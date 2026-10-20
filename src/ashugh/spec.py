@@ -33,7 +33,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from . import lyrics
-from .lang import ANALYZERS
+from .lang import ANALYZERS, override_error
 from .meter import parse_meter
 from .rhyme import THRESHOLD
 
@@ -223,6 +223,10 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     lexicon = data.get("lexicon", {})
     if not isinstance(lexicon, dict) or not all(isinstance(v, str) for v in lexicon.values()):
         raise SpecError(f"{where}: [lexicon] maps words to strings")
+    for word, value in lexicon.items():
+        problem = override_error(word, value)
+        if problem:
+            raise SpecError(f"{where} [lexicon] {word!r}: {problem}")
     lexicon = {k.lower(): v for k, v in lexicon.items()}
     return Spec(path, language, base, sections, lexicon, stanzas)
 

@@ -105,6 +105,11 @@ syllables = [9, 8, 9, 8]
 "zorblax" = "Z AO1 R B L AE0 K S"     # English: ARPABET with stress digits
 ```
 
+Each `[lexicon]` entry is checked when the spec loads, so a correction is
+never silently ignored: a Russian word needs its stress marked, an English one
+ARPABET with a digit on every vowel, an Armenian one its sung syllables split
+by hyphens, one vowel each, and every entry must spell its word.
+
 Top-level keys apply everywhere; `[section.<name>]` and `[stanza.<n>]`
 override them. Command-line flags (`--syllables`, `--meter`, `--rhyme`,
 `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.

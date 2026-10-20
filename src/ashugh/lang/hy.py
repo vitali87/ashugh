@@ -391,6 +391,22 @@ def _stress(syllables: list[list[Seg]]) -> int:
     return len(syllables) - 1
 
 
+def override_error(word: str, value: str) -> str | None:
+    """Why a [lexicon] entry cannot be used, or None: կայ-սը-րու-թյուն."""
+    example = "like կայ-սը-րու-թյուն"
+    if not all(is_armenian(ch) or ch in "-" + "".join(STRESS_MARKS) for ch in value):
+        return f"{value!r} is not in Armenian letters: write its sung syllables, {example}"
+    chunks = [c for c in value.split("-") if c]
+    vowels = [sum(1 for s in segments(c) if s.vowel) for c in chunks]
+    if len(chunks) == 1 and vowels[0] > 1:
+        return f"{value!r} needs a hyphen between its sung syllables, {example}"
+    if any(n != 1 for n in vowels):
+        return f"{value!r} needs one vowel per syllable, ը included, {example}"
+    if normalize(value).replace("-", "").replace("ը", "") != normalize(word).replace("ը", ""):
+        return f"{value!r} spells a different word"
+    return None
+
+
 def _from_override(spec: str) -> list[list[Seg]]:
     """A [lexicon] entry: syllables separated by "-", hidden ը written out."""
     syllables = []

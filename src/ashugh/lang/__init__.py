@@ -26,6 +26,13 @@ def script_of(token: str) -> str:
     return ""
 
 
+def override_error(word: str, value: str) -> str | None:
+    """Why a [lexicon] entry cannot be used, by the script of its word; None if
+    it can, or if no analyzer reads that script."""
+    module = ANALYZERS.get(script_of(word))
+    return module.override_error(word, value) if module else None
+
+
 def detect(tokens: list[str]) -> str:
     counts: dict[str, int] = {}
     for t in tokens:

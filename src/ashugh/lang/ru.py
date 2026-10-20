@@ -321,6 +321,16 @@ def read_marks(token: str) -> tuple[str, int | None]:
     return "".join(letters), stress
 
 
+def override_error(word: str, value: str) -> str | None:
+    """Why a [lexicon] entry cannot be used, or None: замок = замо́к, замОк or ё."""
+    spelled, stress = read_marks(value.replace("-", ""))
+    if spelled.replace("ё", "е") != read_marks(word)[0].replace("ё", "е"):
+        return f"{value!r} spells a different word"
+    if stress is None and vowel_count(spelled) > 1:
+        return f"{value!r} marks no stress: write it like замо́к, замОк, or with ё"
+    return None
+
+
 def split_syllables(word: str) -> list[str]:
     """Orthographic syllables for display: мо-ро-зы, толь-ко, се-мья, вой-на."""
     if "-" in word:

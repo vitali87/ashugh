@@ -169,6 +169,19 @@ def _parse(variant: str) -> tuple[tuple[str, ...], list[int], list[str]]:
     return tuple(phones), stresses, bare
 
 
+def override_error(word: str, value: str) -> str | None:
+    """Why a [lexicon] entry cannot be used, or None: ARPABET with stress digits."""
+    example = 'like "Z AO1 R B L AE0 K S"'
+    symbols = value.split()
+    heads = [s.rstrip("012") for s in symbols]
+    if not symbols or any(h not in VOWELS_ARPA and h not in CONSONANTS_ARPA for h in heads):
+        return f"{value!r} is not ARPABET, {example}"
+    vowels = [s for s, h in zip(symbols, heads) if h in VOWELS_ARPA]
+    if not vowels or any(not s[-1].isdigit() for s in vowels):
+        return f"{value!r} needs a stress digit on every vowel, {example}"
+    return None
+
+
 def lookup(norm: str) -> list[str] | None:
     candidates = [norm]
     if norm.endswith("in"):
