@@ -375,6 +375,13 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             if r.stress is not None and k > r.stress and all(x.stress != k for x in readings):
                 rest = tuple(sorted({r.stress, *r.secondary} - {k}))
                 readings.append(Reading(k, r.phones, norm, "shift", rest, penalty=STRESS_SHIFT))
+    # Two primary stresses (well-known, thirteen) give way to a stressed word after
+    # them, so the first may carry the line: a wéll-known vóice.
+    for phones, stresses, _ in full[:1]:
+        primary = [i for i, d in enumerate(stresses) if d == 1]
+        if len(primary) > 1 and all(x.stress != primary[0] for x in readings):
+            rest = tuple(i for i, d in enumerate(stresses) if d and i != primary[0])
+            readings.append(Reading(primary[0], phones, norm, "shift", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest))
     word.weak = word.weak or word.clitic or longest == 1

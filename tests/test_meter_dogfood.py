@@ -37,3 +37,16 @@ def test_a_variant_that_merges_two_vowels_may_drop_one():
         "The carriage held but just ourselves\n", from_dict({"language": "en", "meter": "iamb4"})
     )
     assert [i for i in rep.issues if i.severity == "error"] == []
+
+
+def test_a_word_with_two_primary_stresses_may_take_either():
+    stresses = {r.stress for r in en.analyze_word("well-known").readings}
+    assert stresses == {0, 1}
+    assert {r.stress for r in en.analyze_word("thirteen").readings} == {0, 1}
+    rep = scan("A well-known voice\n", from_dict({"language": "en", "meter": "iamb2"}))
+    assert [i for i in rep.issues if i.severity == "error"] == []
+
+
+def test_one_primary_stress_does_not_move_back():
+    assert {r.stress for r in en.analyze_word("today").readings} == {1}
+    assert {r.stress for r in en.analyze_word("river").readings} == {0}
