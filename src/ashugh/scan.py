@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import dataclass, field, replace
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
@@ -77,6 +78,7 @@ class UnitReport:
     scheme: str
     rule: Rule
     lines: list[LineReport]
+    scope: str | None = None  # stanzas sharing one rhyme scheme ("ABBA ABBA CDC DCD")
 
 
 @dataclass
@@ -132,25 +134,97 @@ def scan(text: str, spec: Spec | None = None, path: str = "-", lang: str | None 
     for ln in lines:
         units.setdefault(ln.unit, []).append(ln)
     report = Report(path, spec, [], text)
-    for unit_lines in units.values():
-        report.units.append(_scan_unit(unit_lines, spec))
+    stanzas = list(units.values())
+    rules, scopes, short = _shared_schemes(stanzas, spec, text)
+    for unit_lines, rule, scope in zip(stanzas, rules, scopes):
+        report.units.append(_scan_unit(unit_lines, rule, scope))
+    _check_shared_rhymes(report.units)
+    for k, have, parts in short:
+        lr = report.units[k].lines[-1]
+        lr.issues.append(
+            Issue(
+                lr.line.number,
+                "scheme",
+                "warning",
+                f"{have} stanzas, rhyme {' '.join(parts)} wants {len(parts)}",
+            )
+        )
     return report
 
 
-def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
+def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):
+    """Each stanza's rule, with a spaced scheme ("ABBA ABBA CDC DCD") dealt out
+    over a run of stanzas that share it; the run's stanzas get one scope, so
+    their letters name the same rhymes. A tag starts the scheme over, a
+    scheme longer than the run repeats with fresh rhymes, and a run that ends
+    partway through the scheme is reported in short as (last stanza, stanzas
+    in the cycle, parts)."""
+    rules = [spec.rule_for(u[0].key, u[0].unit) for u in stanzas]
+    scopes: list[str | None] = [None] * len(stanzas)
+    short: list[tuple[int, int, tuple[str, ...]]] = []
+    tags = [n for n, raw in enumerate(lyrics.split_lines(text), 1) if lyrics.TAG_RE.match(raw)]
+
+    def joined(a: list[Line], b: list[Line]) -> bool:
+        return not any(a[-1].number < n < b[0].number for n in tags)
+
+    k = 0
+    while k < len(stanzas):
+        end = k
+        while (
+            end + 1 < len(stanzas)
+            and rules[end + 1] is rules[k]
+            and joined(stanzas[end], stanzas[end + 1])
+        ):
+            end += 1
+        parts = rules[k].rhyme_parts
+        if parts and end > k:
+            base, n = rules[k], len(parts)
+            for j in range(end - k + 1):
+                rules[k + j] = replace(base, rhyme=parts[j % n], rhyme_parts=())
+                scopes[k + j] = f"{k}:{j // n}"
+            if (end - k + 1) % n:
+                short.append((end, (end - k + 1) % n, parts))
+        k = end + 1
+    return rules, scopes, short
+
+
+def _check_shared_rhymes(units: list[UnitReport]) -> None:
+    """Check the rhyme groups that run across the stanzas of one spaced scheme."""
+    scoped: dict[str, list[UnitReport]] = {}
+    for u in units:
+        if u.scope is not None:
+            scoped.setdefault(u.scope, []).append(u)
+    for members in scoped.values():
+        for u in members:
+            others = [lr.tails for v in members if v is not u for lr in v.lines]
+            _finish(u, others, groups=False)
+        groups: dict[str, list[LineReport]] = {}
+        for u in members:
+            for g, lrs in _groups(u.lines, u.rule).items():
+                groups.setdefault(g, []).extend(lrs)
+        _check_groups(groups, members[0].rule)
+
+
+def _scan_unit(lines: list[Line], rule: Rule, scope: str | None = None) -> UnitReport:
     first = lines[0]
-    rule = spec.rule_for(first.key, first.unit)
     if rule.meter:
         meter_name, source = rule.meter, "spec"
     else:
         meter_name, source = meter.detect(lines), "detected"
     reports = [check_line(ln, rule, meter_name, source) for ln in lines]
-    _rhyme_stress(reports, rule, meter_name, source)
-    letters = rhyme.scheme([lr.tails for lr in reports])
-    for lr, letter in zip(reports, letters):
+    unit = UnitReport(first.section, first.key, meter_name, source, "", rule, reports, scope)
+    if scope is None:  # a shared scheme is finished once all its stanzas are read
+        _finish(unit, [], groups=True)
+    return unit
+
+
+def _finish(unit: UnitReport, others: list[list[rhyme.Tail]], groups: bool) -> None:
+    """Choose rhyme stresses, letter the stanza and check its scheme."""
+    _rhyme_stress(unit.lines, unit.rule, unit.meter, unit.meter_source, others)
+    unit.scheme = rhyme.scheme([lr.tails for lr in unit.lines])
+    for lr, letter in zip(unit.lines, unit.scheme):
         lr.letter = letter
-    _check_rhyme(reports, rule)
-    return UnitReport(first.section, first.key, meter_name, source, letters, rule, reports)
+    _check_rhyme(unit.lines, unit.rule, groups)
 
 
 def check_line(
@@ -174,13 +248,20 @@ RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
 RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
 
 
-def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source: str) -> None:
+def _rhyme_stress(
+    reports: list[LineReport],
+    rule: Rule,
+    meter_name: str,
+    source: str,
+    beyond: Sequence[list[rhyme.Tail]] = (),
+) -> None:
     """Let rhymes choose the stress of ambiguous line-final words (облака́ / издалека́),
     or put an English line's last beat on its final syllable (memory / free).
 
     The meter alone often cannot tell о́блака from облака́. When another reading
     of a line's rhyme word costs the meter little more and rhymes clearly better
-    with a line of the same stanza, that reading wins.
+    with a line of the same stanza (or of the stanzas sharing its scheme, in
+    beyond), that reading wins.
     """
     floor = rhyme.THRESHOLD["near"]
     for _ in range(2):
@@ -199,7 +280,7 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
                 tries.append((None, True))
             if not tries:
                 continue
-            others = [r.tails for m, r in enumerate(reports) if m != k]
+            others = [r.tails for m, r in enumerate(reports) if m != k] + list(beyond)
             if not others:
                 return
 
@@ -392,7 +473,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 break
 
 
-def _check_rhyme(reports: list[LineReport], rule: Rule) -> None:
+def _check_rhyme(reports: list[LineReport], rule: Rule, groups: bool = True) -> None:
     if not rule.rhyme:
         return
     n = len(rule.rhyme)
@@ -406,12 +487,21 @@ def _check_rhyme(reports: list[LineReport], rule: Rule) -> None:
                 f"stanza has {len(reports)} lines, rhyme {rule.rhyme} wants {n}",
             )
         )
-    floor = rhyme.THRESHOLD[rule.min_rhyme]
-    groups: dict[str, list[LineReport]] = {}
+    if groups:
+        _check_groups(_groups(reports, rule), rule)
+
+
+def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]]:
+    out: dict[str, list[LineReport]] = {}
     for lr in reports:
         g = rule.rhyme_at(lr.line.index)
         if g is not None:
-            groups.setdefault(g, []).append(lr)
+            out.setdefault(g, []).append(lr)
+    return out
+
+
+def _check_groups(groups: dict[str, list[LineReport]], rule: Rule) -> None:
+    floor = rhyme.THRESHOLD[rule.min_rhyme]
     for g, members in groups.items():
         head = members[0]
         for lr in members[1:]:

@@ -94,7 +94,9 @@ def _rule_words(rule: Rule) -> list[str]:
         mixed = rule.rhyme != rule.rhyme.upper() and rule.rhyme != rule.rhyme.lower()
         case = "; capital letters end on an unstressed syllable, small ones on a stressed one"
         note = "a dash marks an unrhymed line" + (case if mixed else "")
-        out.append(f"the rhyme scheme is {rule.rhyme} ({note})")
+        scheme = " ".join(rule.rhyme_parts) or rule.rhyme
+        across = ", one stanza per group, rhymes running across stanzas" if rule.rhyme_parts else ""
+        out.append(f"the rhyme scheme is {scheme} ({note}{across})")
     if rule.endings:
         out.append(f"line endings are {rule.endings} (m masculine, f feminine, d dactylic)")
     if rule.forbid_final:

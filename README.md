@@ -111,6 +111,19 @@ override them. Command-line flags (`--syllables`, `--meter`, `--rhyme`,
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
 `.A.A`.
 
+A rhyme scheme applies to each stanza on its own: `ABAB` over two stanzas
+asks for two separate pairs of rhymes. Spaces split a scheme into stanzas
+whose letters are shared, for rhymes that run across them, as in a sonnet:
+
+```toml
+rhyme = "ABBA ABBA CDC DCD"   # line 8 must rhyme with line 1
+```
+
+The parts are dealt out over the stanzas in turn, starting over with fresh
+rhymes after the last part and at every section tag. A run that stops partway
+through the scheme is a warning, and a single stanza reads the scheme
+without its spaces.
+
 ### fit and pick
 
 `fit` turns every failing line, and every line of a broken rhyme group, into
@@ -347,8 +360,6 @@ consonant before the vowel (ты / красоты).
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
-- Rhyme is judged within a stanza, so the cross-stanza rhymes of a sonnet
-  (ABBA ABBA) go unseen.
 - `probe` needs you to generate the clips in Suno; ashugh cannot call Suno.
 
 ## Development

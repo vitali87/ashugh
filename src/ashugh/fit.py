@@ -210,25 +210,25 @@ def run(
 def _variables(report: Report, keep_original: bool, everything: bool = False):
     variables: dict[int, _Var] = {}
     groups: dict[str, list[int]] = {}
+    members: dict[str, list[LineReport]] = {}
     for u_id, unit in enumerate(report.units):
-        members: dict[str, list[LineReport]] = {}
+        scope = unit.scope or str(u_id)  # stanzas of one spaced scheme share their letters
         for lr in unit.lines:
             g = unit.rule.rhyme_at(lr.line.index)
             if g is not None:
-                members.setdefault(f"{u_id}:{g}", []).append(lr)
-        broken = {
-            g
-            for g, lrs in members.items()
-            if any(i.code == "rhyme" for lr in lrs for i in lr.issues)
-        }
-        group_of = {lr.line.number: g for g, lrs in members.items() for lr in lrs}
+                members.setdefault(f"{scope}:{g}", []).append(lr)
+    broken = {
+        g for g, lrs in members.items() if any(i.code == "rhyme" for lr in lrs for i in lr.issues)
+    }
+    group_of = {lr.line.number: g for g, lrs in members.items() for lr in lrs}
+    for unit in report.units:
         for lr in unit.lines:
             g = group_of.get(lr.line.number)
             if everything or line_errors(lr) or g in broken:
                 variables[lr.line.number] = _Var(lr, unit, group=g)
-        for g, lrs in members.items():
-            if any(lr.line.number in variables for lr in lrs) and len(lrs) > 1:
-                groups[g] = [lr.line.number for lr in lrs]
+    for g, lrs in members.items():
+        if any(lr.line.number in variables for lr in lrs) and len(lrs) > 1:
+            groups[g] = [lr.line.number for lr in lrs]
     for var in variables.values():
         var.seen.add(_norm(var.lr.line.text))
         if keep_original and not line_errors(var.lr):

@@ -110,6 +110,7 @@ syllables = 8              # or [8, 8, 8, 6]; lists repeat over the stanza
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
 rhyme = "ABAB"             # "-" or "." = free line; AbAb also asks f/m endings
+                           # "ABBA ABBA CDC DCD": one part per stanza, letters shared
 endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]

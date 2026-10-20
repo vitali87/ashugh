@@ -62,6 +62,7 @@ class Rule:
     meter: str | None = None
     feet: tuple[int, ...] = ()
     rhyme: str | None = None
+    rhyme_parts: tuple[str, ...] = ()  # "ABBA ABBA": the scheme of each stanza, in turn
     endings: str | None = None
     min_rhyme: str = "near"
     forbid_final: tuple[str, ...] = ()
@@ -164,12 +165,14 @@ def apply(table: dict, base: Rule, where: str) -> Rule:
     if "feet" in table:
         changes["feet"] = _int_list("feet", table["feet"], where)
     if "rhyme" in table:
-        r = str(table["rhyme"]).replace(" ", "")
+        parts = str(table["rhyme"]).split()
+        r = "".join(parts)
         if not r or not all(c.isalpha() or c in "-.*" for c in r):
             raise SpecError(
                 f"{where}: rhyme must be letters like ABAB, with - or . for a free line"
             )
         changes["rhyme"] = r
+        changes["rhyme_parts"] = tuple(parts) if len(parts) > 1 else ()
     if "endings" in table:
         e = str(table["endings"]).replace(" ", "").lower()
         if not e or not all(c in "mfdh-" for c in e):
