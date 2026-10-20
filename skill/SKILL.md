@@ -110,7 +110,7 @@ Each issue has a `code`, a `severity` and a short `message` with `detail`:
 
 | code | means |
 |---|---|
-| `syllables` | count differs from the slot; detail lists Armenian words with hidden vowels |
+| `syllables` | count differs from the slot; detail lists Armenian words with hidden vowels; info: the line fits only if a schwa drops |
 | `meter` | a stressed syllable falls on a weak beat; detail shows the stress grid against the meter's |
 | `feet` | wrong number of stressed beats |
 | `ending` | masculine/feminine/dactylic ending differs from the slot |
@@ -118,6 +118,9 @@ Each issue has a `code`, a `severity` and a short `message` with `detail`:
 | `rhyme` | two lines of a group do not rhyme well enough; detail names the words and the level |
 | `stress` | warning: stress unknown and guessed; info: ambiguous stress the meter resolved |
 | `script` | warning: digits or words in a script ashugh does not analyze |
+| `scheme` | warning: a stanza has a different number of lines than its rhyme scheme |
+| `spec` | warning: a `[section.X]` or `[stanza.N]` table that matches nothing (a typo such as `[section.chorsu]`) |
+| `translate` | error: no candidate came back for a line of a translation |
 
 `error`s break the spec, `warning`s make a check unreliable, and `info` notes
 record assumptions. Rhyme levels from best to worst: perfect, near, slant,

@@ -17,6 +17,12 @@ one-vowel forms that exist only with ё. The derived tables are distributed
 under the same CC BY-SA 4.0 license. The rest of ashugh is MIT
 licensed (see LICENSE), except the data tables described here.
 
+`src/ashugh/data/ru_suffix.tsv` is learned from ru_stress.tsv by
+`scripts/build_suffix_stress.py` (for each word ending, how many vowels most
+often follow the stress), so it is distributed under the same CC BY-SA 4.0
+license. `src/ashugh/data/en_suffix.tsv` is learned the same way from
+en_cmudict.tsv and falls under the CMU license below.
+
 ## Armenian word lists
 
 `src/ashugh/data/hy_lexical.tsv`, `src/ashugh/data/hy_compound.tsv` and

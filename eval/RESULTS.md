@@ -13,8 +13,8 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 | stress of polysyllabic words (60,854) | 97.2% |
 | each word's first reading, without meter or rhyme | 92.5% |
 | words the dictionary lists (50,075) | 98.2% |
-| ambiguous words resolved by meter and rhyme (3,678) | 95.2% |
-| unknown words guessed from the ending, meter and rhyme (5,424) | 88.2% |
+| ambiguous words resolved by meter and rhyme (3,680) | 95.2% |
+| unknown words guessed from the ending, meter and rhyme (5,422) | 88.3% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.878, F1 0.909 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
@@ -162,8 +162,11 @@ the analyzer before the numbers above were taken:
 
 The possessive fix also caught a real error the first scoring had missed
 (աչքերս above). A second code review after these runs fixed more analyzer
-bugs; rescoring every draft and every repaired text with the final analyzer
-gave the same numbers. Before the fixes the drafts scored 133/140 and 185/196
+bugs; rescoring every draft and every repaired text with the analyzer of that
+time gave the same numbers. A later fix of the possessive after a plural
+(782b9cc: աչ-քե-րըդ is three syllables) flags three more draft lines
+(աչքերդ twice in hy-lullaby, Աչքերդ in hy-spring): rescored today, the
+drafts meet 136/140 lines and 9/12 songs, the repaired texts 137/140 and 10/12. Before the fixes the drafts scored 133/140 and 185/196
 lines (8/12 and 5/12 songs). Those scores measured ashugh's errors more than
 the writer's.
 
@@ -223,7 +226,9 @@ alarms:
 
 The false alarms were fixed afterwards. As a regression check, not a
 measurement: with the fixed analyzer the same drafts raise only the three
-real flags.
+real flags. One false alarm did harm: the hy-lullaby line was right, and the
+repair Դու աչուկներդ փակիր sings seven syllables in a slot of six, so the
+repaired songs, rescored today, meet 997 / 1,000 lines and 47 / 48 songs.
 
 ### What this does and does not show
 

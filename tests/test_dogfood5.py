@@ -124,8 +124,18 @@ def test_names_with_yo(word, spelling, want):
     assert r.spelling == spelling and r.stress == want
 
 
-@pytest.mark.parametrize("word,want", [("улыбалася", [2]), ("смеялася", [1])])
-def test_the_old_lasya_reads_as_las(word, want):
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("улыбалася", [2]),
+        ("смеялася", [1]),
+        ("ложися", [1]),  # не ложи́ся на краю, not ло́жи (theatre boxes) with ся
+        ("боюся", [1]),
+        ("смеюся", [1]),
+        ("берегися", [2]),
+    ],
+)
+def test_the_old_full_sya_reads_as_its_sj_twin(word, want):
     w = ru.analyze_word(word)
     assert stressed(word) == want and not w.guessed  # улыба́лася as улыба́лась
 

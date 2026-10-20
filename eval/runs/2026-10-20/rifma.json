@@ -10,16 +10,16 @@
         "accuracy": 0.9822
       },
       "guess": {
-        "words": 5424,
-        "accuracy": 0.8827
+        "words": 5422,
+        "accuracy": 0.8829
       },
       "mark": {
         "words": 1677,
         "accuracy": 0.9917
       },
       "meter": {
-        "words": 3678,
-        "accuracy": 0.9524
+        "words": 3680,
+        "accuracy": 0.9522
       }
     },
     "skipped_lines": 25,

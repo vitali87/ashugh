@@ -523,7 +523,10 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
             twin(norm[:-2] + full, lambda p: p)
     if norm.endswith("ей") and not found:
         twin(norm[:-2] + "ее", lambda p: p)
-    if norm.endswith("лася") and not found:  # улыба́лася, verse's улыба́лась
+    # Folk and old verse write -ся in full after a vowel where speech has -сь
+    # (улыба́лася, не ложи́ся, бою́ся): its twin is the -сь form, not the bare stem
+    # (ло́жи, theatre boxes).
+    if norm.endswith("ся") and norm[-3:-2] in VOWELS and not found:
         twin(norm[:-2] + "сь", lambda p: p)
     # стараясь is стара́юсь's gerund, not ста́рая with сь: a gerund asks its verb first.
     gerund = norm.endswith(("ясь", "ась")) and not norm.endswith("лась")

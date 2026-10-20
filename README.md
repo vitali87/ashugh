@@ -60,7 +60,7 @@ OR-Tools for large repair problems, `[whisper]` adds openai-whisper for
 | `ashugh probe make սպասել --lang hy` | measure how Suno pronounces different spellings |
 | `ashugh spec --from song.txt` | the spec that reproduces a song's form |
 | `ashugh syl Մկրտիչը կյանքն է սիրում` | how a line is sung |
-| `ashugh rhyme сердце дверце` | `perfect 1.00  sʲertsɨ / vʲertsɨ` |
+| `ashugh rhyme сердце дверце` | `perfect 1.00  sʲertsə / vʲertsə` |
 | `ashugh eval run eval/tasks` | spec pass rate of a writer alone and with ashugh |
 | `ashugh mcp`, `ashugh lsp` | MCP server for agents, language server for editors |
 
@@ -68,8 +68,10 @@ OR-Tools for large repair problems, `[whisper]` adds openai-whisper for
 
 ```
 $ ashugh scan examples/song.ru.txt --spec examples/song.ru.toml
-[Verse 1]  iamb · ABCB (spec AbAb)
-  L4   rhyme A broken                     «окон» / «строгий»: assonance 0.42, need near
+examples/song.ru.txt · Russian · spec examples/song.ru.toml
+
+[Verse 1]  iamb · AbCb (spec AbAb)
+  L4   rhyme A broken                     «окон» / «строгий»: assonance 0.40, need near
   L5   last stress off the beat           stress x/x/xx/, iamb wants x/x/x/x
   L5   3 feet, slot is 4                  7 syllables; iamb4 with a masculine ending has 8
 ...
@@ -87,6 +89,7 @@ language = "ru"            # hy | ru | en; detected per line if omitted
 syllables = 8              # or [8, 8, 8, 6]; lists repeat over the stanza
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
+# feet = [4, 3]            # or feet per line, repeating over the stanza (a ballad)
 rhyme = "AbAb"             # "-" or "." = free line; mixed case also asks endings:
                            # a capital letter feminine, a small one masculine
 endings = "fmfm"           # m masculine, f feminine, d dactylic, h 3+ after, - any
@@ -113,8 +116,8 @@ by hyphens, one vowel each, and every entry must spell its word.
 
 Top-level keys apply everywhere; `[section.<name>]` overrides them for its
 sections, and `[stanza.<n>]` overrides its stanza's section in turn, so a
-chorus stanza's table changes only what it sets. Command-line flags (`--syllables`, `--meter`, `--rhyme`,
-`--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
+chorus stanza's table changes only what it sets. Command-line flags (`--syllables`, `--meter`, `--feet`,
+`--rhyme`, `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
 `.A.A`.
 
@@ -253,8 +256,11 @@ unstressed Armenian auxiliary, a stress on the weak beat of a dactyl or an
 anapest. The checker is the weak point: of the 18 lines it flagged, 14 were
 its own mistakes (a dictionary gap such as кружи́тся, the Armenian
 possessive after a plural, a particle counted as stressed). Each cost a
-needless but harmless rewrite, and each has since been fixed with a test;
-the numbers above are from before those fixes. An earlier set of 24 drafts
+needless rewrite, and each has since been fixed with a test; the numbers
+above are from before those fixes. One of those rewrites did harm: the
+lullaby line Աչուկներդ փակիր already had its six syllables (ա-չուկ-նե-րըդ),
+and fit padded it to seven. Rescored with today's analyzer, the repaired
+songs meet 1,479 / 1,482 lines and 71 / 72 songs. An earlier set of 24 drafts
 was the development set the rules were tuned on, so it is reported in
 RESULTS.md but not here. The writers and proposers were Claude subagents,
 not API calls; RESULTS.md has every flagged line and the caveats.
@@ -268,7 +274,7 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 | each word's first reading, without meter or rhyme | 92.5% |
 | words the dictionary lists | 98.2% |
 | ambiguous words, resolved by meter and rhyme | 95.2% |
-| unknown words (9%), guessed from the ending, meter and rhyme | 88.1% |
+| unknown words (9%), guessed from the ending, meter and rhyme | 88.3% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.88, F1 0.91 |
 
 RIFMA was also the development set for the Russian rules, so these numbers
@@ -288,8 +294,10 @@ lists were built without, its sung syllables match Wiktionary's vowels for
 93.3% of words (92.9% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
-glide (դանիացի). The real misses are compounds no listed word explains
-(ծո-վա-գը-նաց): 14 words, 0.8%.
+glide (դանիացի). The real misses, 14 words (0.8%), have a schwa inside that
+the two readings disagree on: mostly compounds no listed word explains
+(ծո-վա-գը-նաց), and some clusters where ashugh sings a schwa Wiktionary does
+not write (ա-բըստ-րա-հել).
 
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.6% of Russian words right (always guessing the
@@ -320,7 +328,8 @@ as possible:
   (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
 - the article -ն after ր, լ or ն may be sung with a schwa or without it
-  (սե-րըն or սերն, like կյան-քըն or կյանքն): a line may count either;
+  (սե-րըն or սերն): a line may count either; after two consonants the
+  schwa stays (կյան-քըն) unless a vowel follows (կյանքն է, կյանք-նէ);
 - a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 248
   word beginnings that do this are listed from Wiktionary, and so are 1,995
   roots that open on two consonants with a schwa between (նշան, սղոց), which
@@ -337,8 +346,9 @@ enclitic that rhymes with the word before it. ես is the pronoun I [jes]
 instead where it opens its clause (Ես եմ, ու ես) or its clause has a verb of
 I (հիմա ես գիտեմ), and the auxiliary [es] otherwise (ինչու ես լռում). A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other
-hyphenated word the dictionary lacks keeps each part's stress, the last part
-carrying the rhyme (давны́м-давно́, баю́-ба́юшки-баю́, ice-cóld, twenty-four-séven).
+hyphenated word the dictionary lacks keeps each part's stress as a secondary
+one the meter may use, the last part carrying the main stress and the rhyme
+(баю́-ба́юшки-баю́, ice-cóld, twenty-four-séven).
 
 **Russian** (`lang/ru.py`). Stress comes from, in order:
 
@@ -369,7 +379,7 @@ count. A diphthong after the main stress keeps its full vowel and acts as a
 secondary stress, for the meter and the rhyme (ém-pìre / fire, bírd-hòuse /
 mouse), whether or not the dictionary marks it. An object pronoun that ends a
 line after a verb or a noun leans on it (néed it, hóld me), and the rhyme may
-fall on either (need it / feel it, love you / true), though never on the same
+fall on either (need it / read it, love you / true), though never on the same
 pronoun twice (need it / want it). A grave sings an -ed (blessèd), an old -est
 or -eth after a vowel is its own syllable (go-est), & is sung as and, and a
 word glued to digits ('80s) is left to the digits warning. Unknown words are counted from
@@ -427,7 +437,8 @@ uv run ruff check . && uv run ruff format --check .
 uv run ty check
 ```
 
-CI runs the same on Python 3.14, and on 3.15 while it is in beta.
+CI runs the same on Python 3.14, and on 3.15 while it is in beta (with the
+claude extra only: OR-Tools has no 3.15 wheels yet).
 
 The data tables are rebuilt by `scripts/build_ru_lexicon.py` (from the
 [OpenRussian dump](https://github.com/Badestrand/russian-dictionary)),
