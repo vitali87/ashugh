@@ -202,3 +202,50 @@ def test_diagnostics_use_editor_line_numbers(tmp_path):
     (published,) = open_doc(Server(), uri, "Я жду\u2028тебя\nЯ жду тебя всю ночь до утра\n")
     rows = {d["range"]["start"]["line"] for d in published["params"]["diagnostics"]}
     assert rows == {0, 1}
+
+
+def _replies(raw: bytes) -> list[dict]:
+    stream, out = io.BytesIO(raw), []
+    while (msg := read_message(stream)) is not None:
+        out.append(msg)
+    return out
+
+
+def test_serve_survives_bad_frames_and_exits_cleanly(tmp_path):
+    from ashugh.lsp import serve
+
+    uri = (tmp_path / "song.txt").as_uri()
+    raw = b"".join(
+        [
+            frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+            b"X-Nonsense: 1\r\n\r\n",  # no Content-Length
+            b"Content-Length: many\r\n\r\n",
+            b"Content-Length: 5\r\n\r\n\xff\xfe{}}",  # not UTF-8
+            frame(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "textDocument/didOpen",
+                    "params": {"textDocument": {"uri": uri, "version": 1, "text": "Я жду"}},
+                }
+            ),
+            frame({"jsonrpc": "2.0", "id": 2, "method": "shutdown"}),
+            frame({"jsonrpc": "2.0", "method": "exit"}),
+            frame({"jsonrpc": "2.0", "id": 3, "method": "initialize", "params": {}}),  # after exit
+        ]
+    )
+    out = io.BytesIO()
+    assert serve(io.BytesIO(raw), out) == 0
+    replies = _replies(out.getvalue())
+    assert [r.get("id", r.get("method")) for r in replies] == [
+        1,
+        "textDocument/publishDiagnostics",
+        2,
+    ]
+
+
+def test_exit_without_shutdown_is_exit_code_1():
+    from ashugh.lsp import serve
+
+    raw = frame({"jsonrpc": "2.0", "method": "exit"})
+    assert serve(io.BytesIO(raw), io.BytesIO()) == 1
+    assert serve(io.BytesIO(b""), io.BytesIO()) == 0  # the client just went away
