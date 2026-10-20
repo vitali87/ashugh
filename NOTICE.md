@@ -1,8 +1,9 @@
 # Notices
 
-## Russian stress table
+## Russian tables
 
-`src/ashugh/data/ru_stress.tsv` is derived from the OpenRussian dictionary
+`src/ashugh/data/ru_stress.tsv` and `src/ashugh/data/ru_yo.tsv` are derived
+from the OpenRussian dictionary
 data (<https://en.openrussian.org>, published at
 <https://github.com/Badestrand/russian-dictionary>), © the OpenRussian team
 and contributors, which in turn draws on Wiktionary. It is licensed under the
@@ -11,8 +12,9 @@ Creative Commons Attribution-ShareAlike 4.0 International license
 
 Changes: inflected forms were extracted from nouns.csv, verbs.csv,
 adjectives.csv and others.csv, lowercased, and reduced to the positions of
-their stressed vowels by `scripts/build_ru_lexicon.py`. The derived table is
-distributed under the same CC BY-SA 4.0 license. The rest of ashugh is MIT
+their stressed vowels by `scripts/build_ru_lexicon.py`, which also lists the
+one-vowel forms that exist only with ё. The derived tables are distributed
+under the same CC BY-SA 4.0 license. The rest of ashugh is MIT
 licensed (see LICENSE), except the data tables described here.
 
 ## Armenian word lists

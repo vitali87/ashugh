@@ -18,6 +18,8 @@ assimilates obstruents, and drops the silent consonants of сердце, сол�
 from __future__ import annotations
 
 import unicodedata
+from functools import cache
+from importlib import resources
 
 from ..model import Reading, Syllable, Word
 from ..table import SuffixPrior
@@ -591,6 +593,13 @@ def _user_readings(value: str) -> list[Reading]:
 LOOK_ALIKE = str.maketrans("aeopcyxAEOPCYXBKMHT", "аеорсухАЕОРСУХВКМНТ")
 
 
+@cache
+def yo_only() -> dict[str, str]:
+    """One-syllable words that exist only with ё, by their е spelling: ждет -> ждёт."""
+    text = resources.files("ashugh").joinpath("data/ru_yo.tsv").read_text(encoding="utf-8")
+    return {w.replace("ё", "е"): w for w in text.split()}
+
+
 def cyrillic(token: str) -> str:
     """token with Latin look-alike letters made Cyrillic and a precomposed accent
     (á, ó) split into its letter and the stress mark."""
@@ -627,7 +636,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     if not readings and n == 0:
         readings = [Reading(None, transcribe(norm, None), norm, "clitic")]
     elif not readings and n == 1:
-        spellings = [norm] + [s for s, _ in TABLE.variants(norm) if s != norm]
+        yo = yo_only().get(norm)  # ждет is ждёт: no word is spelled ждет
+        spellings = [yo] if yo else [norm] + [s for s, _ in TABLE.variants(norm) if s != norm]
         source = "clitic" if clitic else "rule"
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
     elif not readings:

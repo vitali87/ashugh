@@ -41,3 +41,25 @@ def test_fets_anapest_scans():
 )
 def test_bant_is_stressed_on_the_stem(word):
     assert {r.stress for r in ru.analyze_word(word).readings} == {0}
+
+
+@pytest.mark.parametrize(
+    "plain,yo", [("ждет", "ждёт"), ("шел", "шёл"), ("лед", "лёд"), ("днем", "днём")]
+)
+def test_a_one_syllable_word_that_exists_only_with_yo_reads_with_it(plain, yo):
+    (reading,) = ru.analyze_word(plain).readings
+    assert reading.spelling == yo
+
+
+@pytest.mark.parametrize("word", ["все", "сел", "лет", "нем"])
+def test_a_one_syllable_word_that_exists_both_ways_keeps_its_spelling_first(word):
+    assert ru.analyze_word(word).readings[0].spelling == word
+
+
+def test_yo_words_rhyme_and_are_spelled_with_yo_for_suno():
+    from ashugh import suno
+
+    rep = scan("Мы пойдём вперед,\nКто нас ждет\n", from_dict({"language": "ru", "rhyme": "AA"}))
+    assert not [i for i in rep.issues if i.code == "rhyme"]
+    out = suno.format_song("Он ждет меня\n", tags=False).text
+    assert out.startswith("Он ждёт")
