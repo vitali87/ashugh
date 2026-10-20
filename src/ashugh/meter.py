@@ -521,10 +521,13 @@ def free_fit(
     )
 
 
+MAX_SUNG_LINE = 64  # syllables; past this no meter is looked for (the fit grows quadratically)
+
+
 def detect(lines: list[Line]) -> str:
     """The meter that fits a stanza best, or "free" if none fits well."""
     usable = [ln for ln in lines if ln.words]
-    if not usable:
+    if not usable or any(sum(w.size for w in ln.words) > MAX_SUNG_LINE for ln in usable):
         return "free"
     totals = {}
     for m in METERS:

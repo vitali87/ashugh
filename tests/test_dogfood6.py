@@ -104,3 +104,13 @@ def test_syl_gives_the_range_a_line_may_count(capsys):
     assert capsys.readouterr().out.split()[0] == "3-4"  # e-ve-ry or eve-ry
     main(["syl", "--lang", "en", "the day"])
     assert capsys.readouterr().out.split()[0] == "2"
+
+
+def test_a_line_no_song_would_sing_is_read_as_free_verse_quickly():
+    import time
+
+    from ashugh.scan import scan
+
+    start = time.perf_counter()
+    rep = scan(" ".join(["love"] * 6000) + "\n")  # 6.7 s before the cap
+    assert rep.units[0].meter == "free" and time.perf_counter() - start < 1.5

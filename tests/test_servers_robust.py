@@ -211,3 +211,19 @@ def test_lsp_names_a_bad_spec_once(tmp_path):
 def test_mcp_reads_a_line_that_opens_with_a_byte_order_mark():
     (reply,) = mcp_run("﻿" + PING)
     assert reply == {"jsonrpc": "2.0", "id": 99, "result": {}}
+
+
+def test_lsp_scans_only_the_last_of_the_changes_already_queued():
+    def change(n: int) -> bytes:
+        params = {
+            "textDocument": {"uri": "u", "version": n},
+            "contentChanges": [{"text": f"I walk {n}"}],
+        }
+        return frame(msg(method="textDocument/didChange", params=params))
+
+    opened = frame(
+        msg(method="textDocument/didOpen", params={"textDocument": {"uri": "u", "text": "x"}})
+    )
+    stream = opened + b"".join(change(n) for n in range(30)) + frame(msg(id=1, method="shutdown"))
+    pubs = [m for m in lsp_run(stream) if m.get("method") == "textDocument/publishDiagnostics"]
+    assert len(pubs) == 2  # the open and the last change, not 31 scans

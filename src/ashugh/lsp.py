@@ -11,7 +11,9 @@ parent folder; without one the server reports only warnings and notes.
 
 from __future__ import annotations
 
+import io
 import json
+import select
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -265,15 +267,63 @@ def serve(stdin=None, stdout=None) -> int:
     stdin = stdin or sys.stdin.buffer
     stdout = stdout or sys.stdout.buffer
     server = Server()
+    queue: list = []
     while not server.done:
-        try:
-            msg = read_message(stdin)
-        except ValueError, json.JSONDecodeError:  # FramingError too: read on
-            continue
+        if not queue:
+            queue = _read_waiting(stdin)
+            if not queue:
+                break
+        msg = queue.pop(0)
         if msg is EOF_:
             break
+        if _superseded(msg, queue):  # a later full text of the same document is waiting
+            continue
         reply = server.handle(msg)
         for out in reply if isinstance(reply, list) else [reply]:
             if out is not None:
                 write_message(stdout, out)
     return 0 if server.shutdown or not server.done else 1
+
+
+def _read_waiting(stdin) -> list:
+    """The next message, and every one already waiting behind it."""
+    out: list = []
+    while True:
+        try:
+            msg = read_message(stdin)
+        except ValueError, json.JSONDecodeError:  # FramingError too: read on
+            continue
+        out.append(msg)
+        if msg is EOF_ or not _ready(stdin):
+            return out
+
+
+def _ready(stream) -> bool:
+    """Whether more input is waiting, without blocking for it."""
+    try:
+        return bool(select.select([stream], [], [], 0)[0])
+    except AttributeError, OSError, ValueError, io.UnsupportedOperation:
+        if hasattr(stream, "getbuffer"):  # an in-memory stream, as in tests
+            return stream.tell() < len(stream.getbuffer())
+        return False
+
+
+def _superseded(msg, queue: list) -> bool:
+    """A didChange that a later didChange or didClose of the same document replaces:
+    with full sync only the last text counts, so fast typing costs one scan."""
+    if not isinstance(msg, dict) or msg.get("method") != "textDocument/didChange":
+        return False
+    uri = _uri(msg)
+    return uri is not None and any(
+        isinstance(m, dict)
+        and m.get("method") in ("textDocument/didChange", "textDocument/didClose")
+        and _uri(m) == uri
+        for m in queue
+    )
+
+
+def _uri(msg: dict) -> str | None:
+    params = msg.get("params")
+    doc = params.get("textDocument") if isinstance(params, dict) else None
+    uri = doc.get("uri") if isinstance(doc, dict) else None
+    return uri if isinstance(uri, str) else None
