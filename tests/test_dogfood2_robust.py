@@ -50,6 +50,7 @@ def test_mcp_refuses_unknown_languages(tool, args):
             "params": {"name": tool, "arguments": args},
         }
     )
+    assert r is not None
     result = r["result"]
     assert (
         result["isError"]
