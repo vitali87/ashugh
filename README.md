@@ -171,10 +171,13 @@ Suno does not document its pronunciation, so `probe` measures it:
 ashugh probe make սպասել Մկրտիչ --lang hy --lyrics probes/   # one clip lyric per spelling
 # generate each clip in Suno, save as probes/<id>.mp3
 ashugh probe transcribe probes/ --plan probes.json           # Whisper (pip install openai-whisper)
+ashugh probe transcribe probes/ --engine "cmd:whisper-cli -m ggml-small.bin -l {lang} -nt -f {audio}"
 ashugh probe score probes.json transcripts.json -o policy.json
 ashugh suno song.hy.txt --policy policy.json                  # the winning spelling, word by word
 ```
 
+Any recognizer works through `--engine cmd:`: `{audio}` and `{lang}` stand
+for the clip and its language, and the command prints the transcript.
 The score is how close each transcript, analyzed by ashugh, comes to the
 intended sung form. Transcripts use normal spelling, so this measures
 intelligibility rather than every sung schwa.
