@@ -154,7 +154,9 @@ The default proposer is Claude Opus 5.5 with structured JSON output
 and prints `{"lines": [{"id": "L3", "candidates": ["..."]}]}`. `pick` and the
 MCP `pick` tool let an agent that is already writing the lyrics be the
 proposer itself: `ashugh requests` hands it the constraints, and it answers
-with a candidates file.
+with a candidates file: that same `{"lines": [...]}` answer, or simply
+`{"3": ["...", "..."]}`, where a candidate may also be
+`{"text": "...", "faithfulness": 0.9}`.
 
 ### translate
 
