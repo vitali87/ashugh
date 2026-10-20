@@ -1,6 +1,6 @@
 ---
 name: ashugh
-description: Checks and repairs song lyrics and verse in Armenian, Russian or English so they scan and rhyme, and rewrites them for Suno. Counts sung syllables including Armenian hidden schwas (ը), finds Russian stress from a 557k-form dictionary and English stress from CMUdict, fits meter, judges rhyme by sound, translates songs into the same syllable grid. Use whenever you write, translate or edit lyrics or poems in these languages (Suno songs included), and run it before showing the lyrics to the user.
+description: Checks and repairs song lyrics and verse in Armenian, Russian or English so they scan and rhyme, and rewrites them for Suno. Counts sung syllables including Armenian hidden schwas (ը), finds Russian stress from a 559k-form dictionary and English stress from CMUdict, fits meter, judges rhyme by sound, translates songs into the same syllable grid. Use whenever you write, translate or edit lyrics or poems in these languages (Suno songs included), and run it before showing the lyrics to the user.
 ---
 
 # ashugh: give your lyrics an ear
