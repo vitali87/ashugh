@@ -40,26 +40,28 @@ either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **91.6%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **91.9%** |
 | the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **86.7%** |
 
-The 149 disagreements left, by kind:
+The 144 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
 | a schwa at the start | 55 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
-| a schwa at the end | 35 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
+| a schwa at the end | 30 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
 | a schwa inside | 27 | compounds whose beginning no listed word shares (աստ-ղա-գը-նաց) |
 
 Wiktionary transcribes speech, not singing, so this is agreement rather than
 accuracy. The comparison gave ashugh three things:
 
-- two rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
-  of 21 entries), and a final դ after ր is the possessive (սե-րըդ, your
-  love). Dictionary forms never carry the possessive, so this test shows
-  what the second costs (the -րդ stems the held-out list lacks) and not what
-  it gains;
+- three rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
+  of 21 entries); it may end on three consonants that fall in sonority
+  (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops: all 67 such
+  entries are written closed, where ashugh had sung a schwa); and a final դ
+  after ր is the possessive (սե-րըդ, your love). Dictionary forms never
+  carry the possessive, so this test shows what the third costs (the -րդ
+  stems the held-out list lacks) and not what it gains;
 - 296 stems whose final ս or դ is their own (ադամանդ, մաքս, ժողովուրդ);
 - 253 word beginnings that keep a compound root's schwa (մեղադր-, so
   մե-ղա-դը-րել, մե-ղա-դը-րան-քը), each kept only if it breaks no entry the

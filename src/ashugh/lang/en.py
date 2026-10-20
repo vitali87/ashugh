@@ -14,6 +14,7 @@ import re
 import unicodedata
 
 from ..model import Reading, Syllable, Word
+from ..phon import is_vowel
 from ..table import SortedTable, SuffixPrior
 
 CODE = "en"
@@ -351,6 +352,13 @@ def split_spelling(token: str, n: int) -> list[str]:
 
 MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SYNCOPE_COST = 0.5
+# An unstressed [ɚ] straight after [aɪ] or [aʊ] may merge with it, as fire and
+# hour do in the dictionary's second reading: de-sire, pow'r, flow'rs.
+SMOOTHED = {"AY", "AW"}
+# A diphthong after the main stress keeps its full vowel, which takes a beat or
+# a rhyme like a secondary stress whether or not the dictionary marks it:
+# ém-pìre / fire, bírd-hòuse / mouse.
+UNREDUCED = {"AY", "AW", "OY"}
 HIATUS = ("ia", "io", "iu", "ie", "ua", "ue", "ui", "uo", "eo", "oe", "ea")
 
 
@@ -438,16 +446,19 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     if word.drop is None and len(vowels) >= 3 and vowels[-2:] == ["ER", "IY"] and marks[-2] == 0:
         word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er before a final y
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
+    if word.drop is None and _smoothed(*full[0]):
+        word.drop = len(vowels) - 1
 
     readings: list[Reading] = []
-    for phones, stresses, _ in full:
+    for phones, stresses, bare in full:
         primary = [i for i, d in enumerate(stresses) if d == 1]
         marked = [i for i, d in enumerate(stresses) if d]
         stress = primary[-1] if primary else (marked[-1] if marked else 0)
         if longest == 1:
             stress = 0
         source = "clitic" if word.clitic else "lexicon"
-        secondary = tuple(i for i in marked if i != stress)
+        full_vowels = [i for i, v in enumerate(bare) if i > stress and v in UNREDUCED]
+        secondary = tuple(sorted({i for i in marked if i != stress} | set(full_vowels)))
         if readings and not marked:
             continue  # a reduced form (been as /bən/) is no reading of its own
         reading = Reading(stress, phones, norm, source, secondary)
@@ -470,6 +481,14 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest))
     word.weak = word.weak or word.clitic or longest == 1
     return word
+
+
+def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> bool:
+    """Whether the last vowel is an unstressed er right after aɪ or aʊ."""
+    if len(bare) < 2 or bare[-1] != "ER" or stresses[-1] or bare[-2] not in SMOOTHED:
+        return False
+    at = [i for i, p in enumerate(phones) if is_vowel(p)]
+    return at[-1] == at[-2] + 1
 
 
 def _guessed(word: Word, token: str, norm: str) -> Word:

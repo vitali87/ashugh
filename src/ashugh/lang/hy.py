@@ -101,6 +101,9 @@ CLITICS = AUXILIARIES | {"ու", "և", "եւ", "եվ", "էլ", "թե", "որ", "
 
 PROTHESIS_FIRST = {"s", "z", "ʃ"}
 MAX_CODA = 2
+# A word may end on three consonants that fall in sonority, or on ս between
+# stops: Մինսկ, պարտք, կուրծք, տեքստ, Մարքս. Not where it rises: աս-տըղ, բար-ձըր.
+MAX_FINAL_CODA = 3
 # The possessive ս (my) and դ (your) take a schwa after a sonorant too: սե-րըս,
 # տու-նըդ, սե-րըդ. Not after յ (լույս, հույս), and not in the words of
 # data/hy_lexical.tsv and these, whose stem ends that way.
@@ -200,8 +203,13 @@ def _schwa() -> Seg:
 
 
 def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
-    if len(cs) > MAX_CODA:
+    if len(cs) > (MAX_FINAL_CODA if final else MAX_CODA):
         return False
+    if len(cs) == 3:
+        a, b = cs[0].ph, cs[1].ph
+        if sonority(a) < sonority(b) and b != "s":
+            return False
+        return _valid_coda(cs[1:], final, possessive)
     if len(cs) == 2:
         a, b = cs[0].ph, cs[1].ph
         if final and (a, b) in FINAL_SPLIT:
@@ -291,7 +299,8 @@ def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bo
     for onset_len in _onsets(cs) if has_next else [0]:
         onset = cs[len(cs) - onset_len :] if onset_len else []
         inner = cs[: len(cs) - onset_len]
-        coda_lens = range(0, min(MAX_CODA, len(inner)) + 1) if has_prev else [0]
+        longest = MAX_CODA if has_next else MAX_FINAL_CODA
+        coda_lens = range(0, min(longest, len(inner)) + 1) if has_prev else [0]
         for coda_len in coda_lens:
             coda = inner[:coda_len]
             final = not has_next

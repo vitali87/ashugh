@@ -190,3 +190,43 @@ def test_a_line_fits_with_or_without_the_compounds_schwa():
     (note,) = [i for i in short.issues if i.code == "syllables"]
     assert "Լուսանկարներ" in note.message and "second root" in note.detail
     assert not _scan("Լուսանկարներ\n", syllables=3).ok
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("Մինսկ", "Մինսկ"),
+        ("Կուրսկ", "Կուրսկ"),
+        ("Օմսկ", "Օմսկ"),
+        ("տեքստ", "տեքստ"),
+        ("կոնտեքստ", "կոն-տեքստ"),
+        ("պարտք", "պարտք"),
+        ("կուրծք", "կուրծք"),
+        ("անցք", "անցք"),
+        ("միջանցք", "մի-ջանցք"),
+        ("համայնք", "հա-մայնք"),
+        ("շնորհք", "շը-նորհք"),
+        ("Մարքս", "Մարքս"),
+        ("ցանքս", "ցանքս"),
+    ],
+)
+def test_a_final_cluster_falling_in_sonority_is_one_coda(word, want):
+    assert sung(word) == want  # Wiktionary: minsk, tekʰst, pɑɾtkʰ, kuɾt͡skʰ, mɑɾkʰs
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("աստղ", "աս-տըղ"),
+        ("բարձր", "բար-ձըր"),
+        ("ոսկր", "ոս-կըր"),
+        ("այժմ", "այ-ժըմ"),
+        ("արկղ", "ար-կըղ"),
+        ("կայսր", "կայ-սըր"),
+        ("սիրտս", "սիր-տըս"),
+        ("կյանքս", "կյան-քըս"),
+        ("վերջերքս", "վեր-ջեր-քըս"),
+    ],
+)
+def test_a_final_cluster_rising_at_its_end_or_a_possessive_keeps_its_schwa(word, want):
+    assert sung(word) == want

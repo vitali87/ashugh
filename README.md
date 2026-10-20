@@ -280,7 +280,7 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-91.6% of words (86.7% of those written with a schwa). Most of the rest are
+91.9% of words (86.7% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
 glide (դանիացի). The real misses are compounds no listed word explains
@@ -302,7 +302,8 @@ as possible:
   ըս-պա-սել, ըզ-գեստ, and ըս-կը-սել when the cluster goes on;
 - an onset is one consonant, or a consonant plus յ (կյանք, -թյուն);
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
-  միտք), so տետր is տե-տըր and աստղ is աս-տըղ;
+  միտք), so տետր is տե-տըր and աստղ is աս-տըղ; a word may end on three
+  (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops);
 - a word does not end in մն or ռն: ու-րե-մըն, սա-ռըն;
 - a final ս or դ after a consonant other than յ is the possessive and takes
   a schwa (սիր-տըս, գը-լու-խըդ, սե-րըս, սե-րըդ, տու-նըդ), except where the
@@ -347,8 +348,12 @@ consonants (сердце, солнце, честный).
 
 **English** (`lang/en.py`). Pronunciations come from CMUdict (126k words),
 with primary and secondary stress. A variant with one vowel fewer (every,
-fire, temperate) makes a droppable syllable; a variant that spells out an
-abbreviation (us as U.S.) does not count. Unknown words are counted from
+fire, temperate) makes a droppable syllable, and so does an unstressed er
+right after the diphthong of desire or power, which the dictionary writes
+only long; a variant that spells out an abbreviation (us as U.S.) does not
+count. A diphthong after the main stress keeps its full vowel and acts as a
+secondary stress, for the meter and the rhyme (ém-pìre / fire, bírd-hòuse /
+mouse), whether or not the dictionary marks it. Unknown words are counted from
 their spelling and stressed by the ending prior. A preposition that ends a
 line takes the stress (ships gone by / sky).
 

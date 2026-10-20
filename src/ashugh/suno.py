@@ -217,7 +217,7 @@ def _elided(lr: LineReport) -> set[int]:
     out |= {
         i
         for i, w in enumerate(lr.line.words)
-        if w.drop is not None and w.drop == w.size - 1 and w.size > 1
+        if w.lang == "hy" and w.drop is not None and w.drop == w.size - 1 and w.size > 1
     }
     return out
 
