@@ -1,0 +1,7 @@
+# The form of examples/song.en.txt: ballad iambs, alternate rhymes, a couplet chorus.
+language = "en"
+meter = "iamb4"
+rhyme = "ABAB"
+
+[section.chorus]
+rhyme = "AABB"

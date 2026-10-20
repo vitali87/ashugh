@@ -188,3 +188,16 @@ def test_translation_does_not_carry_the_source_full_stop():
     proposer = Scripted([{1: ["Я жду тебя всю ночь"], 2: ["До самого утра"]}])
     result = translate.translate_song(source, "ru", proposer, keep={"syllables"}, rounds=1)
     assert "։" not in result.text
+
+
+def test_english_example_grid():
+    from pathlib import Path
+
+    from ashugh.spec import load
+
+    examples = Path(__file__).resolve().parent.parent / "examples"
+    text = (examples / "song.en.txt").read_text(encoding="utf-8")
+    assert scan(text, load(examples / "song.en.toml")).ok
+    data = translate.derive_spec(scan(text), keep={"syllables", "rhyme"})
+    assert data["stanza"]["1"]["syllables"] == [8, 8, 8, 8]
+    assert data["stanza"]["2"]["rhyme"] == "AABB"
