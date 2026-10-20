@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵս Մահվան համար կանգ չառա,\nՆա կանգ առավ տանը,\nԿառքը տանում էր մեզ միայն\nՈւ Անմահությանը։\n\n[Verse 2]\nԿամաց քշեց, չէր շտապում,\nԹողեցի ամեն բան՝\nԻմ աշխատանքը, հանգիստը՝\nՀանուն իր բարության։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, սարերը պատեց ձյունը,\nՔեզ գրում եմ ես սահմանից,\nԵրազում տեսա մեր հին տունը\nՈւ քեզ՝ մեր բաց պատուհանից։\n\n[Verse 2]\nԳիշերը ցուրտ է, բայց կա հույսը,\nՄայրիկ, ես քեզ շատ եմ կարոտ,\nՍրտիս մեջ վառվում է քո լույսը,\nԿգամ մի պայծառ առավոտ։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "ru-grid-call",
+      "language": "ru",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТелефон разрывает молчанье,\nСлышу в трубке родное дыханье.\nТри часа — и опять не до сна,\nТы, наверное, тоже одна.\n\n[Verse 2]\nТы сказала: «Прости, я не знала,\nКак мне долго тебя не хватало».\nИ до самой зари мы вдвоём\nГоворили о чём-то своём.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

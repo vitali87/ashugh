@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nIron wheels across the plain,\nSilver rails in silver rain,\nMidnight lanterns swaying low,\nSleeping towns we'll never know.\n\n[Chorus]\nOh, the whistle is calling the night,\nAnd the prairie is silver and gray,\nThere's a lamp in a window, a light\nIn a house at the end of the way.\n\n[Verse 2]\nCoffee cooling in my hand,\nEndless miles of empty land,\nMother's letter, folded tight,\nSays the porch lamp burns all night.\n\n[Chorus]\nOh, the whistle is calling the night,\nAnd the prairie is silver and gray,\nThere's a lamp in a window, a light\nIn a house at the end of the way.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSun is sinking in the bay,\nGolden light just slips away,\nSand is cold beneath my feet,\nMusic drifting down the street,\nTan lines fading on my skin,\nLet the final night begin,\nPolaroids and paper cups,\nNo one's ready to give up.\n\n[Pre-Chorus]\nHold the moment, hold it tight,\nDon't you let it out of sight.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Verse 2]\nSoon the leaves will turn to gold,\nSoon the mornings will be cold,\nSuitcases are by the door,\nCan't we have just one night more?\nWrite your name across my hand,\nDraw a heart into the sand,\nPromise me you won't forget\nAll the strangers that we met.\n\n[Pre-Chorus]\nHold the moment, hold it tight,\nDon't you let it out of sight.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Bridge]\nWhen September calls my name,\nNothing's gonna feel the same,\nBut tonight the sky is wide,\nAnd you're dancing at my side.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Outro]\nSummer, summer, don't you go,\nLeave the lights on, leave them low.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

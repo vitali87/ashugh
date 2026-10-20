@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, այստեղ մարում է լույսը,\nՆամակ եմ գրում դեպի տուն,\nԲայց իմ սրտում դեռ վառ է հույսը,\nՈւ չի գալիս աչքերիս քուն։\n\n[Verse 2]\nԱյս սարերին նստել է ձյունը,\nՔեզ հիշում եմ ամեն անգամ,\nՄի՛ լացիր, մայրիկ, պահիր տունը,\nԵրբ գա գարունը, ես կգամ։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, во тьме горишь\nВ чаще, где ночная тишь,\nЧья рука и чей зрачок\nГрозный строй твой выковать смог?\n\n[Verse 2]\nВ безднах ли, на небесах\nЖёг огонь в твоих глазах?\nНа каких крылах взлетел?\nКто огонь схватить посмел?\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, ты — светлый жар,\nСредь ночных лесов пожар!\nЧья рука и чей зрачок\nСковать твой грозный облик смог?\n\n[Verse 2]\nВ глубине каких небес\nЖёг огонь твоих очес?\nНа каких крылах парить?\nКто посмел огонь схватить?\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

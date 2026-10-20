@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nПолетели поля белоснежные,\nКолокольчик звенит под дугой,\nМне сияют глаза безмятежные,\nНи к чему нам дорога домой.\n\n[Verse 2]\nГде вы, ночи мои незабвенные,\nГде тот снег и где топот коней?\nОтзвенели мгновенья бесценные,\nЛишь мерцанье далёких огней.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

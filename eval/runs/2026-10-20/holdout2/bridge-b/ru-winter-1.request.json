@@ -1,0 +1,248 @@
+{
+  "task": "ru-winter",
+  "round": 1,
+  "system": "You write alternative lines for song lyrics. Each request is one line of a song that breaks its slot: the wrong number of sung syllables, stress off the beat, a broken rhyme, or a forbidden ending. Propose candidates for it.\n\nA separate checker measures every candidate by its phonology and keeps only the ones that fit, so propose several genuinely different options rather than one careful one. Stay in the song's language, keep the line's meaning and imagery, and keep the voice of the lines around it. Prefer natural word order over padding with filler words.\n\nCounting rules the checker uses:\n- Syllables are sung syllables. Armenian sings schwas it does not write: a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-սել, 3), and consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; ё is always stressed.\n- template: \"/\" marks a syllable that must carry stress, \"x\" one that must not.\n- rhyme_with: the line's last stressed vowel and everything after it must sound like these words' (by sound, not spelling).\n- rejected: earlier candidates that failed, with the reason. Do not repeat them.\n\nA request with a \"source\" line is a translation: original is empty, and each candidate is a singable translation of source (from source_lang) into lang that fits the constraints. Sense and imagery matter more than word-for-word accuracy; faithfulness is then measured against the source line.\n\nFor each request return n candidates, the most faithful first, each with a faithfulness score from 0 to 1 for how much of the original meaning it keeps.",
+  "answer_format": {
+    "type": "object",
+    "properties": {
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "faithfulness": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "text",
+                  "faithfulness"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "id",
+            "candidates"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "lines"
+    ],
+    "additionalProperties": false
+  },
+  "requests": [
+    {
+      "id": "L2",
+      "line": 2,
+      "lang": "ru",
+      "original": "Метель кружится над дорогой,",
+      "section": "Verse 1",
+      "after": [
+        "И гаснет медленно закат,",
+        "Я жду с надеждой и тревогой,"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "тревогой"
+      ],
+      "rhyme_sound": "vogəj",
+      "problems": [
+        "«кру́-жит-ся» off the beat (stress x//xxxx/x, iamb wants x/x/x/x/x)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L16",
+      "line": 16,
+      "lang": "ru",
+      "original": "Пускай метёт, пускай кружится,",
+      "section": "Chorus",
+      "before": [
+        "И время тихое, ночное",
+        "Над снежной улицей плывёт."
+      ],
+      "after": [
+        "Я буду ждать тебя всегда,",
+        "Быть может, чудо совершится,"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "совершится"
+      ],
+      "rhyme_sound": "ʃɨtsə",
+      "problems": [
+        "«кру́-жит-ся» off the beat (stress x/x/x//xx, iamb wants x/x/x/x/x)",
+        "3 feet, slot is 4 (9 syllables; iamb4 with a dactylic ending has 10)",
+        "ends dactylic, slot is feminine («кружится»)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L18",
+      "line": 18,
+      "lang": "ru",
+      "original": "Быть может, чудо совершится,",
+      "section": "Chorus",
+      "before": [
+        "Пускай метёт, пускай кружится,",
+        "Я буду ждать тебя всегда,"
+      ],
+      "after": [
+        "И прилетит письмо сюда.",
+        "Ты обещал писать мне вскоре,"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "кружится"
+      ],
+      "rhyme_sound": "ruʒɨtsə",
+      "problems": [
+        "rhyme A broken («кружится» / «совершится»: none 0.10, need near)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L36",
+      "line": 36,
+      "lang": "ru",
+      "original": "Пускай метёт, пускай кружится,",
+      "section": "Chorus",
+      "before": [
+        "И время тихое, ночное",
+        "Над снежной улицей плывёт."
+      ],
+      "after": [
+        "Я буду ждать тебя всегда,",
+        "Быть может, чудо совершится,"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "совершится"
+      ],
+      "rhyme_sound": "ʃɨtsə",
+      "problems": [
+        "«кру́-жит-ся» off the beat (stress x/x/x//xx, iamb wants x/x/x/x/x)",
+        "3 feet, slot is 4 (9 syllables; iamb4 with a dactylic ending has 10)",
+        "ends dactylic, slot is feminine («кружится»)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L38",
+      "line": 38,
+      "lang": "ru",
+      "original": "Быть может, чудо совершится,",
+      "section": "Chorus",
+      "before": [
+        "Пускай метёт, пускай кружится,",
+        "Я буду ждать тебя всегда,"
+      ],
+      "after": [
+        "И прилетит письмо сюда.",
+        "Горит свеча, и тени пляшут"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "кружится"
+      ],
+      "rhyme_sound": "ruʒɨtsə",
+      "problems": [
+        "rhyme A broken («кружится» / «совершится»: none 0.10, need near)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L52",
+      "line": 52,
+      "lang": "ru",
+      "original": "Пускай метёт, пускай кружится,",
+      "section": "Chorus",
+      "before": [
+        "И время тихое, ночное",
+        "Над снежной улицей плывёт."
+      ],
+      "after": [
+        "Я буду ждать тебя всегда,",
+        "Быть может, чудо совершится,"
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "совершится"
+      ],
+      "rhyme_sound": "ʃɨtsə",
+      "problems": [
+        "«кру́-жит-ся» off the beat (stress x/x/x//xx, iamb wants x/x/x/x/x)",
+        "3 feet, slot is 4 (9 syllables; iamb4 with a dactylic ending has 10)",
+        "ends dactylic, slot is feminine («кружится»)"
+      ],
+      "n": 6
+    },
+    {
+      "id": "L54",
+      "line": 54,
+      "lang": "ru",
+      "original": "Быть может, чудо совершится,",
+      "section": "Chorus",
+      "before": [
+        "Пускай метёт, пускай кружится,",
+        "Я буду ждать тебя всегда,"
+      ],
+      "after": [
+        "И прилетит письмо сюда."
+      ],
+      "tolerance": 0,
+      "meter": "iamb",
+      "feet": 4,
+      "template": "x/x/x/x/x",
+      "ending": "feminine",
+      "rhyme_with": [
+        "кружится"
+      ],
+      "rhyme_sound": "ruʒɨtsə",
+      "problems": [
+        "rhyme A broken («кружится» / «совершится»: none 0.10, need near)"
+      ],
+      "n": 6
+    }
+  ]
+}

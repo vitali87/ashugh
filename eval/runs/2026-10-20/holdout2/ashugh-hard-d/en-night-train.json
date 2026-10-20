@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nMidnight engine through the dark,\nPrairie wind and one red spark,\nWheat fields roll like golden seas,\nLantern swaying in the breeze.\n\n[Chorus]\nWe are rolling away through the night,\nThrough the miles and the miles of the plain,\nWith the stars and the moon for our light,\nAnd the rails sing their silver refrain.\n\n[Verse 2]\nSleeping towns go drifting by,\nWater towers touch the sky,\nSomewhere far a mother waits,\nStanding by the farmhouse gates.\n\n[Chorus]\nWe are rolling away through the night,\nThrough the miles and the miles of the plain,\nWith the stars and the moon for our light,\nAnd the rails sing their silver refrain.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵրևանում իջավ գիշեր,\nԼույսեր են թափվում մայթերին,\nՈւ դու չկաս, չկաս, իմ սեր,\nՆայում եմ օտար դեմքերին։\n\n[Chorus]\nԵս քեզ կսպասեմ մինչև լույս,\nԿանգնած փողոցի անկյունում,\nԻմ սրտում դեռ վառվում է հույս,\nՔաղաքը կամաց է քնում։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

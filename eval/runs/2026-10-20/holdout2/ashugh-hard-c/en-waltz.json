@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nOnce in this ballroom the lovers were turning,\nRound as the moon while the music would flow,\nLanterns were glowing and hearts were all burning,\nNobody thought they would ever let go.\n\n[Verse 2]\nNow there are boards where the windows were gleaming,\nNow there's a chain and a lock on the door,\nStill, if you listen, the fiddles are dreaming,\nPlaying one waltz for the ghosts on the floor.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

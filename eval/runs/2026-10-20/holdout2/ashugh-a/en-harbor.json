@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still circle round the bay,\nThe pier is gray with salt and rust,\nThe ropes are coiled and stowed away,\nThe anchors sleeping in the dust.\nMy father sailed at morning light\nAnd came home singing with the tide,\nBut no one sails from here tonight,\nThe water's empty, cold and wide.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n\n[Verse 2]\nThe chapel bell rings out at noon,\nThe widows wander by the pier,\nThey hum a half-forgotten tune\nTo boats that will not anchor here.\nThe shops are shuttered one by one,\nThe children leave for city lights,\nThe nets are drying in the sun\nAnd no one mends them through the nights.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n\n[Bridge]\nBut I will stay and keep the flame\nAnd sing the songs my father knew,\nAnd call each vessel by its name\nUntil the sea gives back the crew.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

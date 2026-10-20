@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 48,
+      "passing": 48,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nCooling sand beneath my feet,\nNeon buzzing down the street,\nAll the stars are burning low,\nNo one's ready yet to go.\nBottles clinking in the dark,\nSparklers drawing in the park,\nWrite your name in silver light,\nHold it till the end of night.\n\n[Pre-Chorus]\nTell me nothing's gonna change,\nEven when the days feel strange,\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n\n[Verse 2]\nMorning brings the city train,\nAutumn knocking on the pane,\nBoxes packed and tickets bought,\nSummer's gone before we thought.\nSo we run into the tide,\nSalty lips and eyes so wide,\nLight a match and let it burn,\nSome things never will return.\n\n[Pre-Chorus]\nTell me nothing's gonna change,\nEven when the days feel strange,\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n\n[Bridge]\nWhen the leaves begin to fall,\nWill you think of me at all?\nWhen the sky is cold and gray,\nThink of how we ran away.\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

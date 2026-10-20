@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still wheel above the pier,\nThe ropes hang slack on rusted rings,\nBut no ship's horn has sounded here,\nAnd no one on the jetty sings.\n\n[Verse 2]\nMy father mended nets by hand,\nMy mother salted cod by night,\nNow weeds grow up through drifted sand,\nThe lighthouse long has lost its light.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Verse 3]\nThe young ones took the morning train\nTo cities where the money flows,\nAnd we who stayed behind remain\nTo mend the nets that no one throws.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Bridge]\nI keep my lantern on the sill\nIn case a sail should cross the bay,\nThe sea is wide, the night is still,\nAnd morning seems so far away.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Outro]\nThe gulls still wheel above the pier,\nThe ropes hang slack on rusted rings,\nAnd I will keep on waiting here\nTo see what news the morning brings.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}
