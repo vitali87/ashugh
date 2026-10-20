@@ -9,11 +9,15 @@ sung mə-kər-tich; սպասել is ըս-պա-սել. The rules this module appl
   it, an onset for the vowel after it, and as few schwa syllables as possible
   in between. An onset is one consonant, or a consonant plus յ (կյանք). A coda
   is at most two consonants that do not rise in sonority (սիրտ, միտք, but
-  տետր -> տե-տըր, աստղ -> աս-տըղ).
-* Word-final ս or դ after an obstruent is the possessive suffix and takes a
-  schwa: սիրտս -> սիր-տըս, գլուխդ -> գը-լու-խըդ. So does ս or դ after a
-  sonorant other than յ, and other than ր for դ (սերս -> սե-րըս, տունդ ->
-  տու-նըդ), except in words whose stem ends that way (չորս, լույս, մարդ, ծնունդ).
+  տետր -> տե-տըր, աստղ -> աս-տըղ). A word does not end in մն or ռն:
+  ուրեմն -> ու-րե-մըն, սառն -> սա-ռըն.
+* Word-final ս or դ after a consonant other than յ is the possessive suffix
+  and takes a schwa: սիրտս -> սիր-տըս, գլուխդ -> գը-լու-խըդ, սերդ -> սե-րըդ,
+  տունդ -> տու-նըդ. Not in words whose stem ends that way (չորս, լույս, մարդ,
+  ադամանդ, մաքս), listed from Wiktionary's dictionary forms in
+  data/hy_lexical.tsv, compounds that end in one of them (միջնաբերդ), and
+  agent nouns and ordinals in -որդ (վարորդ, հինգերորդ), and longer nouns
+  in -ուրդ (ժողովուրդ).
 * The negative prefix ան- before ս, զ or շ and a stop keeps the stem's
   schwa: անշտապ -> ան-շը-տապ.
 * Ties between equally short splits go to the longer onset (-թյուն), then to
@@ -31,6 +35,8 @@ keeps the schwa of կայսր) are out of reach of these rules; the spec's
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
+from importlib import resources
 
 from ..model import Reading, Syllable, Word
 from ..phon import is_obstruent, is_stop, sonority
@@ -91,10 +97,20 @@ CLITICS = AUXILIARIES | {"ու", "և", "եւ", "էլ", "թե", "որ", "մի", "
 PROTHESIS_FIRST = {"s", "z", "ʃ"}
 MAX_CODA = 2
 # The possessive ս (my) and դ (your) take a schwa after a sonorant too: սե-րըս,
-# տու-նըդ. Not after յ (լույս, հույս), not դ after ր (մարդ, վարդ), and not in these
-# words, whose stem ends that way.
-POSSESSIVE_S_AFTER = {"ɾ", "r", "n", "l", "ʁ", "m"}
-POSSESSIVE_D_AFTER = {"n", "l", "ʁ", "m"}
+# տու-նըդ, սե-րըդ. Not after յ (լույս, հույս), and not in the words of
+# data/hy_lexical.tsv and these, whose stem ends that way.
+POSSESSIVE_AFTER = {"ɾ", "r", "n", "l", "ʁ", "m"}
+# Agent nouns and ordinals in -որդ (վարորդ, հինգերորդ), and nouns in -ուրդ
+# after a stem of three letters or more (ժողովուրդ, but հյուր-դ, ջուր-դ).
+LEXICAL_SUFFIXES = (("որդ", 3), ("ուրդ", 7))
+# A compound joined by ա or ե ends in a listed stem: նորա-հարս, դափնե-վարդ;
+# but not հա-մարդ (your number) or մա-զերդ (your hair).
+LINKERS = ("ա", "ե")
+MIN_HEAD = 3
+# Possessives the dictionary also lists as stems: յար-դ (your beloved), not straw.
+POSSESSIVE_FORMS = {"յարդ"}
+# Final clusters Wiktionary splits with a schwa in 19 of 21 dictionary forms.
+FINAL_SPLIT = {("m", "n"), ("r", "n")}
 NOT_POSSESSIVE = {
     "չորս", "ներս", "դուրս", "որս", "ձկնորս", "թարս", "կարս", "կուրս", "մարս", "ֆարս",
     "ռեսուրս", "կոնկուրս", "դիսկուրս", "շանս", "բալանս", "ռոմանս", "ֆինանս", "սեանս",
@@ -177,26 +193,42 @@ def _schwa() -> Seg:
     return Seg("ə", "ը", True, epenthetic=True)
 
 
-def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True, plural: bool = False) -> bool:
+def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
     if len(cs) > MAX_CODA:
         return False
     if len(cs) == 2:
         a, b = cs[0].ph, cs[1].ph
-        if sonority(a) < sonority(b):
+        if final and (a, b) in FINAL_SPLIT:
             return False
-        if final and possessive and _possessive(a, b, plural):
+        if sonority(a) < sonority(b) and not (final and not possessive and b == "s"):
+            return False  # a stem may end in a stop and ս: մաքս, բոքս
+        if final and possessive and _possessive(a, b):
             return False
     return True
 
 
-def _possessive(a: str, b: str, plural: bool = False) -> bool:
-    """Whether a final consonant pair reads as a stem plus the possessive ս or դ;
-    after the plural -եր, դ is always the possessive (աչքերդ, not like մարդ)."""
-    if b == "s":
-        return is_obstruent(a) or a in POSSESSIVE_S_AFTER
-    if b == "d":
-        return is_obstruent(a) or a in POSSESSIVE_D_AFTER or (plural and a == "ɾ")
-    return False
+def _possessive(a: str, b: str) -> bool:
+    """Whether a final consonant pair reads as a stem plus the possessive ս or դ."""
+    return b in ("s", "d") and (is_obstruent(a) or a in POSSESSIVE_AFTER)
+
+
+@cache
+def lexical_endings() -> frozenset[str]:
+    """Words whose final ս or դ belongs to the stem."""
+    text = resources.files("ashugh").joinpath("data/hy_lexical.tsv").read_text(encoding="utf-8")
+    return frozenset(text.split()) | NOT_POSSESSIVE
+
+
+def stem_final(norm: str) -> bool:
+    """Whether a final ս or դ of norm is the stem's own rather than the possessive."""
+    if norm in POSSESSIVE_FORMS:
+        return False
+    words = lexical_endings()
+    if norm in words or any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
+        return True
+    return any(
+        norm[k:] in words for k in range(MIN_HEAD, len(norm) - 2) if norm[k - 1 : k] in LINKERS
+    )
 
 
 def _onsets(cs: list[Seg]) -> list[int]:
@@ -210,7 +242,7 @@ def _onsets(cs: list[Seg]) -> list[int]:
 
 
 def _schwa_runs(
-    cs: list[Seg], closed_last: bool, possessive: bool = True, plural: bool = False
+    cs: list[Seg], closed_last: bool, possessive: bool = True
 ) -> list[list[tuple[list[Seg], list[Seg]]]]:
     """Every way to cut cs into schwa syllables (onset, coda)."""
     if not cs:
@@ -224,16 +256,14 @@ def _schwa_runs(
         coda = cs[rest + 1 :]
         if closed_last and not coda:
             continue
-        if not _valid_coda(coda, final=closed_last, possessive=possessive, plural=plural):
+        if not _valid_coda(coda, final=closed_last, possessive=possessive):
             continue
         for head in _schwa_runs(cs[:rest], closed_last=False):
             runs.append(head + [(onset, coda)])
     return runs
 
 
-def _parse_cluster(
-    cs: list[Seg], has_prev: bool, has_next: bool, possessive: bool = True, plural: bool = False
-):
+def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bool = True):
     """Split a consonant cluster into (coda, schwa syllables, onset)."""
     best = None
     for onset_len in _onsets(cs) if has_next else [0]:
@@ -243,10 +273,10 @@ def _parse_cluster(
         for coda_len in coda_lens:
             coda = inner[:coda_len]
             final = not has_next
-            if has_prev and not _valid_coda(coda, final, possessive=possessive, plural=plural):
+            if has_prev and not _valid_coda(coda, final, possessive=possessive):
                 continue
             middle = inner[coda_len:]
-            for run in _schwa_runs(middle, not has_next, possessive=possessive, plural=plural):
+            for run in _schwa_runs(middle, not has_next, possessive=possessive):
                 yod = sum(1 for o, _ in run if o[0].ph == "j")
                 # Right to left, the longer coda wins: մը-կըր-տիչ, not մըկ-րը-տիչ.
                 codas = tuple(-len(c) for _, c in reversed(run)) + (-coda_len,)
@@ -270,7 +300,7 @@ def _negative_prefix(segs: list[Seg], cluster: list[Seg]) -> bool:
     )
 
 
-def syllabify(segs: list[Seg], possessive: bool = True, plural: bool = False) -> list[list[Seg]]:
+def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
     vowels = [i for i, s in enumerate(segs) if s.vowel]
     if not vowels:
         # No vowel letter at all: one schwa after the first consonant.
@@ -302,9 +332,7 @@ def syllabify(segs: list[Seg], possessive: bool = True, plural: bool = False) ->
             syllables.extend(o + [_schwa()] + c for o, c in run)
             current = onset + [segs[end]]
             continue
-        parsed = _parse_cluster(
-            cluster, has_prev=True, has_next=has_next, possessive=possessive, plural=plural
-        )
+        parsed = _parse_cluster(cluster, has_prev=True, has_next=has_next, possessive=possessive)
         if parsed is None:  # cannot happen with MAX_CODA >= 1, kept as a guard
             parsed = (cluster, [], [])
         coda, run, onset = parsed
@@ -360,8 +388,7 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         syllables = _from_override(override)
         source = "user"
     else:
-        plural = norm.endswith("երդ") and len(norm) > 4  # աչքերդ, but not բերդ
-        syllables = syllabify(segments(token), norm not in NOT_POSSESSIVE, plural)
+        syllables = syllabify(segments(token), not stem_final(norm))
         source = "rule"
     shown = _display(syllables, token)
     phones = tuple(s.ph for syl in syllables for s in syl)

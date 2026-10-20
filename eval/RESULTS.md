@@ -2,7 +2,7 @@
 
 Measured on 2026-10-20 with the scripts described in [README.md](README.md).
 The raw outputs are in [runs/2026-10-20/](runs/2026-10-20/), the analyzer
-benchmarks in its `rifma.json`, `armenian.json` and `oov.json`.
+benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 
 ## The analyzer
 
@@ -27,6 +27,36 @@ precision were both 0.89.
 hand): ashugh matches all 81. espeak-ng counted 82% of the first 68 words
 right. The list was written alongside the rules, so it is a regression
 test more than a measurement.
+
+**Armenian against Wiktionary** (WikiPron's scrape of Wiktionary's Eastern
+Armenian pronunciations, 18,090 entries). ashugh's list of stems whose final
+ս or դ is their own comes from the same data, so it is rebuilt without every
+tenth entry and ashugh is scored on those 1,799:
+
+| | |
+|---|---|
+| sung syllables equal Wiktionary's vowels | 90.6% |
+| the same, on the 311 words Wiktionary writes with a schwa | 83.3% |
+
+The 169 disagreements, by kind:
+
+| kind | words | mostly |
+|---|---|---|
+| a schwa at the start | 67 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
+| a schwa at the end | 39 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ, մետաքս), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
+| a schwa inside | 35 | compounds that keep their second root's schwa (կե-րա-կը-րել, աստ-ղա-գը-նաց): ashugh's real gap |
+| a vowel letter | 28 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
+
+Wiktionary transcribes speech, not singing, so this is agreement rather than
+accuracy. The comparison found two rules ashugh lacked: a word does not end
+in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19 of 21 entries), and the possessive
+դ after ր (սե-րըդ, your love). The second costs on this test: dictionary
+forms never carry the possessive, so they show the -րդ stems it now
+misreads (6 of the held-out ones) but not the possessives it now gets
+right. With the old rules the held-out score was 90.8%. In the eval's
+Armenian drafts (2,919 words) the only words read differently are լեռն and
+սառն, which connected speech still lets fit their slots; every draft scores
+the same.
 
 **Words outside the dictionaries** (every tenth entry held out):
 

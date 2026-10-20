@@ -269,6 +269,15 @@ phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas
 The gold list was written together with the rules, so treat ashugh's 100% as
 a regression test, not as an independent measurement.
 
+**Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,799
+entries of Wiktionary's Eastern Armenian pronunciations that ashugh's stem
+list was built without, its sung syllables match Wiktionary's vowels for
+90.6% of words. Most of the rest are conventions rather than errors:
+Wiktionary leaves out the schwa of many loanwords and names (բրիգադ,
+ֆլեշմոբ) and reads ի before a vowel as a glide (դանիացի). The real misses
+are compounds whose second root keeps its schwa (կե-րա-կը-րել): 35 words,
+2%.
+
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.7% of Russian words right (always guessing the
 commonest position: 40.8%) and 77.0% of English words (66.7%). The English
@@ -286,9 +295,12 @@ as possible:
 - an onset is one consonant, or a consonant plus յ (կյանք, -թյուն);
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
   միտք), so տետր is տե-տըր and աստղ is աս-տըղ;
-- a final ս or դ after an obstruent is the possessive and takes a schwa
-  (սիր-տըս, գը-լու-խըդ), and so is ս or դ after a sonorant (սե-րըս,
-  տու-նըդ), except where the stem ends that way (չորս, լույս, մարդ, ծնունդ);
+- a word does not end in մն or ռն: ու-րե-մըն, սա-ռըն;
+- a final ս or դ after a consonant other than յ is the possessive and takes
+  a schwa (սիր-տըս, գը-լու-խըդ, սե-րըս, սե-րըդ, տու-նըդ), except where the
+  stem ends that way: 296 stems listed from Wiktionary's dictionary forms
+  (չորս, մարդ, ադամանդ, մաքս), compounds joined by ա or ե that end in one
+  (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
 - among equal splits, the onset with յ wins, then the split whose codas
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
@@ -354,9 +366,11 @@ consonant before the vowel (ты / красоты).
 
 ## Limits
 
-- A few Armenian schwas come from a word's history rather than its clusters:
-  կայսրություն keeps the schwa of կայսր (կայ-սը-րու-թյուն). The rules cannot
-  see that; write the word into `[lexicon]` once and every song uses it.
+- Some Armenian schwas come from a word's history rather than its clusters:
+  a compound keeps the schwa of its second root (կերակրել is կե-րա-կը-րել,
+  կայսրություն is կայ-սը-րու-թյուն), about 2% of dictionary words. The
+  rules cannot see that; write the word into `[lexicon]` once and every song
+  uses it.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
@@ -376,11 +390,14 @@ CI runs the same on Python 3.14, and on 3.15 while it is in beta.
 The data tables are rebuilt by `scripts/build_ru_lexicon.py` (from the
 [OpenRussian dump](https://github.com/Badestrand/russian-dictionary)),
 `scripts/build_en_lexicon.py` (from
-[CMUdict](https://github.com/cmusphinx/cmudict)) and
+[CMUdict](https://github.com/cmusphinx/cmudict)),
+`scripts/build_hy_lexicon.py` (from
+[WikiPron](https://github.com/CUNY-CL/wikipron)'s Wiktionary scrape) and
 `scripts/build_suffix_stress.py`.
 
 ## License
 
 The code is MIT (see [LICENSE](LICENSE)). The Russian stress table is
-derived from OpenRussian (CC BY-SA 4.0), and the English table from CMUdict
-(BSD-style). See [NOTICE.md](NOTICE.md).
+derived from OpenRussian (CC BY-SA 4.0), the Armenian stem list from
+Wiktionary (CC BY-SA 4.0), and the English table from CMUdict (BSD-style).
+See [NOTICE.md](NOTICE.md).
