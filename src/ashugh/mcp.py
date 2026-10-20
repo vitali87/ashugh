@@ -111,19 +111,26 @@ def t_pick(args: dict) -> dict:
         candidates = parse_candidates(raw)
     except ProposerError as e:
         raise ToolError(str(e)) from None
-    result = fit_song(_str(args, "lyrics"), _spec(args), StaticProposer(candidates), rounds=1)
-    return result.as_dict()
+    proposer = StaticProposer(candidates)
+    result = fit_song(_str(args, "lyrics"), _spec(args), proposer, rounds=1)
+    data = result.as_dict()
+    data["warnings"] = proposer.unused({lr.line.number for lr in result.report.lines})
+    return data
 
 
 def t_suno(args: dict) -> dict:
-    tags = args.get("tags", True)
+    tags = args.get("tags")
+    if tags is None:
+        tags = True
+    if not isinstance(tags, bool):  # "false" is no boolean, and bool("false") is True
+        raise ToolError("tags must be true or false")
     result = format_song(
         _str(args, "lyrics"),
         _spec(args),
         stress=_opt(args, "stress") or "caps",
         armenian=_opt(args, "armenian") or "script",
         split=_opt(args, "split") or "none",
-        tags=bool(tags),
+        tags=tags,
     )
     return {"text": result.text, "notes": [vars(n) for n in result.notes]}
 
@@ -142,7 +149,14 @@ def t_spec_template(args: dict) -> dict:
 
 
 def _schema(required: list[str], **props: str) -> dict:
-    kinds = {"candidates": {"type": "object"}, "tags": {"type": "boolean"}}
+    kinds = {
+        "candidates": {"type": ["object", "array"]},
+        "tags": {"type": "boolean"},
+        "lang": {"type": "string", "enum": ["hy", "ru", "en"]},
+        "stress": {"type": "string", "enum": ["caps", "acute", "none"]},
+        "armenian": {"type": "string", "enum": ["script", "schwa", "latin"]},
+        "split": {"type": "string", "enum": ["none", "last", "all"]},
+    }
     return {
         "type": "object",
         "properties": {
@@ -173,6 +187,7 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             text="words or lines",
             lang=LANG_DOC,
             meter="resolve stress against this meter",
+            spec="song spec as TOML text (optional): its [lexicon] corrects words",
         ),
         t_syllables,
     ),
@@ -207,6 +222,7 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             armenian="script (default), schwa or latin",
             split="none (default), last or all",
             tags="normalize and infer section tags (default true)",
+            lang=LANG_DOC,
         ),
         t_suno,
     ),
@@ -230,12 +246,25 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
 
 
 class Server:
+    def handle_batch(self, msg) -> dict | list | None:
+        """A message or a batch of them: each answered, the notifications not."""
+        if not isinstance(msg, list):
+            return self.handle(msg)
+        if not msg:
+            return _error(None, -32600, "empty batch")
+        replies = [r for r in (self.handle(m) for m in msg) if r is not None]
+        return replies or None
+
     def handle(self, msg) -> dict | None:
         if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0" or "method" not in msg:
-            return _error(
-                msg.get("id") if isinstance(msg, dict) else None, -32600, "invalid request"
-            )
-        method, params, mid = msg["method"], msg.get("params"), msg.get("id")
+            mid = msg.get("id") if isinstance(msg, dict) else None
+            return _error(mid if _valid_id(mid) else None, -32600, "invalid request")
+        method, params = msg["method"], msg.get("params")
+        if "id" in msg and not _valid_id(msg["id"]):  # null, NaN, a list: no id at all
+            return _error(None, -32600, "id must be a string or an integer")
+        mid = msg.get("id")
+        if not isinstance(method, str):
+            return _error(mid, -32600, "method must be a string")
         if params is None:
             params = {}
         if mid is None:  # a notification: nothing to answer
@@ -262,7 +291,7 @@ class Server:
             return _result(mid, {"tools": tools})
         if method == "tools/call":
             name = params.get("name")
-            if name not in TOOLS:
+            if not isinstance(name, str) or name not in TOOLS:
                 return _error(mid, -32602, f"unknown tool: {name}")
             args = params.get("arguments")
             if args is None:
@@ -278,6 +307,10 @@ class Server:
             text = json.dumps(data, ensure_ascii=False)
             return _result(mid, {"content": [{"type": "text", "text": text}], "isError": failed})
         return _error(mid, -32601, f"method not found: {method}")
+
+
+def _valid_id(mid) -> bool:
+    return (isinstance(mid, str) or isinstance(mid, int)) and not isinstance(mid, bool)
 
 
 def _result(mid, result) -> dict:
@@ -296,12 +329,17 @@ def serve(stdin=None, stdout=None) -> int:
         if not line.strip():
             continue
         try:
-            msg = json.loads(line)
-        except json.JSONDecodeError:
+            msg = json.loads(line.lstrip("\ufeff"))  # a BOM some clients send first
+        except json.JSONDecodeError, RecursionError:  # [[[[... a hundred thousand deep
             reply = _error(None, -32700, "parse error")
         else:
-            reply = server.handle(msg)
+            try:
+                reply = server.handle_batch(msg)
+            except Exception as e:  # nothing a client sends may take the server down
+                mid = msg.get("id") if isinstance(msg, dict) else None
+                reply = _error(mid if _valid_id(mid) else None, -32603, f"internal error: {e}")
         if reply is not None:
-            stdout.write(json.dumps(reply, ensure_ascii=False) + "\n")
+            # ASCII on the wire: a lone surrogate (an emoji cut in half) stays escaped
+            stdout.write(json.dumps(reply) + "\n")
             stdout.flush()
     return 0

@@ -23,26 +23,46 @@ from .spec import Spec, SpecError, load
 SEVERITY = {"error": 1, "warning": 2, "info": 3}
 
 
-def read_message(stream) -> dict | None:
-    """One Content-Length framed JSON message, or None at the end of the stream."""
+class FramingError(ValueError):
+    """A message that cannot be read; the next Content-Length starts afresh."""
+
+
+EOF_ = object()  # the end of the stream, which a JSON null body is not
+
+
+def read_message(stream):
+    """One Content-Length framed JSON message, or EOF_ at the end of the stream.
+
+    A frame with a bad or missing length raises FramingError; its body is then
+    skipped up to the next Content-Length header, so one bad frame cannot put
+    the rest out of step."""
     length = None
     while True:
         line = stream.readline()
         if not line:
-            return None
+            return EOF_
+        at = line.lower().find(b"content-length:")
+        if at > 0:  # the unread body of a bad frame, then the next header
+            line = line[at:]
         line = line.strip()
         if not line:
+            if length is None:
+                raise FramingError("message without Content-Length")
             break
         name, _, value = line.decode("ascii", "replace").partition(":")
         if name.strip().lower() == "content-length":
-            length = int(value.strip())
-    if length is None:
-        raise ValueError("message without Content-Length")
-    return json.loads(stream.read(length).decode("utf-8"))
+            value = value.strip()
+            if not value.isdigit():
+                raise FramingError(f"bad Content-Length: {value!r}")
+            length = int(value)
+    body = stream.read(length)
+    if len(body) < length:
+        return EOF_
+    return json.loads(body.decode("utf-8", "replace"))
 
 
 def write_message(stream, msg: dict) -> None:
-    body = json.dumps(msg, ensure_ascii=False).encode("utf-8")
+    body = json.dumps(msg).encode("ascii")  # escaped: a lone surrogate cannot break it
     stream.write(b"Content-Length: %d\r\n\r\n" % len(body) + body)
     stream.flush()
 
@@ -65,59 +85,110 @@ def find_spec(path: Path) -> Path | None:
     return None
 
 
+class BadParams(ValueError):
+    pass
+
+
 class Server:
     def __init__(self) -> None:
         self.docs: dict[str, str] = {}
+        self.reports: dict[str, tuple[str, tuple[Report | None, str | None]]] = {}
         self.done = False
         self.shutdown = False
 
-    def handle(self, msg: dict):
-        method, mid, params = msg.get("method"), msg.get("id"), msg.get("params") or {}
+    def handle(self, msg):
+        """One message; a malformed one gets an error answer, never a crash."""
+        if not isinstance(msg, dict):
+            return None
+        mid = msg.get("id")
+        try:
+            return self._handle(msg)
+        except BadParams as e:
+            return _error(mid, -32602, f"invalid params: {e}") if mid is not None else None
+        except Exception as e:  # a bug, or a path the system cannot take
+            return _error(mid, -32603, f"internal error: {e}") if mid is not None else None
+
+    def _handle(self, msg: dict):
+        method, mid, params = msg.get("method"), msg.get("id"), msg.get("params")
+        params = {} if params is None else params
+        if not isinstance(params, dict):
+            raise BadParams("params must be an object")
+        if method == "exit":
+            self.done = True
+            return None
+        if self.shutdown:  # after shutdown only exit is served
+            return _error(mid, -32600, "the server is shutting down") if mid is not None else None
         if method == "initialize":
             caps = {"textDocumentSync": 1, "hoverProvider": True}
             return _result(mid, {"capabilities": caps, "serverInfo": {"name": "ashugh"}})
         if method == "shutdown":
             self.shutdown = True
             return _result(mid, None)
-        if method == "exit":
-            self.done = True
-            return None
+        if method == "workspace/didChangeWatchedFiles":  # a spec changed on disk
+            self.reports.clear()
+            return [self._publish(u) for u in self.docs]
         doc = params.get("textDocument") or {}
+        if not isinstance(doc, dict):
+            raise BadParams("textDocument must be an object")
         uri = doc.get("uri", "")
+        if not isinstance(uri, str):
+            raise BadParams("uri must be a string")
         if method == "textDocument/didOpen":
-            self.docs[uri] = doc.get("text", "")
+            text = doc.get("text", "")
+            if not isinstance(text, str):
+                raise BadParams("text must be a string")
+            self.docs[uri] = text
             return [self._publish(uri)]
         if method == "textDocument/didChange":
             changes = params.get("contentChanges") or []
+            if not isinstance(changes, list) or not all(isinstance(c, dict) for c in changes):
+                raise BadParams("contentChanges must be a list of objects")
             if changes:
-                self.docs[uri] = changes[-1].get("text", "")
+                text = changes[-1].get("text", "")
+                if not isinstance(text, str):
+                    raise BadParams("text must be a string")
+                self.docs[uri] = text
             return [self._publish(uri)]
         if method == "textDocument/didSave":
+            if _is_spec(uri):  # the songs that read this spec read it again
+                self.reports.clear()
+                return [self._publish(u) for u in self.docs if not _is_spec(u)]
             return [self._publish(uri)] if uri in self.docs else []
         if method == "textDocument/didClose":
             self.docs.pop(uri, None)
+            self.reports.pop(uri, None)
             return [_notify("textDocument/publishDiagnostics", {"uri": uri, "diagnostics": []})]
         if method == "textDocument/hover":
-            return _result(mid, self._hover(uri, params.get("position") or {}))
+            position = params.get("position") or {}
+            if not isinstance(position, dict) or not isinstance(position.get("line", 0), int):
+                raise BadParams("position.line must be an integer")
+            return _result(mid, self._hover(uri, position))
         if mid is not None:
-            return {
-                "jsonrpc": "2.0",
-                "id": mid,
-                "error": {"code": -32601, "message": f"method not found: {method}"},
-            }
+            return _error(mid, -32601, f"method not found: {method}")
         return None
 
     def _report(self, uri: str) -> tuple[Report | None, str | None]:
         text = self.docs.get(uri)
-        if text is None:
+        if text is None or _is_spec(uri):
             return None, None
+        cached = self.reports.get(uri)
+        if cached is not None and cached[0] == text:  # hover after a change: no rescan
+            return cached[1]
         path = path_of(uri)
         spec_path = find_spec(path) if path else None
         try:
             spec = load(spec_path) if spec_path else Spec()
         except (SpecError, OSError) as e:
-            return None, f"{spec_path.name if spec_path else 'spec'}: {e}"
-        return scan(text, spec, path=str(path or uri)), None
+            message = str(e)
+            name = spec_path.name if spec_path else "spec"
+            out: tuple[Report | None, str | None] = (
+                None,
+                message if name in message else f"{name}: {message}",
+            )
+        else:
+            out = scan(text, spec, path=str(path or uri)), None
+        self.reports[uri] = (text, out)
+        return out
 
     def _publish(self, uri: str) -> dict:
         rep, problem = self._report(uri)
@@ -129,13 +200,13 @@ class Server:
             for issue in rep.issues:
                 row = issue.line - 1
                 text = lines[row] if 0 <= row < len(lines) else ""
-                start = len(text) - len(text.lstrip())
+                start = _utf16(text[: len(text) - len(text.lstrip())])  # LSP counts UTF-16
                 message = issue.message + (f": {issue.detail}" if issue.detail else "")
                 diagnostics.append(
                     _diag(
                         row,
                         start,
-                        max(len(text), start + 1),
+                        max(_utf16(text), start + 1),
                         issue.code,
                         message,
                         SEVERITY[issue.severity],
@@ -154,6 +225,19 @@ class Server:
         rhyme = f" · rhyme {lr.letter}" if lr.letter and lr.letter != "-" else ""
         value = f"**{lr.fit.count} syllables** · `{lr.fit.grid}` · {lr.ending}{rhyme}\n\n{lr.sung}"
         return {"contents": {"kind": "markdown", "value": value}}
+
+
+def _utf16(text: str) -> int:
+    """Length in UTF-16 code units, as LSP positions count: an emoji is two."""
+    return len(text.encode("utf-16-le", "surrogatepass")) // 2
+
+
+def _is_spec(uri: str) -> bool:
+    return uri.lower().endswith(".toml")
+
+
+def _error(mid, code: int, message: str) -> dict:
+    return {"jsonrpc": "2.0", "id": mid, "error": {"code": code, "message": message}}
 
 
 def _diag(row: int, start: int, end: int, code: str, message: str, severity: int) -> dict:
@@ -184,9 +268,9 @@ def serve(stdin=None, stdout=None) -> int:
     while not server.done:
         try:
             msg = read_message(stdin)
-        except ValueError, json.JSONDecodeError:
+        except ValueError, json.JSONDecodeError:  # FramingError too: read on
             continue
-        if msg is None:
+        if msg is EOF_:
             break
         reply = server.handle(msg)
         for out in reply if isinstance(reply, list) else [reply]:

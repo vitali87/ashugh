@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ashugh.lsp import Server, find_spec, read_message, write_message
+from ashugh.lsp import EOF_, Server, find_spec, read_message, write_message
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
@@ -154,7 +154,7 @@ def test_framing_round_trip():
     write_message(buf, {"jsonrpc": "2.0", "id": 1, "result": "ок"})
     buf.seek(0)
     assert read_message(buf) == {"jsonrpc": "2.0", "id": 1, "result": "ок"}
-    assert read_message(io.BytesIO(b"")) is None
+    assert read_message(io.BytesIO(b"")) is EOF_  # not a JSON null
     with pytest.raises(ValueError):
         read_message(io.BytesIO(b"Content-Type: x\r\n\r\n{}"))
 
@@ -188,7 +188,7 @@ def test_stdio_session(tmp_path):
     )
     out = io.BytesIO(proc.stdout)
     replies = []
-    while (msg := read_message(out)) is not None:
+    while (msg := read_message(out)) is not EOF_:
         replies.append(msg)
     assert replies[0]["id"] == 1
     assert any(r.get("method") == "textDocument/publishDiagnostics" for r in replies)
@@ -206,7 +206,7 @@ def test_diagnostics_use_editor_line_numbers(tmp_path):
 
 def _replies(raw: bytes) -> list[dict]:
     stream, out = io.BytesIO(raw), []
-    while (msg := read_message(stream)) is not None:
+    while (msg := read_message(stream)) is not EOF_:
         out.append(msg)
     return out
 

@@ -225,7 +225,8 @@ intelligibility rather than every sung schwa.
   `spec_template`.
 * **Language server.** `ashugh lsp` underlines the lines that do not scan and
   shows on hover how a line is sung. The spec is the file's sibling `.toml`
-  (song.txt -> song.toml) or the nearest `ashugh.toml`.
+  (song.txt -> song.toml) or the nearest `ashugh.toml`; saving the spec
+  rechecks the open songs.
 
 ## How well it works
 

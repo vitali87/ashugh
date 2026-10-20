@@ -93,3 +93,14 @@ def test_pick_json_lists_what_it_ignored(tmp_path, capsys):
     main(["pick", str(song), *args])
     data = json.loads(capsys.readouterr().out)
     assert data["ignored"] == ["line 9 is no lyric line (lines count from the file's first)"]
+
+
+def test_syl_gives_the_range_a_line_may_count(capsys):
+    from ashugh.cli import main
+
+    main(["syl", "--lang", "hy", "նա ստացավ"])
+    assert capsys.readouterr().out.split()[0] == "3-4"  # the ը may merge after նա
+    main(["syl", "--lang", "en", "every day"])
+    assert capsys.readouterr().out.split()[0] == "3-4"  # e-ve-ry or eve-ry
+    main(["syl", "--lang", "en", "the day"])
+    assert capsys.readouterr().out.split()[0] == "2"
