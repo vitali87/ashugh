@@ -110,8 +110,9 @@ never silently ignored: a Russian word needs its stress marked, an English one
 ARPABET with a digit on every vowel, an Armenian one its sung syllables split
 by hyphens, one vowel each, and every entry must spell its word.
 
-Top-level keys apply everywhere; `[section.<name>]` and `[stanza.<n>]`
-override them. Command-line flags (`--syllables`, `--meter`, `--rhyme`,
+Top-level keys apply everywhere; `[section.<name>]` overrides them for its
+sections, and `[stanza.<n>]` overrides its stanza's section in turn, so a
+chorus stanza's table changes only what it sets. Command-line flags (`--syllables`, `--meter`, `--rhyme`,
 `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
 `.A.A`.

@@ -52,3 +52,24 @@ def test_bad_entries_are_refused_with_the_word_and_the_way_to_write_it(word, val
 
 def test_words_in_other_scripts_are_left_alone():
     assert load("λόγος", "anything").lexicon["λόγος"] == "anything"
+
+
+def test_a_stanza_table_overrides_its_sections_rules_not_the_top_levels():
+    from ashugh.scan import scan
+
+    spec = from_dict(
+        {
+            "language": "en",
+            "meter": "iamb4",
+            "rhyme": "AbAb",
+            "section": {"chorus": {"meter": "trochee4", "rhyme": "AABB"}},
+            "stanza": {"2": {"tolerance": 1}},
+        }
+    )
+    text = "[Verse]\na\nb\nc\nd\n\n[Chorus]\ne\nf\ng\nh\n"
+    rep = scan(text, spec)
+    chorus = rep.units[1].rule
+    assert (chorus.meter, chorus.rhyme, chorus.tolerance) == ("trochee", "AABB", 1)
+    verse = rep.units[0].rule
+    assert (verse.meter, verse.rhyme, verse.tolerance) == ("iamb", "AbAb", 0)
+    assert spec.rule_for("chorus", 1) is spec.rule_for("chorus", 1)  # one rule per stanza

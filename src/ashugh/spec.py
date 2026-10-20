@@ -105,13 +105,27 @@ class Spec:
     base: Rule = field(default_factory=Rule)
     sections: dict[str, Rule] = field(default_factory=dict)
     lexicon: dict[str, str] = field(default_factory=dict)
-    stanzas: dict[int, Rule] = field(default_factory=dict)  # 1-based stanza number
+    stanzas: dict[int, Rule] = field(default_factory=dict)  # 1-based, each over the top level
+    stanza_tables: dict[int, dict] = field(default_factory=dict)  # the [stanza.N] tables as written
+    flags: dict = field(default_factory=dict)  # command-line rules, over everything
+    _rules: dict = field(default_factory=dict, repr=False, compare=False)
 
     def rule_for(self, key: str, unit: int | None = None) -> Rule:
-        """The rule of a stanza: its own [stanza.N] table, else its section's, else the top."""
-        if unit is not None and unit + 1 in self.stanzas:
+        """The rule of a stanza: its section's (else the top level's), with its own
+        [stanza.N] table over it and the command line's rules over that."""
+        section = self.sections.get(key, self.base)
+        if unit is None or unit + 1 not in self.stanzas:
+            return section
+        table = self.stanza_tables.get(unit + 1)
+        if table is None:  # a Spec built without its tables
             return self.stanzas[unit + 1]
-        return self.sections.get(key, self.base)
+        rule = self._rules.get((key, unit))
+        if rule is None:
+            rule = apply(table, section, f"[stanza.{unit + 1}]")
+            if self.flags:
+                rule = apply(self.flags, rule, "flags")
+            self._rules[(key, unit)] = rule
+        return rule
 
     @property
     def empty(self) -> bool:
@@ -221,7 +235,7 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
         if key in sections:
             raise SpecError(f"{where}: section.{name} and another table name the same section")
         sections[key] = apply(table, base, f"{where} [section.{name}]")
-    stanzas = {}
+    stanzas, tables = {}, {}
     raw_stanzas = data.get("stanza", {})
     if not isinstance(raw_stanzas, dict):
         raise SpecError(f"{where}: [stanza.<number>] tables expected")
@@ -229,6 +243,7 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
         if not str(name).isdigit() or int(name) < 1 or not isinstance(table, dict):
             raise SpecError(f"{where}: stanza.{name} must be a table numbered from 1")
         stanzas[int(name)] = apply(table, base, f"{where} [stanza.{name}]")
+        tables[int(name)] = table
     lexicon = data.get("lexicon", {})
     if not isinstance(lexicon, dict) or not all(isinstance(v, str) for v in lexicon.values()):
         raise SpecError(f"{where}: [lexicon] maps words to strings")
@@ -237,7 +252,7 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
         if problem:
             raise SpecError(f"{where} [lexicon] {word!r}: {problem}")
     lexicon = {k.lower(): v for k, v in lexicon.items()}
-    return Spec(path, language, base, sections, lexicon, stanzas)
+    return Spec(path, language, base, sections, lexicon, stanzas, tables)
 
 
 def load(path: str | Path) -> Spec:

@@ -59,6 +59,7 @@ def _spec(args: argparse.Namespace) -> Spec:
         spec.base = apply(inline, spec.base, "flags")
         spec.sections = {k: apply(inline, r, "flags") for k, r in spec.sections.items()}
         spec.stanzas = {k: apply(inline, r, "flags") for k, r in spec.stanzas.items()}
+        spec.flags = inline
     return spec
 
 
