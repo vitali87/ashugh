@@ -207,9 +207,13 @@ a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-ս
 consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is \
 գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; \
 ё is always stressed.
-- template: "/" marks a syllable that must carry stress, "x" one that must not.
+- template: "/" marks a beat, where a stressed syllable belongs (a one-syllable \
+word may also sit there unstressed); "x" marks an off-beat, where no word's own \
+stress may fall.
 - rhyme_with: the line's last stressed vowel and everything after it must \
-sound like these words' (by sound, not spelling).
+sound like these words' (by sound, not spelling). rhyme_sound is that rime; \
+with rhyme_with empty it is the line's own rhyme, to keep. Never end on the \
+same word as a partner.
 - rejected: earlier candidates that failed, with the reason. Do not repeat them.
 
 A request with a "source" line is a translation: original is empty, and each \

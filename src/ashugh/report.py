@@ -7,6 +7,7 @@ import unicodedata
 
 from .lang import NAMES
 from .scan import LineReport, Report, UnitReport
+from .spec import mixed_case
 
 
 def _width(s: str) -> int:
@@ -28,6 +29,11 @@ def _meter_label(u: UnitReport) -> str:
 def _unit_header(u: UnitReport) -> str:
     name = f"[{u.section}]" if u.section else "[untagged]"
     rhyme = u.scheme
+    if u.rule.rhyme and mixed_case(u.rule.rhyme):  # the endings found, as the spec writes them
+        rhyme = "".join(
+            ch if not ch.isalpha() else ch.upper() if lr.fit.ending else ch.lower()
+            for ch, lr in zip(u.scheme, u.lines)
+        )
     if u.rule.rhyme:
         rhyme += f" (spec {u.rule.rhyme})"
     return f"{name}  {_meter_label(u)} · {rhyme}"

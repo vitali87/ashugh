@@ -418,6 +418,7 @@ def _request(
     ln = lr.line
     idx = ln.index
     rhyme_with, sound, partner_ending = [], None, None
+    moving: list[int] = []  # partners whose rhyme word must change too
     if var.group is not None:
         members = groups[var.group]
         settled = [  # partners that may stay: kept, chosen, or passing their own checks
@@ -432,13 +433,23 @@ def _request(
         ]
         # When every partner must change, all aim at the first line's rhyme, not at
         # each other's discarded originals: nice and street would chase each other.
-        for k in settled or members[:1]:
+        # The first line itself keeps its rhyme sound, and a rhyme word that has to
+        # go (a forbidden final, the wrong ending) is nobody's target.
+        head = members[0]
+        anchors = settled
+        if not anchors and head != ln.number and _rhyme_word_stays(variables[head].lr):
+            anchors = [head]
+        for k in anchors:
             current = _current(variables.get(k), lines[k] if partners_from_lines else None)
             t = current.tail if current else None
             if t is not None:
                 rhyme_with.append(t.word)
-                sound = sound or t.sound
+                sound = sound or t.rime
                 partner_ending = t.post if partner_ending is None else partner_ending
+        if not anchors:
+            if head == ln.number and lr.tail is not None and _rhyme_word_stays(lr):
+                sound = lr.tail.rime
+            moving = [k for k in members if k != ln.number and k in variables]
     syllables = rule.syllables_at(idx)
     want_ending = rule.ending_at(idx)
     if want_ending is None and partner_ending is not None:
@@ -468,6 +479,9 @@ def _request(
         if i.severity == "error"
     ]
     problems.extend(b for b in var.blocked if b not in problems)
+    if moving and not sound:
+        names = ", ".join(f"L{k}" for k in moving)
+        problems.append(f"{names} must change as well: any rhyme you can share will do")
     numbers = sorted(lines)
     at = numbers.index(ln.number)
     before = [lines[k].line.text for k in numbers[max(0, at - 2) : at]]
@@ -496,6 +510,11 @@ def _request(
     if extra is not None:
         extra(var, req)
     return req
+
+
+def _rhyme_word_stays(lr: LineReport) -> bool:
+    """Whether a failing line may keep its last word: its errors are not about it."""
+    return not any(i.code in ("final", "ending") for i in line_errors(lr))
 
 
 def _near_misses(var: _Var) -> list[tuple[str, str]]:

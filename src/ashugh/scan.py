@@ -397,6 +397,26 @@ def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
     return new
 
 
+def _elision_notes(ln: Line, f, add) -> None:
+    """Notes on the syllables the line's fit leaves out, so none goes unsaid."""
+    for i in sorted(f.elided):
+        w = ln.words[i]
+        if w.lang == "hy" and w.drop == w.optional:
+            what = "drops its ը"
+            detail = w.optional_why
+        elif w.lang == "hy":
+            how = (
+                "merges into the vowel before it"
+                if w.drop == 0
+                else "links its last consonant to the vowel after it"
+            )
+            what, detail = "drops its ը", f"in connected speech the word {how}"
+        else:
+            what = "is sung with one syllable fewer"
+            detail = f"sung {w.sung(dropped=True)}"
+        add(Issue(ln.number, "syllables", "info", f"fits if {_quote(w.text)} {what}", detail))
+
+
 def _hidden_vowels(ln: Line) -> str:
     shown = [w for w in ln.words if any(s.epenthetic for s in w.syllables)]
     return ", ".join(f"{_quote(w.text)} sings as {w.sung()}" for w in shown[:3])
@@ -469,26 +489,9 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 )
             )
         else:
-            for i in sorted(f.elided):
-                w = ln.words[i]
-                if w.lang == "hy" and w.drop == w.optional:
-                    what = "drops its ը"
-                    detail = w.optional_why
-                elif w.lang == "hy":
-                    how = (
-                        "merges into the vowel before it"
-                        if w.drop == 0
-                        else "links its last consonant to the vowel after it"
-                    )
-                    what, detail = "drops its ը", f"in connected speech the word {how}"
-                else:
-                    what = "is sung with one syllable fewer"
-                    detail = f"{w.sung()} also has a shorter pronunciation"
-                add(
-                    Issue(
-                        ln.number, "syllables", "info", f"fits if {_quote(w.text)} {what}", detail
-                    )
-                )
+            _elision_notes(ln, f, add)
+    elif f.elided:
+        _elision_notes(ln, f, add)  # the meter dropped it: Eve-ry heartbeat
 
     if source == "spec" and meter_name != "free" and (f.off_beat or f.ending_off):
         names = [_quote(ln.words[i].sung(f.stresses.get(i), mark=True)) for i in f.off_beat]
@@ -602,6 +605,7 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
         kept, pair = rhyming_set(members)
         for k, lr in enumerate(members):
             if k in kept:
+                _same_word(members, k, pair)
                 continue
             partner = max(sorted(kept), key=lambda m: pair(m, k)[0])
             s, ta, tb = pair(partner, k)
@@ -624,6 +628,37 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
                     },
                 )
             )
+
+
+def _same_word(members: list[LineReport], k: int, pair) -> None:
+    """A line rhyming only on the word an earlier one ends with: a refrain, which
+    may be meant, but no rhyme. A line repeated whole is a refrain and fine."""
+    lr = members[k]
+    for m in range(k):
+        s, ta, tb = pair(m, k)
+        if ta is None or tb is None or ta.spelling != tb.spelling:
+            return
+        if _norm_text(members[m].line.text) == _norm_text(lr.line.text):
+            return
+    if k == 0:
+        return
+    word = pair(0, k)[2]
+    if word is None:
+        return
+    lr.issues.append(
+        Issue(
+            lr.line.number,
+            "rhyme",
+            "warning",
+            f"rhymes {_quote(word.word)} with itself",
+            "the same word is a refrain, not a rhyme; fine if meant",
+            {"word": word.word},
+        )
+    )
+
+
+def _norm_text(text: str) -> str:
+    return " ".join(lyrics.tokenize(text.lower()))
 
 
 def rhyming_set(members: list[LineReport]):

@@ -112,18 +112,23 @@ def cmd_pick(args: argparse.Namespace) -> int:
     result = fit_song(
         _read(args.file), spec, proposer, rounds=1, solver=args.solver, lang=args.lang
     )
-    for why in proposer.unused({lr.line.number for lr in result.report.lines}):
-        print(f"warning: {why}", file=sys.stderr)
-    return _emit_fit(result, args)
+    ignored = proposer.unused({lr.line.number for lr in result.report.lines})
+    if not args.json:
+        for why in ignored:
+            print(f"warning: {why}", file=sys.stderr)
+    return _emit_fit(result, args, ignored)
 
 
-def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
+def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | None = None) -> int:
     result.report.path = args.file
     if args.output:
         with open(args.output, "w", encoding="utf-8", newline="") as fh:
             fh.write(result.text)
     if args.json:
-        print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
+        data = result.as_dict()
+        if ignored is not None:
+            data["ignored"] = ignored  # candidates no request named
+        print(json.dumps(data, ensure_ascii=False, indent=2))
         return 0 if result.ok else 1
     log = sys.stderr if not args.output else sys.stdout
     written = lyrics.split_lines(result.text)

@@ -38,6 +38,15 @@ class Tail:
     def sound(self) -> str:
         return "".join(self.onset[-1:]) + self.vowel + "".join(self.rest)
 
+    @property
+    def rime(self) -> str:
+        """What a partner must sound like: the stressed vowel and what follows,
+        with the consonant before it where Russian and Armenian open rhymes want
+        it (ты / красоты)."""
+        if not self.rest and self.lang in ("ru", "hy"):
+            return self.sound
+        return self.vowel + "".join(self.rest)
+
 
 def level(score: float) -> str:
     for name, floor in LEVELS:

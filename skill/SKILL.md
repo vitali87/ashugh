@@ -50,10 +50,15 @@ Python 3.14 runs the same script directly.
    is not counted.
 3. **Scan**: `ashugh scan song.txt --spec song.toml --json`.
 4. **Repair**, at most three rounds:
-   - `ashugh requests song.txt --spec song.toml` lists every failing line
-     with what it must satisfy: `syllables`, the stress `template` ("/"
-     stressed, "x" unstressed), `rhyme_with` (the partner's rhyme word),
-     `avoid_final`, and the `problems` found.
+   - `ashugh requests song.txt --spec song.toml` lists every failing line,
+     and the partners of a broken rhyme even where they pass (changing those
+     is optional), with what each must satisfy: `syllables`, the stress
+     `template` ("/" a beat, where a stressed syllable belongs and a
+     one-syllable word may also sit unstressed; "x" an off-beat, where no
+     word's own stress may fall), `rhyme_with` (the words of the partners
+     that stay) and `rhyme_sound` (the rime to match; when `rhyme_with` is
+     empty it is the line's own rhyme, to keep), `ending`, `avoid_final`,
+     and the `problems` found, including partners that must change too.
    - For each request write 4–6 alternatives that keep the meaning and the
      voice of the song. Put them in a JSON file keyed by line number:
      `{"3": ["...", "..."], "11": ["..."]}`. Including the original line is
@@ -77,11 +82,27 @@ Python 3.14 runs the same script directly.
 
 ## Translating a song
 
-`ashugh spec --from source.txt --keep syllables,rhyme --lang hy > target.toml`
-turns the source's form into a spec with one `[stanza.N]` table per stanza.
+To sing the translation to the same melody, keep the stresses and endings as
+well as the counts and rhymes:
+
+```bash
+ashugh spec --from source.txt --keep syllables,meter,rhyme,endings --lang ru > target.toml
+```
+
+turns the source's form into a spec with one `[stanza.N]` table per stanza
+(a stanza whose lines do not all keep one meter gets its counts without it).
 Translate line by line into a draft, then run the repair loop above against
-`target.toml`. `--keep meter` also keeps the stress grid; `--keep endings` the
-masculine/feminine endings.
+`target.toml`. Or let ashugh hold the translation loop: write your candidate
+translations per source line in a JSON file as for `pick`, then
+
+```bash
+ashugh translate source.txt --to ru --keep syllables,meter,rhyme,endings \
+  --proposer file:candidates.json -o song.ru.txt
+```
+
+checks them against the source's grid and picks the combination that holds.
+`--keep syllables,rhyme` alone fits the counts and rhymes but not the
+stresses, so the words may not sit on the melody's beats.
 
 ## Reading the report
 

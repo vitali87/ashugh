@@ -87,4 +87,5 @@ def test_a_group_that_is_all_rewritten_aims_at_its_first_line():
     spec = from_dict({"language": "en", "syllables": 3, "rhyme": "AA"})
     text = "Oh, that is so nice\nAnd I walk down the street\n"
     reqs = {r.line: r for r in fit.requests_for(text, spec)}
-    assert reqs[1].rhyme_with == ["nice"] and reqs[2].rhyme_with == ["nice"]
+    assert reqs[1].rhyme_with == [] and reqs[1].rhyme_sound == "aɪs"  # keeps its own rhyme
+    assert reqs[2].rhyme_with == ["nice"]

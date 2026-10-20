@@ -147,11 +147,12 @@ def format_song(
     report = scan(text, spec or Spec(), lang=lang)
     raw = lyrics.split_lines(text, keepends=True)
     notes: list[Note] = []
+    by_meter = {lr.line.number for u in report.units if u.meter_source == "spec" for lr in u.lines}
     for lr in report.lines:
         line_raw = raw[lr.line.number - 1]
         body, ending = _split_ending(line_raw)
         spans = lyrics.token_spans(body)
-        elided = _elided(lr)
+        elided = _elided(lr, lr.target is not None or lr.line.number in by_meter)
         pieces, last = [], 0
         for i, ((a, b, token), word) in enumerate(zip(spans, lr.line.words)):
             pieces.append(body[last:a])
@@ -230,19 +231,22 @@ def _split_ending(line: str) -> tuple[str, str]:
     return stripped, line[len(stripped) :]
 
 
-def _elided(lr: LineReport) -> set[int]:
-    """Schwas to drop: whatever the slot's count needed, a compound's that the
-    meter left out, and every linking -ն."""
+def _elided(lr: LineReport, constrained: bool) -> set[int]:
+    """Schwas to drop. Where a count or a meter holds the line, the ones the scan
+    dropped, so Suno sings what the check passed (Մայրիկըն է at 8 syllables,
+    Մայրիկն է at 7); with nothing to keep, speech's own forms: a compound's as
+    the meter left it, and every linking -ն (Մըկըրտիչն էլ)."""
+    if constrained:
+        return set(lr.fit.elided)
     words = lr.line.words
-    out = set(lr.fit.elided) if lr.target is not None else set()
-    out |= {
+    out = {
         i
         for i in lr.fit.elided
         if words[i].optional is not None and words[i].drop == words[i].optional
     }
     out |= {
         i
-        for i, w in enumerate(lr.line.words)
+        for i, w in enumerate(words)
         if w.lang == "hy" and w.drop is not None and w.drop == w.size - 1 and w.size > 1
     }
     return out
