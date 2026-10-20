@@ -174,8 +174,15 @@ def _split_ending(line: str) -> tuple[str, str]:
 
 
 def _elided(lr: LineReport) -> set[int]:
-    """Schwas to drop: whatever the slot's count needed, plus every linking -ն."""
+    """Schwas to drop: whatever the slot's count needed, a compound's that the
+    meter left out, and every linking -ն."""
+    words = lr.line.words
     out = set(lr.fit.elided) if lr.target is not None else set()
+    out |= {
+        i
+        for i in lr.fit.elided
+        if words[i].optional is not None and words[i].drop == words[i].optional
+    }
     out |= {
         i
         for i, w in enumerate(lr.line.words)

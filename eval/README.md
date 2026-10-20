@@ -7,7 +7,7 @@ Five measurements, each a script you can rerun. Results are in
 |---|---|---|
 | `uv run eval/rifma.py` | Russian stress and rhyme against hand-marked poems | RIFMA (downloaded on first use) |
 | `uv run eval/armenian.py` | Armenian sung syllables against a hand-checked list, and espeak-ng | `data/hy_gold.tsv` |
-| `uv run eval/wikipron.py` | Armenian sung syllables against Wiktionary, on entries the stem list never saw | WikiPron's Wiktionary scrape (downloaded on first use) |
+| `uv run eval/wikipron.py` | Armenian sung syllables against Wiktionary, on words the word lists never saw | WikiPron's Wiktionary scrape (downloaded on first use) |
 | `uv run eval/oov.py` | stress and syllables of words the dictionaries lack, on held-out entries | the bundled tables |
 | `ashugh eval run TASKS` | how many lines and songs meet their spec, written alone and with ashugh | `tasks/`, `tasks-hard/` |
 

@@ -121,3 +121,66 @@ def test_nouns_in_urd_are_lexical(word, want):
 @pytest.mark.parametrize("word,want", [("ջուրդ", "ջու-րըդ"), ("սուրդ", "սու-րըդ")])
 def test_short_words_in_urd_are_possessive(word, want):
     assert sung(word) == want
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("մեղադրել", "մե-ղա-դը-րել"),
+        ("մեղադրանքը", "մե-ղա-դը-րան-քը"),  # an inflection the dictionary does not list
+        ("ախտանշանը", "ախ-տա-նը-շա-նը"),
+        ("նախագծել", "նա-խա-գը-ծել"),
+        ("անհրաժեշտ", "ան-հը-րա-ժեշտ"),
+        ("անհրաժեշտություն", "ան-հը-րա-ժեշ-տու-թյուն"),
+        ("Մեղադրեց", "Մե-ղա-դը-րեց"),
+    ],
+)
+def test_compounds_keep_their_second_roots_schwa(word, want):
+    assert sung(word) == want
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("կերակրել", "կե-րակ-րել"),  # Wiktionary has it with and without the schwa
+        ("աշխարհ", "աշ-խարհ"),
+        ("մանկություն", "ման-կու-թյուն"),
+        ("Մկրտիչ", "Մը-կըր-տիչ"),
+        ("ազատություն", "ա-զա-տու-թյուն"),
+    ],
+)
+def test_other_medial_clusters_are_left_to_the_rules(word, want):
+    assert sung(word) == want
+
+
+def test_the_compound_list_is_loaded():
+    keys = hy.compound_schwas()
+    assert "մեղադր" in keys and len(keys) > 150
+    assert all(len(k) >= hy.MIN_COMPOUND for k in keys)
+
+
+def test_a_compounds_schwa_is_optional():
+    w = hy.analyze_word("լուսանկար")
+    assert sung("լուսանկար") == "լու-սա-նը-կար"
+    assert w.optional == 2 and w.drop == 2
+    assert hy.analyze_word("Մկրտիչ").optional is None  # a cluster's schwa is not
+
+
+def _scan(text, **rule):
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    return scan(text, from_dict({"language": "hy", **rule}))
+
+
+def test_a_line_fits_with_or_without_the_compounds_schwa():
+    line = "Լուսանկարներ պատին կախված\n"
+    rep = _scan(line, meter="iamb4")
+    assert [i for i in rep.issues if i.severity == "error"] == []
+    assert rep.units[0].lines[0].sung.startswith("Լու-սա-ն(ը)-կար-ներ")
+    assert _scan("Լուսանկարներ\n", syllables=5).ok  # sung with it
+    short = _scan("Լուսանկարներ\n", syllables=4)  # or without
+    assert short.ok
+    (note,) = [i for i in short.issues if i.code == "syllables"]
+    assert "Լուսանկարներ" in note.message and "second root" in note.detail
+    assert not _scan("Լուսանկարներ\n", syllables=3).ok

@@ -80,7 +80,8 @@ def analyze(lang: str, tokens: list[str], lexicon: dict[str, str]) -> list[Word]
 def _armenian_elision(words: list[Word]) -> None:
     """Mark the schwas that connected speech drops: a vowel before swallows a
     word's leading ը (նա ստացավ -> նաս-տա-ցավ), and a word's final schwa
-    syllable links its consonant onto a vowel after it (կյանքն է -> կյանք-նէ)."""
+    syllable links its consonant onto a vowel after it (կյանքն է -> կյանք-նէ).
+    Elsewhere, a compound's inner schwa may drop (լու-սան-կար)."""
 
     def first(w: Word) -> str:
         return w.readings[0].phones[0] if w.readings and w.readings[0].phones else ""
@@ -91,7 +92,7 @@ def _armenian_elision(words: list[Word]) -> None:
     for i, w in enumerate(words):
         if w.lang != "hy":
             continue
-        w.drop = None
+        w.drop = w.optional
         if w.head_schwa and i > 0 and is_vowel(last(words[i - 1])):
             w.drop = 0
         elif w.tail_schwa and i + 1 < len(words) and _vowel_initial(words[i + 1], first):

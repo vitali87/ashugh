@@ -44,6 +44,7 @@ class Word:
     head_schwa: bool = False  # starts with a schwa that a vowel before it can swallow
     tail_schwa: bool = False  # ends in a schwa syllable whose consonant can link forward
     drop: int | None = None  # syllable whose schwa may drop in this line's context
+    optional: int | None = None  # a schwa syllable that may drop anywhere (a compound's)
     notes: list[str] = field(default_factory=list)
 
     @property

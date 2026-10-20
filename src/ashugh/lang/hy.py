@@ -20,6 +20,11 @@ sung mə-kər-tich; սպասել is ըս-պա-սել. The rules this module appl
   in -ուրդ (ժողովուրդ).
 * The negative prefix ան- before ս, զ or շ and a stop keeps the stem's
   schwa: անշտապ -> ան-շը-տապ.
+* A compound keeps the schwa of its second root (մեղադրել -> մե-ղա-դը-րել,
+  from դրել). No rule predicts that, so word beginnings that do it are
+  listed from Wiktionary in data/hy_compound.tsv; any word that starts with
+  one gets the schwa, inflected or not (մե-ղա-դը-րան-քը). Speech often drops
+  it, so a line may sing it or not.
 * Ties between equally short splits go to the longer onset (-թյուն), then to
   the split whose codas are longest reading from the right (Մկրտիչ ->
   մը-կըր-տիչ, Ադրբեջան -> ա-դըր-բե-ջան).
@@ -27,9 +32,9 @@ sung mə-kər-tich; սպասել is ըս-պա-սել. The rules this module appl
 Stress falls on the last syllable whose vowel is not a schwa. The marks ՛ ՜ ՞
 written after a vowel move it there.
 
-Schwas that come from morphology rather than from the cluster (կայսրություն
-keeps the schwa of կայսր) are out of reach of these rules; the spec's
-[lexicon] table fixes them.
+Other schwas that come from morphology rather than from the cluster
+(կայսրություն keeps the schwa of կայսր) are out of reach of these rules; the
+spec's [lexicon] table fixes them.
 """
 
 from __future__ import annotations
@@ -109,6 +114,7 @@ LINKERS = ("ա", "ե")
 MIN_HEAD = 3
 # Possessives the dictionary also lists as stems: յար-դ (your beloved), not straw.
 POSSESSIVE_FORMS = {"յարդ"}
+MIN_COMPOUND = 4  # the shortest listed word beginning
 # Final clusters Wiktionary splits with a schwa in 19 of 21 dictionary forms.
 FINAL_SPLIT = {("m", "n"), ("r", "n")}
 NOT_POSSESSIVE = {
@@ -217,6 +223,20 @@ def lexical_endings() -> frozenset[str]:
     """Words whose final ս or դ belongs to the stem."""
     text = resources.files("ashugh").joinpath("data/hy_lexical.tsv").read_text(encoding="utf-8")
     return frozenset(text.split()) | NOT_POSSESSIVE
+
+
+@cache
+def compound_schwas() -> frozenset[str]:
+    """Word beginnings with a schwa before their last letter: մեղադր (մե-ղա-դը-րել)."""
+    text = resources.files("ashugh").joinpath("data/hy_compound.tsv").read_text(encoding="utf-8")
+    return frozenset(text.split())
+
+
+def compound_points(norm: str) -> list[int]:
+    """Segment indices to put a compound's schwa before, last first."""
+    keys = compound_schwas()
+    found = (norm[:k] for k in range(MIN_COMPOUND, len(norm) + 1) if norm[:k] in keys)
+    return sorted({len(segments(key)) - 1 for key in found}, reverse=True)
 
 
 def stem_final(norm: str) -> bool:
@@ -384,12 +404,22 @@ def _from_override(spec: str) -> list[list[Seg]]:
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     norm = normalize(token)
     override = (overrides or {}).get(norm)
+    optional = None
     if override:
         syllables = _from_override(override)
         source = "user"
     else:
-        syllables = syllabify(segments(token), not stem_final(norm))
+        segs = segments(token)
+        inserted = []
+        for i in compound_points(norm):
+            inserted.append(_schwa())
+            segs.insert(i, inserted[-1])
+        syllables = syllabify(segs, not stem_final(norm))
         source = "rule"
+        optional = next(
+            (k for k, syl in enumerate(syllables) if any(s is t for s in syl for t in inserted)),
+            None,
+        )
     shown = _display(syllables, token)
     phones = tuple(s.ph for syl in syllables for s in syl)
     clitic = norm in CLITICS
@@ -413,4 +443,6 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         enclitic=norm in AUXILIARIES,
         head_schwa=len(syllables) > 1 and bool(first) and first[0].ph == "ə",
         tail_schwa=len(syllables) > 1 and linkable,
+        drop=optional,
+        optional=optional,
     )

@@ -5,10 +5,12 @@
 The data is WikiPron's scrape of Wiktionary's Eastern Armenian pronunciations
 (hye_armn_e_broad.tsv, downloaded on first use). ashugh's list of stems
 ending in ս or դ (scripts/build_hy_lexicon.py) comes from the same data, so
-the list is rebuilt here without every tenth entry, and ashugh is scored on
+the list is rebuilt here without every tenth word, and ashugh is scored on
 those alone: its sung syllables against the vowels of Wiktionary's broad
-transcription, schwas included. --src points at another checkout's src/ to
-score an older analyzer.
+transcription, schwas included. A word that Wiktionary transcribes more than
+one way (կերակրել with and without the schwa of its second root) matches
+when ashugh agrees with any of them. --src points at another checkout's src/
+to score an older analyzer.
 
 Wiktionary is not a record of singing, so the disagreements are sorted by
 kind: vowel letters it reads as a glide (միլիառ as mil-jar, where ashugh
@@ -31,21 +33,15 @@ URL = (
     "https://raw.githubusercontent.com/CUNY-CL/wikipron/master/data/scrape/tsv/hye_armn_e_broad.tsv"
 )
 DATA = ROOT / "eval" / "data" / "hye_armn_e_broad.tsv"
-HOLD_OUT = 10  # as in scripts/build_hy_lexicon.py
 VOWELS = set("ɑaeiouəɛɔ")
 
 
-def load(path: Path = DATA) -> list[tuple[str, list[str]]]:
+def download(path: Path = DATA) -> Path:
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
         print(f"downloading {URL}", file=sys.stderr)
         urllib.request.urlretrieve(URL, path)
-    rows = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        word, _, ipa = line.partition("\t")
-        if word and ipa:
-            rows.append((word, ipa.split()))
-    return rows
+    return path
 
 
 def kind(word, phones: list[str]) -> str:
@@ -74,20 +70,21 @@ def _last_full(syllables) -> int:
     return max(i for i, s in enumerate(syllables) if not s.epenthetic)
 
 
-def evaluate(rows: list[tuple[str, list[str]]], hy) -> dict:
+def evaluate(table: dict[str, list[list[str]]], hy, builder) -> dict:
     tally: Counter[str] = Counter()
     kinds: Counter[str] = Counter()
     examples: dict[str, list[str]] = {}
-    for i, (word, phones) in enumerate(rows):
-        if i % HOLD_OUT or not all(hy.is_armenian(ch) for ch in word):
+    for k, (word, variants) in enumerate(table.items()):
+        if not builder.held_out(k) or not all(hy.is_armenian(ch) for ch in word):
             continue
+        phones = variants[0]
         if not any(p[0] in VOWELS and p != "ə" for p in phones):
             continue  # an abbreviation spelled out letter by letter
         w = hy.analyze_word(word)
-        want = sum(1 for p in phones if p[0] in VOWELS)
+        counts = {sum(1 for p in v if p[0] in VOWELS) for v in variants}
         tally["words"] += 1
         tally["schwa words"] += "ə" in phones
-        if w.size == want:
+        if w.size in counts:
             tally["agree"] += 1
             tally["schwa agree"] += "ə" in phones
             continue
@@ -105,17 +102,23 @@ def evaluate(rows: list[tuple[str, list[str]]], hy) -> dict:
     }
 
 
-def hold_out_lexicon(hy) -> None:
-    """Make hy use the stem list built without the held-out entries."""
-    if not hasattr(hy, "lexical_endings"):
-        return  # an analyzer from before the list
+def load_builder():
     path = ROOT / "scripts" / "build_hy_lexicon.py"
     spec = importlib.util.spec_from_file_location("build_hy_lexicon", path)
     assert spec and spec.loader
     builder = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(builder)
-    words = frozenset(builder.build(DATA, hold_out=True)) | hy.NOT_POSSESSIVE
-    hy.lexical_endings = lambda: words
+    return builder
+
+
+def hold_out_lexicon(hy, builder) -> None:
+    """Make hy use word lists built without the held-out words."""
+    if hasattr(hy, "lexical_endings"):
+        words = frozenset(builder.build(DATA, hold_out=True)) | hy.NOT_POSSESSIVE
+        hy.lexical_endings = lambda: words
+    if hasattr(hy, "compound_schwas"):
+        keys = frozenset(builder.compounds(DATA, hold_out=True))
+        hy.compound_schwas = lambda: keys
 
 
 def main() -> None:
@@ -126,9 +129,10 @@ def main() -> None:
     sys.path.insert(0, str(args.src.resolve()))
     from ashugh.lang import hy
 
-    rows = load()
-    hold_out_lexicon(hy)
-    text = json.dumps(evaluate(rows, hy), ensure_ascii=False, indent=2)
+    builder = load_builder()
+    table = builder.words(download())
+    hold_out_lexicon(hy, builder)
+    text = json.dumps(evaluate(table, hy, builder), ensure_ascii=False, indent=2)
     print(text)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

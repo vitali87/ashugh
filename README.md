@@ -269,14 +269,14 @@ phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas
 The gold list was written together with the rules, so treat ashugh's 100% as
 a regression test, not as an independent measurement.
 
-**Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,799
-entries of Wiktionary's Eastern Armenian pronunciations that ashugh's stem
-list was built without, its sung syllables match Wiktionary's vowels for
-90.6% of words. Most of the rest are conventions rather than errors:
-Wiktionary leaves out the schwa of many loanwords and names (բրիգադ,
-ֆլեշմոբ) and reads ի before a vowel as a glide (դանիացի). The real misses
-are compounds whose second root keeps its schwa (կե-րա-կը-րել): 35 words,
-2%.
+**Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
+words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
+lists were built without, its sung syllables match Wiktionary's vowels for
+91.4% of words (86.7% of those written with a schwa). Most of the rest are
+conventions rather than errors: Wiktionary leaves out the schwa of many
+loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
+glide (դանիացի). The real misses are compounds no listed word explains
+(աստ-ղա-գը-նաց): 27 words, 1.5%.
 
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.7% of Russian words right (always guessing the
@@ -302,6 +302,9 @@ as possible:
   (չորս, մարդ, ադամանդ, մաքս), compounds joined by ա or ե that end in one
   (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
+- a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 253
+  word beginnings that do this are listed from Wiktionary, and since speech
+  often drops that schwa, a line may sing it or not;
 - among equal splits, the onset with յ wins, then the split whose codas
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
 
@@ -367,10 +370,10 @@ consonant before the vowel (ты / красоты).
 ## Limits
 
 - Some Armenian schwas come from a word's history rather than its clusters:
-  a compound keeps the schwa of its second root (կերակրել is կե-րա-կը-րել,
-  կայսրություն is կայ-սը-րու-թյուն), about 2% of dictionary words. The
-  rules cannot see that; write the word into `[lexicon]` once and every song
-  uses it.
+  a compound keeps the schwa of its second root (աստղագնաց is
+  աստ-ղա-գը-նաց, կայսրություն is կայ-սը-րու-թյուն). The listed compounds
+  cover many; for the rest (1.5% of dictionary words), write the word into
+  `[lexicon]` once and every song uses it.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
@@ -398,6 +401,6 @@ The data tables are rebuilt by `scripts/build_ru_lexicon.py` (from the
 ## License
 
 The code is MIT (see [LICENSE](LICENSE)). The Russian stress table is
-derived from OpenRussian (CC BY-SA 4.0), the Armenian stem list from
+derived from OpenRussian (CC BY-SA 4.0), the Armenian word lists from
 Wiktionary (CC BY-SA 4.0), and the English table from CMUdict (BSD-style).
 See [NOTICE.md](NOTICE.md).

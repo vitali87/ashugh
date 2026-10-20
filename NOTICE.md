@@ -15,18 +15,21 @@ their stressed vowels by `scripts/build_ru_lexicon.py`. The derived table is
 distributed under the same CC BY-SA 4.0 license. The rest of ashugh is MIT
 licensed (see LICENSE), except the data tables described here.
 
-## Armenian stem list
+## Armenian word lists
 
-`src/ashugh/data/hy_lexical.tsv` is derived from WikiPron's scrape of
+`src/ashugh/data/hy_lexical.tsv` and `src/ashugh/data/hy_compound.tsv` are
+derived from WikiPron's scrape of
 Wiktionary's Eastern Armenian pronunciations
 (<https://github.com/CUNY-CL/wikipron>, `data/scrape/tsv/hye_armn_e_broad.tsv`),
 which comes from Wiktionary (<https://en.wiktionary.org>), © Wiktionary
 contributors, under the Creative Commons Attribution-ShareAlike 4.0
 International license (<https://creativecommons.org/licenses/by-sa/4.0/>).
 
-Changes: `scripts/build_hy_lexicon.py` keeps only the entries that end in a
-consonant and ս or դ transcribed without a schwa, lowercased, without their
-pronunciations. The list is distributed under the same CC BY-SA 4.0 license.
+Changes: `scripts/build_hy_lexicon.py` keeps the entries that end in a
+consonant and ս or դ transcribed without a schwa (hy_lexical.tsv), and the
+beginnings of entries transcribed with a schwa inside that the rules do not
+give (hy_compound.tsv), lowercased, without their pronunciations. The lists
+are distributed under the same CC BY-SA 4.0 license.
 
 ## English pronunciation table
 

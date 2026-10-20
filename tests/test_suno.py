@@ -213,3 +213,11 @@ def test_yo_is_still_restored_where_verse_may_read_e():
 
 def test_cyrillic_repeat_marker_in_tags():
     assert fmt("[Припев х2]\nЯ жду", tags=True) == "[Chorus х2]\nЯ жду"
+
+
+def test_a_compounds_schwa_follows_the_fit():
+    meter = from_dict({"language": "hy", "meter": "iamb4"})
+    line = "Լուսանկարներ պատին կախված"
+    assert fmt(line, spec=meter, armenian="schwa").startswith("Լուսանկարներ ")  # iamb drops it
+    counted = from_dict({"language": "hy", "syllables": 10})
+    assert fmt(line, spec=counted, armenian="schwa").startswith("Լուսանըկարներ ")  # 10 keeps it

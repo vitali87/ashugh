@@ -410,7 +410,10 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         else:
             for i in sorted(f.elided):
                 w = ln.words[i]
-                if w.lang == "hy":
+                if w.lang == "hy" and w.drop == w.optional:
+                    what = "drops its ը"
+                    detail = "speech often leaves out the ը of a compound's second root"
+                elif w.lang == "hy":
                     how = (
                         "merges into the vowel before it"
                         if w.drop == 0
