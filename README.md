@@ -89,7 +89,7 @@ endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]       # a line may not end in these letters
 
-[section.chorus]           # [Chorus], [Chorus x2]; [Verse 2] matches section.verse
+[section.chorus]           # [Chorus x2], [Припев], [Կրկներգ]; [Verse 2] is section.verse
 syllables = [7, 7, 7, 5]
 rhyme = "AABB"
 
@@ -182,8 +182,8 @@ intelligibility rather than every sung schwa.
 ## Agents and editors
 
 * **Claude skill.** `python scripts/build_skill.py` writes
-  `dist/ashugh-skill.zip`. Upload it in Claude under Settings > Capabilities >
-  Skills, or copy `dist/ashugh` to `~/.claude/skills/` for Claude Code. It
+  `dist/ashugh-skill.zip` (CI attaches it to every build). Upload it as a
+  skill in Claude, or copy `dist/ashugh` to `~/.claude/skills/` for Claude Code. It
   bundles the tool and tells Claude to draft, scan, repair with `requests` and
   `pick`, and re-scan before it shows you a song. See
   [skill/SKILL.md](skill/SKILL.md).

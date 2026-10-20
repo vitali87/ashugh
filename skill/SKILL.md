@@ -112,7 +112,7 @@ endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]
 
-[section.chorus]           # overrides for [Chorus]; [Verse 2] matches section.verse
+[section.chorus]           # overrides for [Chorus], [Припев], [Կրկներգ]; [Verse 2] is section.verse
 syllables = [7, 7, 7, 5]
 rhyme = "AABB"
 
