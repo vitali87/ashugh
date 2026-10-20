@@ -14,7 +14,10 @@ from .model import Line
 TAG_RE = re.compile(r"^\ufeff?\s*\[([^\]]*)\]\s*$")  # a BOM may open the file
 PAREN_RE = re.compile(r"\([^)]*\)")
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
-WORD_RE = re.compile(r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*")
+WORD_RE = re.compile(
+    r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
+    r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?"  # a dropped g: goin', lovin'
+)
 DIGIT_RE = re.compile(r"\d")
 
 
@@ -57,7 +60,8 @@ SECTION_NAMES = {
 
 def section_key(tag: str) -> str:
     """[Verse 2] -> verse, [Pre-Chorus] -> pre-chorus, [Припев x2: тише] -> chorus."""
-    name = tag.split(":")[0].lower()
+    name = re.sub(r"\([^)]*\)", " ", tag.split(":")[0].lower())  # (Female), (x2)
+    name = re.sub(r"\b(?:\d+(?:st|nd|rd|th)|first|second|third|fourth|last|final)\b", " ", name)
     name = re.sub(r"(?<!\w)[xх×]\s*\d+\b|\b\d+\s*[xх×](?!\w)|\d+", " ", name)
     name = re.sub(r"[^\w\s-]", " ", name)
     name = re.sub(r"\s+", " ", name).strip() or "default"
@@ -119,8 +123,8 @@ def parse(text: str) -> list[Line]:
                 unit += 1
             open_unit, index = False, 0
             continue
-        if not tokenize(stripped):  # only a backing vocal or punctuation
-            continue
+        if not tokenize(stripped) and not has_digits(stripped):
+            continue  # only a backing vocal or punctuation; digits are a line to flag
         lines.append(Line(number, stripped, section, key, unit, index))
         open_unit = True
         index += 1

@@ -212,7 +212,7 @@ def test_yo_is_still_restored_where_verse_may_read_e():
 
 
 def test_cyrillic_repeat_marker_in_tags():
-    assert fmt("[Припев х2]\nЯ жду", tags=True) == "[Chorus х2]\nЯ жду"
+    assert fmt("[Припев х2]\nЯ жду", tags=True) == "[Chorus x2]\nЯ жду"  # Suno's own x
 
 
 def test_a_compounds_schwa_follows_the_fit():

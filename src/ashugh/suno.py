@@ -358,6 +358,7 @@ def _retag(text: str, report: Report, notes: list[Note]) -> str:
             continue
         tagged = True
         lead, name, number, extra = m.group(1), m.group(2), m.group(3), m.group(4) or ""
+        number = re.sub("[хХ×]", "x", number)  # Suno's repeat mark: [Chorus x2]
         known = TAGS.get(name.strip().lower())
         if known:
             new = f"{lead}[{known}{' ' + number if number else ''}{extra}]"

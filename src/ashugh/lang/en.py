@@ -147,7 +147,10 @@ def is_latin(ch: str) -> bool:
 
 
 def normalize(token: str) -> str:
-    return token.lower().replace("’", "'").strip("'")
+    norm = token.lower().replace("’", "'")
+    if norm.endswith("in'"):
+        return norm.lstrip("'")  # goin': CMUdict lists it, and lookup tries going
+    return norm.strip("'")
 
 
 def _parse(variant: str) -> tuple[tuple[str, ...], list[int], list[str]]:
@@ -184,8 +187,10 @@ def override_error(word: str, value: str) -> str | None:
 
 def lookup(norm: str) -> list[str] | None:
     candidates = [norm]
-    if norm.endswith("in"):
-        candidates.append(norm + "g")  # lovin' -> loving
+    if norm.endswith("in'"):
+        candidates.append(norm[:-1] + "g")  # lovin' -> loving
+    elif norm.endswith("in"):
+        candidates.append(norm + "g")
     if "-" in norm:
         candidates.append(norm.replace("-", ""))
     for c in candidates:
