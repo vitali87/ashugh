@@ -6,7 +6,7 @@ A spec is a TOML file. Keys at the top level apply to every section; a
 "default"). Lists cycle over a stanza's lines, so syllables = [8, 6] means
 8, 6, 8, 6, ...
 
-    language = "hy"              # hy | ru; detected per line when omitted
+    language = "hy"              # hy | ru | en; detected per line when omitted
     syllables = 8                # or [8, 8, 8, 6]
     tolerance = 0                # allowed miss in syllables
     meter = "iamb4"              # iamb trochee dactyl amphibrach anapest dolnik free,
@@ -32,6 +32,7 @@ import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from .lang import ANALYZERS
 from .meter import parse_meter
 from .rhyme import THRESHOLD
 
@@ -189,8 +190,8 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     if unknown:
         raise SpecError(f"{where}: unknown key(s) {', '.join(sorted(unknown))}")
     language = data.get("language")
-    if language is not None and language not in ("hy", "ru"):
-        raise SpecError(f"{where}: language must be hy or ru")
+    if language is not None and language not in ANALYZERS:
+        raise SpecError(f"{where}: language must be one of {', '.join(sorted(ANALYZERS))}")
     base = apply({k: v for k, v in data.items() if k in RULE_KEYS}, Rule(), where)
     sections = {}
     raw_sections = data.get("section", {})

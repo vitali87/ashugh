@@ -30,6 +30,7 @@ class Tail:
     post: int  # syllables after the stressed one
     word: str  # the rhyming word(s) as written
     spelling: str
+    lang: str = ""
 
     @property
     def sound(self) -> str:
@@ -61,16 +62,18 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
     for reading in word.readings:
         if reading.stress is None or (fit.meter != "free" and reading.stress != chosen):
             continue
-        t = _tail(word, reading, words[w + 1 :])
-        if t is not None and t not in out:
-            out.append(t)
+        # English also rhymes on a secondary stress after the main one (sunshine / mine).
+        later = [k for k in reading.secondary if k > reading.stress]
+        for stress in [reading.stress, *later]:
+            t = _tail(word, reading, stress, words[w + 1 :])
+            if t is not None and t not in out:
+                out.append(t)
     return out
 
 
-def _tail(word, reading, after) -> Tail | None:
+def _tail(word, reading, stress, after) -> Tail | None:
     phones = reading.phones
     vs = nuclei(phones)
-    stress = reading.stress
     if stress is None or stress >= len(vs):
         return None
     at = vs[stress]
@@ -89,6 +92,7 @@ def _tail(word, reading, after) -> Tail | None:
         post=sum(is_vowel(p) for p in rest),
         word=" ".join(shown),
         spelling=" ".join(spelled),
+        lang=word.lang,
     )
 
 
@@ -120,8 +124,9 @@ def score(a: Tail | None, b: Tail | None) -> float:
         s -= 0.35
     s -= 0.5 * align_cost(a.rest, b.rest)
     if not a.rest and not b.rest:
+        # Russian and Armenian open rhymes want the consonant before the vowel too.
         x, y = a.onset[-1:], b.onset[-1:]
-        if x != y:
+        if x != y and "en" not in (a.lang, b.lang):
             s -= 0.4 * (distance(x[0], y[0]) if x and y else 0.6)
     elif not a.rest or not b.rest:
         s -= 0.2  # open against closed: ду / сум

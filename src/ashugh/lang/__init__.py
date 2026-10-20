@@ -7,10 +7,10 @@ from types import ModuleType
 
 from ..model import Reading, Syllable, Word
 from ..phon import is_vowel
-from . import hy, ru
+from . import en, hy, ru
 
-ANALYZERS: dict[str, ModuleType] = {"hy": hy, "ru": ru}
-NAMES = {"hy": "Armenian", "ru": "Russian", "xx": "Latin script (rough)"}
+ANALYZERS: dict[str, ModuleType] = {"hy": hy, "ru": ru, "en": en}
+NAMES = {"hy": "Armenian", "ru": "Russian", "en": "English", "xx": "unsupported script"}
 
 
 def script_of(token: str) -> str:
@@ -19,6 +19,8 @@ def script_of(token: str) -> str:
             return "hy"
         if ru.is_cyrillic(ch):
             return "ru"
+        if en.is_latin(ch):
+            return "en"
         if ch.isalpha():
             return "xx"
     return ""
@@ -38,8 +40,8 @@ def detect(tokens: list[str]) -> str:
 _LATIN_VOWELS = re.compile(r"[aeiouy]+", re.I)
 
 
-def latin_word(token: str) -> Word:
-    """A rough count for the "oh", "yeah", "la-la" a lyric borrows from English."""
+def foreign_word(token: str) -> Word:
+    """A rough vowel-group count for a word in a script ashugh does not analyze."""
     norm = token.lower()
     groups = list(_LATIN_VOWELS.finditer(norm))
     if len(groups) > 1 and norm.endswith("e") and not norm.endswith(("le", "ee")):
@@ -63,7 +65,7 @@ def analyze(lang: str, tokens: list[str], lexicon: dict[str, str]) -> list[Word]
         if script in ANALYZERS:
             words.append(ANALYZERS[script].analyze_word(token, lexicon))
         else:
-            words.append(latin_word(token))
+            words.append(foreign_word(token))
     if lang == "hy" or any(w.lang == "hy" for w in words):
         _armenian_elision(words)
     return words
@@ -81,6 +83,8 @@ def _armenian_elision(words: list[Word]) -> None:
         return w.readings[0].phones[-1] if w.readings and w.readings[0].phones else ""
 
     for i, w in enumerate(words):
+        if w.lang != "hy":
+            continue
         w.drop = None
         if w.head_schwa and i > 0 and is_vowel(last(words[i - 1])):
             w.drop = 0

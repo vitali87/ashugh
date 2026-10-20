@@ -23,6 +23,7 @@ class Reading:
     phones: tuple[str, ...]  # the n-th vowel here is the nucleus of syllable n
     spelling: str  # normalized spelling, ё restored for Russian
     source: str  # mark | user | lexicon | rule | guess | clitic
+    secondary: tuple[int, ...] = ()  # syllables with secondary stress (English)
 
 
 @dataclass

@@ -85,6 +85,7 @@ class Slot:
     weak: bool
     clitic: bool
     enclitic: bool
+    secondary: frozenset[int] = frozenset()  # may take a beat or skip it for free
 
 
 @dataclass
@@ -124,13 +125,15 @@ def slots(words: list[Word], elided: frozenset[int]) -> list[Slot]:
     for i, w in enumerate(words):
         size = w.size
         options = tuple(w.stress_options())
+        secondary = {k for r in w.readings for k in r.secondary}
         if i in elided and w.drop is not None:
             d = w.drop
             size -= 1
             options = tuple(o - (o > d) for o in options if o is None or o != d) or (None,)
+            secondary = {k - (k > d) for k in secondary if k != d}
         if size == 0:
             continue
-        out.append(Slot(i, pos, size, options, w.weak, w.clitic, w.enclitic))
+        out.append(Slot(i, pos, size, options, w.weak, w.clitic, w.enclitic, frozenset(secondary)))
         pos += size
     return out
 
@@ -170,7 +173,7 @@ def _slot_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float,
                 else:
                     cost += STRESS_OFF_BEAT
                     off = True
-        elif on:
+        elif on and k not in s.secondary:
             cost += PYRRHIC[period]
     return cost, off
 
@@ -189,6 +192,9 @@ def _stressed_grid(ss: list[Slot], choice: dict[int, int | None], strong, count:
             grid[s.start] = s.word == last_word or (not s.clitic and on)
         else:
             grid[s.start + st] = True
+            for k in s.secondary:
+                if strong is not None and strong(s.start + k):
+                    grid[s.start + k] = True
     return tuple(grid)
 
 

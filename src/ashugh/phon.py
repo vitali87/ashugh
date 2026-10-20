@@ -1,7 +1,8 @@
 """Phoneme features shared by the language analyzers and the rhyme scorer.
 
 Phonemes are short IPA strings. A consonant may carry "ʰ" (aspirated, Armenian)
-or "ʲ" (palatalized, Russian); everything else about it comes from BASE.
+or "ʲ" (palatalized, Russian); everything else about it comes from BASE. English
+diphthongs are single vowel phonemes ("aɪ", "oʊ").
 """
 
 from __future__ import annotations
@@ -9,7 +10,10 @@ from __future__ import annotations
 from functools import cache
 from typing import NamedTuple
 
-VOWELS = frozenset("aeiouəɨɪ")
+VOWELS = frozenset(
+    ["a", "e", "i", "o", "u", "ə", "ɨ", "ɪ"]  # Armenian, Russian
+    + ["æ", "ɑ", "ɔ", "ʌ", "ɛ", "ʊ", "ɝ", "ɚ", "aɪ", "aʊ", "eɪ", "oʊ", "ɔɪ"]  # English
+)
 
 # manner, place, voiced
 BASE: dict[str, tuple[str, str, bool]] = {
@@ -34,12 +38,17 @@ BASE: dict[str, tuple[str, str, bool]] = {
     "χ": ("fric", "dor", False),
     "ʁ": ("fric", "dor", True),
     "h": ("fric", "glot", False),
+    "θ": ("fric", "cor", False),
+    "ð": ("fric", "cor", True),
     "m": ("nas", "lab", True),
     "n": ("nas", "cor", True),
+    "ŋ": ("nas", "dor", True),
     "l": ("liq", "cor", True),
     "ɾ": ("liq", "cor", True),
     "r": ("liq", "cor", True),
+    "ɹ": ("liq", "cor", True),
     "j": ("glide", "pal", True),
+    "w": ("glide", "lab", True),
 }
 
 SONORITY = {"stop": 1, "affr": 1, "fric": 2, "nas": 3, "liq": 4, "glide": 5}
@@ -88,6 +97,13 @@ _CLOSE_VOWELS = {
     frozenset("ɨɪ"): 0.25,
     frozenset("oə"): 0.35,
     frozenset("eə"): 0.4,
+    frozenset(("ɝ", "ɚ")): 0.1,
+    frozenset(("ʌ", "ə")): 0.2,
+    frozenset(("ɑ", "ɔ")): 0.2,
+    frozenset(("ʊ", "u")): 0.35,
+    frozenset(("ɛ", "æ")): 0.4,
+    frozenset(("ɛ", "eɪ")): 0.4,
+    frozenset(("ɔ", "oʊ")): 0.4,
 }
 
 
