@@ -215,3 +215,16 @@ def test_short_comparative_in_ei_gets_its_twin_stress():
     w = ru.analyze_word("милей")
     assert 1 in w.stress_options() and 0 in w.stress_options()  # миле́й, and ми́лей of miles
     assert ru.analyze_word("сильней").stress_options() == [1]
+
+
+@pytest.mark.parametrize(
+    "word,expected",
+    [("кружится", [0, 1]), ("кружатся", [0, 1]), ("искрится", [1]), ("искрятся", [1])],
+)
+def test_reflexive_forms_the_dictionary_stresses_wrongly(word, expected):
+    assert stresses(word) == expected
+
+
+def test_particles_are_metrically_weak():
+    assert ru.analyze_word("только").weak
+    assert not ru.analyze_word("тропинка").weak

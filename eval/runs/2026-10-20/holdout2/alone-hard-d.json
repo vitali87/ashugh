@@ -1,0 +1,148 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 0.9766,
+      "songs_ok": 0.8333,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nMidnight engine through the dark,\nPrairie wind and one red spark,\nWheat fields roll like golden seas,\nLantern swaying in the breeze.\n\n[Chorus]\nWe are rolling away through the night,\nThrough the miles and the miles of the plain,\nWith the stars and the moon for our light,\nAnd the rails sing their silver refrain.\n\n[Verse 2]\nSleeping towns go drifting by,\nWater towers touch the sky,\nSomewhere far a mother waits,\nStanding by the farmhouse gates.\n\n[Chorus]\nWe are rolling away through the night,\nThrough the miles and the miles of the plain,\nWith the stars and the moon for our light,\nAnd the rails sing their silver refrain.\n"
+    },
+    {
+      "task": "en-shanty",
+      "language": "en",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nWe sailed at dawn from Bristol quay,\nThe tide was running high,\nBut no one stood upon the deck\nTo give the captain's cry.\n\n[Verse 2]\nHis coat still hangs beside the wheel,\nHis boots are by the door,\nYet still she turns against the wind\nThe way she did before.\n\n[Verse 3]\nSo haul away, my bonny lads,\nAnd never ask her where,\nA hand is on the helm tonight\nBut no one's standing there.\n"
+    },
+    {
+      "task": "en-translate-pushkin",
+      "language": "en",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nI still recall our wondrous meeting:\nBefore me you appeared in light,\nAs though a vision, brief and fleeting,\nThe soul of beauty, pure and bright.\n\n[Verse 2]\nIn hopeless grief, in sad surrender,\nAmid the noisy world's alarms,\nFor long I heard a voice so tender,\nAnd dreamt of all your gentle charms.\n"
+    },
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 7,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "meter": 1
+      },
+      "text": "[Verse 1]\nOnce in the ballroom the music was flowing,\nLanterns were hung from the rafters above,\nCouples went circling, their faces all glowing,\nSpinning like leaves in the arms of their love.\n\n[Verse 2]\nNow there's a sign on the door that says closing,\nDust on the floor where the dancers once spun,\nChairs on the tables, the bandleader dozing,\nOne final waltz, and the evening is done.\n"
+    },
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, այստեղ մարում է լույսը,\nՆամակ եմ գրում դեպի տուն,\nԲայց իմ սրտում դեռ վառ է հույսը,\nՈւ չի գալիս աչքերիս քուն։\n\n[Verse 2]\nԱյս սարերին նստել է ձյունը,\nՔեզ հիշում եմ ամեն անգամ,\nՄի՛ լացիր, մայրիկ, պահիր տունը,\nԵրբ գա գարունը, ես կգամ։\n"
+    },
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵս Մահվան համար կանգ չառա,\nՆա եկավ ինձ համար,\nԿառքը տանում էր մեզ միայն,\nԱնմահությունն էլ կար։\n\n[Verse 2]\nԿամաց քշեց, չէր շտապում,\nԹողեցի ամեն բան՝\nԻմ աշխատանքը, հանգիստը՝\nՀանուն իր բարության։\n"
+    },
+    {
+      "task": "hy-trochee",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄեկ հատիկ կարմիր աքլոր,\nԾուղրուղու՜, — ելե՛ք բոլոր։\nԿան երկու ճերմակ հավեր,\nԼայն բացած փափուկ թևեր։\n\n[Verse 2]\nԿան երեք փոքրիկ սև գառ,\nՄեծ աչքեր ունեն վառ-վառ։\nՉորս կատու — մլավ, մլավ,\nԼափեցին տաք կաթ — շատ լավ։\n\n[Verse 3]\nՀինգ շնիկ պահում են տուն,\nՈղջ գիշեր — էլ ոչ մի քուն։\nՎեց ոչխար ելան մեծ սար,\nԽոտ կերան դալար-դալար։\n\n[Outro]\nՄեկ, երկու, երեք — եկե՛ք,\nՄեր բակում հաշիվ արե՛ք։\nՉորս ու հինգ, վեց, յոթ ու ութ,\nՄեկ դեղնիկ, պստիկ մի ճուտ։\n"
+    },
+    {
+      "task": "hy-wedding",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԶուռնան կանչում է հարսանիք,\nԴհոլը թնդում է բակում,\nՀավաքվել է ողջ ընտանիք,\nՈտքերով գետինն են թակում։\n\n[Chorus]\nՀարս ու փեսա, ջան ու ջան,\nՍերը լինի անվախճան,\nՊարե՛ք, հյուրե՛ր, հե՜յ,\nԼի թող լինի ձեր սեղան։\n\n[Verse 2]\nՁեռք ձեռքի տված՝ բռնենք պար,\nՀարսը ծաղիկ, փեսան արև,\nԾիծաղ, երգ ու գինի հազար,\nՊարում ենք մենք թեթև-թեթև։\n\n[Chorus]\nՀարս ու փեսա, ջան ու ջան,\nՍերը լինի անվախճան,\nՊարե՛ք, հյուրե՛ր, հե՜յ,\nԼի թող լինի ձեր սեղան։\n"
+    },
+    {
+      "task": "ru-dog",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nДождь стучит, и ветер дышит,\nПёс один в чужом краю.\nОн скулит — но кто услышит\nПесню грустную свою?\n\n[Verse 2]\nОн искал свою дорогу,\nШёл он много долгих дней,\nНос и сердце понемногу\nПривели к семье своей.\n\n[Chorus]\nВижу знакомый порог,\nВ окнах горит огонёк,\nЛапы бегут всё быстрей —\nДвери откройте скорей!\n"
+    },
+    {
+      "task": "ru-grid-call",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТелефон разрывает молчанье,\nСлышу в трубке родное дыханье.\nТри часа — и опять не до сна,\nТы, наверное, тоже одна.\n\n[Verse 2]\nТы сказала: «Прости, я не знала,\nКак мне долго тебя не хватало».\nИ до самой зари мы вдвоём\nГоворили о чём-то своём.\n"
+    },
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, ты — светлый жар,\nСредь ночных лесов пожар!\nЧья рука и чей зрачок\nСковать твой грозный облик смог?\n\n[Verse 2]\nВ глубине каких небес\nЖёг огонь твоих очес?\nНа каких крылах парить?\nКто посмел огонь схватить?\n"
+    },
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 6,
+      "line_pass_rate": 0.75,
+      "song_ok": false,
+      "errors": {
+        "meter": 2
+      },
+      "text": "[Verse 1]\nНочь морозная, даль белоснежная,\nПод серебряный звон бубенцов\nРядом ты, моя милая, нежная,\nИ не нужно ни клятв и ни слов.\n\n[Verse 2]\nАх, зачем эта ночь так кончается,\nДогорает луна над рекой,\nКолокольчик звенит и качается,\nТолько сердце навеки с тобой.\n"
+    }
+  ]
+}

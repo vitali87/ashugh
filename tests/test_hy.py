@@ -176,3 +176,16 @@ def test_possessive_d_after_n(word, sung):
 )
 def test_stems_ending_in_nd(word, sung):
     assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+@pytest.mark.parametrize(
+    "word,sung",
+    [("աչուկներդ", "ա-չուկ-նե-րըդ"), ("աչքերդ", "աչ-քե-րըդ"), ("ձեռքերդ", "ձեռ-քե-րըդ")],
+)
+def test_plural_then_possessive_d(word, sung):
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+@pytest.mark.parametrize("word", ["բերդ", "մարդ", "վարդ", "դարդ"])
+def test_rd_stems_stay_closed(word):
+    assert hy.analyze_word(word).size == 1

@@ -1,0 +1,144 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "alone",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still circle round the bay,\nThe pier is gray with salt and rust,\nThe ropes are coiled and stowed away,\nThe anchors sleeping in the dust.\nMy father sailed at morning light\nAnd came home singing with the tide,\nBut no one sails from here tonight,\nThe water's empty, cold and wide.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n\n[Verse 2]\nThe chapel bell rings out at noon,\nThe widows wander by the pier,\nThey hum a half-forgotten tune\nTo boats that will not anchor here.\nThe shops are shuttered one by one,\nThe children leave for city lights,\nThe nets are drying in the sun\nAnd no one mends them through the nights.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n\n[Bridge]\nBut I will stay and keep the flame\nAnd sing the songs my father knew,\nAnd call each vessel by its name\nUntil the sea gives back the crew.\n\n[Chorus]\nThe harbor waits, the harbor sleeps,\nNo masts are rising from the sea,\nThe lighthouse lonely vigil keeps\nFor ships that never come to me.\n"
+    },
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "alone",
+      "lines": 48,
+      "passing": 48,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nCooling sand beneath my feet,\nNeon buzzing down the street,\nAll the stars are burning low,\nNo one's ready yet to go.\nBottles clinking in the dark,\nSparklers drawing in the park,\nWrite your name in silver light,\nHold it till the end of night.\n\n[Pre-Chorus]\nTell me nothing's gonna change,\nEven when the days feel strange,\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n\n[Verse 2]\nMorning brings the city train,\nAutumn knocking on the pane,\nBoxes packed and tickets bought,\nSummer's gone before we thought.\nSo we run into the tide,\nSalty lips and eyes so wide,\nLight a match and let it burn,\nSome things never will return.\n\n[Pre-Chorus]\nTell me nothing's gonna change,\nEven when the days feel strange,\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n\n[Bridge]\nWhen the leaves begin to fall,\nWill you think of me at all?\nWhen the sky is cold and gray,\nThink of how we ran away.\n\n[Chorus]\nLast night of the summer sun,\nDance until the dark is done,\nKeep the music turning loud,\nShout your name into the crowd,\nHold me till the daylight breaks,\nGive me all the love it takes,\nOh, we're never letting go,\nNot tonight, tonight, oh no.\n"
+    },
+    {
+      "task": "hy-iamb",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄի հին տուն կա իմ հուշերում,\nԾիրանենին բակում կանգնած,\nՄոմի լույսով մութ գիշերում\nՈւ ժամացույցը լուռ քնած։\n\n[Chorus]\nՕ՜, իմ հին տուն, իմ լույս, իմ հուշ,\nՔո լուսամուտը վառ է դեռ,\nԿգամ քեզ մոտ, թեկուզ և ուշ,\nՈւ կհալվի ձյուն ու ձմեռ։\n\n[Verse 2]\nՈւ դուռը կամացուկ ճռռաց,\nԼուսանկարներ պատին կախված,\nՎառարանում մոխիր մնաց,\nՈւ նամակներ՝ դեղին, ծալված։\n\n[Chorus]\nՕ՜, իմ հին տուն, իմ լույս, իմ հուշ,\nՔո լուսամուտը վառ է դեռ,\nԿգամ քեզ մոտ, թեկուզ և ուշ,\nՈւ կհալվի ձյուն ու ձմեռ։\n\n[Bridge]\nՈւ տարիներ անցան հեռու,\nՔաղաքներում օտար, մենակ,\nԵրգում էր ինձ մեր հին առու\nՈւ օջախի ջերմ, վառ կրակ։\n\n[Chorus]\nՕ՜, իմ հին տուն, իմ լույս, իմ հուշ,\nՔո լուսամուտը վառ է դեռ,\nԿգամ քեզ մոտ, թեկուզ և ուշ,\nՈւ կհալվի ձյուն ու ձմեռ։\n"
+    },
+    {
+      "task": "hy-lullaby",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՕրոր, բալիկ, օրոր,\nԼուսինը մտավ տուն,\nԱստղերը քեզ համար\nԲերում են անուշ քուն։\n\n[Chorus]\nՕրոր, օրոր, բալես,\nՔնիր անուշ քնով,\nՕրոր, իմ փոքրիկ սեր,\nԼույս օր կգա սիրով։\n\n[Verse 2]\nԱչքերը փակիր դու,\nՔամին երգ է երգում,\nՄայրիկը քեզ մոտ է,\nՈւ քեզ է նա գրկում։\n\n[Chorus]\nՕրոր, օրոր, բալես,\nՔնիր անուշ քնով,\nՕրոր, իմ փոքրիկ սեր,\nԼույս օր կգա սիրով։\n\n[Verse 3]\nԴրսում ձյուն է գալիս,\nԻսկ ներսում՝ ջերմ օջախ,\nԵս քո կողքին եմ միշտ,\nՔնիր խաղաղ, ուրախ։\n\n[Chorus]\nՕրոր, օրոր, բալես,\nՔնիր անուշ քնով,\nՕրոր, իմ փոքրիկ սեր,\nԼույս օր կգա սիրով։\n"
+    },
+    {
+      "task": "hy-mother",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, հեռու ես դու հիմա,\nՔեզ եմ կարոտում, իմ մամա,\nԼուսնին եմ քո մասին պատմում,\nՔո ձայնը լսում եմ քամում։\n\n[Chorus]\nՄայրիկ ջան, մայրիկ իմ անուշ,\nՔո ձեռքերը տաք ու քնքուշ,\nԹեկուզ հեռու ես, իմ արև,\nՔո սերն է ինձ տալիս միշտ թև։\n\n[Verse 2]\nՀիշում եմ քո անուշ օրոր,\nԺպիտն ու խոսքերը բոլոր,\nԻնչպես էիր ճանապարհում,\nԴու իմ լույսն ես այս աշխարհում։\n\n[Chorus]\nՄայրիկ ջան, մայրիկ իմ անուշ,\nՔո ձեռքերը տաք ու քնքուշ,\nԹեկուզ հեռու ես, իմ արև,\nՔո սերն է ինձ տալիս միշտ թև։\n"
+    },
+    {
+      "task": "hy-mountains",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրագածի կատարին ձյուն,\nԱրևն է շողում պայծառ,\nՆերքևում՝ մեր հայրական տուն,\nՈւ ծաղկում է ամեն ծառ։\n\n[Chorus]\nՈ՜վ Արագած, ալևոր սար,\nՀայոց հողի ամուր պատ,\nՔո լանջերին գյուղեր հազար\nԱպրում են հպարտ, ազատ։\n\n[Verse 2]\nՀովիվը սարից է իջնում,\nՇվին է անուշ երգում,\nՈւ ցորենն է ոսկի դառնում,\nԼեռն է բոլորին գրկում։\n\n[Chorus]\nՈ՜վ Արագած, ալևոր սար,\nՀայոց հողի ամուր պատ,\nՔո լանջերին գյուղեր հազար\nԱպրում են հպարտ, ազատ։\n\n[Verse 3]\nԱղբյուրներից ջուր եմ խմում,\nՍառն է ու մաքուր, անուշ,\nՈւ պապերի երգն է քամում,\nՈւ հազար դարերի հուշ։\n\n[Chorus]\nՈ՜վ Արագած, ալևոր սար,\nՀայոց հողի ամուր պատ,\nՔո լանջերին գյուղեր հազար\nԱպրում են հպարտ, ազատ։\n"
+    },
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵրևանում իջավ գիշեր,\nԼույսեր են թափվում մայթերին,\nՈւ դու չկաս, չկաս, իմ սեր,\nՆայում եմ օտար դեմքերին։\n\n[Chorus]\nԵս քեզ կսպասեմ մինչև լույս,\nԿանգնած փողոցի անկյունում,\nԻմ սրտում դեռ վառվում է հույս,\nՔաղաքը կամաց է քնում։\n"
+    },
+    {
+      "task": "hy-spring",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳարնան առաջին տաք օր,\nԱրևը ժպտում է մեզ,\nԾաղկած են ծառեր բոլոր,\nՈւ ես տեսա հանկարծ քեզ։\n\n[Chorus]\nԻմ սիրտը թռչում է վեր,\nԻնչպես ծիծեռնակ ազատ,\nԳարուն է, գարուն ու սեր,\nՈւ քեզ եմ սիրում շատ-շատ։\n\n[Verse 2]\nՔո ժպիտը տաք արև,\nԱչքերը կապույտ երկինք,\nԿանաչ է ամեն տերև,\nՈւ ձեռք ձեռքի քայլեցինք։\n\n[Chorus]\nԻմ սիրտը թռչում է վեր,\nԻնչպես ծիծեռնակ ազատ,\nԳարուն է, գարուն ու սեր,\nՈւ քեզ եմ սիրում շատ-շատ։\n\n[Bridge]\nՄենք պարում ենք փողոցում,\nԾիծաղում ենք մանկան պես,\nԱրևի ոսկե բոցում\nԴու ինձ սիրում ես այնպես։\n\n[Chorus]\nԻմ սիրտը թռչում է վեր,\nԻնչպես ծիծեռնակ ազատ,\nԳարուն է, գարուն ու սեր,\nՈւ քեզ եմ սիրում շատ-շատ։\n"
+    },
+    {
+      "task": "ru-city",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nЭтот город не спит, я не сплю,\nВ окнах тают огни фонарей,\nНа балконе я ветер ловлю,\nИ сирены звучат всё острей.\nТам таксисты гудят на мосту,\nКто-то смеётся в чужом дворе,\nЯ курю и смотрю в темноту,\nМесяц тонет в своём серебре.\n\n[Chorus]\nНе усни, не усни, не усни,\nЭтот город горит до утра,\nМиллионы окон — мы одни,\nИ бессонница — наша сестра.\nНе усни, пока сердце стучит,\nПока в небе звенят провода,\nПусть весь мир за стеною молчит,\nМы не спим, не уснём никогда.\n\n[Verse 2]\nКруглосуточный свет у ларька,\nПродавщица зевает в ночи,\nТьма течёт, как большая река,\nЯ в кармане сжимаю ключи.\nЯ пишу тебе — и стираю\nСообщения. Гаснет экран,\nИ хожу по ночному краю,\nИ внутри у меня ураган.\n\n[Chorus]\nНе усни, не усни, не усни,\nЭтот город горит до утра,\nМиллионы окон — мы одни,\nИ бессонница — наша сестра.\nНе усни, пока сердце стучит,\nПока в небе звенят провода,\nПусть весь мир за стеною молчит,\nМы не спим, не уснём никогда.\n\n[Bridge]\nПять утра, и небо светлеет,\nДворник вышел мести тротуар,\nГород медленно, тихо тлеет,\nКак окурок, как поздний пожар.\n\n[Chorus]\nНе усни, не усни, не усни,\nЭтот город горит до утра,\nМиллионы окон — мы одни,\nИ бессонница — наша сестра.\nНе усни, пока сердце стучит,\nПока в небе звенят провода,\nПусть весь мир за стеною молчит,\nМы не спим, не уснём никогда.\n"
+    },
+    {
+      "task": "ru-road",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nРано утром, на рассвете,\nМы выходим за порог,\nТолько мы одни на свете\nДа простор степных дорог.\nЧемодан и термос с чаем,\nНаша «Нива» вся в пыли,\nМы друг друга понимаем,\nГород тает там, вдали.\n\n[Chorus]\nЕдем к югу, едем к морю,\nСолнце в лобовом стекле,\nНи заботам и ни горю\nНе догнать нас на земле.\nПой, дружище, как когда-то,\nПесню наших юных лет,\nДо ближайшего заката —\nЦелый день и целый свет.\n\n[Verse 2]\nМимо пролетают сёла,\nТополя, поля, мосты,\nВспоминаем двор и школа,\nИ наивные мечты.\nТы за руль, а я за карту,\nТак всегда, с тех самых пор,\nПодчиняясь лишь азарту,\nЧерез степи, мимо гор.\n\n[Chorus]\nЕдем к югу, едем к морю,\nСолнце в лобовом стекле,\nНи заботам и ни горю\nНе догнать нас на земле.\nПой, дружище, как когда-то,\nПесню наших юных лет,\nДо ближайшего заката —\nЦелый день и целый свет.\n\n[Bridge]\nПозади — дожди и стены,\nСерый город, вечный шум,\nВпереди лишь перемены\nДа дорога наобум.\n\n[Chorus]\nЕдем к югу, едем к морю,\nСолнце в лобовом стекле,\nНи заботам и ни горю\nНе догнать нас на земле.\nПой, дружище, как когда-то,\nПесню наших юных лет,\nДо ближайшего заката —\nЦелый день и целый свет.\n"
+    },
+    {
+      "task": "ru-sea",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nНад морем высокий маяк\nГорит сквозь ненастье и мрак,\nТам женщина ждёт у воды,\nГде волны смывают следы.\nСедая, в платке, на причале\nСтоит, как стояла вначале,\nИ смотрит в туманную даль,\nИ держит в ладонях печаль.\n\n[Chorus]\nГори же, маяк, над волнами,\nНад чёрными злыми валами,\nЧтоб он, возвращаясь домой,\nУвидел твой свет над водой.\n\n[Verse 2]\nУходят года, как отлив,\nИ тихо вздыхает залив,\nНо верит она и не плачет,\nИ чайка над нею маячит.\nЕй снится, что парус вдали\nБелеет у кромки земли,\nИ вот он идёт по дороге,\nИ тает печаль на пороге.\n\n[Chorus]\nГори же, маяк, над волнами,\nНад чёрными злыми валами,\nЧтоб он, возвращаясь домой,\nУвидел твой свет над водой.\n\n[Bridge]\nШтормит, и не видно ни зги,\nЕй слышатся в буре шаги,\nМаяк не погаснет, не сгинет,\nПока в ней любовь не остынет.\n\n[Chorus]\nГори же, маяк, над волнами,\nНад чёрными злыми валами,\nЧтоб он, возвращаясь домой,\nУвидел твой свет над водой.\n"
+    },
+    {
+      "task": "ru-winter",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 36,
+      "passing": 36,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nСнегами скрыта вся ограда,\nИ фонари горят едва,\nИ тишина пустого сада\nХранит забытые слова.\nЯ жду письма уже полгода,\nА почтальон всё не идёт,\nИ снова, с самого восхода,\nСижу и жду — и снег метёт.\n\n[Chorus]\nНу где же ты, письмо родное,\nГде затерялось ты в пути?\nИ сердце, грустное, больное,\nТебя зовёт: «Лети, лети!»\n\n[Verse 2]\nЯ помню наш перрон вокзала\nИ твой прощальный тихий взгляд,\n«Я напишу», — ты мне сказала,\nИ вот — зима и снегопад.\nЯ проверяю ящик снова,\nНо в нём лишь иней, пустота,\nИ от тебя опять ни слова,\nНи строчки с белого листа.\n\n[Chorus]\nНу где же ты, письмо родное,\nГде затерялось ты в пути?\nИ сердце, грустное, больное,\nТебя зовёт: «Лети, лети!»\n\n[Bridge]\nА может, ты его писала,\nНо ветер вырвал из руки,\nИ вьюга с ним вдвоём плясала,\nПорвав листок на лепестки.\n\n[Chorus]\nНу где же ты, письмо родное,\nГде затерялось ты в пути?\nИ сердце, грустное, больное,\nТебя зовёт: «Лети, лети!»\n\n[Outro]\nГорит свеча до поздней ночи,\nА за окном метель свистит,\nИ дни становятся короче,\nА сердце ждёт — и всё молчит.\n"
+    }
+  ]
+}

@@ -177,24 +177,25 @@ def _schwa() -> Seg:
     return Seg("ə", "ը", True, epenthetic=True)
 
 
-def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
+def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True, plural: bool = False) -> bool:
     if len(cs) > MAX_CODA:
         return False
     if len(cs) == 2:
         a, b = cs[0].ph, cs[1].ph
         if sonority(a) < sonority(b):
             return False
-        if final and possessive and _possessive(a, b):
+        if final and possessive and _possessive(a, b, plural):
             return False
     return True
 
 
-def _possessive(a: str, b: str) -> bool:
-    """Whether a final consonant pair reads as a stem plus the possessive ս or դ."""
+def _possessive(a: str, b: str, plural: bool = False) -> bool:
+    """Whether a final consonant pair reads as a stem plus the possessive ս or դ;
+    after the plural -եր, դ is always the possessive (աչքերդ, not like մարդ)."""
     if b == "s":
         return is_obstruent(a) or a in POSSESSIVE_S_AFTER
     if b == "d":
-        return is_obstruent(a) or a in POSSESSIVE_D_AFTER
+        return is_obstruent(a) or a in POSSESSIVE_D_AFTER or (plural and a == "ɾ")
     return False
 
 
@@ -209,7 +210,7 @@ def _onsets(cs: list[Seg]) -> list[int]:
 
 
 def _schwa_runs(
-    cs: list[Seg], closed_last: bool, possessive: bool = True
+    cs: list[Seg], closed_last: bool, possessive: bool = True, plural: bool = False
 ) -> list[list[tuple[list[Seg], list[Seg]]]]:
     """Every way to cut cs into schwa syllables (onset, coda)."""
     if not cs:
@@ -223,14 +224,16 @@ def _schwa_runs(
         coda = cs[rest + 1 :]
         if closed_last and not coda:
             continue
-        if not _valid_coda(coda, final=closed_last, possessive=possessive):
+        if not _valid_coda(coda, final=closed_last, possessive=possessive, plural=plural):
             continue
         for head in _schwa_runs(cs[:rest], closed_last=False):
             runs.append(head + [(onset, coda)])
     return runs
 
 
-def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bool = True):
+def _parse_cluster(
+    cs: list[Seg], has_prev: bool, has_next: bool, possessive: bool = True, plural: bool = False
+):
     """Split a consonant cluster into (coda, schwa syllables, onset)."""
     best = None
     for onset_len in _onsets(cs) if has_next else [0]:
@@ -239,10 +242,11 @@ def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bo
         coda_lens = range(0, min(MAX_CODA, len(inner)) + 1) if has_prev else [0]
         for coda_len in coda_lens:
             coda = inner[:coda_len]
-            if has_prev and not _valid_coda(coda, final=not has_next, possessive=possessive):
+            final = not has_next
+            if has_prev and not _valid_coda(coda, final, possessive=possessive, plural=plural):
                 continue
             middle = inner[coda_len:]
-            for run in _schwa_runs(middle, closed_last=not has_next, possessive=possessive):
+            for run in _schwa_runs(middle, not has_next, possessive=possessive, plural=plural):
                 yod = sum(1 for o, _ in run if o[0].ph == "j")
                 # Right to left, the longer coda wins: մը-կըր-տիչ, not մըկ-րը-տիչ.
                 codas = tuple(-len(c) for _, c in reversed(run)) + (-coda_len,)
@@ -266,7 +270,7 @@ def _negative_prefix(segs: list[Seg], cluster: list[Seg]) -> bool:
     )
 
 
-def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
+def syllabify(segs: list[Seg], possessive: bool = True, plural: bool = False) -> list[list[Seg]]:
     vowels = [i for i, s in enumerate(segs) if s.vowel]
     if not vowels:
         # No vowel letter at all: one schwa after the first consonant.
@@ -298,7 +302,9 @@ def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
             syllables.extend(o + [_schwa()] + c for o, c in run)
             current = onset + [segs[end]]
             continue
-        parsed = _parse_cluster(cluster, has_prev=True, has_next=has_next, possessive=possessive)
+        parsed = _parse_cluster(
+            cluster, has_prev=True, has_next=has_next, possessive=possessive, plural=plural
+        )
         if parsed is None:  # cannot happen with MAX_CODA >= 1, kept as a guard
             parsed = (cluster, [], [])
         coda, run, onset = parsed
@@ -354,7 +360,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         syllables = _from_override(override)
         source = "user"
     else:
-        syllables = syllabify(segments(token), possessive=norm not in NOT_POSSESSIVE)
+        plural = norm.endswith("երդ") and len(norm) > 4  # աչքերդ, but not բերդ
+        syllables = syllabify(segments(token), norm not in NOT_POSSESSIVE, plural)
         source = "rule"
     shown = _display(syllables, token)
     phones = tuple(s.ph for syl in syllables for s in syl)

@@ -1,0 +1,153 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 0.9716,
+      "songs_ok": 0.75,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "alone",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still wheel above the pier,\nThe ropes hang slack on rusted rings,\nBut no ship's horn has sounded here,\nAnd no one on the jetty sings.\n\n[Verse 2]\nMy father mended nets by hand,\nMy mother salted cod by night,\nNow weeds grow up through drifted sand,\nThe lighthouse long has lost its light.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Verse 3]\nThe young ones took the morning train\nTo cities where the money flows,\nAnd we who stayed behind remain\nTo mend the nets that no one throws.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Bridge]\nI keep my lantern on the sill\nIn case a sail should cross the bay,\nThe sea is wide, the night is still,\nAnd morning seems so far away.\n\n[Chorus]\nCome sailing home, you long-lost ships,\nThe tide still turns, the harbor waits,\nYour names are on the widow's lips,\nAnd rust has eaten through the gates.\n\n[Outro]\nThe gulls still wheel above the pier,\nThe ropes hang slack on rusted rings,\nAnd I will keep on waiting here\nTo see what news the morning brings.\n"
+    },
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSun is sinking in the bay,\nGolden light just slips away,\nSand is cold beneath my feet,\nMusic drifting down the street,\nTan lines fading on my skin,\nLet the final night begin,\nPolaroids and paper cups,\nNo one's ready to give up.\n\n[Pre-Chorus]\nHold the moment, hold it tight,\nDon't you let it out of sight.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Verse 2]\nSoon the leaves will turn to gold,\nSoon the mornings will be cold,\nSuitcases are by the door,\nCan't we have just one night more?\nWrite your name across my hand,\nDraw a heart into the sand,\nPromise me you won't forget\nAll the strangers that we met.\n\n[Pre-Chorus]\nHold the moment, hold it tight,\nDon't you let it out of sight.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Bridge]\nWhen September calls my name,\nNothing's gonna feel the same,\nBut tonight the sky is wide,\nAnd you're dancing at my side.\n\n[Chorus]\nStay with me till morning comes,\nDancing barefoot, beating drums,\nSummer, summer, don't you go,\nLeave the lights on, leave them low,\nAll the stars are burning bright,\nKiss me on the last warm night.\n\n[Outro]\nSummer, summer, don't you go,\nLeave the lights on, leave them low.\n"
+    },
+    {
+      "task": "hy-iamb",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄի հին տուն կա գյուղի ծայրին,\nՄի ծեր ընկուզենի բակում,\nԱյն դեռ հիշում է իմ մայրին,\nՔնքուշ մի երգ կա իմ սրտում։\n\n[Verse 2]\nԱյնտեղ օջախ էր միշտ վառվում,\nՈւ տաք էր, լուսավոր մեր տուն,\nՓափուկ ձյուն էր թափվում դրսում,\nՈւ մայրս էր հսկում իմ քուն։\n\n[Chorus]\nԻմ սիրելի ու լուռ, հին տուն,\nՔո դուռը փակ է շատ վաղուց,\nԵս շշնջում եմ քո անուն,\nԴու ինձ ես ձայն տալիս հեռուց։\n\n[Verse 3]\nՀիմա փոշի կա պատերին,\nՈւ լռություն է սենյակում,\nՄիայն քամին է շեմերին,\nԲայց դու ապրում ես իմ հոգում։\n\n[Chorus]\nԻմ սիրելի ու լուռ, հին տուն,\nՔո դուռը փակ է շատ վաղուց,\nԵս շշնջում եմ քո անուն,\nԴու ինձ ես ձայն տալիս հեռուց։\n"
+    },
+    {
+      "task": "hy-lullaby",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 21,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "syllables": 3
+      },
+      "text": "[Verse 1]\nԼուսինը դուրս եկավ,\nՔնիր, իմ անուշիկ,\nՆա քեզ է օրորում,\nԴու իմ փոքրիկ ծաղիկ։\n\n[Chorus]\nՕրոր, օրոր, բալա,\nԱչուկներդ փակիր,\nՄայրիկդ քեզ մոտ է,\nՔնիր, քնիր, քնիր։\n\n[Verse 2]\nՔամին քնեց արդեն,\nԳառը՝ կանաչ դաշտում,\nՁագը՝ տաք բնի մեջ,\nՔնիր, բալես, գրկում։\n\n[Chorus]\nՕրոր, օրոր, բալա,\nԱչուկներդ փակիր,\nՄայրիկդ քեզ մոտ է,\nՔնիր, քնիր, քնիր։\n\n[Verse 3]\nԱռավոտը կգա,\nԱրևը կծագի,\nԻսկ հիմա քնիր դու,\nԹռչունը քեզ կերգի։\n\n[Chorus]\nՕրոր, օրոր, բալա,\nԱչուկներդ փակիր,\nՄայրիկդ քեզ մոտ է,\nՔնիր, քնիր, քնիր։\n"
+    },
+    {
+      "task": "hy-mother",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 23,
+      "line_pass_rate": 0.9583,
+      "song_ok": false,
+      "errors": {
+        "rhyme": 1
+      },
+      "text": "[Verse 1]\nՄայրիկ, հեռու ես դու հիմա,\nԿարոտել եմ քեզ, իմ մամա,\nԻնձ հետ է քո ամեն մի հուշ,\nԼսում եմ քո ձայնը քնքուշ,\nՇատ ճամփաներ եմ անցել ես,\nՈչ ոք չի սիրում ինձ քեզ պես,\nՔեզ երազում եմ գիշերով,\nՈւ կանչում եմ քեզ կարոտով։\n\n[Chorus]\nՄայրիկ, իմ լույս ու իմ արև,\nՔո սերը ինձ տալիս է թև,\nԿգամ քեզ մոտ մի օր նորից,\nԿհամբուրեմ քեզ ճակատից։\n\n[Verse 2]\nԱյստեղ ամեն ինչ օտար է,\nՃամփան դեպի քեզ երկար է,\nԳիտեմ՝ դու ինձ ես սպասում,\nՈւ ճրագ ես վառում դրսում,\nՔո ձեռքը հացի հոտ ուներ,\nԺպիտդ՝ գարնան ծաղիկներ,\nԹող քամին տանի իմ բարև,\nՈւ գրկի քեզ ինչպես արև։\n\n[Chorus]\nՄայրիկ, իմ լույս ու իմ արև,\nՔո սերը ինձ տալիս է թև,\nԿգամ քեզ մոտ մի օր նորից,\nԿհամբուրեմ քեզ ճակատից։\n"
+    },
+    {
+      "task": "hy-mountains",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՎեհ ու հզոր է Արագած,\nՁյունը գլխին՝ սպիտակ,\nԻր լանջերին գյուղեր շարված,\nԱմեն տանը՝ վառ կրակ։\n\n[Verse 2]\nՍարից իջնում է պաղ աղբյուր,\nԿանաչ են դաշտ ու արոտ,\nՀովիվը խմում է զով ջուր,\nՇվին երգում է կարոտ։\n\n[Chorus]\nԱրագած, իմ հայրենի սար,\nԳլուխդ բարձր պահիր,\nԴու հսկում ես մեզ դարեդար,\nՄեր երգերին ականջ դիր։\n\n[Verse 3]\nԼանջերին բացվում է ծաղիկ,\nԽաղող կա ամեն այգում,\nՋուր է բերում գյուղի աղջիկ,\nՊար են բռնում մեր բակում։\n\n[Chorus]\nԱրագած, իմ հայրենի սար,\nԳլուխդ բարձր պահիր,\nԴու հսկում ես մեզ դարեդար,\nՄեր երգերին ականջ դիր։\n"
+    },
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳիշեր է մեր Երևանում,\nՔամին է քայլում փողոցով,\nՆստած եմ ու քեզ սպասում,\nՍիրտս լցված է կարոտով,\nԱրդեն կեսգիշեր է անցել,\nԼույսեր են մարում մեկ առ մեկ,\nՉեմ դադարել քեզ սպասել,\nԻնչպես սպասեցի երեկ։\n\n[Chorus]\nԱրի, ես քեզ եմ սպասում,\nՕպերայի մոտ, լույսի տակ,\nՄենակ եմ այս մեծ քաղաքում,\nԱրի, վառիր հոգուս կրակ,\nԿքայլենք մինչև լուսաբաց,\nԼուռ կնայենք Արարատին,\nՈւ կմոռանամ ամեն լաց,\nԵրբ ձեռքդ դնես իմ սրտին։\n"
+    },
+    {
+      "task": "hy-spring",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրևը տաք է այսօր,\nԾաղկել է ծիրանենին,\nԺպտում են մարդիկ բոլոր,\nՈւ քամին՝ քո մազերին,\nՔայլում ենք այգով կամաց,\nՁեռքդ տաք է ու քնքուշ,\nԵրկինքը կապույտ է, բաց,\nԺպիտդ՝ այնքան անուշ։\n\n[Chorus]\nԳարուն է, գարուն եկավ,\nՍիրտս բացվեց քեզ համար,\nՁմեռը գնաց, անցավ,\nՈւ սիրում եմ քեզ, իմ յար։\n\n[Verse 2]\nԾիծեռնակը եկավ տուն,\nԿանաչել է ամեն տեղ,\nԵս մոռացել եմ իմ քուն,\nԴու ես սրտիս միակ դեղ,\nՎաղը դու կգաս նորից,\nՈւ կքայլենք միասին,\nԾաղիկ կքաղեմ ծառից,\nՄինչև որ դուրս գա լուսին։\n\n[Chorus]\nԳարուն է, գարուն եկավ,\nՍիրտս բացվեց քեզ համար,\nՁմեռը գնաց, անցավ,\nՈւ սիրում եմ քեզ, իմ յար։\n\n[Bridge]\nԹող տևի այս օր հավետ,\nԹող միշտ լինի տաք գարուն,\nՈւ լինենք մենք իրար հետ,\nԿերգեմ քո անուշ անուն։\n\n[Chorus]\nԳարուն է, գարուն եկավ,\nՍիրտս բացվեց քեզ համար,\nՁմեռը գնաց, անցավ,\nՈւ սիրում եմ քեզ, իմ յար։\n"
+    },
+    {
+      "task": "ru-city",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТретий час, и снова не спится,\nГудит за окнами мой город,\nВ стёклах отражаются лица,\nВ сердце то ли жар, то ли холод.\nМчат такси по ночным бульварам,\nКто-то курит там, на балконе,\nЯ иду по закрытым барам,\nТолько свет в моём телефоне.\n\n[Chorus]\nЭтот город никогда не спит,\nЯ с ним вместе не сплю до утра,\nСердце бьётся, а небо горит,\nНу и пусть, это наша игра.\nМы не спим, мы горим, как неон,\nМы как искры в пустой темноте,\nДо рассвета последний вагон\nУнесёт нас к далёкой черте.\n\n[Verse 2]\nЯ пишу тебе и стираю\nСотни слов, и снова в пустоту,\nЯ не сплю и медленно таю,\nКак фонарь на ветру, на мосту.\nДышит город гарью, бетоном,\nМне бы просто услышать тебя,\nЯ стою под мёртвым неоном,\nПотеряв в этой давке себя.\n\n[Chorus]\nЭтот город никогда не спит,\nЯ с ним вместе не сплю до утра,\nСердце бьётся, а небо горит,\nНу и пусть, это наша игра.\nМы не спим, мы горим, как неон,\nМы как искры в пустой темноте,\nДо рассвета последний вагон\nУнесёт нас к далёкой черте.\n\n[Bridge]\nПять утра, и небо светлеет,\nДворник сметает вчерашний день,\nКто-то где-то о чём-то жалеет,\nНа стенах тает ночная тень.\n\n[Chorus]\nЭтот город никогда не спит,\nЯ с ним вместе не сплю до утра,\nСердце бьётся, а небо горит,\nНу и пусть, это наша игра.\nМы не спим, мы горим, как неон,\nМы как искры в пустой темноте,\nДо рассвета последний вагон\nУнесёт нас к далёкой черте.\n"
+    },
+    {
+      "task": "ru-road",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nРано утром, до рассвета,\nЗаведём мотор с тобой,\nГде-то юг и запах лета,\nГде-то море и прибой.\nСтарый друг, мы снова вместе,\nКак в шестнадцать, как тогда,\nМы не можем жить на месте,\nВдаль уходят провода.\n\n[Chorus]\nЕдем, едем на рассвете,\nСтрого к югу держим путь,\nТолько мы на всей планете,\nНи за что не повернуть!\nПусть мелькают километры,\nПусть дорога без конца,\nНам навстречу дуют ветры,\nБьются в такт у нас сердца.\n\n[Verse 2]\nПомнишь, как мы в старом доме\nПели песни до утра,\nНичего не знали, кроме\nМоря, ветра и костра?\nШли года, менялись лица,\nПыль дорог и снег седой,\nНо в ночи всё так же снится\nПуть за южною звездой.\n\n[Chorus]\nЕдем, едем на рассвете,\nСтрого к югу держим путь,\nТолько мы на всей планете,\nНи за что не повернуть!\nПусть мелькают километры,\nПусть дорога без конца,\nНам навстречу дуют ветры,\nБьются в такт у нас сердца.\n\n[Bridge]\nСолнце встало над холмами,\nПахнет морем и теплом,\nВсё плохое за плечами,\nГоворим о том, о сём.\n\n[Chorus]\nЕдем, едем на рассвете,\nСтрого к югу держим путь,\nТолько мы на всей планете,\nНи за что не повернуть!\nПусть мелькают километры,\nПусть дорога без конца,\nНам навстречу дуют ветры,\nБьются в такт у нас сердца.\n"
+    },
+    {
+      "task": "ru-sea",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 44,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nГорит над водою маяк\nСквозь волны, сквозь ветер и мрак,\nНа берег выходит она,\nГде плещет ночная волна.\nЛюбимый ушёл в океан,\nГде бури, и шторм, и туман,\nОна ожидает давно,\nКак будто ей так суждено.\n\n[Chorus]\nСвети же, маяк, в темноте,\nГори на своей высоте,\nПусть милый вернётся домой\nСквозь чёрный простор штормовой.\nПусть ветер утихнет к утру\nИ парус мелькнёт на ветру,\nА море поёт и поёт,\nИ сердце надеждой живёт.\n\n[Verse 2]\nСедеет её голова,\nНо помнит она те слова:\nВернусь, говорил, навсегда,\nКак волны к песку, сквозь года.\nИ каждую ночь, в тишине,\nОн снится ей в лунном огне,\nИ шепчет она маяку\nПро долгую в сердце тоску.\n\n[Chorus]\nСвети же, маяк, в темноте,\nГори на своей высоте,\nПусть милый вернётся домой\nСквозь чёрный простор штормовой.\nПусть ветер утихнет к утру\nИ парус мелькнёт на ветру,\nА море поёт и поёт,\nИ сердце надеждой живёт.\n\n[Bridge]\nОднажды на самом краю\nУвидит она ту ладью,\nИ голос родной позовёт,\nИ кончится долгий отсчёт.\n\n[Chorus]\nСвети же, маяк, в темноте,\nГори на своей высоте,\nПусть милый вернётся домой\nСквозь чёрный простор штормовой.\nПусть ветер утихнет к утру\nИ парус мелькнёт на ветру,\nА море поёт и поёт,\nИ сердце надеждой живёт.\n"
+    },
+    {
+      "task": "ru-winter",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 44,
+      "passing": 37,
+      "line_pass_rate": 0.8409,
+      "song_ok": false,
+      "errors": {
+        "meter": 4,
+        "ending": 3,
+        "feet": 3,
+        "rhyme": 3
+      },
+      "text": "[Verse 1]\nМетель кружится над дорогой,\nИ гаснет медленно закат,\nЯ жду с надеждой и тревогой,\nНи строчки. Тихо. Снегопад.\nЯ слушаю шаги у двери,\nНо тишина в ответ звенит,\nБоюсь я думать о потере,\nИ лишь огонь в печи горит.\n\n[Chorus]\nАх, где же ты, письмо родное?\nТебя я жду который год,\nИ время тихое, ночное\nНад снежной улицей плывёт.\nПускай метёт, пускай кружится,\nЯ буду ждать тебя всегда,\nБыть может, чудо совершится,\nИ прилетит письмо сюда.\n\n[Verse 2]\nТы обещал писать мне вскоре,\nКогда уехал в дальний край,\nИ вот: зима, и снег, и горе,\nИ ветер воет: не встречай.\nЯ перечитываю строки\nТого, что ты писал давно,\nИ мы с тобою одиноки,\nИ снег ложится на окно.\n\n[Chorus]\nАх, где же ты, письмо родное?\nТебя я жду который год,\nИ время тихое, ночное\nНад снежной улицей плывёт.\nПускай метёт, пускай кружится,\nЯ буду ждать тебя всегда,\nБыть может, чудо совершится,\nИ прилетит письмо сюда.\n\n[Bridge]\nГорит свеча, и тени пляшут\nНа белом инее стекла,\nИ ветви мне с мороза машут,\nКак будто жизнь давно прошла.\n\n[Chorus]\nАх, где же ты, письмо родное?\nТебя я жду который год,\nИ время тихое, ночное\nНад снежной улицей плывёт.\nПускай метёт, пускай кружится,\nЯ буду ждать тебя всегда,\nБыть может, чудо совершится,\nИ прилетит письмо сюда.\n"
+    }
+  ]
+}

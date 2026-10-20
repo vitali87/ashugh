@@ -353,3 +353,10 @@ def test_elision_note_speaks_the_lines_language():
     rep = scan("I still recall our wondrous meeting", from_dict({"syllables": 9}))
     notes = [i.message for i in rep.issues if i.code == "syllables"]
     assert notes and all("ը" not in m for m in notes)
+
+
+def test_holdout_two_lines_scan():
+    assert scan("Только сердце навеки с тобой", from_dict({"meter": "anapest3"}), lang="ru").ok
+    spec = from_dict({"meter": "iamb4", "endings": "f"})
+    assert scan("Метель кружится над дорогой", spec, lang="ru").ok
+    assert scan("Աչուկներդ փակիր", from_dict({"syllables": 6}), lang="hy").ok
