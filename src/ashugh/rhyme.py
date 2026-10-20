@@ -53,11 +53,12 @@ def anchor_word(line: Line, fit: Fit) -> int | None:
     return ss[k].word if k is not None else None
 
 
-def tails(line: Line, fit: Fit) -> list[Tail]:
+def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
     """Rhyme tails of a line: one per reading of its last stressed word that the fit allows.
 
     Under a meter that is the chosen stress (with every ё spelling of it); in
-    free verse every stress the word can take, so the best one can be matched.
+    free verse every stress the word can take, so the best one can be matched,
+    unless chosen_only asks for the fit's own reading there too.
     """
     words = line.words
     ss = slots(words, fit.elided)
@@ -67,20 +68,13 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
     w = ss[k].word
     word = words[w]
     chosen = fit.stresses.get(w)
-    if chosen is None and ss[k].lead and w > 0:  # по́ лесу: the preposition took the stress
-        prep, lean = words[w - 1], word.readings[-1]
-        t = _tail(prep, prep.readings[0], 0, [])
-        if t is None:
-            return []
-        rest = t.rest + lean.phones + tuple(p for x in words[w + 1 :] for p in x.readings[0].phones)
-        shown = " ".join(x.text for x in words[w - 1 :])
-        spelled = " ".join([prep.norm, lean.spelling, *(x.norm for x in words[w + 1 :])])
-        return [
-            Tail(t.onset, t.vowel, rest, sum(is_vowel(p) for p in rest), shown, spelled, word.lang)
-        ]
-    out = []
+    shifted = _shifted_tail(words, w) if ss[k].lead and w > 0 else None
+    if chosen is None and shifted is not None:  # по́ лесу: the preposition took the stress
+        return [shifted]
+    free = fit.meter == "free" and not chosen_only
+    out = [shifted] if free and shifted is not None else []
     for reading in word.readings:
-        if reading.stress is None or (fit.meter != "free" and reading.stress != chosen):
+        if reading.stress is None or (not free and reading.stress != chosen):
             continue
         # English also rhymes on a secondary stress after the main one (sunshine / mine).
         later = [k for k in reading.secondary if k > reading.stress]
@@ -97,6 +91,19 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
         if own is not None and own not in out:
             out.append(own)
     return out
+
+
+def _shifted_tail(words, w: int) -> Tail | None:
+    """The tail of a line whose word w gives its stress to the preposition before it."""
+    prep, word = words[w - 1], words[w]
+    lean = word.readings[-1]
+    t = _tail(prep, prep.readings[0], 0, [])
+    if t is None:
+        return None
+    rest = t.rest + lean.phones + tuple(p for x in words[w + 1 :] for p in x.readings[0].phones)
+    shown = " ".join(x.text for x in words[w - 1 :])
+    spelled = " ".join([prep.norm, lean.spelling, *(x.norm for x in words[w + 1 :])])
+    return Tail(t.onset, t.vowel, rest, sum(is_vowel(p) for p in rest), shown, spelled, word.lang)
 
 
 def _tail(word, reading, stress, after) -> Tail | None:

@@ -10,12 +10,12 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | 97.1% |
-| each word's first reading, without meter or rhyme | 92.0% |
-| words the dictionary lists (50,073) | 98.2% |
-| ambiguous words resolved by meter and rhyme (3,677) | 94.6% |
-| unknown words guessed from the ending, meter and rhyme (5,427) | 88.1% |
-| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.876, F1 0.907 |
+| stress of polysyllabic words (60,854) | 97.2% |
+| each word's first reading, without meter or rhyme | 92.5% |
+| words the dictionary lists (50,075) | 98.2% |
+| ambiguous words resolved by meter and rhyme (3,678) | 95.0% |
+| unknown words guessed from the ending, meter and rhyme (5,424) | 88.2% |
+| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.877, F1 0.908 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
 led to the gerund and participle twins, the ending prior, the second

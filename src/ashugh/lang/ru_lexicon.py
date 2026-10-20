@@ -1,6 +1,7 @@
 """The bundled Russian stress table (src/ashugh/data/ru_stress.tsv).
 
-Each line is a form, a tab, and the 1-based positions of its stressed vowels.
+Each line is a form, a tab, and the 1-based positions of its stressed vowels,
+a headword's own stress first.
 Built by scripts/build_ru_lexicon.py from OpenRussian (CC BY-SA 4.0).
 """
 

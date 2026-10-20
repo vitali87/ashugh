@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import lyrics
-from .lang import hy
+from .lang import hy, ru
 from .model import ACUTE, LICENCES, Word
 from .scan import LineReport, Report, scan
 from .spec import Spec
@@ -165,6 +165,7 @@ def format_song(
         line_out = "".join(pieces)
         if lr.line.lang == "hy" and default_mode != "script":
             line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, notes, lr)
+        line_out = _russian_asides(line_out, lr.line.number, notes)
         raw[lr.line.number - 1] = line_out + ending
     out = "".join(raw)
     if tags:
@@ -197,6 +198,23 @@ def _armenian_asides(
     if mode == "latin":
         line = line.translate(ARMENIAN_STOPS)
     return line
+
+
+def _russian_asides(line: str, n: int, notes: list[Note]) -> str:
+    """The backing vocals in parentheses with the ё the line would get: моё (моё),
+    where only one spelling is a word; no stress marks, which want a meter."""
+
+    def aside(m: re.Match) -> str:
+        inner = m.group(0)
+        out, last = [], 0
+        for a, b, token in lyrics.word_spans(inner):
+            if not any(ru.is_cyrillic(ch) for ch in token):
+                continue
+            out += [inner[last:a], _russian(ru.analyze_word(token), token, None, "none", n, notes)]
+            last = b
+        return "".join(out) + inner[last:]
+
+    return lyrics.PAREN_RE.sub(aside, line)
 
 
 def _split_ending(line: str) -> tuple[str, str]:
@@ -236,7 +254,18 @@ def _render(
 ) -> str:
     n = lr.line.number
     if w.lang == "ru":
-        new = _russian(w, token, lr.fit.stresses.get(i), stress, n, notes)
+        words, chosen = lr.line.words, lr.fit.stresses
+        nxt = i + 1
+        if (
+            stress != "none"
+            and nxt < len(words)
+            and words[nxt].leans
+            and chosen.get(nxt, 0) is None
+        ):
+            new = _mark_vowel(token, 0, stress)  # по́ лесу: the noun gave the preposition its stress
+            notes.append(Note(n, "stress", token, new, "stress on the preposition"))
+            return new
+        new = _russian(w, token, chosen.get(i), stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy":
         prev = lr.line.words[i - 1] if i > 0 else None

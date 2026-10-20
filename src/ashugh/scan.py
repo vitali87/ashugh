@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, replace
 from . import lang as languages
 from . import lyrics, meter, rhyme
 from .meter import Fit
-from .model import Line
+from .model import Line, mark_stress
 from .spec import Rule, Spec, mixed_case
 
 ENDING_NAMES = {0: "masculine", 1: "feminine", 2: "dactylic", 3: "hyperdactylic"}
@@ -303,12 +303,13 @@ def _rhyme_stress(
             def best(tails, others=others) -> float:
                 return max((rhyme.match(tails, t)[0] for t in others), default=0.0)
 
-            current = best(lr.tails)
+            # in free verse a line's tails hold every reading; judge the one it shows
+            current = best(rhyme.tails(lr.line, lr.fit, chosen_only=True))
             for force, promote in tries:
                 alt = check_line(lr.line, rule, meter_name, source, force, promote)
                 if not _affordable(alt, lr):
                     continue
-                score = best(alt.tails)
+                score = best(rhyme.tails(alt.line, alt.fit, chosen_only=True))
                 if score >= floor and score > current + RHYME_STRESS_GAIN:
                     reports[k], current, lr, changed = alt, score, alt, True
         if not changed:
@@ -327,6 +328,8 @@ def _rhyme_tries(lr: LineReport) -> list[tuple[dict[int, int | None] | None, boo
         for option in word.stress_options()
         if word.ambiguous and option not in (None, lr.fit.stresses.get(w))
     ]
+    if word.leans and lr.fit.stresses.get(w) is not None:
+        tries.append(({w: None}, None))  # по́ лесу / по́ голосу
     if word.lang == "en" and not lr.fit.promoted:
         tries.append((None, True))
     return tries
@@ -408,12 +411,16 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
         elif w.ambiguous and meter_name != "free" and w.size > 1:
             st = f.stresses.get(i)
+            shown = _quote(w.text), w.sung(st, mark=True)
+            if st is None and w.leans and i > 0:  # the preposition took the stress
+                prep = ln.words[i - 1]
+                shown = _quote(f"{prep.text} {w.text}"), f"{mark_stress(prep.text)} {w.sung()}"
             add(
                 Issue(
                     ln.number,
                     "stress",
                     "info",
-                    f"{_quote(w.text)} read as {w.sung(st, mark=True)}",
+                    f"{shown[0]} read as {shown[1]}",
                     "stress is ambiguous; the meter picked this reading",
                     {"word": w.text, "assumed": st},
                 )

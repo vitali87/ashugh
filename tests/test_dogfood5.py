@@ -93,3 +93,94 @@ def test_an_ending_asked_by_the_rhymes_case_says_so():
     rep = scan("I walk the way\nI hold the light\n", from_dict({"language": "en", "rhyme": "Ab"}))
     (issue,) = [i for i in rep.issues if i.code == "ending"]
     assert issue.line == 1 and "capital A" in issue.detail and "feminine" in issue.detail
+
+
+@pytest.mark.parametrize(
+    "word,want", [("спою", [1]), ("споем", [1]), ("споёт", [1]), ("споют", [1])]
+)
+def test_spet_is_stressed_on_its_ending(word, want):
+    assert stressed(word) == want  # спою́ / свою́, not спо́ю
+
+
+def test_atlas_may_be_satin_where_the_meter_asks():
+    assert set(stressed("атласом")) == {0, 1}  # а́тласом (atlas) or атла́сом (satin)
+
+
+@pytest.mark.parametrize(
+    "word,spelling,want",
+    [
+        ("Сережа", "серёжа", 1),
+        ("Федор", "фёдор", 0),
+        ("Семен", "семён", 1),
+        ("Алеша", "алёша", 1),
+        ("Артем", "артём", 1),
+        ("Петр", "пётр", 0),
+    ],
+)
+def test_names_with_yo(word, spelling, want):
+    (r,) = ru.analyze_word(word).readings
+    assert r.spelling == spelling and r.stress == want
+
+
+@pytest.mark.parametrize("word,want", [("улыбалася", [2]), ("смеялася", [1])])
+def test_the_old_lasya_reads_as_las(word, want):
+    w = ru.analyze_word(word)
+    assert stressed(word) == want and not w.guessed  # улыба́лася as улыба́лась
+
+
+@pytest.mark.parametrize("word,want", [("вода", 1), ("душа", 1), ("урок", 1)])
+def test_a_line_that_leaves_the_stress_open_takes_the_headwords(word, want):
+    assert ru.analyze_word(word).readings[0].stress == want  # вода́ before во́да of вод
+
+
+FOREST = "Мы идём с тобою по лесу,\nЯ иду к тебе по голосу.\n"
+
+
+def test_a_rhyme_may_choose_the_stress_on_the_preposition():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    rep = scan(FOREST, from_dict({"language": "ru", "rhyme": "AA"}))
+    assert [i for i in rep.issues if i.code == "rhyme"] == []  # по́ лесу / по́ голосу
+
+
+def test_free_verse_rhymes_the_shifted_stress_too():
+    from ashugh import meter, rhyme
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    lines = analyze_lines(FOREST, Spec(language="ru"), "ru")
+    s, _, _ = rhyme.match(*(rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines))
+    assert s >= rhyme.THRESHOLD["near"]
+
+
+def test_the_note_and_suno_show_the_stress_on_the_preposition():
+    from ashugh import suno
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    spec = from_dict({"language": "ru", "rhyme": "AA", "meter": "trochee4"})
+    notes = [i.message for i in scan(FOREST, spec).issues if i.code == "stress"]
+    assert "«по лесу» read as по́ ле-су" in notes
+    out = suno.format_song(FOREST, spec=spec, tags=False).text
+    assert "пО лесу" in out
+
+
+def test_in_free_verse_the_rhyme_picks_the_reading_shown_and_sung():
+    from ashugh import suno
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    text = "Тусим до утра,\nГород — наша игра,\n"
+    spec = from_dict({"language": "ru", "meter": "free", "rhyme": "AA"})
+    first = scan(text, spec).units[0].lines[0]
+    assert first.fit.stresses[2] == 1  # утра́, as it rhymes with игра́
+    assert "утрА" in suno.format_song(text, spec=spec, tags=False).text
+
+
+def test_russian_backing_vocals_get_their_yo_back():
+    from ashugh import suno
+
+    out = suno.format_song("Это сердце мое (мое, еще)", tags=False).text
+    assert out == "Это сердце моё (моё, ещё)"
+    assert suno.format_song("Я жду (все)", tags=False).text == "Я жду (все)"  # все or всё

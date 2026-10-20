@@ -49,6 +49,18 @@ def test_build_fills_missing_past_forms(tmp_path):
     for name in ("nouns.csv", "adjectives.csv", "others.csv"):
         (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
     table = ru_build.build(tmp_path)
-    assert table["звучал"] == {2} and table["звучали"] == {2}
-    assert table["жила"] == {2}, "listed forms are kept as they are"
+    assert table["звучал"] == [2] and table["звучали"] == [2]
+    assert table["жила"] == [2], "listed forms are kept as they are"
     assert "жил" not in table, "monosyllables are still left out"
+
+
+def test_a_headwords_own_stress_comes_first(tmp_path):
+    header = ["bare", "accented", "sg_nom", "sg_gen"]
+    rows = [["вод", "вод", "вод", "во'да"], ["вода", "вода'", "вода'", "воды'"]]
+    (tmp_path / "nouns.csv").write_text(
+        "\n".join("\t".join(r) for r in [header, *rows]) + "\n", encoding="utf-8"
+    )
+    for name in ("verbs.csv", "adjectives.csv", "others.csv"):
+        (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
+    table = ru_build.build(tmp_path)
+    assert table["вода"] == [2, 1]  # вода́, the noun, before во́да of вод

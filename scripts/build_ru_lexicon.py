@@ -7,10 +7,12 @@ inflected form written with an apostrophe after the stressed vowel.
     uv run scripts/build_ru_lexicon.py path/to/russian-dictionary
 
 writes src/ashugh/data/ru_stress.tsv: one form per line, sorted by UTF-8 bytes,
-followed by a tab and the 1-based positions of its stressed vowels ("12" means
-the form is stressed on the first vowel in one reading and the second in
-another). Forms with one vowel are left out unless they contain ё, because
-their stress carries no information but their ё does.
+followed by a tab and the 1-based positions of its stressed vowels ("21" means
+the form is stressed on the second vowel in one reading and the first in
+another), a headword's own stress first: вода is вода́ the noun before во́да of
+вод, so where a line leaves the stress open it takes the common one. Forms
+with one vowel are left out unless they contain ё, because their stress
+carries no information but their ё does.
 
 It also writes src/ashugh/data/ru_yo.tsv: the one-vowel forms that exist only
 with ё (ждёт, шёл, лёд), one per line, so that ждет written without its ё
@@ -106,9 +108,13 @@ def yo_only(forms: set[str]) -> list[str]:
     )
 
 
-def build(source: Path) -> dict[str, set[int]]:
+def build(source: Path) -> dict[str, list[int]]:
+    """Each form's stressed vowels, a headword's own stress first: вода lists вода́
+    (the noun) before во́да (of вод, waters), so a reading the line leaves open
+    is the common one."""
     csv.field_size_limit(sys.maxsize)
     table: dict[str, set[int]] = defaultdict(set)
+    headword: dict[str, set[int]] = defaultdict(set)
     for name in FILES:
         with open(source / name, encoding="utf-8", newline="") as fh:
             rows = csv.reader(fh, delimiter="\t")
@@ -118,6 +124,11 @@ def build(source: Path) -> dict[str, set[int]]:
             accented = header.index("accented") if "accented" in header else None
             for row in rows:
                 forms = [v for i in columns if i < len(row) for v in re.split(r"[,;/]", row[i])]
+                if accented is not None and accented < len(row):
+                    head = row[accented].strip().lower().replace("\u0301", "'")
+                    if FORM_RE.fullmatch(head):
+                        bare, positions, _ = stress_positions(head)
+                        headword[bare] |= positions
                 listed_past = "".join(row[past : past + 1]).strip() if past is not None else "?"
                 if accented is not None and not listed_past:
                     forms += past_forms(row[accented].strip().lower())
@@ -129,7 +140,10 @@ def build(source: Path) -> dict[str, set[int]]:
                     if not positions or (count < 2 and "ё" not in bare):
                         continue
                     table[bare] |= positions
-    return table
+    return {
+        form: sorted(positions & headword[form]) + sorted(positions - headword[form])
+        for form, positions in table.items()
+    }
 
 
 def main() -> None:
@@ -139,7 +153,7 @@ def main() -> None:
     keys = sorted(table, key=lambda k: k.encode())
     with open(OUT, "w", encoding="utf-8", newline="\n") as out:
         for key in keys:
-            out.write(f"{key}\t{''.join(str(p) for p in sorted(table[key]))}\n")
+            out.write(f"{key}\t{''.join(str(p) for p in table[key])}\n")
     print(f"{len(keys)} forms -> {OUT}")
     yo = yo_only(all_forms(Path(sys.argv[1])))
     YO_OUT.write_text("".join(f + "\n" for f in yo), encoding="utf-8", newline="\n")

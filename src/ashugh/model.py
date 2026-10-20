@@ -87,7 +87,7 @@ class Word:
         for i, syl in enumerate(self.syllables):
             text = syl.text
             if mark and i == stress and self.size > 1:
-                text = _mark(text)
+                text = mark_stress(text)
             parts.append(text)
         return "-".join(parts)
 
@@ -95,7 +95,8 @@ class Word:
 VOWEL_LETTERS = set("аеёиоуыэюяaeiouyաեէըիոօ")
 
 
-def _mark(text: str) -> str:
+def mark_stress(text: str) -> str:
+    """text with an acute after its first vowel letter (ё needs none)."""
     for i, ch in enumerate(text):
         if ch.lower() in VOWEL_LETTERS:
             if ch.lower() == "ё":

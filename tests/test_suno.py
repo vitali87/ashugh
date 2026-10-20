@@ -37,8 +37,10 @@ def test_keeps_case_and_punctuation():
     assert out == "ЕЩЁ, ещё!"
 
 
-def test_backing_vocals_are_left_alone():
-    assert fmt("Я жду (еще) тебя", stress="none") == "Я жду (еще) тебя"
+def test_backing_vocals_get_their_yo_but_no_stress_marks():
+    assert fmt("Я жду (еще) тебя", stress="none") == "Я жду (ещё) тебя"
+    spec = from_dict({"meter": "iamb"})
+    assert fmt("Не уходи, мой замок (замок)", spec=spec) == "Не уходи, мой зАмок (замок)"
 
 
 def test_armenian_schwas_written_out():

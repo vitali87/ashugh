@@ -148,6 +148,24 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "алёна": ("алёна", (1,)),
     # The table stresses бант on its ending (банты́); it is ба́нт throughout.
     **{f: (f, (0,)) for f in "банта банту бантом банте банты бантов бантам бантами бантах".split()},
+    # спеть is missing from the dump; its спою came from elsewhere as спо́ю.
+    **{
+        f: (f.replace("е", "ё") if "ё" not in f and f != "спою" and f != "споют" else f, (1,))
+        for f in "спою споешь споёшь споет споёт споем споём споете споёте споют".split()
+    },
+    # атла́с (satin) beside а́тлас (atlas), which is all the table has.
+    **{
+        f: (f, (0, 1))
+        for f in (
+            "атлас атласа атласу атласом атласе атласы атласов атласам атласами атласах"
+        ).split()
+    },
+    # Names with ё, written without it as often as not: Серёжа, not Сере́жа.
+    **{
+        k: (v, (s,))
+        for v, s in (("серёжа", 1), ("фёдор", 0), ("семён", 1), ("алёша", 1), ("артём", 1))
+        for k in (v, v.replace("ё", "е"))
+    },
     "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
     "баюшки": ("баюшки", (0,)),
     "кого": ("кого", (1,)),
@@ -230,6 +248,7 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "из-под": ("из-под", (1,)),
 }
 PARTICLES = {"то", "либо", "нибудь", "ка", "таки"}
+YO_NAMES = {"петр": "пётр"}  # one-syllable names the table lacks
 # Nouns whose locative after в, во or на is stressed on the ending: в саду́, на ветру́,
 # в крови́. After these prepositions the stem-stressed dative or genitive cannot be meant.
 # Some take it after one preposition only: в полку́ but на по́лку, на виду́ but в ви́ду.
@@ -504,6 +523,8 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
             twin(norm[:-2] + full, lambda p: p)
     if norm.endswith("ей") and not found:
         twin(norm[:-2] + "ее", lambda p: p)
+    if norm.endswith("лася") and not found:  # улыба́лася, verse's улыба́лась
+        twin(norm[:-2] + "сь", lambda p: p)
     # стараясь is стара́юсь's gerund, not ста́рая with сь: a gerund asks its verb first.
     gerund = norm.endswith(("ясь", "ась")) and not norm.endswith("лась")
     for suffix in ("ся", "сь"):
@@ -715,7 +736,7 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     if not readings and n == 0:
         readings = [Reading(None, transcribe(norm, None), norm, "clitic")]
     elif not readings and n == 1:
-        yo = yo_only().get(norm)  # ждет is ждёт: no word is spelled ждет
+        yo = yo_only().get(norm) or YO_NAMES.get(norm)  # ждет is ждёт: no word is spelled ждет
         spellings = [yo] if yo else [norm] + [s for s, _ in TABLE.variants(norm) if s != norm]
         source = "clitic" if clitic else "rule"
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
