@@ -162,3 +162,62 @@ def test_an_unexpected_failure_does_not_kill_the_server(monkeypatch):
     response = call(server, "tools/call", {"name": "scan", "arguments": {"lyrics": "a"}})
     assert response["result"]["isError"]
     assert call(server, "ping")["result"] == {}
+
+
+def test_serve_answers_line_by_line_and_survives_bad_lines():
+    import io
+
+    from ashugh.mcp import serve
+
+    lines = [
+        json.dumps({"jsonrpc": "2.0", "id": 1, "method": "ping"}),
+        "",
+        "{not json",
+        json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}),
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {"name": "scan", "arguments": []},
+            }
+        ),
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {"name": "syllables", "arguments": {"text": "Մկրտիչ"}},
+            }
+        ),
+    ]
+    out = io.StringIO()
+    assert serve(io.StringIO("\n".join(lines) + "\n"), out) == 0
+    replies = [json.loads(r) for r in out.getvalue().splitlines()]
+    assert [r.get("id") for r in replies] == [1, None, 2, 3]  # nothing for "" or the notification
+    assert replies[1]["error"]["code"] == -32700
+    assert replies[2]["error"]["code"] == -32602 and "object" in replies[2]["error"]["message"]
+    assert "Մը-կըր-տի́չ" in replies[3]["result"]["content"][0]["text"]
+
+
+def test_lang_arguments_choose_the_language():
+    s = Server()
+    _, rep = tool(s, "scan", lyrics="mine\n", lang="en")
+    assert rep["sections"][0]["lines"][0]["lang"] == "en"
+    _, r = tool(s, "rhyme", a="night", b="light", lang="en")
+    assert r["level"] == "perfect"
+    result, bad = tool(s, "rhyme", a="a\nb", b="c")
+    assert result["isError"] is True and "a and b" in bad["error"]
+    result, bad = tool(s, "scan", lyrics="x", lang=3)
+    assert result["isError"] is True and "lang must be a string" in bad["error"]
+    result, bad = tool(s, "pick", lyrics=SONG)
+    assert result["isError"] is True and "candidates" in bad["error"]
+
+
+@pytest.mark.parametrize("bad", [[], [1], "x", 0])
+def test_params_and_arguments_must_be_objects_even_when_empty(bad):
+    s = Server()
+    r = s.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": bad})
+    assert r is not None and r["error"]["code"] == -32602
+    r = call(s, "tools/call", {"name": "scan", "arguments": bad})
+    assert r["error"]["code"] == -32602 and "arguments must be an object" in r["error"]["message"]

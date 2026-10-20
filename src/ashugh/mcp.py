@@ -226,7 +226,9 @@ class Server:
             return _error(
                 msg.get("id") if isinstance(msg, dict) else None, -32600, "invalid request"
             )
-        method, params, mid = msg["method"], msg.get("params") or {}, msg.get("id")
+        method, params, mid = msg["method"], msg.get("params"), msg.get("id")
+        if params is None:
+            params = {}
         if mid is None:  # a notification: nothing to answer
             return None
         if not isinstance(params, dict):
@@ -253,8 +255,10 @@ class Server:
             name = params.get("name")
             if name not in TOOLS:
                 return _error(mid, -32602, f"unknown tool: {name}")
-            args = params.get("arguments") or {}
-            if not isinstance(args, dict):
+            args = params.get("arguments")
+            if args is None:
+                args = {}
+            if not isinstance(args, dict):  # [] and 0 too, not read as "no arguments"
                 return _error(mid, -32602, "arguments must be an object")
             try:
                 data, failed = TOOLS[name][2](args), False
