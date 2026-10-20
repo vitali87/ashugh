@@ -91,9 +91,21 @@ class StaticProposer:
 
     def __init__(self, candidates: dict[int, list]) -> None:
         self.candidates = candidates
+        self.asked: set[int] = set()  # the lines a request named
 
     def propose(self, requests: list[Request]) -> dict[str, list]:
+        self.asked |= {r.line for r in requests}
         return {r.id: list(self.candidates.get(r.line, [])) for r in requests}
+
+    def unused(self, lyric_lines: set[int]) -> list[str]:
+        """Why the candidates of lines no request named went unused."""
+        out = []
+        for line in sorted(set(self.candidates) - self.asked):
+            if line not in lyric_lines:
+                out.append(f"line {line} is no lyric line (lines count from the file's first)")
+            else:
+                out.append(f"line {line} already passes; its candidates were not needed")
+        return out
 
 
 def load_candidates(path: str | Path) -> dict[int, list]:

@@ -147,7 +147,29 @@ def scan(text: str, spec: Spec | None = None, path: str = "-", lang: str | None 
                 f"{have} stanzas, rhyme {' '.join(parts)} wants {len(parts)}",
             )
         )
+    _check_spec_tables(report)
     return report
+
+
+def _check_spec_tables(report: Report) -> None:
+    """A [section.X] or [stanza.N] that matches nothing is likely a typo: chorsu."""
+    if not report.lines:
+        return
+    first = report.lines[0]
+    keys = {lr.line.key for lr in report.lines}
+    found = [
+        (f"[section.{name}] matches no section of the song", ", ".join(sorted(keys - {""})))
+        for name in sorted(report.spec.sections)
+        if name not in keys
+    ]
+    count = len(report.units)
+    found += [
+        (f"[stanza.{n}] is past the song's {count} stanzas", "")
+        for n in sorted(report.spec.stanza_tables)
+        if n > count
+    ]
+    for message, detail in found:
+        first.issues.append(Issue(first.line.number, "spec", "warning", message, detail))
 
 
 def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):
@@ -218,7 +240,9 @@ def _check_shared_rhymes(units: list[UnitReport]) -> None:
             for g, lrs in _groups(u.lines, u.rule).items():
                 groups.setdefault(g, []).extend(lrs)
         _check_groups(groups)
-        letters = rhyme.scheme([lr.tails for u in members for lr in u.lines])
+        letters = rhyme.scheme(
+            [lr.tails for u in members for lr in u.lines], _floor(members[0].rule)
+        )
         for u in members:  # one lettering for the stanzas that share a scheme
             u.scheme, letters = letters[: len(u.lines)], letters[len(u.lines) :]
             for lr, letter in zip(u.lines, u.scheme):
@@ -238,10 +262,16 @@ def _scan_unit(lines: list[Line], rule: Rule, scope: str | None = None) -> UnitR
     return unit
 
 
+def _floor(rule: Rule) -> float:
+    """The rhyme a spec asks for, below which no lines are lettered alike: its
+    min_rhyme where it sets a scheme, near otherwise."""
+    return rhyme.THRESHOLD[rule.min_rhyme] if rule.rhyme else rhyme.THRESHOLD["near"]
+
+
 def _finish(unit: UnitReport, others: dict[int, list[list[rhyme.Tail]]], groups: bool) -> None:
     """Choose rhyme stresses, letter the stanza and check its scheme."""
     _rhyme_stress(unit.lines, unit.rule, unit.meter, unit.meter_source, others)
-    unit.scheme = rhyme.scheme([lr.tails for lr in unit.lines])
+    unit.scheme = rhyme.scheme([lr.tails for lr in unit.lines], _floor(unit.rule))
     for lr, letter in zip(unit.lines, unit.scheme):
         lr.letter = letter
     _check_rhyme(unit.lines, unit.rule, groups)
@@ -283,14 +313,17 @@ def _rhyme_stress(
     with a line of the same stanza (or a partner in the stanzas sharing its
     scheme: beyond, by line number), that reading wins.
     """
-    floor = rhyme.THRESHOLD["near"]
+    floor = _floor(rule)
+    # what each line could also be, so two ambiguous partners can move together:
+    # у́тра / о́строва both become утра́ / острова́
+    could = [rhyme_alternatives(r, rule, meter_name, source) for r in reports]
     for _ in range(2):
         changed = False
         for k, lr in enumerate(reports):
             tries = _rhyme_tries(lr)
             if not tries:
                 continue
-            others = [r.tails for m, r in enumerate(reports) if m != k]
+            others = [r.tails + could[m] for m, r in enumerate(reports) if m != k]
             others += (beyond or {}).get(lr.line.number, [])
             if not others:
                 return

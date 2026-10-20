@@ -112,6 +112,8 @@ def cmd_pick(args: argparse.Namespace) -> int:
     result = fit_song(
         _read(args.file), spec, proposer, rounds=1, solver=args.solver, lang=args.lang
     )
+    for why in proposer.unused({lr.line.number for lr in result.report.lines}):
+        print(f"warning: {why}", file=sys.stderr)
     return _emit_fit(result, args)
 
 

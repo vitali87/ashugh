@@ -233,3 +233,76 @@ def test_a_voicing_difference_is_a_near_rhyme_not_a_perfect_one(a, b):
 
     s = en_rhyme(f"in the {a}", f"take a {b}")
     assert rhyme.THRESHOLD["near"] <= s < rhyme.THRESHOLD["perfect"]
+
+
+def test_a_derived_spec_passes_the_song_it_came_from():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+    from ashugh.translate import derive_spec
+
+    song = (
+        "[Verse]\nThe whole family's gathered 'round,\nThe record player's on,\n"
+        "My grandpa's playin' Johnny Cash\nTill every hour's gone.\n\n"
+        "[Chorus]\n'Cause it's Tennessee whiskey and a Friday night,\n"
+        "Dancin' with my baby in the neon light,\n"
+        "Gonna raise a little hell in this little town,\n"
+        "Ain't nobody tellin' us to settle down.\n"
+    )
+    derived = derive_spec(scan(song), {"syllables", "meter", "rhyme", "endings"})
+    assert scan(song, from_dict({**derived, "language": "en"})).ok
+
+
+def run_pick(tmp_path, capsys, song: str, cands: dict, *flags: str):
+    import json
+
+    from ashugh.cli import main
+
+    f = tmp_path / "song.txt"
+    f.write_text(song, encoding="utf-8")
+    c = tmp_path / "c.json"
+    c.write_text(json.dumps(cands), encoding="utf-8")
+    code = main(["pick", str(f), "--candidates", str(c), *flags])
+    return code, capsys.readouterr().err
+
+
+def test_pick_names_candidates_it_could_not_use(tmp_path, capsys):
+    song = "[Verse]\nI walk the way\nI pass the day\nI hold the light and more\n"
+    cands = {"2": ["I walk all day"], "4": ["I hold the light"], "99": ["nothing"]}
+    _, err = run_pick(tmp_path, capsys, song, cands, "--syllables", "4", "--lang", "en")
+    assert "line 99 is no lyric line" in err
+    assert "line 2 already passes" in err  # file lines, tags counted: an agent's slip
+
+
+def test_pick_tells_a_line_with_no_candidates_from_one_whose_candidates_failed(tmp_path, capsys):
+    song = "I walk the way\nI hold the light\n"
+    _, err = run_pick(tmp_path, capsys, song, {}, "--syllables", "3", "--lang", "en")
+    assert "no candidates given" in err and "own checks" not in err
+
+
+def test_a_spec_table_that_matches_nothing_is_named():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    song = "[Verse]\nI walk the way\n\n[Chorus]\nI hold the light\n"
+    spec = from_dict(
+        {
+            "language": "en",
+            "section": {"chorsu": {"syllables": 4}},
+            "stanza": {"9": {"syllables": 4}},
+        }
+    )
+    warnings = [(i.line, i.message) for i in scan(song, spec).issues if i.code == "spec"]
+    assert (2, "[section.chorsu] matches no section of the song") in warnings
+    assert (2, "[stanza.9] is past the song's 2 stanzas") in warnings
+    ok = from_dict({"language": "en", "section": {"chorus": {"syllables": 4}}})
+    assert [i for i in scan(song, ok).issues if i.code == "spec"] == []
+
+
+def test_the_detected_scheme_uses_the_specs_min_rhyme():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    song = "Пели до утра\nПлыли острова\nТемная ночь\nХолодный дождь\n"  # slant pairs
+    loose = scan(song, from_dict({"language": "ru", "rhyme": "AABB", "min_rhyme": "slant"}))
+    assert loose.ok and loose.units[0].scheme == "AABB"
+    assert scan(song, from_dict({"language": "ru"})).units[0].scheme == "ABCD"  # near, alone

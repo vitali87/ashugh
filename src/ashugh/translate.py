@@ -57,7 +57,10 @@ def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
         table: dict = {}
         if "syllables" in keep or "meter" in keep:
             table["syllables"] = [lr.fit.count for lr in unit.lines]
-        if "meter" in keep and unit.meter != "free":
+        # the stanza's meter only where every line keeps it: a spec its own song fails
+        # would ask a translation for what the source never did
+        kept = not any(lr.fit.off_beat or lr.fit.ending_off for lr in unit.lines)
+        if "meter" in keep and unit.meter != "free" and kept:
             table["meter"] = unit.meter
             table["feet"] = [lr.fit.feet for lr in unit.lines]
         if "rhyme" in keep:

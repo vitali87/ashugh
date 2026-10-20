@@ -121,6 +121,7 @@ class _Var:
     group: str | None = None
     chosen: Candidate | None = None
     blocked: list[str] = field(default_factory=list)  # why the last round did not settle it
+    offered: int = 0  # candidates the proposer gave
 
     @property
     def number(self) -> int:
@@ -213,6 +214,7 @@ def run(
         for req in requests:
             var = variables[req.line]
             for raw in answers.get(req.id, []) or []:
+                var.offered += 1
                 _consider(var, raw, spec, lang, weigh)
         pending = _settle(variables, groups, lines, solver)
     return used, asked
@@ -320,7 +322,7 @@ def _settle(
             var.chosen = max(var.pool, key=lambda c: c.weight) if var.pool else None
             if var.chosen is None:
                 pending.add(var.number)
-                var.blocked = ["no candidate passed the line's own checks"]
+                var.blocked = [_why_empty(var)]
     for numbers in groups.values():
         pools = [variables[k].pool if k in variables else [_fixed(lines[k])] for k in numbers]
         var_numbers = [k for k in numbers if k in variables]
@@ -331,7 +333,7 @@ def _settle(
                 variables[k].chosen = None
                 pending.add(k)
                 variables[k].blocked = (
-                    ["no candidate passed the line's own checks"]
+                    [_why_empty(variables[k])]
                     if not variables[k].pool
                     else ["no combination of candidates kept the rhyme"]
                 )
@@ -341,6 +343,12 @@ def _settle(
                 variables[k].chosen = variables[k].pool[c]
                 variables[k].blocked = []
     return pending
+
+
+def _why_empty(var: _Var) -> str:
+    if not var.offered:
+        return "no candidates given"
+    return "no candidate passed the line's own checks"
 
 
 def _problem(pools: list[list[Candidate]]) -> Problem:
