@@ -128,3 +128,36 @@ def test_stdio_round_trip():
     assert replies[0]["id"] == 1 and "result" in replies[0]
     assert replies[1]["error"]["code"] == -32700
     assert json.loads(replies[2]["result"]["content"][0]["text"])["level"] == "perfect"
+
+
+def test_meter_names_with_feet_or_aliases_work():
+    _, data = tool(Server(), "syllables", text="Я помню чудное мгновенье", meter="iamb4")
+    assert data["lines"][0]["syllables"] == 9
+    _, data = tool(Server(), "syllables", text="Я помню чудное мгновенье", meter="ямб")
+    assert data["lines"][0]["syllables"] == 9
+
+
+def test_unknown_meter_is_a_tool_error():
+    response = call(
+        Server(), "tools/call", {"name": "syllables", "arguments": {"text": "a", "meter": "sonnet"}}
+    )
+    assert response["result"]["isError"]
+
+
+@pytest.mark.parametrize("params", [["x"], "x", 3])
+def test_malformed_params_are_errors_not_crashes(params):
+    response = call(Server(), "initialize", params)
+    assert response["error"]["code"] == -32602
+
+
+def test_an_unexpected_failure_does_not_kill_the_server(monkeypatch):
+    import ashugh.mcp as mcp
+
+    def boom(args):
+        raise KeyError("surprise")
+
+    monkeypatch.setitem(mcp.TOOLS, "scan", (*mcp.TOOLS["scan"][:2], boom))
+    server = Server()
+    response = call(server, "tools/call", {"name": "scan", "arguments": {"lyrics": "a"}})
+    assert response["result"]["isError"]
+    assert call(server, "ping")["result"] == {}

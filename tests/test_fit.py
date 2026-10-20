@@ -246,3 +246,71 @@ def test_requests_cli_on_a_passing_song(tmp_path, capsys):
     song.write_text("Мой дядя самых честных правил\n", encoding="utf-8")
     assert main(["requests", str(song), "--syllables", "9"]) == 0
     assert json.loads(capsys.readouterr().out)["requests"] == []
+
+
+@pytest.mark.parametrize("bad", ["[Chorus]", "(ա-ա-ա)", "[Verse 2] Ես եմ", "…", "123"])
+def test_candidates_without_sung_words_are_refused(bad):
+    spec = from_dict({"forbid_final": ["ը"], "language": "hy"})
+    proposer = Scripted([{3: [bad]}])
+    text = "Գիշերն իջավ\nՈւ ես նորից\nՈւ մնաց միայն իմ սիրտը\nՍպասում եմ"
+    result = fit.fit_song(text, spec, proposer, rounds=1)
+    assert not any(c.line == 3 for c in result.changes)
+    assert result.text.splitlines()[2] == "Ու մնաց միայն իմ սիրտը"
+
+
+def test_armenian_stress_marks_are_not_carried_as_punctuation():
+    assert fit.replace_lines("Ես գնացի տուն՜\n", {1: "Ես գնացի տունը"}) == "Ես գնացի տունը\n"
+    assert fit.replace_lines("Ո՞վ ես դու՞\n", {1: "Ով ես"}) == "Ով ես\n"
+    assert fit.replace_lines("Ես եմ։\n", {1: "Դու ես"}) == "Դու ես։\n"
+
+
+def test_carried_punctuation_follows_the_target_language():
+    assert fit.replace_lines("Ես եմ։\n", {1: "Я здесь"}, lang="ru") == "Я здесь.\n"
+    assert fit.replace_lines("Я здесь.\n", {1: "Ես եմ"}, lang="hy") == "Ես եմ։\n"
+    assert fit.replace_lines("Я здесь,\n", {1: "Ես եմ"}, lang="hy") == "Ես եմ,\n"
+    assert fit.replace_lines("Ես եմ՝\n", {1: "I am"}, lang="en") == "I am,\n"
+
+
+@pytest.mark.parametrize("sep", ["\r", "\u2028"])
+def test_replace_lines_with_other_line_breaks(sep):
+    text = f"Да нет{sep}Мой дядя{sep}"
+    out = fit.replace_lines(text, {1: "Ну да"})
+    if sep == "\r":
+        assert out == "Ну да\rМой дядя\r"
+    else:  # U+2028 is not a line break for editors: the whole text is one line
+        assert out == "Ну да"
+
+
+def test_rejected_candidates_keep_their_text_intact():
+    proposer = Scripted([{3: ["Я жду тебя — а ты молчишь всю ночь"]}])
+    spec = from_dict({"syllables": 3, "language": "ru"})
+    fit.fit_song("Да\nНет\nМолчи\n", spec, proposer, rounds=2)
+    (retry,) = [r for r in proposer.calls[1] if r.line == 3]
+    assert retry.rejected[0].startswith("Я жду тебя — а ты молчишь всю ночь — ")
+
+
+@pytest.mark.parametrize(
+    "spec,template",
+    [
+        ({"meter": "trochee4", "syllables": 9, "endings": "d"}, "/x/x/x/xx"),
+        ({"meter": "trochee4", "syllables": 8, "endings": "f"}, "/x/x/x/x"),
+        ({"meter": "iamb4", "endings": "f"}, "x/x/x/x/x"),
+        ({"meter": "iamb4", "syllables": 10}, "x/x/x/x/xx"),
+        ({"meter": "iamb", "syllables": 8}, "x/x/x/x/"),
+    ],
+)
+def test_request_template_ends_where_the_slot_does(spec, template):
+    (req,) = fit.requests_for("Мой дядя честных правил", from_dict({**spec, "language": "ru"}))
+    assert req.template == template
+    from ashugh import meter
+
+    assert meter.parse_meter(spec["meter"])[0] == req.meter
+
+
+@pytest.mark.parametrize("bad_id", [["L1"], {"a": 1}, 3, None])
+def test_answers_with_odd_ids_are_skipped_not_fatal(bad_id):
+    from ashugh.proposers import parse_lines
+
+    (req,) = fit.requests_for("Мой дядя честных правил", from_dict({"syllables": 9}))
+    answer = {"lines": [{"id": bad_id, "candidates": ["x"]}, {"id": req.id, "candidates": ["y"]}]}
+    assert parse_lines(answer, [req]) == {req.id: ["y"]}

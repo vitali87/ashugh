@@ -73,3 +73,44 @@ def test_templates_parse(tmp_path):
 def test_lexicon_keys_are_lowercased():
     spec = from_dict({"lexicon": {"Замок": "замо́к"}})
     assert spec.lexicon == {"замок": "замо́к"}
+
+
+@pytest.mark.parametrize(
+    "tag,key",
+    [
+        ("Verse 2", "verse"),
+        ("Chorus x2", "chorus"),
+        ("Припев", "chorus"),
+        ("Припев x2", "chorus"),
+        ("Припев 2x", "chorus"),
+        ("Կրկներգ", "chorus"),
+        ("Куплет 3: тише", "verse"),
+        ("Pre-Chorus", "pre-chorus"),
+        ("Hook", "hook"),
+        ("Ending part", "ending part"),
+    ],
+)
+def test_section_keys_are_canonical(tag, key):
+    from ashugh.lyrics import section_key
+
+    assert section_key(tag) == key
+
+
+def test_russian_and_armenian_tags_match_english_sections():
+    from ashugh.scan import scan
+
+    spec = from_dict({"syllables": 9, "section": {"chorus": {"syllables": 3}}})
+    rep = scan("[Куплет]\nМой дядя самых честных правил\n[Припев]\nЯ жду\n", spec)
+    assert [i.code for i in rep.issues if i.severity == "error"] == ["syllables"]
+    rep = scan("[Куплет]\nМой дядя самых честных правил\n[Припев]\nЖду тебя\n", spec)
+    assert rep.ok
+
+
+def test_spec_sections_may_be_named_in_any_language():
+    spec = from_dict({"section": {"Припев": {"syllables": 3}}})
+    assert spec.rule_for("chorus").syllables_at(0) == 3
+
+
+def test_two_names_for_one_section_are_refused():
+    with pytest.raises(SpecError, match="same section"):
+        from_dict({"section": {"chorus": {"syllables": 3}, "припев": {"syllables": 4}}})

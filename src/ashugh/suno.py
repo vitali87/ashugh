@@ -69,41 +69,8 @@ LATIN = {
     "f": "f",
 }
 
-TAGS = {
-    "verse": "Verse",
-    "куплет": "Verse",
-    "տուն": "Verse",
-    "chorus": "Chorus",
-    "refrain": "Chorus",
-    "припев": "Chorus",
-    "рефрен": "Chorus",
-    "կրկներգ": "Chorus",
-    "pre-chorus": "Pre-Chorus",
-    "prechorus": "Pre-Chorus",
-    "pre chorus": "Pre-Chorus",
-    "предприпев": "Pre-Chorus",
-    "bridge": "Bridge",
-    "бридж": "Bridge",
-    "мост": "Bridge",
-    "կամուրջ": "Bridge",
-    "intro": "Intro",
-    "интро": "Intro",
-    "вступление": "Intro",
-    "ներածություն": "Intro",
-    "outro": "Outro",
-    "аутро": "Outro",
-    "кода": "Outro",
-    "концовка": "Outro",
-    "ավարտ": "Outro",
-    "եզրափակում": "Outro",
-    "hook": "Hook",
-    "хук": "Hook",
-    "instrumental": "Instrumental",
-    "проигрыш": "Instrumental",
-    "solo": "Solo",
-    "соло": "Solo",
-}
-TAG_RE = re.compile(r"^(\s*)\[\s*([^\]:\d]*?)\s*(\d*)\s*(:[^\]]*)?\]\s*$")
+TAGS = lyrics.SECTION_NAMES
+TAG_RE = re.compile(r"^(\s*)\[\s*([^\]:\d]*?)\s*((?:x\s*)?\d+(?:\s*x)?|)\s*(:[^\]]*)?\]\s*$", re.I)
 
 
 @dataclass
@@ -169,11 +136,13 @@ def format_song(
         check_policy(policy)
     words_policy = ((policy or {}).get("hy") or {}).get("words") or {}
     default_mode = ((policy or {}).get("hy") or {}).get("default", armenian) if policy else armenian
+    ru_words: dict[str, str] = {}
     if policy and "ru" in policy:
         stress = PROBE_STRESS[policy["ru"].get("default", "plain")]
+        ru_words = {w: PROBE_STRESS[m] for w, m in (policy["ru"].get("words") or {}).items()}
 
     report = scan(text, spec or Spec(), lang=lang)
-    raw = text.splitlines(keepends=True)
+    raw = lyrics.split_lines(text, keepends=True)
     notes: list[Note] = []
     for lr in report.lines:
         line_raw = raw[lr.line.number - 1]
@@ -185,7 +154,8 @@ def format_song(
             pieces.append(body[last:a])
             hold = split == "all" or (split == "last" and i == len(spans) - 1)
             mode = words_policy.get(word.norm, default_mode)
-            new = _render(word, token, lr, i, i in elided, stress, mode, hold, schwa, notes)
+            how = ru_words.get(word.norm, stress)
+            new = _render(word, token, lr, i, i in elided, how, mode, hold, schwa, notes)
             pieces.append(new)
             last = b
         pieces.append(body[last:])
@@ -238,7 +208,10 @@ def _render(
 def _russian(
     w: Word, token: str, chosen: int | None, stress: str, n: int, notes: list[Note]
 ) -> str:
+    if ACUTE in token and stress == "none":
+        return token  # the writer's own marks stay as written
     letters = token.replace(ACUTE, "")
+    marked_by_writer = letters != token
     candidates = [r for r in w.readings if r.stress == chosen] or list(w.readings)
     spellings = {r.spelling for r in w.readings}
     new = letters
@@ -253,10 +226,14 @@ def _russian(
             if "".join(chars) != letters:
                 new = "".join(chars)
                 notes.append(Note(n, "yo", token, new, "ё restored"))
-    if stress != "none" and w.size > 1 and chosen is not None and (w.ambiguous or w.guessed):
+    hint = w.ambiguous or w.guessed or marked_by_writer
+    if stress != "none" and w.size > 1 and chosen is not None and hint:
         marked = _mark_vowel(new, chosen, stress)
         if marked != new:
-            why = "stress guessed by the meter" if w.guessed else "ambiguous stress"
+            if marked_by_writer:
+                why = "marked in the lyrics"
+            else:
+                why = "stress guessed by the meter" if w.guessed else "ambiguous stress"
             notes.append(Note(n, "stress", token, marked, why))
             new = marked
     return new
@@ -364,7 +341,7 @@ def _case_like(token: str, latin: str) -> str:
 
 
 def _retag(text: str, report: Report, notes: list[Note]) -> str:
-    raw = text.splitlines(keepends=True)
+    raw = lyrics.split_lines(text, keepends=True)
     tagged = False
     for k, line in enumerate(raw):
         m = TAG_RE.match(line.rstrip("\r\n"))

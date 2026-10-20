@@ -171,3 +171,9 @@ def test_promotion_does_not_make_any_dactyl_rhyme():
     text = "I keep the summer in my memory\nAnd every road will lead me home\n"
     rep = scan(text, from_dict({"meter": "iamb", "rhyme": "AA"}))
     assert "rhyme" in codes(rep)
+
+
+def test_syl_cli_takes_meter_names_with_feet(capsys):
+    assert main(["syl", "--meter", "iamb4", "Я помню чудное мгновенье"]) == 0
+    assert "9" in capsys.readouterr().out
+    assert main(["syl", "--meter", "sonnet", "Я помню"]) == 2

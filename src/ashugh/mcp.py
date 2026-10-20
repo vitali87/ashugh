@@ -67,7 +67,7 @@ def t_scan(args: dict) -> dict:
 def t_syllables(args: dict) -> dict:
     lines = []
     for ln in analyze_lines(_str(args, "text"), _spec(args), _str(args, "lang", False)):
-        f = meter.fit(ln.words, _str(args, "meter", False) or "free")
+        f = meter.fit(ln.words, meter.parse_meter(_str(args, "meter", False) or "free")[0])
         sung = " ".join(w.sung(f.stresses.get(i), mark=True) for i, w in enumerate(ln.words))
         ambiguous = [w.text for w in ln.words if w.ambiguous and w.size > 1]
         lines.append(
@@ -226,6 +226,8 @@ class Server:
         method, params, mid = msg["method"], msg.get("params") or {}, msg.get("id")
         if mid is None:  # a notification: nothing to answer
             return None
+        if not isinstance(params, dict):
+            return _error(mid, -32602, "params must be an object")
         if method == "initialize":
             asked = params.get("protocolVersion")
             return _result(
@@ -255,6 +257,8 @@ class Server:
                 data, failed = TOOLS[name][2](args), False
             except (ToolError, SpecError, ProposerError, ValueError, OSError) as e:
                 data, failed = {"error": str(e)}, True
+            except Exception as e:  # a bug in one call must not take the server down
+                data, failed = {"error": f"internal error: {type(e).__name__}: {e}"}, True
             text = json.dumps(data, ensure_ascii=False)
             return _result(mid, {"content": [{"type": "text", "text": text}], "isError": failed})
         return _error(mid, -32601, f"method not found: {method}")

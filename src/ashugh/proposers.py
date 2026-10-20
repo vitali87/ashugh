@@ -74,7 +74,9 @@ def parse_lines(data, requests: list[Request]) -> dict[str, list]:
     wanted = {r.id for r in requests}
     out: dict[str, list] = {r.id: [] for r in requests}
     for entry in data["lines"]:
-        if not isinstance(entry, dict) or entry.get("id") not in wanted:
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+            continue
+        if entry["id"] not in wanted:
             continue
         candidates = entry.get("candidates")
         if isinstance(candidates, list):

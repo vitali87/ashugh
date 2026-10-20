@@ -146,9 +146,9 @@ def translate_with_spec(
             changes.append(
                 Change(k, var.lr.line.text, text, round(chosen.weight, 3) if chosen else 0.0)
             )
-    out = replace_lines(src.text, new)
+    out = replace_lines(src.text, new, lang=target)
     return FitResult(out, scan(out, spec, lang=target), changes, unresolved, used, asked)
 
 
-def _first_attempt(rejected: list[str]) -> str | None:
-    return rejected[0].split(" — ")[0] if rejected else None
+def _first_attempt(rejected: list[tuple[str, str]]) -> str | None:
+    return rejected[0][0] if rejected else None

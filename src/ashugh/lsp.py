@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+from . import lyrics
 from .scan import Report, scan
 from .spec import Spec, SpecError, load
 
@@ -124,7 +125,7 @@ class Server:
         if problem:
             diagnostics.append(_diag(0, 0, 1, "spec", problem, 1))
         elif rep is not None:
-            lines = self.docs[uri].splitlines()
+            lines = lyrics.split_lines(self.docs[uri])
             for issue in rep.issues:
                 row = issue.line - 1
                 text = lines[row] if 0 <= row < len(lines) else ""

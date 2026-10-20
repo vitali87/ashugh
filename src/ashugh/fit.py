@@ -18,14 +18,16 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from . import meter, rhyme
+from . import lyrics, meter, rhyme
 from .proposers import Proposer, Request
 from .scan import ENDING_NAMES, LineReport, Report, UnitReport, check_line, reanalyze, scan
 from .solver import Problem, solve
 from .spec import Spec
 
 MAX_LINE = 300
-PUNCT_RE = re.compile(r"[,.;:!?…։՝՞՜—-]+\s*$")
+PUNCT_RE = re.compile(r"[,.;:!?…։՝—-]+\s*$")  # not ՛ ՜ ՞: they mark a stressed vowel
+TO_ARMENIAN = str.maketrans({".": "։"})
+FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
 
 
@@ -103,7 +105,7 @@ class _Var:
     lr: LineReport
     unit: UnitReport
     pool: list[Candidate] = field(default_factory=list)
-    rejected: list[str] = field(default_factory=list)
+    rejected: list[tuple[str, str]] = field(default_factory=list)  # (candidate, why it failed)
     seen: set[str] = field(default_factory=set)
     group: str | None = None
     chosen: Candidate | None = None
@@ -255,6 +257,8 @@ def _clean(raw) -> tuple[str, float | None] | None:
     text = raw.strip()
     if not text or "\n" in text or "\r" in text or len(text) > MAX_LINE:
         return None
+    if "[" in text or "]" in text or not lyrics.tokenize(text):
+        return None  # a section tag, a backing vocal or punctuation: nothing to sing
     return text, faith
 
 
@@ -271,7 +275,7 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
     lr = check_line(line, var.unit.rule, var.unit.meter, var.unit.meter_source)
     errors = line_errors(lr)
     if errors:
-        var.rejected.append(f"{text} — {errors[0].message}")
+        var.rejected.append((text, errors[0].message))
         return
     var.pool.append(Candidate(text, lr, weigh(var.lr.line.text, text, faith)))
 
@@ -356,7 +360,14 @@ def _request(
             length = meter.length(meter_name, feet, want_ending if want_ending is not None else 0)
         if length:
             period, phase = meter.CLASSICAL[meter_name]
-            template = "".join("/" if p % period == phase else "x" for p in range(length))
+            last = length - 1  # the last beat: nothing after it is stressed
+            if want_ending is not None:
+                last = length - 1 - want_ending
+            elif feet is not None:
+                last = phase + period * (feet - 1)
+            template = "".join(
+                "/" if p % period == phase and p <= last else "x" for p in range(length)
+            )
     rhyme_with, sound = [], None
     if var.group is not None:
         for k in groups[var.group]:
@@ -395,7 +406,7 @@ def _request(
         rhyme_sound=sound,
         avoid_final=list(rule.forbid_final),
         problems=problems,
-        rejected=var.rejected[-8:],
+        rejected=[f"{text} — {why}" for text, why in var.rejected[-8:]],
         n=n,
     )
     if extra is not None:
@@ -411,17 +422,24 @@ def _current(var: _Var | None, original: LineReport | None) -> LineReport | None
     return best.report if best else original
 
 
-def replace_lines(text: str, new: dict[int, str]) -> str:
-    """text with the given 1-based lines replaced, indentation and line endings kept."""
+def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> str:
+    """text with the given 1-based lines replaced, indentation and line endings kept.
+
+    A line's closing punctuation stays when the new text has none, written the
+    way lang writes it (the Armenian full stop is ։) when lang is given.
+    """
     if not new:
         return text
-    lines = text.splitlines(keepends=True)
+    lines = lyrics.split_lines(text, keepends=True)
     for number, content in new.items():
         if 1 <= number <= len(lines):
-            m = re.match(r"(\s*)(.*?)(\r?\n)?$", lines[number - 1], re.S)
+            m = re.match(r"(\s*)(.*?)(\r\n|\r|\n)?$", lines[number - 1], re.S)
             lead, body, ending = m.group(1), m.group(2), m.group(3) or ""
             mark = PUNCT_RE.search(body)
             if mark and not PUNCT_RE.search(content):
-                content += mark.group(0)  # keep the line's closing comma or full stop
+                tail = mark.group(0)
+                if lang is not None:
+                    tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
+                content += tail  # keep the line's closing comma or full stop
             lines[number - 1] = lead + content + ending
     return "".join(lines)

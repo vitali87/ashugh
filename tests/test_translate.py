@@ -173,3 +173,18 @@ def test_translate_cli_with_a_command_proposer(tmp_path, capsys):
     )
     assert code == 0, capsys.readouterr()
     assert out.read_text(encoding="utf-8") == "Я жду тебя всю ночь\nИ мне нельзя помочь\n"
+
+
+def test_unresolved_translation_keeps_a_dashed_attempt_whole():
+    proposer = Scripted([{1: ["Я жду тебя — а ты молчишь всю ночь"], 2: ["До самого утра"]}])
+    result = translate.translate_song(
+        COUPLET, "ru", proposer, keep={"syllables", "rhyme"}, rounds=1
+    )
+    assert "Я жду тебя — а ты молчишь всю ночь" in result.text
+
+
+def test_translation_does_not_carry_the_source_full_stop():
+    source = "Ես սպասում եմ քեզ։\nՄինչև առավոտ։\n"
+    proposer = Scripted([{1: ["Я жду тебя всю ночь"], 2: ["До самого утра"]}])
+    result = translate.translate_song(source, "ru", proposer, keep={"syllables"}, rounds=1)
+    assert "։" not in result.text

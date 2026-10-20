@@ -118,7 +118,7 @@ def cmd_syl(args: argparse.Namespace) -> int:
     text = " ".join(args.text) if args.text else sys.stdin.read()
     spec = load(args.spec) if args.spec else Spec()
     for ln in analyze_lines(text, spec, args.lang):
-        f = meter.fit(ln.words, args.meter or "free")
+        f = meter.fit(ln.words, meter.parse_meter(args.meter or "free")[0])
         parts = []
         for i, w in enumerate(ln.words):
             st = f.stresses.get(i)

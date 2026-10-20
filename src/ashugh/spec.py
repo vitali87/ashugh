@@ -32,6 +32,7 @@ import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from . import lyrics
 from .lang import ANALYZERS
 from .meter import parse_meter
 from .rhyme import THRESHOLD
@@ -204,7 +205,10 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     for name, table in raw_sections.items():
         if not isinstance(table, dict):
             raise SpecError(f"{where}: section.{name} must be a table")
-        sections[name.lower()] = apply(table, base, f"{where} [section.{name}]")
+        key = lyrics.section_key(name)
+        if key in sections:
+            raise SpecError(f"{where}: section.{name} and another table name the same section")
+        sections[key] = apply(table, base, f"{where} [section.{name}]")
     stanzas = {}
     raw_stanzas = data.get("stanza", {})
     if not isinstance(raw_stanzas, dict):

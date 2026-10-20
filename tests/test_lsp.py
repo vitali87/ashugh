@@ -194,3 +194,11 @@ def test_stdio_session(tmp_path):
     assert any(r.get("method") == "textDocument/publishDiagnostics" for r in replies)
     assert replies[-1]["id"] == 2
     assert proc.returncode == 0
+
+
+def test_diagnostics_use_editor_line_numbers(tmp_path):
+    (tmp_path / "song.toml").write_text("syllables = 3\n", encoding="utf-8")
+    uri = (tmp_path / "song.txt").as_uri()
+    (published,) = open_doc(Server(), uri, "Я жду\u2028тебя\nЯ жду тебя всю ночь до утра\n")
+    rows = {d["range"]["start"]["line"] for d in published["params"]["diagnostics"]}
+    assert rows == {0, 1}

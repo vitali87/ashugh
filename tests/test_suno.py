@@ -164,3 +164,44 @@ def test_russian_policy_picks_the_stress_marks():
     assert out == "Не уходи, мой тёплый за́мок"
     with pytest.raises(ValueError):
         fmt("Я жду", policy={"ru": {"default": "bold"}})
+
+
+@pytest.mark.parametrize("stress", ["caps", "acute", "none"])
+def test_stress_marks_the_user_wrote_are_kept(stress):
+    from ashugh.model import ACUTE
+
+    word = "за" + ACUTE + "мок"
+    out = fmt(f"Мой тёплый {word}", stress=stress)
+    want = {"caps": "зАмок", "acute": word, "none": word}[stress]
+    assert out == f"Мой тёплый {want}"
+    other = fmt("Мой тёплый замо" + ACUTE + "к", stress="caps")
+    assert other == "Мой тёплый замОк"
+
+
+def test_russian_policy_per_word():
+    spec = from_dict({"meter": "iamb"})
+    policy = {"ru": {"default": "plain", "words": {"замок": "caps"}}}
+    out = fmt("Не уходи, мой тёплый замок", spec=spec, policy=policy)
+    assert out == "Не уходи, мой тёплый зАмок"
+    policy = {"ru": {"default": "caps", "words": {"замок": "plain"}}}
+    assert fmt("Не уходи, мой тёплый замок", spec=spec, policy=policy).endswith("замок")
+
+
+@pytest.mark.parametrize(
+    "tag,want",
+    [
+        ("[Припев x2]", "[Chorus x2]"),
+        ("[Припев 2x]", "[Chorus 2x]"),
+        ("[Կրկներգ x3]", "[Chorus x3]"),
+        ("[Куплет 2]", "[Verse 2]"),
+        ("[Chorus x2]", "[Chorus x2]"),
+    ],
+)
+def test_repeat_counts_survive_tag_translation(tag, want):
+    assert fmt(f"{tag}\nЯ жду", tags=True) == f"{want}\nЯ жду"
+
+
+def test_line_separator_is_not_a_line_break():
+    text = "Мой тёплый замок\u2028ещё\nНе уходи"
+    out = fmt(text, stress="none")
+    assert out.split("\n")[1] == "Не уходи"
