@@ -169,18 +169,18 @@ def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):
 
     k = 0
     while k < len(stanzas):
-        end = k
-        while (
-            end + 1 < len(stanzas)
-            and rules[end + 1] is rules[k]
+        end, parts = k, rules[k].rhyme_parts
+        while (  # a [stanza.N] table that leaves the rhyme alone stays in the run
+            parts
+            and end + 1 < len(stanzas)
+            and rules[end + 1].rhyme_parts == parts
             and joined(stanzas[end], stanzas[end + 1])
         ):
             end += 1
-        parts = rules[k].rhyme_parts
-        if parts and end > k:
-            base, n = rules[k], len(parts)
+        if end > k:
+            n = len(parts)
             for j in range(end - k + 1):
-                rules[k + j] = replace(base, rhyme=parts[j % n], rhyme_parts=())
+                rules[k + j] = replace(rules[k + j], rhyme=parts[j % n], rhyme_parts=())
                 scopes[k + j] = f"{k}:{j // n}"
             if (end - k + 1) % n:
                 short.append((end, (end - k + 1) % n, parts))

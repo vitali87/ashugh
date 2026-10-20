@@ -123,3 +123,20 @@ def test_too_few_stanzas_for_the_scheme_is_a_warning():
 def test_whole_cycles_raise_no_scheme_warning():
     rep = scan(SONNET, from_dict(PETRARCHAN))
     assert [i for i in rep.issues if i.code == "scheme"] == []
+
+
+def test_a_stanza_table_that_leaves_the_rhyme_alone_keeps_the_shared_scheme():
+    spec = from_dict({**PETRARCHAN, "stanza": {"3": {"tolerance": 1}}})
+    rep = scan(SONNET, spec)
+    assert [u.rule.rhyme for u in rep.units] == ["ABBA", "ABBA", "CDC", "DCD"]
+    assert rep.units[2].rule.tolerance == 1 and rep.units[3].rule.tolerance == 0
+    broken = scan(SONNET.replace("soft and green and gray", "soft and green and cold"), spec)
+    assert errors(broken) == [(9, "rhyme")]
+
+
+def test_a_stanza_with_its_own_scheme_leaves_the_shared_run():
+    spec = from_dict({**PETRARCHAN, "stanza": {"4": {"rhyme": "ABA"}}})
+    rep = scan(SONNET, spec)
+    assert [u.rule.rhyme for u in rep.units] == ["ABBA", "ABBA", "CDC", "ABA"]
+    (warn,) = [i for i in rep.issues if i.code == "scheme"]
+    assert "3 stanzas" in warn.message
