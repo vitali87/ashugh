@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
 from .meter import Fit
 from .model import Line
-from .spec import Rule, Spec
+from .spec import Rule, Spec, mixed_case
 
 ENDING_NAMES = {0: "masculine", 1: "feminine", 2: "dactylic", 3: "hyperdactylic"}
 
@@ -42,6 +42,7 @@ class LineReport:
     letter: str = ""
     target: int | None = None
     issues: list[Issue] = field(default_factory=list)
+    min_rhyme: str = "near"  # its stanza's: a line is judged by its own rule
 
     @property
     def ok(self) -> bool:
@@ -180,12 +181,21 @@ def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):
         if end > k:
             n = len(parts)
             for j in range(end - k + 1):
-                rules[k + j] = replace(rules[k + j], rhyme=parts[j % n], rhyme_parts=())
+                rules[k + j] = _part_rule(rules[k + j], parts[j % n])
                 scopes[k + j] = f"{k}:{j // n}"
             if (end - k + 1) % n:
                 short.append((end, (end - k + 1) % n, parts))
         k = end + 1
     return rules, scopes, short
+
+
+def _part_rule(rule: Rule, part: str) -> Rule:
+    """A stanza's share of a spaced scheme. When the whole scheme mixes cases,
+    a part in one case still asks its endings: CDC in AbbA AbbA CDC DCD."""
+    endings = rule.endings
+    if endings is None and rule.rhyme and mixed_case(rule.rhyme):
+        endings = "".join("f" if c.isupper() else "m" if c.islower() else "-" for c in part)
+    return replace(rule, rhyme=part, rhyme_parts=(), endings=endings)
 
 
 def _check_shared_rhymes(units: list[UnitReport]) -> None:
@@ -195,14 +205,22 @@ def _check_shared_rhymes(units: list[UnitReport]) -> None:
         if u.scope is not None:
             scoped.setdefault(u.scope, []).append(u)
     for members in scoped.values():
-        for u in members:
-            others = [lr.tails for v in members if v is not u for lr in v.lines]
-            _finish(u, others, groups=False)
+        for u in members:  # stresses chosen with the partners in other stanzas
+            partners: dict[int, list[list[rhyme.Tail]]] = {}
+            for v in members:
+                if v is u:
+                    continue
+                for lr in v.lines:
+                    g = v.rule.rhyme_at(lr.line.index)
+                    for mine in u.lines:
+                        if g is not None and u.rule.rhyme_at(mine.line.index) == g:
+                            partners.setdefault(mine.line.number, []).append(lr.tails)
+            _finish(u, partners, groups=False)
         groups: dict[str, list[LineReport]] = {}
         for u in members:
             for g, lrs in _groups(u.lines, u.rule).items():
                 groups.setdefault(g, []).extend(lrs)
-        _check_groups(groups, members[0].rule)
+        _check_groups(groups)
 
 
 def _scan_unit(lines: list[Line], rule: Rule, scope: str | None = None) -> UnitReport:
@@ -214,11 +232,11 @@ def _scan_unit(lines: list[Line], rule: Rule, scope: str | None = None) -> UnitR
     reports = [check_line(ln, rule, meter_name, source) for ln in lines]
     unit = UnitReport(first.section, first.key, meter_name, source, "", rule, reports, scope)
     if scope is None:  # a shared scheme is finished once all its stanzas are read
-        _finish(unit, [], groups=True)
+        _finish(unit, {}, groups=True)
     return unit
 
 
-def _finish(unit: UnitReport, others: list[list[rhyme.Tail]], groups: bool) -> None:
+def _finish(unit: UnitReport, others: dict[int, list[list[rhyme.Tail]]], groups: bool) -> None:
     """Choose rhyme stresses, letter the stanza and check its scheme."""
     _rhyme_stress(unit.lines, unit.rule, unit.meter, unit.meter_source, others)
     unit.scheme = rhyme.scheme([lr.tails for lr in unit.lines])
@@ -239,7 +257,7 @@ def check_line(
     target = rule.syllables_at(ln.index)
     feet = rule.feet_at(ln.index)
     f = meter.fit(ln.words, meter_name, target, rule.tolerance, force, feet, promote)
-    lr = LineReport(ln, f, rhyme.tails(ln, f), target=target)
+    lr = LineReport(ln, f, rhyme.tails(ln, f), target=target, min_rhyme=rule.min_rhyme)
     _check_line(lr, rule, meter_name, source)
     return lr
 
@@ -253,15 +271,15 @@ def _rhyme_stress(
     rule: Rule,
     meter_name: str,
     source: str,
-    beyond: Sequence[list[rhyme.Tail]] = (),
+    beyond: Mapping[int, list[list[rhyme.Tail]]] | None = None,
 ) -> None:
     """Let rhymes choose the stress of ambiguous line-final words (облака́ / издалека́),
     or put an English line's last beat on its final syllable (memory / free).
 
     The meter alone often cannot tell о́блака from облака́. When another reading
     of a line's rhyme word costs the meter little more and rhymes clearly better
-    with a line of the same stanza (or of the stanzas sharing its scheme, in
-    beyond), that reading wins.
+    with a line of the same stanza (or a partner in the stanzas sharing its
+    scheme: beyond, by line number), that reading wins.
     """
     floor = rhyme.THRESHOLD["near"]
     for _ in range(2):
@@ -280,7 +298,8 @@ def _rhyme_stress(
                 tries.append((None, True))
             if not tries:
                 continue
-            others = [r.tails for m, r in enumerate(reports) if m != k] + list(beyond)
+            others = [r.tails for m, r in enumerate(reports) if m != k]
+            others += (beyond or {}).get(lr.line.number, [])
             if not others:
                 return
 
@@ -488,7 +507,7 @@ def _check_rhyme(reports: list[LineReport], rule: Rule, groups: bool = True) -> 
             )
         )
     if groups:
-        _check_groups(_groups(reports, rule), rule)
+        _check_groups(_groups(reports, rule))
 
 
 def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]]:
@@ -500,13 +519,12 @@ def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]
     return out
 
 
-def _check_groups(groups: dict[str, list[LineReport]], rule: Rule) -> None:
-    floor = rhyme.THRESHOLD[rule.min_rhyme]
+def _check_groups(groups: dict[str, list[LineReport]]) -> None:
     for g, members in groups.items():
         head = members[0]
         for lr in members[1:]:
             s, ta, tb = rhyme.match(head.tails, lr.tails)
-            if s >= floor:
+            if s >= rhyme.THRESHOLD[lr.min_rhyme]:
                 continue
             a = ta.word if ta else head.line.text
             b = tb.word if tb else lr.line.text
@@ -516,7 +534,7 @@ def _check_groups(groups: dict[str, list[LineReport]], rule: Rule) -> None:
                     "rhyme",
                     "error",
                     f"rhyme {g[0]} broken",
-                    f"{_quote(a)} / {_quote(b)}: {rhyme.level(s)} {s:.2f}, need {rule.min_rhyme}",
+                    f"{_quote(a)} / {_quote(b)}: {rhyme.level(s)} {s:.2f}, need {lr.min_rhyme}",
                     {
                         "group": g[0],
                         "with_line": head.line.number,

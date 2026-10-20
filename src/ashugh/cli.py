@@ -40,9 +40,10 @@ def _inline_rule(args: argparse.Namespace) -> dict:
 def _spec(args: argparse.Namespace) -> Spec:
     spec = load(args.spec) if getattr(args, "spec", None) else Spec()
     inline = _inline_rule(args)
-    if inline:  # flags override the spec's top level and every section
+    if inline:  # flags override the spec's top level, every section and stanza
         spec.base = apply(inline, spec.base, "flags")
         spec.sections = {k: apply(inline, r, "flags") for k, r in spec.sections.items()}
+        spec.stanzas = {k: apply(inline, r, "flags") for k, r in spec.stanzas.items()}
     return spec
 
 

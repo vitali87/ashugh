@@ -81,7 +81,7 @@ class Rule:
         if self.endings:
             code = self.endings[i % len(self.endings)].lower()
             return ENDING_CODES.get(code)
-        if self.rhyme and _mixed_case(self.rhyme):
+        if self.rhyme and mixed_case(self.rhyme):
             ch = self.rhyme[i % len(self.rhyme)]
             if ch.isalpha():
                 return 1 if ch.isupper() else 0
@@ -118,7 +118,7 @@ class Spec:
         return self.base.empty and not self.sections and not self.stanzas
 
 
-def _mixed_case(s: str) -> bool:
+def mixed_case(s: str) -> bool:
     letters = [c for c in s if c.isalpha()]
     return any(c.isupper() for c in letters) and any(c.islower() for c in letters)
 

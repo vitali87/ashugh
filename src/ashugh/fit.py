@@ -301,7 +301,7 @@ def _settle(
     for numbers in groups.values():
         pools = [variables[k].pool if k in variables else [_fixed(lines[k])] for k in numbers]
         var_numbers = [k for k in numbers if k in variables]
-        problem = _problem(pools, variables[var_numbers[0]].unit.rule.min_rhyme)
+        problem = _problem(pools)
         choice = solve(problem, method) if all(pools) else None
         if choice is None:
             for k in var_numbers:
@@ -320,8 +320,8 @@ def _settle(
     return pending
 
 
-def _problem(pools: list[list[Candidate]], min_rhyme: str) -> Problem:
-    floor = rhyme.THRESHOLD[min_rhyme]
+def _problem(pools: list[list[Candidate]]) -> Problem:
+    """Each line against the group's first, judged by its own stanza's min_rhyme."""
     weights = [[c.weight for c in pool] for pool in pools]
     pairs: dict[tuple[int, int], set[tuple[int, int]]] = {}
     head = pools[0]
@@ -331,7 +331,9 @@ def _problem(pools: list[list[Candidate]], min_rhyme: str) -> Problem:
             for j, y in enumerate(pools[b]):
                 s, tx, ty = rhyme.match(x.report.tails, y.report.tails)
                 same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
-                if s >= floor and not (same_word and not (x.original and y.original)):
+                if s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
+                    same_word and not (x.original and y.original)
+                ):
                     ok.add((i, j))
         pairs[(0, b)] = ok
     return Problem(weights, pairs)

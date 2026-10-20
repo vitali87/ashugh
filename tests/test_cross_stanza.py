@@ -140,3 +140,75 @@ def test_a_stanza_with_its_own_scheme_leaves_the_shared_run():
     assert [u.rule.rhyme for u in rep.units] == ["ABBA", "ABBA", "CDC", "ABA"]
     (warn,) = [i for i in rep.issues if i.code == "scheme"]
     assert "3 stanzas" in warn.message
+
+
+def test_endings_follow_the_whole_schemes_case():
+    text = (
+        "I see the winter sky\nI walk along the river\n\n"
+        "I walk along the way\nI wait for you all day\n"
+    )
+    rep = scan(text, from_dict({"rhyme": "aB CC", "language": "en"}))
+    ending = sorted(i.line for i in rep.issues if i.code == "ending")
+    assert ending == [4, 5]  # CC asks feminine endings; way / day are masculine
+    whole = scan(text.replace("\n\n", "\n"), from_dict({"rhyme": "aBCC", "language": "en"}))
+    assert sorted(i.line for i in whole.issues if i.code == "ending") == [3, 4]
+
+
+def test_all_capital_parts_alone_ask_no_endings():
+    rep = scan(SONNET, from_dict(PETRARCHAN))
+    assert [i for i in rep.issues if i.code == "ending"] == []
+
+
+def test_each_line_is_judged_by_its_own_stanzas_min_rhyme():
+    text = (
+        "I lost the track of time\nI held a hand in mine\n\n"
+        "I sat upon a stone\nI could not find my home\n"
+    )
+    strict_second = {"rhyme": "AA BB", "language": "en", "stanza": {"2": {"min_rhyme": "perfect"}}}
+    assert errors(scan(text, from_dict(strict_second))) == [(5, "rhyme")]
+    loose_first = {
+        "rhyme": "AA BB",
+        "language": "en",
+        "min_rhyme": "perfect",
+        "stanza": {"1": {"min_rhyme": "near"}},
+    }
+    assert errors(scan(text, from_dict(loose_first))) == [(5, "rhyme")]
+
+
+def test_fit_judges_a_shared_rhyme_like_scan_does():
+    spec = from_dict(
+        {
+            "language": "en",
+            "rhyme": "AB AB",
+            "syllables": 3,
+            "min_rhyme": "perfect",
+            "stanza": {"2": {"min_rhyme": "near"}},
+        }
+    )
+    text = "all the day\non a stone\n\non the way\nI am all alone\n"
+    proposer = Scripted({5: ["far from home"]})
+    result = fit.fit_song(text, spec, proposer, rounds=1)
+    assert result.ok  # line 5 is judged near, in fit as in the rescan
+    assert "far from home" in result.text
+
+
+def test_only_partners_in_the_same_group_choose_a_stress():
+    text = (
+        "Над рекою старый замок\nНа столе так много банок\n\n"
+        "Я под ливнем весь намок\nИ ступил через порог\n"
+    )
+    rep = scan(text, from_dict({"rhyme": "AA BB", "language": "ru", "meter": "dolnik"}))
+    assert errors(rep) == []  # за́мок / ба́нок; намок is a B line
+    assert rep.units[0].lines[0].fit.stresses[2] == 0
+
+
+def test_rhyme_flag_overrides_stanza_tables_too(tmp_path, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    song.write_text("day\nnight\n\nway\nlight\n", encoding="utf-8")
+    spec = tmp_path / "song.toml"
+    spec.write_text('language = "en"\nrhyme = "AB"\n[stanza.2]\nrhyme = "AA"\n', encoding="utf-8")
+    assert main(["scan", str(song), "--spec", str(spec)]) == 1  # way / light, as AA
+    capsys.readouterr()
+    assert main(["scan", str(song), "--spec", str(spec), "--rhyme", "AB AB"]) == 0
