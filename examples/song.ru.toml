@@ -1,0 +1,4 @@
+# Iambic tetrameter, alternating feminine and masculine endings (AbAb).
+language = "ru"
+meter = "iamb4"
+rhyme = "AbAb"

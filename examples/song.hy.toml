@@ -1,0 +1,9 @@
+# Every line 8 syllables, quatrains rhyme ABAB, and no line may end on the
+# unstressed article ը (Suno swallows it).
+language = "hy"
+syllables = 8
+rhyme = "ABAB"
+forbid_final = ["ը"]
+
+[section.outro]
+rhyme = "-"

@@ -1,0 +1,41 @@
+[project]
+name = "ashugh"
+version = "0.1.0"
+description = "Prosody checks for song lyrics in Armenian and Russian: syllables, hidden schwas, stress, meter, rhyme."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md"]
+authors = [{ name = "Vitali Avagyan" }]
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["lyrics", "prosody", "meter", "rhyme", "armenian", "russian", "suno", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Linguistic",
+    "Natural Language :: Armenian",
+    "Natural Language :: Russian",
+]
+
+[project.scripts]
+ashugh = "ashugh.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ashugh"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B905"]  # zip() over sequences known to match
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
