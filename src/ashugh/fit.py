@@ -18,15 +18,25 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from . import lang as languages
 from . import lyrics, meter, rhyme
 from .proposers import Proposer, Request
-from .scan import ENDING_NAMES, LineReport, Report, UnitReport, check_line, reanalyze, scan
+from .scan import (
+    ENDING_NAMES,
+    LineReport,
+    Report,
+    UnitReport,
+    check_line,
+    reanalyze,
+    rhyme_alternatives,
+    scan,
+)
 from .solver import Problem, solve
 from .spec import Spec
 
 MAX_LINE = 300
 PUNCT_RE = re.compile(r"[,.;:!?…։՝—-]+\s*$")  # not ՛ ՜ ՞: they mark a stressed vowel
-ASIDE_RE = re.compile(r"\s*\([^)]*\)[,.;:!?…։՝]*\s*$")  # a backing vocal ending the line
+ASIDE_RE = re.compile(r"(\s*\([^)]*\))([,.;:!?…։՝]*)\s*$")  # a backing vocal ending the line
 TO_ARMENIAN = str.maketrans({".": "։"})
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
@@ -212,6 +222,7 @@ def _variables(report: Report, keep_original: bool, everything: bool = False):
     variables: dict[int, _Var] = {}
     groups: dict[str, list[int]] = {}
     members: dict[str, list[LineReport]] = {}
+    unit_of = {lr.line.number: unit for unit in report.units for lr in unit.lines}
     for u_id, unit in enumerate(report.units):
         scope = unit.scope or str(u_id)  # stanzas of one spaced scheme share their letters
         for lr in unit.lines:
@@ -230,6 +241,9 @@ def _variables(report: Report, keep_original: bool, everything: bool = False):
     for g, lrs in members.items():
         if any(lr.line.number in variables for lr in lrs) and len(lrs) > 1:
             groups[g] = [lr.line.number for lr in lrs]
+            for lr in lrs:  # the readings a new partner may choose for a line kept as is
+                unit = unit_of[lr.line.number]
+                lr.alt_tails = rhyme_alternatives(lr, unit.rule, unit.meter, unit.meter_source)
     for var in variables.values():
         var.seen.add(_norm(var.lr.line.text))
         if keep_original and not line_errors(var.lr):
@@ -272,12 +286,20 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
     if key in var.seen:
         return
     var.seen.add(key)
+    want = lang or var.lr.line.lang
+    written = languages.detect(lyrics.tokenize(text))
+    if want in languages.ANALYZERS and written and written != want:
+        name = languages.NAMES.get(want, want)
+        var.rejected.append((text, f"not in {name}"))  # a translation left in its source
+        return
     line = reanalyze(var.lr.line, text, spec, lang)
     lr = check_line(line, var.unit.rule, var.unit.meter, var.unit.meter_source)
     errors = line_errors(lr)
     if errors:
         var.rejected.append((text, errors[0].message))
         return
+    if var.group is not None:
+        lr.alt_tails = rhyme_alternatives(lr, var.unit.rule, var.unit.meter, var.unit.meter_source)
     var.pool.append(Candidate(text, lr, weigh(var.lr.line.text, text, faith)))
 
 
@@ -322,7 +344,9 @@ def _settle(
 
 
 def _problem(pools: list[list[Candidate]]) -> Problem:
-    """Each line against the group's first, judged by its own stanza's min_rhyme."""
+    """Each line against the group's first, judged by its own stanza's min_rhyme, with
+    the readings a partner may choose (облака́ beside свысока́); and no two lines
+    on the same rhyme word unless both were written that way."""
     weights = [[c.weight for c in pool] for pool in pools]
     pairs: dict[tuple[int, int], set[tuple[int, int]]] = {}
     head = pools[0]
@@ -330,14 +354,33 @@ def _problem(pools: list[list[Candidate]]) -> Problem:
         ok = set()
         for i, x in enumerate(head):
             for j, y in enumerate(pools[b]):
-                s, tx, ty = rhyme.match(x.report.tails, y.report.tails)
+                s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
                 same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
                 if s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
                     same_word and not (x.original and y.original)
                 ):
                     ok.add((i, j))
         pairs[(0, b)] = ok
+    for a in range(1, len(pools)):
+        for b in range(a + 1, len(pools)):
+            ok = {
+                (i, j)
+                for i, x in enumerate(pools[a])
+                for j, y in enumerate(pools[b])
+                if (x.original and y.original) or not _same_rhyme_word(x, y)
+            }
+            if len(ok) < len(pools[a]) * len(pools[b]):
+                pairs[(a, b)] = ok
     return Problem(weights, pairs)
+
+
+def _rhymes(c: Candidate) -> list:
+    return c.report.tails + c.report.alt_tails
+
+
+def _same_rhyme_word(x: Candidate, y: Candidate) -> bool:
+    a, b = x.report.tail, y.report.tail
+    return a is not None and b is not None and a.spelling == b.spelling
 
 
 def _request(
@@ -352,8 +395,34 @@ def _request(
     lr, rule = var.lr, var.unit.rule
     ln = lr.line
     idx = ln.index
+    rhyme_with, sound, partner_ending = [], None, None
+    if var.group is not None:
+        members = groups[var.group]
+        settled = [  # partners that may stay: kept, chosen, or passing their own checks
+            k
+            for k in members
+            if k != ln.number
+            and (
+                k not in variables
+                or variables[k].chosen is not None
+                or not line_errors(variables[k].lr)
+            )
+        ]
+        # When every partner must change, all aim at the first line's rhyme, not at
+        # each other's discarded originals: nice and street would chase each other.
+        for k in settled or members[:1]:
+            current = _current(variables.get(k), lines[k] if partners_from_lines else None)
+            t = current.tail if current else None
+            if t is not None:
+                rhyme_with.append(t.word)
+                sound = sound or t.sound
+                partner_ending = t.post if partner_ending is None else partner_ending
     syllables = rule.syllables_at(idx)
     want_ending = rule.ending_at(idx)
+    if want_ending is None and partner_ending is not None:
+        want_ending = min(partner_ending, 2)  # пустая asks тая: a feminine slot
+    elif want_ending is None and lr.tail is not None and not line_errors(lr):
+        want_ending = min(lr.tail.post, 2)  # a passing line keeps its own ending
     meter_name = var.unit.meter if var.unit.meter_source == "spec" else None
     feet = rule.feet_at(idx) if meter_name else None
     template = None
@@ -371,16 +440,6 @@ def _request(
             template = "".join(
                 "/" if p % period == phase and p <= last else "x" for p in range(length)
             )
-    rhyme_with, sound = [], None
-    if var.group is not None:
-        for k in groups[var.group]:
-            if k == ln.number:
-                continue
-            current = _current(variables.get(k), lines[k] if partners_from_lines else None)
-            t = current.tail if current else None
-            if t is not None:
-                rhyme_with.append(t.word)
-                sound = sound or t.sound
     problems = [
         f"{i.message}" + (f" ({i.detail})" if i.detail else "")
         for i in lr.issues
@@ -409,12 +468,21 @@ def _request(
         rhyme_sound=sound,
         avoid_final=list(rule.forbid_final),
         problems=problems,
-        rejected=[f"{text} — {why}" for text, why in var.rejected[-8:]],
+        rejected=[f"{text} — {why}" for text, why in (var.rejected + _near_misses(var))[-8:]],
         n=n,
     )
     if extra is not None:
         extra(var, req)
     return req
+
+
+def _near_misses(var: _Var) -> list[tuple[str, str]]:
+    """Candidates that fit their own line but rhymed with no partner."""
+    if var.chosen is not None:
+        return []
+    return [
+        (c.text, "fits the line, but no partner rhymes with it") for c in var.pool if not c.original
+    ]
 
 
 def _current(var: _Var | None, original: LineReport | None) -> LineReport | None:
@@ -425,12 +493,16 @@ def _current(var: _Var | None, original: LineReport | None) -> LineReport | None
     return best.report if best else original
 
 
-def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> str:
+def replace_lines(
+    text: str, new: dict[int, str], lang: str | None = None, asides: bool = True
+) -> str:
     """text with the given 1-based lines replaced, indentation and line endings kept.
 
     A line's closing punctuation stays when the new text has none, written the
     way lang writes it (the Armenian full stop is ։) when lang is given, and so
-    does a backing vocal that ends it, unless the new text brings its own.
+    does a backing vocal that ends it, unless the new text brings its own; the new
+    line's own full stop then goes after it. With asides=False (a translation) the
+    backing vocal, in the source's language, is left out.
     """
     if not new:
         return text
@@ -448,13 +520,17 @@ def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> st
                 continue
             if aside:
                 body = body[: aside.start()]
+            paren, after = (aside.group(1), aside.group(2)) if aside and asides else ("", "")
+            own = PUNCT_RE.search(content)
             mark = PUNCT_RE.search(body)
-            if mark and not PUNCT_RE.search(content):
-                tail = mark.group(0)
-                if lang is not None and tail.strip() in (".", "։", "՝"):  # not an ellipsis
-                    tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
-                content += tail  # keep the line's closing comma or full stop
-            if aside:
-                content += aside.group(0)
+            if own and paren:  # I sing a lonely tune (oh baby).
+                content = content[: own.start()] + paren + own.group(0).strip()
+            elif not own:
+                if mark:
+                    tail = mark.group(0)
+                    if lang is not None and tail.strip() in (".", "։", "՝"):  # not an ellipsis
+                        tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
+                    content += tail  # keep the line's closing comma or full stop
+                content += paren + after
             lines[number - 1] = lead + content + ending
     return "".join(lines)

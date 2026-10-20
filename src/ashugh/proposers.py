@@ -89,15 +89,15 @@ def parse_lines(data, requests: list[Request]) -> dict[str, list]:
 class StaticProposer:
     name = "file"
 
-    def __init__(self, candidates: dict[int, list[str]]) -> None:
+    def __init__(self, candidates: dict[int, list]) -> None:
         self.candidates = candidates
 
     def propose(self, requests: list[Request]) -> dict[str, list]:
         return {r.id: list(self.candidates.get(r.line, [])) for r in requests}
 
 
-def load_candidates(path: str | Path) -> dict[int, list[str]]:
-    """{"3": ["...", "..."]} or [{"line": 3, "candidates": [...]}], keyed by line number."""
+def load_candidates(path: str | Path) -> dict[int, list]:
+    """A candidates file in any form parse_candidates reads, keyed by line number."""
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as e:
@@ -105,7 +105,17 @@ def load_candidates(path: str | Path) -> dict[int, list[str]]:
     return parse_candidates(data, str(path))
 
 
-def parse_candidates(data, path: str = "candidates") -> dict[int, list[str]]:
+def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
+    """Candidates by line number from {"3": [...]}, {"L3": [...]}, [{"line": 3,
+    "candidates": [...]}] or a proposer's answer, {"lines": [{"id": "L3", ...}]}.
+    A candidate is a string or {"text": ..., "faithfulness": ...}."""
+    if isinstance(data, dict) and isinstance(data.get("lines"), list):
+        data = [
+            {"line": e.get("line", e.get("id")), "candidates": e.get("candidates")}
+            if isinstance(e, dict)
+            else e
+            for e in data["lines"]
+        ]
     if isinstance(data, list):
         pairs = []
         for entry in data:
@@ -116,16 +126,22 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list[str]]:
         pairs = list(data.items())
     else:
         raise ProposerError(f"{path}: expected an object or a list")
-    out: dict[int, list[str]] = {}
+    out: dict[int, list] = {}
     for key, cands in pairs:
         try:
-            number = int(key)
+            number = int(key[1:] if isinstance(key, str) and key[:1] in "Ll" else key)
         except TypeError, ValueError:
             raise ProposerError(f"{path}: {key!r} is not a line number") from None
-        if not isinstance(cands, list) or not all(isinstance(c, str) for c in cands):
-            raise ProposerError(f"{path}: line {number} needs a list of strings")
+        if not isinstance(cands, list) or not all(_candidate(c) for c in cands):
+            raise ProposerError(
+                f'{path}: line {number} needs a list of lines or {{"text": ...}} objects'
+            )
         out.setdefault(number, []).extend(cands)
     return out
+
+
+def _candidate(c) -> bool:
+    return isinstance(c, str) or (isinstance(c, dict) and isinstance(c.get("text"), str))
 
 
 class CommandProposer:

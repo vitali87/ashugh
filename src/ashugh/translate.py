@@ -146,7 +146,7 @@ def translate_with_spec(
             changes.append(
                 Change(k, var.lr.line.text, text, round(chosen.weight, 3) if chosen else 0.0)
             )
-    out = replace_lines(src.text, new, lang=target)
+    out = replace_lines(src.text, new, lang=target, asides=False)
     report = scan(out, spec, lang=target)
     for lr in report.lines:  # still the source's words: not a translation that passes
         if lr.line.number in variables and lr.line.number not in new:

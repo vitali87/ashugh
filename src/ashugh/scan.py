@@ -43,6 +43,7 @@ class LineReport:
     target: int | None = None
     issues: list[Issue] = field(default_factory=list)
     min_rhyme: str = "near"  # its stanza's: a line is judged by its own rule
+    alt_tails: list[rhyme.Tail] = field(default_factory=list)  # other readings a partner may pick
 
     @property
     def ok(self) -> bool:
@@ -290,17 +291,7 @@ def _rhyme_stress(
     for _ in range(2):
         changed = False
         for k, lr in enumerate(reports):
-            w = rhyme.anchor_word(lr.line, lr.fit)
-            if w is None:
-                continue
-            word = lr.line.words[w]
-            tries: list[tuple[dict[int, int | None] | None, bool | None]] = [
-                ({w: option}, None)
-                for option in word.stress_options()
-                if word.ambiguous and option not in (None, lr.fit.stresses.get(w))
-            ]
-            if word.lang == "en" and not lr.fit.promoted:
-                tries.append((None, True))
+            tries = _rhyme_tries(lr)
             if not tries:
                 continue
             others = [r.tails for m, r in enumerate(reports) if m != k]
@@ -314,17 +305,51 @@ def _rhyme_stress(
             current = best(lr.tails)
             for force, promote in tries:
                 alt = check_line(lr.line, rule, meter_name, source, force, promote)
-                if (
-                    alt.fit.cost - lr.fit.cost > RHYME_STRESS_MARGIN
-                    or alt.fit.count != lr.fit.count
-                    or _errors(alt) > _errors(lr)  # a rhyme never buys a feet or ending error
-                ):
+                if not _affordable(alt, lr):
                     continue
                 score = best(alt.tails)
                 if score >= floor and score > current + RHYME_STRESS_GAIN:
                     reports[k], current, lr, changed = alt, score, alt, True
         if not changed:
             return
+
+
+def _rhyme_tries(lr: LineReport) -> list[tuple[dict[int, int | None] | None, bool | None]]:
+    """The other readings of a line's rhyme word to try: its other stresses, and for
+    English a beat on the last syllable."""
+    w = rhyme.anchor_word(lr.line, lr.fit)
+    if w is None:
+        return []
+    word = lr.line.words[w]
+    tries: list[tuple[dict[int, int | None] | None, bool | None]] = [
+        ({w: option}, None)
+        for option in word.stress_options()
+        if word.ambiguous and option not in (None, lr.fit.stresses.get(w))
+    ]
+    if word.lang == "en" and not lr.fit.promoted:
+        tries.append((None, True))
+    return tries
+
+
+def _affordable(alt: LineReport, lr: LineReport) -> bool:
+    """Whether a rhyme may choose alt over lr: little more meter cost, the same
+    length, and no error a rhyme cannot buy (feet, ending)."""
+    return (
+        alt.fit.cost - lr.fit.cost <= RHYME_STRESS_MARGIN
+        and alt.fit.count == lr.fit.count
+        and _errors(alt) <= _errors(lr)
+    )
+
+
+def rhyme_alternatives(lr: LineReport, rule: Rule, meter_name: str, source: str) -> list:
+    """The rhyme tails a line could also take if a partner asked for them: облака́
+    for a line the meter alone reads with о́блака."""
+    out: list[rhyme.Tail] = []
+    for force, promote in _rhyme_tries(lr):
+        alt = check_line(lr.line, rule, meter_name, source, force, promote)
+        if _affordable(alt, lr):
+            out += [t for t in alt.tails if t not in lr.tails and t not in out]
+    return out
 
 
 def _errors(lr: LineReport) -> int:
