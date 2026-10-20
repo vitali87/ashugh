@@ -15,6 +15,19 @@ ANALYZERS: dict[str, ModuleType] = {"hy": hy, "ru": ru, "en": en}
 NAMES = {"hy": "Armenian", "ru": "Russian", "en": "English", "xx": "unsupported script"}
 
 
+AMPERSAND = {"en": "and", "ru": "и", "hy": "և"}
+
+
+def analyze_word_as(token: str, lexicon: dict[str, str]) -> Word:
+    """One word by its own script's analyzer."""
+    script = script_of(token)
+    return (
+        ANALYZERS[script].analyze_word(token, lexicon)
+        if script in ANALYZERS
+        else foreign_word(token)
+    )
+
+
 def script_of(token: str) -> str:
     for ch in token:
         if hy.is_armenian(ch):
@@ -86,6 +99,11 @@ def analyze(
     like one at the end of the line: hold on, hold on."""
     words: list[Word] = []
     for token in tokens:
+        if token == "&":  # rock & roll: the line's own and
+            and_ = analyze_word_as(AMPERSAND.get(lang, "and"), lexicon)
+            and_.text = token
+            words.append(and_)
+            continue
         script = script_of(token)
         if script in ANALYZERS:
             words.append(ANALYZERS[script].analyze_word(token, lexicon))

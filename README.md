@@ -369,7 +369,9 @@ secondary stress, for the meter and the rhyme (ém-pìre / fire, bírd-hòuse /
 mouse), whether or not the dictionary marks it. An object pronoun that ends a
 line after a verb or a noun leans on it (néed it, hóld me), and the rhyme may
 fall on either (need it / feel it, love you / true), though never on the same
-pronoun twice (need it / want it). Unknown words are counted from
+pronoun twice (need it / want it). A grave sings an -ed (blessèd), an old -est
+or -eth after a vowel is its own syllable (go-est), & is sung as and, and a
+word glued to digits ('80s) is left to the digits warning. Unknown words are counted from
 their spelling and stressed by the ending prior. A preposition that ends a
 line takes the stress (ships gone by / sky).
 

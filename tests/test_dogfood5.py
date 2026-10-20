@@ -225,3 +225,11 @@ def test_the_json_names_the_dropped_syllable():
 
 def test_the_acute_lands_on_a_syllable_with_ev(capsys):
     assert "ա-րև́" in syl_output(capsys, "--lang", "hy", "արև")
+
+
+@pytest.mark.parametrize("a,b", [("night", "ride"), ("love", "enough")])
+def test_a_voicing_difference_is_a_near_rhyme_not_a_perfect_one(a, b):
+    from ashugh import rhyme
+
+    s = en_rhyme(f"in the {a}", f"take a {b}")
+    assert rhyme.THRESHOLD["near"] <= s < rhyme.THRESHOLD["perfect"]

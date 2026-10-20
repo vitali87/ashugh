@@ -249,9 +249,16 @@ def guess_syllables(token: str) -> int:
 
 
 def _vowel_groups(w: str) -> list[tuple[int, int]]:
-    """Runs of vowel letters; the u of qu is a consonant (qui-et, queen)."""
+    """Runs of vowel letters; the u of qu is a consonant (qui-et, queen), and the
+    e of an old -est or -eth after a vowel starts its own (go-est, fly-eth)."""
     plain = re.sub(r"(?<=q)u", "w", w)
-    return [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", plain)]
+    groups = [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", plain)]
+    if groups and ARCHAIC.search(plain):
+        at = len(plain) - 3
+        a, b = groups[-1]
+        if a < at < b:
+            groups[-1:] = [(a, at), (at, b)]
+    return groups
 
 
 def _counted_groups(w: str) -> list[tuple[int, int]]:
@@ -296,10 +303,12 @@ def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
     return None
 
 
-def split_spelling(token: str, n: int) -> list[str]:
+def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> list[str]:
     """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful;
-    could-n't; a compound of two dictionary words at its seam: heart-ache."""
-    low = token.lower()
+    could-n't; a compound of two dictionary words at its seam: heart-ache. A
+    syllable in short has a stressed short vowel, which keeps a consonant: fish-ing,
+    whis-key, rec-ord (but pa-per)."""
+    low = "".join(unicodedata.normalize("NFD", ch)[0] for ch in token.lower())  # èd: ed
     if n >= 2 and low.endswith(("n't", "n’t")) and len(_counted_groups(low[:-3])) < n:
         return split_spelling(token[:-3], n - 1) + [token[-3:]]
     seam = _compound_seam(low, n)
@@ -314,7 +323,15 @@ def split_spelling(token: str, n: int) -> list[str]:
         a, b = groups[k - 1], groups.pop(k)
         groups[k - 1] = (a[0], b[1])
     while len(groups) < n:  # one vowel run is two syllables: a hiatus first (Lou-i-si-a-na)
-        cut = next(
+        glide = next(  # a y between vowels stays with the first: play-ing, buy-er
+            (
+                (k, a + m.end())
+                for k, (a, b) in enumerate(groups)
+                if (m := re.search(r"[aeiou]y(?=[aeiou])", low[a:b]))
+            ),
+            None,
+        )
+        cut = glide or next(
             (
                 (k, a + low[a:b].find(h) + 1)
                 for h in HIATUS
@@ -333,16 +350,19 @@ def split_spelling(token: str, n: int) -> list[str]:
         a, b = groups[k]
         groups[k : k + 1] = [(a, at), (at, b)]
     cuts = []
-    for (_, end), (start, _) in zip(groups, groups[1:]):
+    for k, ((_, end), (start, _)) in enumerate(zip(groups, groups[1:])):
         gap = low[end:start]
         if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
-        elif gap.endswith("gh"):
-            onset = 0  # laugh-ing, weigh-ing
+        elif gap.endswith("gh") or (not gap and low[end - 1 : end] == "y"):
+            onset = 0  # laugh-ing, weigh-ing; play-ing
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
+            if k in short and gap:  # the short vowel keeps one consonant, or a digraph
+                onset = 0 if len(gap) == 1 or gap in DIGRAPHS else min(onset, len(gap) - 1)
         cuts.append(start - min(onset, len(gap)))
-    pieces = [token[a:b].strip("-'") or token[a:b] for a, b in zip([0, *cuts], [*cuts, len(token)])]
+    bounds = list(zip([0, *cuts], [*cuts, len(token)]))
+    pieces = [_piece(token[a:b], k, len(bounds)) for k, (a, b) in enumerate(bounds)]
     while len(pieces) < n:  # too few vowel letters to cut: split the longest piece
         k = max(range(len(pieces)), key=lambda i: len(pieces[i]))
         if len(pieces[k]) < 2:
@@ -353,7 +373,26 @@ def split_spelling(token: str, n: int) -> list[str]:
     return pieces
 
 
+def _piece(text: str, k: int, n: int) -> str:
+    """A piece without the hyphens and apostrophes at its cuts; the last keeps a
+    dropped g's apostrophe (fix-in')."""
+    out = text.strip("-")
+    if k > 0:
+        out = out.lstrip("'’")
+    if k < n - 1:
+        out = out.rstrip("'’")
+    return out or text
+
+
+DIGRAPHS = {"sh", "th", "ch", "ph", "ng", "ck", "wh"}
+SHORT_VOWELS = {"IH", "EH", "AE", "AH", "UH", "AA"}  # fish, bed, cat, cup, book, rock
 MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
+SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
+# Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
+EXTRA = {"yeah": ["Y EH1 R"], "real": ["R IY1 AH0 L"], "poem": ["P OW1 M"]}
+SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
+SHORT_PREFERENCE = -0.05
+ARCHAIC = re.compile(r"[aeiouy]e(?:st|th)$")  # go-est, see-est, fly-eth
 SYNCOPE_COST = 0.5
 # An unstressed [ɚ] straight after [aɪ] or [aʊ] may merge with it, as fire and
 # hour do in the dictionary's second reading: de-sire, pow'r, flow'rs.
@@ -370,7 +409,9 @@ def _compound_parts(low: str) -> tuple[str, str] | None:
     if not low.isalpha() or len(low) < 2 * MIN_COMPOUND_PART:
         return None
     best = None
-    for k in range(MIN_COMPOUND_PART, len(low) - MIN_COMPOUND_PART + 1):
+    for k in range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1):
+        if len(low) - k < MIN_COMPOUND_PART and not low[:k].endswith("e"):
+            continue
         if TABLE.get(low[:k]) and TABLE.get(low[k:]):
             even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))  # love-struck
             if best is None or even < best[0]:
@@ -382,7 +423,9 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
     """Where low splits into two dictionary words whose syllables add up to n, and
     how many the first has; the most even such split."""
     best = None
-    for k in range(MIN_COMPOUND_PART, len(low) - MIN_COMPOUND_PART + 1):
+    for k in range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1):
+        if len(low) - k < MIN_COMPOUND_PART and not low[:k].endswith("e"):
+            continue
         left, right = TABLE.get(low[:k]), TABLE.get(low[k:])
         if not left or not right or not low[:k].isalpha() or not low[k:].isalpha():
             continue
@@ -421,9 +464,13 @@ def _guess_phones(norm: str) -> tuple[str, ...]:
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     norm = normalize(token)
     variants = lookup(norm)
-    user = (overrides or {}).get(norm)
+    user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
+    if norm in EXTRA and not user:
+        variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
     if user:
         variants = [user] if any(ch.isdigit() for ch in user) else variants
+    elif variants and token.lower().endswith("èd"):  # blessèd, wingèd: the -ed is sung
+        variants = list(dict.fromkeys(_sung_ed(v) for v in variants))
     elif variants and token.lower().endswith("é"):  # résumé: the reading that sings its é
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
         variants = voiced + [v for v in variants if v not in voiced]
@@ -453,12 +500,14 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
     if word.drop is None and _smoothed(*full[0]):
         word.drop = len(vowels) - 1
+    if norm in SHORT_FIRST and word.drop is not None:
+        word.drop_cost = SHORT_PREFERENCE
 
     readings: list[Reading] = []
     for phones, stresses, bare in full:
         primary = [i for i, d in enumerate(stresses) if d == 1]
         marked = [i for i, d in enumerate(stresses) if d]
-        stress = primary[-1] if primary else (marked[-1] if marked else 0)
+        stress = primary[-1] if primary else (marked[0] if marked else 0)  # ín-sta-gràm
         if longest == 1:
             stress = 0
         source = "clitic" if word.clitic else "lexicon"
@@ -483,7 +532,9 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             rest = tuple(i for i, d in enumerate(stresses) if d and i != primary[0])
             readings.append(Reading(primary[0], phones, norm, "shift", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
-    word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest))
+    _, stresses, bare = full[0]
+    short = frozenset(k for k, (v, d) in enumerate(zip(bare, stresses)) if d and v in SHORT_VOWELS)
+    word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest, short))
     word.weak = word.weak or word.clitic or longest == 1
     return word
 
@@ -534,6 +585,14 @@ def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Wor
         word.drop_cost = parts[dropping].drop_cost
     word.weak = word.weak or word.size == 1
     return word
+
+
+def _sung_ed(variant: str) -> str:
+    """blessed with its -ed sung: B L EH1 S T as B L EH1 S IH0 D."""
+    phones = variant.split()
+    if len(phones) > 1 and phones[-1] in ("T", "D") and phones[-2].rstrip("012") not in VOWELS_ARPA:
+        return " ".join([*phones[:-1], "IH0", "D"])
+    return variant
 
 
 def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> bool:

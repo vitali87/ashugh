@@ -15,9 +15,10 @@ TAG_RE = re.compile(r"^\ufeff?\s*\[([^\]]*)\]\s*$")  # a BOM may open the file
 PAREN_RE = re.compile(r"\([^)]*\)")
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
-    r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
-    r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?"  # a dropped g: goin', lovin'
-)
+    r"(?<![^\W_])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
+    r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?)(?!\d)"  # a dropped g: goin', lovin'
+    r"|&"  # sung as and, и, և
+)  # letters glued to digits ('80s, 4ever, mp3) are no word: the digits warn
 DIGIT_RE = re.compile(r"\d")
 
 

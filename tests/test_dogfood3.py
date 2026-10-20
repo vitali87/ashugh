@@ -120,7 +120,7 @@ def test_er_before_a_final_y_may_drop(word):
 
 
 @pytest.mark.parametrize(
-    "word,pieces", [("quiet", "qui-et"), ("Louisiana", "Lou-i-si-a-na"), ("queen", "queen")]
+    "word,pieces", [("quiet", "qui-et"), ("Louisiana", "Lou-i-si-an-a"), ("queen", "queen")]
 )
 def test_more_english_pieces(word, pieces):
     from ashugh.lang import en

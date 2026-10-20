@@ -145,6 +145,8 @@ def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
 def cmd_syl(args: argparse.Namespace) -> int:
     text = " ".join(args.text) if args.text else sys.stdin.read()
     spec = load(args.spec) if args.spec else Spec()
+    if lyrics.has_digits(text):
+        print("warning: digits are not counted; spell numbers out", file=sys.stderr)
     for ln in analyze_lines(text, spec, args.lang):
         f = meter.fit(ln.words, meter.parse_meter(args.meter or "free")[0])
         parts = []

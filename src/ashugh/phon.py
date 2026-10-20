@@ -121,7 +121,7 @@ def consonant_distance(a: str, b: str) -> float:
     if fa.base == fb.base:
         return 0.15
     if fa.manner == fb.manner and fa.place == fb.place:
-        return 0.2
+        return 0.25  # voicing alone: night / ride is near, not perfect
     if {fa.base, fb.base} == {"k", "x"}:
         return 0.3  # успех / снег
     front = ("cor", "pal")
