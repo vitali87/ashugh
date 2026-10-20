@@ -23,8 +23,8 @@ locative and the rhyme-aware stress choice. The rhyme threshold was checked
 on it too. In a sweep, 0.70 ("near") was the F1 optimum; at 0.60, recall and
 precision were both 0.89.
 
-**Armenian sung syllables** (76 words, one schwa rule each, checked by
-hand): ashugh matches all 76. espeak-ng counted 82% of the first 68 words
+**Armenian sung syllables** (79 words, one schwa rule each, checked by
+hand): ashugh matches all 79. espeak-ng counted 82% of the first 68 words
 right. The list was written alongside the rules, so it is a regression
 test more than a measurement.
 

@@ -147,3 +147,32 @@ def test_words_that_end_or_cluster_like_that_without_a_schwa(word, sung):
 @pytest.mark.parametrize("word", ["հարս", "վարս", "պարս", "ռեզոնանս", "կոնֆերանս"])
 def test_stems_ending_in_rs_or_ns(word):
     assert all(not s.epenthetic for s in hy.analyze_word(word).syllables)
+
+
+@pytest.mark.parametrize(
+    "word,sung",
+    [
+        ("տունդ", "տու-նըդ"),
+        ("անունդ", "ա-նու-նըդ"),
+        ("արյունդ", "ա-րյու-նըդ"),
+        ("ազատությունդ", "ա-զա-տու-թյու-նըդ"),
+    ],
+)
+def test_possessive_d_after_n(word, sung):
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+@pytest.mark.parametrize(
+    "word,sung",
+    [
+        ("ծնունդ", "ծը-նունդ"),
+        ("սերունդ", "սե-րունդ"),
+        ("գունդ", "գունդ"),
+        ("խանդ", "խանդ"),
+        ("ընդ", "ընդ"),
+        ("լեգենդ", "լե-գենդ"),
+        ("ֆոնդ", "ֆոնդ"),
+    ],
+)
+def test_stems_ending_in_nd(word, sung):
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung

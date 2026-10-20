@@ -237,7 +237,7 @@ stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
 RIFMA was also the development set for the Russian rules, so these numbers
 are not from unseen data.
 
-**Armenian sung syllables** (`python eval/armenian.py`). On 76 words that
+**Armenian sung syllables** (`python eval/armenian.py`). On 79 words that
 each exercise one schwa rule (eval/data/hy_gold.tsv, checked by hand),
 ashugh matches every syllabification. espeak-ng, the reference
 phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas in
@@ -263,8 +263,8 @@ as possible:
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
   միտք), so տետր is տե-տըր and աստղ is աս-տըղ;
 - a final ս or դ after an obstruent is the possessive and takes a schwa
-  (սիր-տըս, գը-լու-խըդ), and so is ս after a sonorant (սե-րըս, բո-լո-րըս),
-  except where the stem ends that way (չորս, լույս, ծնունդ);
+  (սիր-տըս, գը-լու-խըդ), and so is ս or դ after a sonorant (սե-րըս,
+  տու-նըդ), except where the stem ends that way (չորս, լույս, մարդ, ծնունդ);
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
 - among equal splits, the onset with յ wins, then the split whose codas
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
@@ -328,9 +328,9 @@ consonant before the vowel (ты / красоты).
 
 ## Limits
 
-- Armenian schwas that come from morphology rather than from the cluster are
-  missed: կայսրություն keeps the schwa of կայսր, and the possessive դ after ն
-  (տունդ) reads like the stem of ծնունդ. Fix them in `[lexicon]`.
+- A few Armenian schwas come from a word's history rather than its clusters:
+  կայսրություն keeps the schwa of կայսր (կայ-սը-րու-թյուն). The rules cannot
+  see that; write the word into `[lexicon]` once and every song uses it.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Russian stress shifts onto prepositions (и́з лесу, на́ гору) are not
   modeled.

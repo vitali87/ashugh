@@ -11,9 +11,9 @@ sung mə-kər-tich; սպասել is ըս-պա-սել. The rules this module appl
   is at most two consonants that do not rise in sonority (սիրտ, միտք, but
   տետր -> տե-տըր, աստղ -> աս-տըղ).
 * Word-final ս or դ after an obstruent is the possessive suffix and takes a
-  schwa: սիրտս -> սիր-տըս, գլուխդ -> գը-լու-խըդ. So does ս after a sonorant
-  other than յ, and դ after լ, ղ or մ (սերս -> սե-րըս, տունս -> տու-նըս),
-  except in words where that ending is the stem's (չորս, լույս, մարդ, ծնունդ).
+  schwa: սիրտս -> սիր-տըս, գլուխդ -> գը-լու-խըդ. So does ս or դ after a
+  sonorant other than յ, and other than ր for դ (սերս -> սե-րըս, տունդ ->
+  տու-նըդ), except in words whose stem ends that way (չորս, լույս, մարդ, ծնունդ).
 * The negative prefix ան- before ս, զ or շ and a stop keeps the stem's
   schwa: անշտապ -> ան-շը-տապ.
 * Ties between equally short splits go to the longer onset (-թյուն), then to
@@ -91,16 +91,17 @@ CLITICS = AUXILIARIES | {"ու", "և", "եւ", "էլ", "թե", "որ", "մի", "
 PROTHESIS_FIRST = {"s", "z", "ʃ"}
 MAX_CODA = 2
 # The possessive ս (my) and դ (your) take a schwa after a sonorant too: սե-րըս,
-# տու-նըս. Not after յ (լույս, հույս), not դ after ր or ն (մարդ, ծնունդ), and not
-# in these words, whose stem ends that way.
+# տու-նըդ. Not after յ (լույս, հույս), not դ after ր (մարդ, վարդ), and not in these
+# words, whose stem ends that way.
 POSSESSIVE_S_AFTER = {"ɾ", "r", "n", "l", "ʁ", "m"}
-POSSESSIVE_D_AFTER = {"l", "ʁ", "m"}  # not ն: ծնունդ, սերունդ (so տունդ is missed)
+POSSESSIVE_D_AFTER = {"n", "l", "ʁ", "m"}
 NOT_POSSESSIVE = {
     "չորս", "ներս", "դուրս", "որս", "ձկնորս", "թարս", "կարս", "կուրս", "մարս", "ֆարս",
     "ռեսուրս", "կոնկուրս", "դիսկուրս", "շանս", "բալանս", "ռոմանս", "ֆինանս", "սեանս",
     "ավանս", "նյուանս", "դիստանս", "ռեվերանս", "ալյանս", "վալս", "պուլս", "ֆոնդ",
     "բրենդ", "լեգենդ", "տրենդ", "բանդ", "սթենդ", "հարս", "վարս", "պարս", "ռեզոնանս",
-    "կոնֆերանս", "ռենեսանս",
+    "կոնֆերանս", "ռենեսանս", "ծնունդ", "սերունդ", "գունդ", "հունդ", "փունդ", "խանդ",
+    "ընդ", "դիվիդենդ", "պոնդ", "հոլանդ",
 }  # fmt: skip
 
 
