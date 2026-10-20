@@ -145,3 +145,14 @@ def test_split_all_follows_the_lines_short_forms():
     out = suno.format_song(line + "\n", spec, split="all", tags=False).text.strip()
     pieces = [p for word in out.split() for p in word.split("-")]
     assert len(pieces) == 9, out
+
+
+def test_probe_ties_keep_sunos_default_spelling():
+    from ashugh import probe
+
+    plan = probe.make_probes(["замок", "дорога"], "ru")
+    same = {p.id: p.word for p in plan}  # text cannot show stress: every mode ties
+    assert probe.score(plan, same).policy["ru"]["default"] == "caps"
+    hy = probe.make_probes(["սպասել"], "hy")
+    heard = {p.id: "spasel" for p in hy}
+    assert probe.score(hy, heard).policy["hy"]["default"] in ("script", "schwa", "latin")

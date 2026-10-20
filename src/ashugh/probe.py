@@ -32,6 +32,7 @@ MODES = {"hy": ("script", "schwa", "latin"), "ru": ("plain", "caps", "acute")}
 COMMAND_TIMEOUT = 600.0
 AUDIO = (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm")
 OVERRIDE_MARGIN = 0.1
+SUNO_DEFAULT = {"hy": "script", "ru": "caps"}  # what suno writes without a policy
 
 
 class ProbeError(RuntimeError):
@@ -250,7 +251,10 @@ def score(plan: list[Probe], transcripts: dict[str, str]) -> ScoreResult:
             values = [scores[w][mode] for w in words if mode in scores[w]]
             return sum(values) / len(values) if values else 0.0
 
-        default = max(modes, key=lambda m: (round(mean(m), 6), -modes.index(m)))
+        # A tie keeps the spelling suno uses anyway: text cannot show stress, so a
+        # Russian tie would otherwise drop every stress hint for plain.
+        keep = SUNO_DEFAULT[lang]
+        default = max(modes, key=lambda m: (round(mean(m), 6), m == keep, -modes.index(m)))
         overrides = {}
         for w in words:
             best = max(scores[w], key=lambda m: (scores[w][m], -modes.index(m)))
