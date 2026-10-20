@@ -212,3 +212,9 @@ def test_rhyme_flag_overrides_stanza_tables_too(tmp_path, capsys):
     assert main(["scan", str(song), "--spec", str(spec)]) == 1  # way / light, as AA
     capsys.readouterr()
     assert main(["scan", str(song), "--spec", str(spec), "--rhyme", "AB AB"]) == 0
+
+
+def test_found_letters_run_across_the_shared_stanzas():
+    rep = scan(SONNET, from_dict(PETRARCHAN))
+    assert [u.scheme for u in rep.units] == ["ABBA", "ABBA", "CDC", "DCD"]
+    assert rep.units[1].lines[0].letter == "A"  # stay rhymes with day

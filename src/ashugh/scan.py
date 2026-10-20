@@ -221,6 +221,11 @@ def _check_shared_rhymes(units: list[UnitReport]) -> None:
             for g, lrs in _groups(u.lines, u.rule).items():
                 groups.setdefault(g, []).extend(lrs)
         _check_groups(groups)
+        letters = rhyme.scheme([lr.tails for u in members for lr in u.lines])
+        for u in members:  # one lettering for the stanzas that share a scheme
+            u.scheme, letters = letters[: len(u.lines)], letters[len(u.lines) :]
+            for lr, letter in zip(u.lines, u.scheme):
+                lr.letter = letter
 
 
 def _scan_unit(lines: list[Line], rule: Rule, scope: str | None = None) -> UnitReport:
