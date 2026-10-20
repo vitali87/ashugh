@@ -252,3 +252,40 @@ def test_describe_alternating_feet(tmp_path):
         write_task(tmp_path, language="en", spec={"meter": "iamb", "feet": [4, 3]})
     )
     assert "iamb with 4, 3 stressed beats per line, in turn" in evaluate.describe(task.spec)
+
+
+def test_agent_bridge_round_trip(tmp_path):
+    import subprocess
+    import threading
+    import time
+
+    bridge = Path(__file__).resolve().parent.parent / "eval" / "agent_bridge.py"
+    folder = tmp_path / "bridge"
+
+    def agent():
+        for _ in range(200):
+            reqs = list(folder.glob("*.request.json")) if folder.exists() else []
+            if reqs:
+                body = json.loads(reqs[0].read_text(encoding="utf-8"))
+                assert body["task"] == "t1" and body["requests"][0]["id"] == "L1"
+                answer = {"lines": [{"id": "L1", "candidates": ["Я жду"]}]}
+                (folder / "t1-1.answer.json").write_text(json.dumps(answer), encoding="utf-8")
+                return
+            time.sleep(0.05)
+
+    thread = threading.Thread(target=agent)
+    thread.start()
+    done = subprocess.run(
+        [sys.executable, str(bridge), str(folder), "t1"],
+        input=json.dumps({"requests": [{"id": "L1"}]}),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    thread.join()
+    assert done.returncode == 0, done.stderr
+    assert json.loads(done.stdout)["lines"][0]["candidates"] == ["Я жду"]
+    listed = subprocess.run(
+        [sys.executable, str(bridge), "--pending", str(folder)], capture_output=True, text=True
+    )
+    assert listed.stdout == ""

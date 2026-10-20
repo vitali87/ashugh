@@ -308,13 +308,28 @@ def _describe_api_error(e: Exception) -> str:
     return f"Claude request failed: {e}"
 
 
+def _command_timeout() -> float:
+    raw = os.environ.get("ASHUGH_PROPOSER_TIMEOUT")
+    if raw is None:
+        return 600.0
+    try:
+        seconds = float(raw)
+    except ValueError:
+        seconds = float("nan")
+    if not seconds > 0 or seconds == float("inf"):
+        raise ProposerError(
+            f"ASHUGH_PROPOSER_TIMEOUT must be a positive number of seconds: {raw!r}"
+        )
+    return seconds
+
+
 def make_proposer(spec: str | None, model: str | None = None, effort: str | None = None):
     """claude | cmd:<command line> | file:<candidates.json>; default from $ASHUGH_PROPOSER."""
     spec = spec or os.environ.get("ASHUGH_PROPOSER") or "claude"
     if spec == "claude":
         return ClaudeProposer(model=model or DEFAULT_MODEL, effort=effort or "medium")
     if spec.startswith("cmd:"):
-        return CommandProposer(shlex.split(spec[4:]))
+        return CommandProposer(shlex.split(spec[4:]), timeout=_command_timeout())
     if spec.startswith("file:"):
         return StaticProposer(load_candidates(spec[5:]))
     raise ProposerError(f"unknown proposer {spec!r}; use claude, cmd:<command> or file:<path>")

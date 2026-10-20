@@ -314,3 +314,21 @@ def test_answers_with_odd_ids_are_skipped_not_fatal(bad_id):
     (req,) = fit.requests_for("Мой дядя честных правил", from_dict({"syllables": 9}))
     answer = {"lines": [{"id": bad_id, "candidates": ["x"]}, {"id": req.id, "candidates": ["y"]}]}
     assert parse_lines(answer, [req]) == {req.id: ["y"]}
+
+
+def test_command_proposer_timeout_from_the_environment(monkeypatch):
+    from ashugh.proposers import make_proposer
+
+    monkeypatch.setenv("ASHUGH_PROPOSER_TIMEOUT", "3600")
+    assert make_proposer("cmd:echo").timeout == 3600.0
+    monkeypatch.delenv("ASHUGH_PROPOSER_TIMEOUT")
+    assert make_proposer("cmd:echo").timeout == 600.0
+
+
+@pytest.mark.parametrize("bad", ["soon", "0", "-5", "nan"])
+def test_bad_proposer_timeout_is_refused(monkeypatch, bad):
+    from ashugh.proposers import make_proposer
+
+    monkeypatch.setenv("ASHUGH_PROPOSER_TIMEOUT", bad)
+    with pytest.raises(ProposerError, match="ASHUGH_PROPOSER_TIMEOUT"):
+        make_proposer("cmd:echo")
