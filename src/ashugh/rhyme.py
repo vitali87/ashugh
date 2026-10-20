@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .lang.en import OBJECTS
 from .meter import Fit, _anchor, slots
 from .model import Line, nuclei
 from .phon import align_cost, distance, is_vowel, vowel_distance
@@ -90,6 +91,11 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
             t = _tail(word, reading, stress, words[w + 1 :])
             if t is not None and t not in out:
                 out.append(t)
+    last = words[-1]
+    if w == len(words) - 2 and last.lang == "en" and last.enclitic:
+        own = _tail(last, last.readings[0], 0, [])  # love yóu / true
+        if own is not None and own not in out:
+            out.append(own)
     return out
 
 
@@ -139,7 +145,9 @@ def score(a: Tail | None, b: Tail | None) -> float:
     if a is None or b is None:
         return 0.0
     if a.spelling == b.spelling:
-        return 1.0
+        # The same object pronoun on both lines is no rhyme: need it / want it rhymes
+        # on need and want, or not at all.
+        return 0.0 if a.lang == "en" and a.spelling in OBJECTS else 1.0
     vd = vowel_distance(a.vowel, b.vowel)
     if vd > 0.3:
         return 0.1

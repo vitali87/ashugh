@@ -87,7 +87,8 @@ language = "ru"            # hy | ru | en; detected per line if omitted
 syllables = 8              # or [8, 8, 8, 6]; lists repeat over the stanza
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
-rhyme = "AbAb"             # "-" or "." = free line; mixed case also asks f/m endings
+rhyme = "AbAb"             # "-" or "." = free line; mixed case also asks endings:
+                           # a capital letter feminine, a small one masculine
 endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]       # a line may not end in these letters
@@ -259,7 +260,7 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | **97.0%** correct |
+| stress of polysyllabic words (60,854) | **97.1%** correct |
 | each word's first reading, without meter or rhyme | 91.9% |
 | words the dictionary lists | 98.2% |
 | ambiguous words, resolved by meter and rhyme | 94.2% |
@@ -360,7 +361,10 @@ right after the diphthong of desire or power, which the dictionary writes
 only long; a variant that spells out an abbreviation (us as U.S.) does not
 count. A diphthong after the main stress keeps its full vowel and acts as a
 secondary stress, for the meter and the rhyme (ém-pìre / fire, bírd-hòuse /
-mouse), whether or not the dictionary marks it. Unknown words are counted from
+mouse), whether or not the dictionary marks it. An object pronoun that ends a
+line after a verb or a noun leans on it (néed it, hóld me), and the rhyme may
+fall on either (need it / feel it, love you / true), though never on the same
+pronoun twice (need it / want it). Unknown words are counted from
 their spelling and stressed by the ending prior. A preposition that ends a
 line takes the stress (ships gone by / sky).
 

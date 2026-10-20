@@ -10,7 +10,7 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | 97.0% |
+| stress of polysyllabic words (60,854) | 97.1% |
 | each word's first reading, without meter or rhyme | 91.9% |
 | words the dictionary lists (50,048) | 98.2% |
 | ambiguous words resolved by meter and rhyme (3,701) | 94.2% |

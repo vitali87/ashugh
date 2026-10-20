@@ -73,6 +73,9 @@ CONSONANTS_ARPA = {
 # because a line can end on them ("for me", "you are").
 # Prepositions that are stressed when they end a phrase, as particles or stranded:
 # hold on, come in, what is it for. Not articles or conjunctions.
+# Object pronouns: ending a line after a verb or a noun they lean on it (néed it,
+# hóld me) and rhyme with it, though a song may still rhyme on them (love yóu / true).
+OBJECTS = {"it", "me", "you", "him", "her", "them", "us"}
 PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
     "a",

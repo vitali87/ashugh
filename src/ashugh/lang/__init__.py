@@ -99,6 +99,10 @@ def analyze(
     end = words[-1] if words else None
     if end is not None and end.lang == "en" and end.clitic and end.norm not in ("a", "an", "the"):
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in
+    before = words[-2] if len(words) > 1 else None
+    if end is not None and before is not None and end.lang == before.lang == "en":
+        if end.norm in en.OBJECTS and not (before.clitic or before.norm in en.WEAK):
+            end.enclitic = True  # need it, hold me; but for you, with me
     ends = [False] * len(words)
     if text is not None:
         spans = lyrics.token_spans(text)

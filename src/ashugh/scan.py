@@ -498,13 +498,18 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
 
     want = rule.ending_at(ln.index)
     if want is not None and f.ending != want:
+        detail = _quote(ln.words[-1].text) if ln.words else ""
+        letter = rule.rhyme[ln.index % len(rule.rhyme)] if rule.rhyme and not rule.endings else ""
+        if letter.isalpha():  # AbAb: a capital letter asks a feminine ending, a small one masculine
+            case = "capital" if letter.isupper() else "small"
+            detail += f"; the rhyme's {case} {letter} asks {ENDING_NAMES.get(want, want)}"
         add(
             Issue(
                 ln.number,
                 "ending",
                 "error",
                 f"ends {lr.ending}, slot is {ENDING_NAMES.get(want, want)}",
-                _quote(ln.words[-1].text) if ln.words else "",
+                detail,
                 {"expected": ENDING_NAMES.get(want), "actual": lr.ending},
             )
         )
