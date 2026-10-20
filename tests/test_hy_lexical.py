@@ -230,3 +230,32 @@ def test_a_final_cluster_falling_in_sonority_is_one_coda(word, want):
 )
 def test_a_final_cluster_rising_at_its_end_or_a_possessive_keeps_its_schwa(word, want):
     assert sung(word) == want
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("զրնգալ", "զը-րըն-գալ"),
+        ("բռնկել", "բը-ռըն-կել"),
+        ("դռնփակ", "դը-ռըն-փակ"),
+        ("խլրտալ", "խը-լըր-տալ"),
+        ("բլնգազ", "բը-լըն-գազ"),
+        ("բժշկել", "բը-ժըշ-կել"),
+    ],
+)
+def test_a_schwa_syllable_closes_on_two_consonants_only_if_the_second_is_a_stop(word, want):
+    assert sung(word) == want  # Wiktionary: zəɾənɡɑl, bərənkel, bəʒəʃkel
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("Մկրտչյան", "Մը-կըրտ-չյան"),
+        ("Հնդկաստան", "Հընդ-կաս-տան"),
+        ("թռչնակ", "թըռչ-նակ"),
+        ("գրտնակ", "գըրտ-նակ"),
+        ("խնդրել", "խընդ-րել"),
+    ],
+)
+def test_a_schwa_syllable_may_close_on_a_sonorant_and_a_stop(word, want):
+    assert sung(word) == want  # məkəɾttʃʰjɑn, həndkɑstɑn, tʰərtʃʰnɑk

@@ -288,6 +288,8 @@ def _schwa_runs(
             continue
         if not _valid_coda(coda, final=closed_last, possessive=possessive):
             continue
+        if len(coda) == 2 and not is_stop(coda[1].ph):
+            continue  # զը-րըն-գալ, բը-ժըշ-կել, but մը-կըրտ-չյան, հընդ-կաս-տան
         for head in _schwa_runs(cs[:rest], closed_last=False):
             runs.append(head + [(onset, coda)])
     return runs

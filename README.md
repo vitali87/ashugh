@@ -280,7 +280,7 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-91.9% of words (86.7% of those written with a schwa). Most of the rest are
+92.1% of words (88.4% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
 glide (դանիացի). The real misses are compounds no listed word explains
@@ -303,7 +303,9 @@ as possible:
 - an onset is one consonant, or a consonant plus յ (կյանք, -թյուն);
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
   միտք), so տետր is տե-տըր and աստղ is աս-տըղ; a word may end on three
-  (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops);
+  (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops); a schwa syllable
+  closes on two consonants only when the second is a stop (մը-կըրտ-չյան,
+  հընդ-կաս-տան), so զրնգալ is զը-րըն-գալ and բժշկել is բը-ժըշ-կել;
 - a word does not end in մն or ռն: ու-րե-մըն, սա-ռըն;
 - a final ս or դ after a consonant other than յ is the possessive and takes
   a schwa (սիր-տըս, գը-լու-խըդ, սե-րըս, սե-րըդ, տու-նըդ), except where the
@@ -313,7 +315,7 @@ as possible:
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
 - the article -ն after ր, լ or ն may be sung with a schwa or without it
   (սե-րըն or սերն, like կյան-քըն or կյանքն): a line may count either;
-- a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 253
+- a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 248
   word beginnings that do this are listed from Wiktionary, and since speech
   often drops that schwa, a line may sing it or not;
 - among equal splits, the onset with յ wins, then the split whose codas

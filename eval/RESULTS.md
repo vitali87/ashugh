@@ -40,14 +40,14 @@ either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **91.9%** |
-| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **86.7%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **92.1%** |
+| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **88.4%** |
 
-The 144 disagreements left, by kind:
+The 139 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
-| a schwa at the start | 55 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
+| a schwa at the start | 50 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
 | a schwa at the end | 30 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
 | a schwa inside | 27 | compounds whose beginning no listed word shares (աստ-ղա-գը-նաց) |
@@ -55,15 +55,18 @@ The 144 disagreements left, by kind:
 Wiktionary transcribes speech, not singing, so this is agreement rather than
 accuracy. The comparison gave ashugh three things:
 
-- three rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
+- four rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
   of 21 entries); it may end on three consonants that fall in sonority
   (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops: all 67 such
-  entries are written closed, where ashugh had sung a schwa); and a final դ
-  after ր is the possessive (սե-րըդ, your love). Dictionary forms never
-  carry the possessive, so this test shows what the third costs (the -րդ
-  stems the held-out list lacks) and not what it gains;
+  entries are written closed, where ashugh had sung a schwa); a schwa
+  syllable closes on two consonants only when the second is a stop
+  (մը-կըրտ-չյան but զը-րըն-գալ, բը-ժըշ-կել: of the entries where ashugh
+  had closed one on a sonorant or a fricative, Wiktionary splits 39 and
+  keeps 8); and a final դ after ր is the possessive (սե-րըդ, your love).
+  Dictionary forms never carry the possessive, so this test shows what the
+  last costs (the -րդ stems the held-out list lacks) and not what it gains;
 - 296 stems whose final ս or դ is their own (ադամանդ, մաքս, ժողովուրդ);
-- 253 word beginnings that keep a compound root's schwa (մեղադր-, so
+- 248 word beginnings that keep a compound root's schwa (մեղադր-, so
   մե-ղա-դը-րել, մե-ղա-դը-րան-քը), each kept only if it breaks no entry the
   rules read right. On the held-out words they fixed 8 and broke none.
   Speech often drops this schwa (Wiktionary gives both forms for 193
