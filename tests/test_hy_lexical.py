@@ -259,3 +259,30 @@ def test_a_schwa_syllable_closes_on_two_consonants_only_if_the_second_is_a_stop(
 )
 def test_a_schwa_syllable_may_close_on_a_sonorant_and_a_stop(word, want):
     assert sung(word) == want  # məkəɾttʃʰjɑn, həndkɑstɑn, tʰərtʃʰnɑk
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("լուսանշան", "լու-սա-նը-շան"),
+        ("թվանշան", "թը-վա-նը-շան"),
+        ("բենզասղոց", "բեն-զա-սը-ղոց"),
+        ("ցուցանմուշ", "ցու-ցա-նը-մուշ"),
+        ("գանգրանման", "գանգ-րա-նը-ման"),
+    ],
+)
+def test_a_compounds_second_root_keeps_the_schwa_it_opens_with(word, want):
+    w = hy.analyze_word(word)
+    assert sung(word) == want and w.optional is not None  # from նշան, սղոց, նմուշ, նման
+
+
+@pytest.mark.parametrize("word", ["համագործակցել", "ուղեկցորդ", "էլեկտրոն", "պատկեր"])
+def test_a_root_that_breaks_a_dictionary_word_is_not_listed(word):
+    assert all(not s.epenthetic for s in hy.analyze_word(word).syllables[1:])
+
+
+def test_a_root_listed_opens_on_a_cluster_with_its_schwa_inside():
+    roots = hy.cluster_roots()
+    assert {"նշան", "սղոց", "նմուշ"} <= roots
+    assert not any(r.startswith(("ստ", "սպ", "զգ", "շտ")) for r in roots)  # ըս-տեղ-ծել
+    assert "կցել" not in roots  # it would break համագործակցել

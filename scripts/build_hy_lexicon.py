@@ -22,7 +22,16 @@ rules do not, the word's beginning up to the second consonant (մեղադր) goe
 into src/ashugh/data/hy_compound.tsv, unless it would break an entry the
 rules already read right.
 
-eval/wikipron.py rebuilds both lists without every tenth word (hold_out=True)
+A compound also keeps the schwa of a second root that opens on two
+consonants, as the root does alone (լուսանշան is լու-սա-նը-շան, from նշան).
+Every entry that opens that way, with a schwa between its first two
+consonants in all its pronunciations, goes into src/ashugh/data/hy_roots.tsv,
+unless after a linker ա or ե it would break an entry the rules read right
+(կցել would make համագործակցել հա-մա-գոր-ծա-կը-ցել). A root that opens on ս,
+զ or շ and a stop is left out: its schwa comes before it, and a linker's
+vowel swallows that one.
+
+eval/wikipron.py rebuilds the lists without every tenth word (hold_out=True)
 and scores ashugh on the words they left out.
 """
 
@@ -35,9 +44,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from ashugh.lang import hy  # noqa: E402
+from ashugh.phon import is_stop  # noqa: E402
 
 OUT = ROOT / "src" / "ashugh" / "data" / "hy_lexical.tsv"
 COMPOUNDS = ROOT / "src" / "ashugh" / "data" / "hy_compound.tsv"
+ROOTS = ROOT / "src" / "ashugh" / "data" / "hy_roots.tsv"
 VOWELS = set("ɑaeiouəɛɔ")
 HOLD_OUT = 10
 
@@ -111,10 +122,13 @@ def _counts(variants: list[list[str]]) -> set[int]:
     return {sum(1 for p in v if p[0] in VOWELS) for v in variants}
 
 
-def _size(norm: str, keys: set[str] | frozenset[str]) -> int:
+def _size(
+    norm: str, keys: set[str] | frozenset[str], roots: set[str] | frozenset[str] = frozenset()
+) -> int:
     segs = hy.segments(norm)
     found = (norm[:k] for k in range(hy.MIN_COMPOUND, len(norm) + 1) if norm[:k] in keys)
-    for i in sorted({len(hy.segments(key)) - 1 for key in found}, reverse=True):
+    points = {len(hy.segments(key)) - 1 for key in found} | set(hy.root_points(norm, roots))
+    for i in sorted(points, reverse=True):
         segs.insert(i, hy._schwa())
     return len(hy.syllabify(segs, not hy.stem_final(norm)))
 
@@ -152,6 +166,42 @@ def compounds(source: Path, hold_out: bool = False) -> list[str]:
     return sorted(keep, key=lambda w: w.encode("utf-8"))
 
 
+def roots(source: Path, keys: frozenset[str], hold_out: bool = False) -> list[str]:
+    """Entries that open on two consonants split by a schwa (նշան), less those
+    that would break an entry the rules and the compound keys read right."""
+    table = {
+        hy.normalize(word): variants
+        for k, (word, variants) in enumerate(words(source).items())
+        if not (hold_out and held_out(k)) and all(hy.is_armenian(ch) for ch in word)
+    }
+    found = set()
+    for norm, variants in table.items():
+        segs = hy.segments(norm)
+        if len(norm) < hy.MIN_ROOT or len(segs) < 3 or any(s.vowel for s in segs[:2]):
+            continue
+        if segs[1].ph == "j" or (segs[0].ph in hy.PROTHESIS_FIRST and is_stop(segs[1].ph)):
+            continue  # կյանք opens on one onset; ստ- takes its schwa in front
+        if all(len(v) > 1 and v[1] == "ə" for v in variants):
+            found.add(norm)
+    broken = set()
+    for norm, v in table.items():
+        hits = {r for r in _roots_in(norm, found)}
+        if hits and _size(norm, keys) in _counts(v):
+            broken |= {r for r in hits if _size(norm, keys, {r}) not in _counts(v)}
+    return sorted(found - broken, key=lambda w: w.encode("utf-8"))
+
+
+def _roots_in(norm: str, roots: set[str]) -> set[str]:
+    """The roots that open after a linker in norm."""
+    return {
+        norm[k:j]
+        for k in range(hy.MIN_HEAD, len(norm) - hy.MIN_ROOT + 1)
+        if norm[k - 1] in hy.LINKERS
+        for j in range(k + hy.MIN_ROOT, len(norm) + 1)
+        if norm[k:j] in roots
+    }
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 1:
         print(__doc__, file=sys.stderr)
@@ -162,6 +212,9 @@ def main(argv: list[str]) -> int:
     keys = compounds(Path(argv[0]))
     COMPOUNDS.write_text("".join(k + "\n" for k in keys), encoding="utf-8")
     print(f"{len(keys)} compound beginnings -> {COMPOUNDS}", file=sys.stderr)
+    found = roots(Path(argv[0]), frozenset(keys))
+    ROOTS.write_text("".join(r + "\n" for r in found), encoding="utf-8")
+    print(f"{len(found)} roots that open on a cluster -> {ROOTS}", file=sys.stderr)
     return 0
 
 

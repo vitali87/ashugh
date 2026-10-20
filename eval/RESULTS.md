@@ -40,20 +40,20 @@ either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **92.1%** |
-| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **88.4%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **92.9%** |
+| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **92.9%** |
 
-The 139 disagreements left, by kind:
+The 125 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
-| a schwa at the start | 50 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
+| a schwa at the start | 49 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
 | a schwa at the end | 30 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
-| a schwa inside | 27 | compounds whose beginning no listed word shares (աստ-ղա-գը-նաց) |
+| a schwa inside | 14 | compounds whose second root is listed in no form of its own (ծո-վա-գը-նաց, from գնալ) or was left out for breaking an entry (պատ-կե-րա-սը-րահ) |
 
 Wiktionary transcribes speech, not singing, so this is agreement rather than
-accuracy. The comparison gave ashugh three things:
+accuracy. The comparison gave ashugh four things:
 
 - four rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
   of 21 entries); it may end on three consonants that fall in sonority
@@ -71,12 +71,19 @@ accuracy. The comparison gave ashugh three things:
   rules read right. On the held-out words they fixed 8 and broke none.
   Speech often drops this schwa (Wiktionary gives both forms for 193
   words), so a line may sing it or not, as with the schwas of connected
-  speech.
+  speech;
+- 1,995 roots that open on two consonants with a schwa between (նշան,
+  սղոց), which keep it after a compound's linker ա or ե (լու-սա-նը-շան,
+  բեն-զա-սը-ղոց), less 24 that would break an entry the rules read right
+  (կցել would make համագործակցել հա-մա-գոր-ծա-կը-ցել). On the held-out
+  words they fixed 14 and broke none; where they add a schwa, Wiktionary
+  writes it in 14 of 15, and the fifteenth differs only at its start.
 
 In the eval's Armenian drafts (2,919 words) only three words read
 differently: լեռն and սառն gain their schwa, which connected speech still
 lets fit, and լուսանկարներ (lu-sa-nə-kar-ner) gains an optional one. Every
-draft scores the same.
+draft scores the same. The roots match one word in the drafts, the same
+լուսանկարներ, which the compound list already covers.
 
 **Words outside the dictionaries** (every tenth entry held out):
 

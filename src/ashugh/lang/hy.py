@@ -118,6 +118,7 @@ MIN_HEAD = 3
 # Possessives the dictionary also lists as stems: յար-դ (your beloved), not straw.
 POSSESSIVE_FORMS = {"յարդ"}
 MIN_COMPOUND = 4  # the shortest listed word beginning
+MIN_ROOT = 4  # the shortest listed root that opens on a cluster: նշան, սղոց
 # Final clusters Wiktionary splits with a schwa in 19 of 21 dictionary forms.
 FINAL_SPLIT = {("m", "n"), ("r", "n")}
 NOT_POSSESSIVE = {
@@ -240,11 +241,31 @@ def compound_schwas() -> frozenset[str]:
     return frozenset(text.split())
 
 
+@cache
+def cluster_roots() -> frozenset[str]:
+    """Words that open on two consonants with a schwa between (նշան, սղոց)."""
+    text = resources.files("ashugh").joinpath("data/hy_roots.tsv").read_text(encoding="utf-8")
+    return frozenset(text.split())
+
+
+def root_points(norm: str, roots: frozenset[str] | set[str]) -> list[int]:
+    """Segment indices of the schwas that roots keep after a compound's linker
+    ա or ե: լու-սա-նը-շան (նշան), բեն-զա-սը-ղոց (սղոց)."""
+    out = set()
+    for k in range(MIN_HEAD, len(norm) - MIN_ROOT + 1):
+        if norm[k - 1] in LINKERS and any(
+            norm[k:j] in roots for j in range(k + MIN_ROOT, len(norm) + 1)
+        ):
+            out.add(len(segments(norm[: k + 1])))
+    return sorted(out)
+
+
 def compound_points(norm: str) -> list[int]:
     """Segment indices to put a compound's schwa before, last first."""
     keys = compound_schwas()
     found = (norm[:k] for k in range(MIN_COMPOUND, len(norm) + 1) if norm[:k] in keys)
-    return sorted({len(segments(key)) - 1 for key in found}, reverse=True)
+    points = {len(segments(key)) - 1 for key in found} | set(root_points(norm, cluster_roots()))
+    return sorted(points, reverse=True)
 
 
 def stem_final(norm: str) -> bool:

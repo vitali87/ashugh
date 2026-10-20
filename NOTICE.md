@@ -19,8 +19,8 @@ licensed (see LICENSE), except the data tables described here.
 
 ## Armenian word lists
 
-`src/ashugh/data/hy_lexical.tsv` and `src/ashugh/data/hy_compound.tsv` are
-derived from WikiPron's scrape of
+`src/ashugh/data/hy_lexical.tsv`, `src/ashugh/data/hy_compound.tsv` and
+`src/ashugh/data/hy_roots.tsv` are derived from WikiPron's scrape of
 Wiktionary's Eastern Armenian pronunciations
 (<https://github.com/CUNY-CL/wikipron>, `data/scrape/tsv/hye_armn_e_broad.tsv`),
 which comes from Wiktionary (<https://en.wiktionary.org>), © Wiktionary
@@ -30,7 +30,9 @@ International license (<https://creativecommons.org/licenses/by-sa/4.0/>).
 Changes: `scripts/build_hy_lexicon.py` keeps the entries that end in a
 consonant and ս or դ transcribed without a schwa (hy_lexical.tsv), and the
 beginnings of entries transcribed with a schwa inside that the rules do not
-give (hy_compound.tsv), lowercased, without their pronunciations. The lists
+give (hy_compound.tsv), and the entries that open on two consonants
+transcribed with a schwa between them (hy_roots.tsv), lowercased, without
+their pronunciations. The lists
 are distributed under the same CC BY-SA 4.0 license.
 
 ## English pronunciation table

@@ -280,11 +280,11 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-92.1% of words (88.4% of those written with a schwa). Most of the rest are
+92.9% of words (92.9% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
 glide (դանիացի). The real misses are compounds no listed word explains
-(աստ-ղա-գը-նաց): 27 words, 1.5%.
+(ծո-վա-գը-նաց): 14 words, 0.8%.
 
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.6% of Russian words right (always guessing the
@@ -316,8 +316,10 @@ as possible:
 - the article -ն after ր, լ or ն may be sung with a schwa or without it
   (սե-րըն or սերն, like կյան-քըն or կյանքն): a line may count either;
 - a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 248
-  word beginnings that do this are listed from Wiktionary, and since speech
-  often drops that schwa, a line may sing it or not;
+  word beginnings that do this are listed from Wiktionary, and so are 1,995
+  roots that open on two consonants with a schwa between (նշան, սղոց), which
+  keep it after a compound's linker ա or ե (լու-սա-նը-շան, բեն-զա-սը-ղոց);
+  since speech often drops that schwa, a line may sing it or not;
 - among equal splits, the onset with յ wins, then the split whose codas
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
 
@@ -389,7 +391,7 @@ consonant before the vowel (ты / красоты).
 - Some Armenian schwas come from a word's history rather than its clusters:
   a compound keeps the schwa of its second root (աստղագնաց is
   աստ-ղա-գը-նաց, կայսրություն is կայ-սը-րու-թյուն). The listed compounds
-  cover many; for the rest (1.5% of dictionary words), write the word into
+  and roots cover most; for the rest (0.8% of dictionary words), write the word into
   `[lexicon]` once and every song uses it.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is

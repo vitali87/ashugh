@@ -3,11 +3,12 @@
     uv run eval/wikipron.py [--out eval/out/wikipron.json] [--src PATH]
 
 The data is WikiPron's scrape of Wiktionary's Eastern Armenian pronunciations
-(hye_armn_e_broad.tsv, downloaded on first use). ashugh's list of stems
-ending in ս or դ (scripts/build_hy_lexicon.py) comes from the same data, so
-the list is rebuilt here without every tenth word, and ashugh is scored on
-those alone: its sung syllables against the vowels of Wiktionary's broad
-transcription, schwas included. A word that Wiktionary transcribes more than
+(hye_armn_e_broad.tsv, downloaded on first use). ashugh's lists of stems
+ending in ս or դ, of compound beginnings and of roots that open on a cluster
+(scripts/build_hy_lexicon.py) come from the same data, so the lists are
+rebuilt here without every tenth word, and ashugh is scored on those alone:
+its sung syllables against the vowels of Wiktionary's broad transcription,
+schwas included. A word that Wiktionary transcribes more than
 one way (կերակրել with and without the schwa of its second root) matches
 when ashugh agrees with any of them, and a word whose schwa ashugh makes
 optional matches at either length. --src points at another checkout's src/
@@ -121,6 +122,9 @@ def hold_out_lexicon(hy, builder) -> None:
     if hasattr(hy, "compound_schwas"):
         keys = frozenset(builder.compounds(DATA, hold_out=True))
         hy.compound_schwas = lambda: keys
+        if hasattr(hy, "cluster_roots"):
+            roots = frozenset(builder.roots(DATA, keys, hold_out=True))
+            hy.cluster_roots = lambda: roots
 
 
 def main() -> None:
