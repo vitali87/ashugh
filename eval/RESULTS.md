@@ -12,8 +12,8 @@ benchmarks in its `rifma.json`, `armenian.json` and `oov.json`.
 |---|---|
 | stress of polysyllabic words (60,856) | 97.0% |
 | each word's first reading, without meter or rhyme | 91.8% |
-| words the dictionary lists (49,989) | 98.1% |
-| ambiguous words resolved by meter and rhyme (3,680) | 94.2% |
+| words the dictionary lists (49,981) | 98.1% |
+| ambiguous words resolved by meter and rhyme (3,688) | 94.2% |
 | unknown words guessed from the ending, meter and rhyme (5,510) | 88.1% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.875, F1 0.907 |
 
@@ -23,8 +23,8 @@ locative and the rhyme-aware stress choice. The rhyme threshold was checked
 on it too. In a sweep, 0.70 ("near") was the F1 optimum; at 0.60, recall and
 precision were both 0.89.
 
-**Armenian sung syllables** (79 words, one schwa rule each, checked by
-hand): ashugh matches all 79. espeak-ng counted 82% of the first 68 words
+**Armenian sung syllables** (81 words, one schwa rule each, checked by
+hand): ashugh matches all 81. espeak-ng counted 82% of the first 68 words
 right. The list was written alongside the rules, so it is a regression
 test more than a measurement.
 
@@ -115,18 +115,51 @@ meaning, but they did not need it. The mistakes were fixed afterwards
 ending of English), and with that analyzer the holdout drafts score 322/322
 and 159/160 alone, the one remaining flag being the real one.
 
+### Holdout 2: four more writers, analyzer frozen again
+
+Four further cold writers wrote two more drafts per task (48 drafts, 1,000
+lines, in [runs/2026-10-20/holdout2/](runs/2026-10-20/holdout2/)). They were
+scored, and repaired, with the analyzer frozen at commit 5c2962f, run from a
+separate worktree while later work went on.
+
+| | lines meeting the spec | songs meeting the spec |
+|---|---|---|
+| Claude alone | 985 / 1,000 (98.5%) | 42 / 48 |
+| Claude with ashugh | **1,000 / 1,000** | **48 / 48** |
+
+Read one by one, the 15 flagged lines were 3 real errors and 12 false
+alarms:
+
+| flagged | real? | after fit |
+|---|---|---|
+| hy-mother: Ոչ ոք չի սիրում ինձ քեզ պես, against …անցել ես | yes: the rhyme falls on an unstressed auxiliary | Ինձ ամենից շատ սիրել ես |
+| en-waltz: One final waltz, and the evening is done | yes: *fi-* on a weak beat of the dactyl | Last of the waltzes, the evening is done |
+| ru-troika: Рядом ты, моя милая, нежная | yes, by the strict standard: an adverb stressed on the anacrusis | Ты со мной, моя милая, нежная |
+| ru-troika: Только сердце навеки с тобой | no: только is a particle, metrically weak | Но лишь сердце навеки с тобой |
+| ru-winter (7 lines): кружится | no: кружи́тся was missing, only кру́жится was listed | клубится |
+| hy-lullaby (3 lines): Աչուկներդ փակիր | no: after the plural -եր, դ is the possessive (ա-չուկ-նե-րըդ, 6 syllables) | Դու աչուկներդ փակիր |
+| ru-grid-call: …номер искрится | no: the table has и́скрится for искри́тся | …номер лучится |
+
+The false alarms were fixed afterwards. With the fixed analyzer the same
+drafts score 997/1,000 alone, and the three remaining flags are the real
+errors above.
+
 ### What this does and does not show
 
-- n is small: 48 drafts of 24 tasks, from two writers.
+- 96 drafts of 24 tasks, from seven writers: the first set, holdout 1 and
+  holdout 2.
 - The writers and the proposers were Claude subagents of the session that
   built ashugh, not calls to the API. They had no access to the code, the
   tool or the conversation, only their briefs and fit's requests.
 - The first set's "alone" numbers come from a checker corrected on those
   drafts; the holdout set's come from a frozen one. They agree: Claude
   alone meets these forms in 98–100% of lines.
-- On fresh drafts, about one flag in three was ashugh's own mistake (2 of
-  3 here, 14 of 18 on the first set before its fixes). A false flag costs
-  a needless rewrite, which fit made without losing the meaning.
+- On fresh drafts, most flags were ashugh's own mistakes: 2 of 3 on
+  holdout 1, 12 of 15 on holdout 2, and 14 of 18 on the first set before
+  its fixes. Real errors were rare (3 in 1,000 lines on holdout 2). A
+  false flag costs a needless rewrite, which fit made without losing the
+  meaning; each one also pointed at a dictionary gap or a rule worth
+  fixing, and was fixed with a test.
 - The standard is strict: a lexical stress on a weak beat counts as an
   error even where a singer would get away with it, and an open rhyme
   needs its supporting consonant.

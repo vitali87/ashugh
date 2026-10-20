@@ -2,12 +2,12 @@
   "samples": 5121,
   "stress": {
     "words": 60856,
-    "accuracy": 0.9698,
-    "first_reading_accuracy": 0.9177,
+    "accuracy": 0.9699,
+    "first_reading_accuracy": 0.9178,
     "by_source": {
       "dictionary": {
-        "words": 49989,
-        "accuracy": 0.9809
+        "words": 49981,
+        "accuracy": 0.9811
       },
       "guess": {
         "words": 5510,
@@ -18,8 +18,8 @@
         "accuracy": 0.9917
       },
       "meter": {
-        "words": 3680,
-        "accuracy": 0.9418
+        "words": 3688,
+        "accuracy": 0.942
       }
     },
     "skipped_lines": 25,

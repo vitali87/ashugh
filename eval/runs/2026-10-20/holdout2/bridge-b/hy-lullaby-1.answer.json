@@ -1,0 +1,37 @@
+{
+  "lines": [
+    {
+      "id": "L9",
+      "candidates": [
+        {"text": "Դու աչուկներդ փակիր,", "faithfulness": 0.95},
+        {"text": "Աչուկներդ շուտ փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ կամաց փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ, բալես, փակիր,", "faithfulness": 0.88},
+        {"text": "Կոպերդ կամաց փակիր,", "faithfulness": 0.85},
+        {"text": "Աչքերդ փակիր, քնիր,", "faithfulness": 0.8}
+      ]
+    },
+    {
+      "id": "L21",
+      "candidates": [
+        {"text": "Դու աչուկներդ փակիր,", "faithfulness": 0.95},
+        {"text": "Աչուկներդ շուտ փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ կամաց փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ, բալիկ, փակիր,", "faithfulness": 0.88},
+        {"text": "Կոպերդ կամաց փակիր,", "faithfulness": 0.85},
+        {"text": "Աչքերդ անուշ փակիր,", "faithfulness": 0.85}
+      ]
+    },
+    {
+      "id": "L33",
+      "candidates": [
+        {"text": "Դու աչուկներդ փակիր,", "faithfulness": 0.95},
+        {"text": "Աչուկներդ շուտ փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ կամաց փակիր,", "faithfulness": 0.9},
+        {"text": "Աչքերդ, բալես, փակիր,", "faithfulness": 0.88},
+        {"text": "Աչքերդ անուշ փակիր,", "faithfulness": 0.85},
+        {"text": "Աչքերդ փակիր, քնիր,", "faithfulness": 0.8}
+      ]
+    }
+  ]
+}

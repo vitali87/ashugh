@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nOnce in the ballroom the music was flowing,\nLanterns were hung from the rafters above,\nCouples went circling, their faces all glowing,\nSpinning like leaves in the arms of their love.\n\n[Verse 2]\nNow there's a sign on the door that says closing,\nDust on the floor where the dancers once spun,\nChairs on the tables, the bandleader dozing,\nLast of the waltzes, the evening is done.\n",
+      "changes": 1,
+      "rounds": 1,
+      "requests": 1
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "lines": [
+    {
+      "id": "L11",
+      "candidates": [
+        {"text": "Last of the waltzes, the evening is done.", "faithfulness": 0.88},
+        {"text": "Lastly a waltz, and the evening is done.", "faithfulness": 0.85},
+        {"text": "Waltzing the last, and the evening is done.", "faithfulness": 0.8},
+        {"text": "Finally waltzing, the evening is done.", "faithfulness": 0.7},
+        {"text": "One for the road, and the evening is done.", "faithfulness": 0.65},
+        {"text": "Down to the last, and the evening is done.", "faithfulness": 0.62}
+      ]
+    }
+  ]
+}

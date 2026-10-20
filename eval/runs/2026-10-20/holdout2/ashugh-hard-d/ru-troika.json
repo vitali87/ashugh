@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nНочь морозная, даль белоснежная,\nПод серебряный звон бубенцов\nТы со мной, моя милая, нежная,\nИ не нужно ни клятв и ни слов.\n\n[Verse 2]\nАх, зачем эта ночь так кончается,\nДогорает луна над рекой,\nКолокольчик звенит и качается,\nНо лишь сердце навеки с тобой.\n",
+      "changes": 2,
+      "rounds": 1,
+      "requests": 2
+    }
+  ]
+}
