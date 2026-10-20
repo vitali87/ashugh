@@ -216,12 +216,14 @@ lines that failed.
 | hard forms, alone | 192 / 196 | 9 / 12 |
 | hard forms, with ashugh | **196 / 196** | **12 / 12** |
 
-The repair changed five lines in at most two rounds. A strong model gets
-most lines right on its own. What it misses is what it cannot hear: a
+The repair changed five lines in at most two rounds. A second, holdout set
+of 24 fresh drafts, scored with the analyzer frozen, gave the same picture:
+321/322 and 158/160 lines alone, every line and song with ashugh. A strong
+model gets most lines right on its own. What it misses is what it cannot hear: a
 hidden Armenian schwa (աչքերս is աչ-քե-րըս), a stress on the weak beat of
 an anapest, an open rhyme whose consonants differ. The first scoring also
 showed how much depends on the checker: of the 18 lines it flagged, 14 were
-ashugh's mistakes, since fixed with tests. The sample is small, and the
+ashugh's mistakes, since fixed with tests; on the holdout, 2 of 3. The sample is small, and the
 writer and proposers were Claude subagents, not API calls; RESULTS.md has
 the caveats.
 

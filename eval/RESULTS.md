@@ -12,8 +12,8 @@ benchmarks in its `rifma.json`, `armenian.json` and `oov.json`.
 |---|---|
 | stress of polysyllabic words (60,856) | 97.0% |
 | each word's first reading, without meter or rhyme | 91.8% |
-| words the dictionary lists (49,995) | 98.1% |
-| ambiguous words resolved by meter and rhyme (3,674) | 94.2% |
+| words the dictionary lists (49,989) | 98.1% |
+| ambiguous words resolved by meter and rhyme (3,680) | 94.2% |
 | unknown words guessed from the ending, meter and rhyme (5,510) | 88.1% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.875, F1 0.907 |
 
@@ -86,23 +86,55 @@ gave the same numbers. Before the fixes the drafts scored 133/140 and 185/196
 lines (8/12 and 5/12 songs). Those scores measured ashugh's errors more than
 the writer's.
 
+### Holdout: fresh drafts, analyzer frozen
+
+Because the analyzer was corrected on the drafts above, a second set was
+written afterwards: new cold writers, the same 24 briefs, drafts in
+[runs/2026-10-20/holdout/](runs/2026-10-20/holdout/). They were scored at
+commit 268da1e and the analyzer was not touched until the repair had run.
+
+| | lines meeting the spec | songs meeting the spec |
+|---|---|---|
+| everyday forms, Claude alone | 321 / 322 (99.7%) | 11 / 12 |
+| everyday forms, Claude with ashugh | **322 / 322** | **12 / 12** |
+| hard forms, Claude alone | 158 / 160 (98.8%) | 10 / 12 |
+| hard forms, Claude with ashugh | **160 / 160** | **12 / 12** |
+
+One round of repair, three changed lines:
+
+| task | as written | after fit | flag was |
+|---|---|---|---|
+| hy-translate-dickinson | Ու ես թողել էի | Ու արդեն թողեցի | right: թողել էի ends on the unstressed auxiliary, so it does not rhyme with գթի |
+| ru-road | Нет пути милей на свете | Лучше нет пути на свете | wrong: миле́й (dearer) was read as ми́лей (of miles) |
+| en-translate-pushkin | Through restless bustle's noisy race | Amid the clamor's restless race | wrong: *bustle's* was counted as one syllable |
+
+Of the three lines the frozen checker flagged, one was a real error and
+two were its own mistakes; fit rewrote those two without harm to the
+meaning, but they did not need it. The mistakes were fixed afterwards
+(the -ее twin of a short comparative, the possessive *'s* and the *-les*
+ending of English), and with that analyzer the holdout drafts score 322/322
+and 159/160 alone, the one remaining flag being the real one.
+
 ### What this does and does not show
 
-- n is small: 24 tasks, one draft each, one writer.
-- The writer and the proposers were Claude subagents of the session that
+- n is small: 48 drafts of 24 tasks, from two writers.
+- The writers and the proposers were Claude subagents of the session that
   built ashugh, not calls to the API. They had no access to the code, the
   tool or the conversation, only their briefs and fit's requests.
-- The analyzer was corrected on these very drafts, so "Claude alone" is
-  scored by a checker that has seen them. Every correction is a general
-  rule with its own tests, and the RIFMA and Armenian numbers did not move
-  or improved, but a fresh set of drafts would be the cleaner measurement.
+- The first set's "alone" numbers come from a checker corrected on those
+  drafts; the holdout set's come from a frozen one. They agree: Claude
+  alone meets these forms in 98–100% of lines.
+- On fresh drafts, about one flag in three was ashugh's own mistake (2 of
+  3 here, 14 of 18 on the first set before its fixes). A false flag costs
+  a needless rewrite, which fit made without losing the meaning.
 - The standard is strict: a lexical stress on a weak beat counts as an
   error even where a singer would get away with it, and an open rhyme
   needs its supporting consonant.
 - A frontier model already writes these forms well. On this evidence,
   ashugh's value is less in rescuing bad drafts than in making "every line
   scans" a checked fact instead of a claim, and in fixing the last few
-  lines without a human counting syllables.
+  lines without a human counting syllables. In every set, every song met
+  its spec after fit.
 
 To rerun with the API: `ashugh eval run eval/tasks-hard` (needs
 `ANTHROPIC_API_KEY` and `pip install 'ashugh[claude]'`).

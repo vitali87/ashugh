@@ -179,7 +179,18 @@ def lookup(norm: str) -> list[str] | None:
         raw = TABLE.get(c)
         if raw:
             return raw.split("|")
+    if norm.endswith("'s") and len(norm) > 3:  # bustle's: the word, then its -s
+        raw = TABLE.get(norm[:-2])
+        if raw:
+            return [v + _s_ending(v) for v in raw.split("|")]
     return None
+
+
+def _s_ending(variant: str) -> str:
+    last = variant.split()[-1].rstrip("012")
+    if last in ("S", "Z", "SH", "ZH", "CH", "JH"):
+        return " IH0 Z"
+    return " S" if last in ("P", "T", "K", "F", "TH") else " Z"
 
 
 def _drop_index(longer: list[str], shorter: list[str]) -> int | None:
@@ -213,6 +224,7 @@ def _counted_groups(w: str) -> list[tuple[int, int]]:
             w.endswith("es")
             and last == "e"
             and not before.endswith(("s", "z", "x", "ch", "sh", "ge", "ce"))
+            and not (w.endswith("les") and len(w) > 3 and w[-4] not in LETTER_VOWELS)
         )
         if silent_e or silent_ed or silent_es:
             groups.pop()

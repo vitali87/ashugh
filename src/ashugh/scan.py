@@ -305,18 +305,19 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         else:
             for i in sorted(f.elided):
                 w = ln.words[i]
-                how = (
-                    "merges into the vowel before it"
-                    if w.drop == 0
-                    else "links its last consonant to the vowel after it"
-                )
+                if w.lang == "hy":
+                    how = (
+                        "merges into the vowel before it"
+                        if w.drop == 0
+                        else "links its last consonant to the vowel after it"
+                    )
+                    what, detail = "drops its ը", f"in connected speech the word {how}"
+                else:
+                    what = "is sung with one syllable fewer"
+                    detail = f"{w.sung()} also has a shorter pronunciation"
                 add(
                     Issue(
-                        ln.number,
-                        "syllables",
-                        "info",
-                        f"fits if {_quote(w.text)} drops its ը",
-                        f"in connected speech the word {how}",
+                        ln.number, "syllables", "info", f"fits if {_quote(w.text)} {what}", detail
                     )
                 )
 

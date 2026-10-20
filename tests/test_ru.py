@@ -205,3 +205,9 @@ def test_pronouns_are_metrically_weak(word):
 def test_content_words_are_not_weak(word):
     w = ru.analyze_word(word)
     assert not w.weak or w.size == 1
+
+
+def test_short_comparative_in_ei_gets_its_twin_stress():
+    w = ru.analyze_word("милей")
+    assert 1 in w.stress_options() and 0 in w.stress_options()  # миле́й, and ми́лей of miles
+    assert ru.analyze_word("сильней").stress_options() == [1]

@@ -545,6 +545,11 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     if not options:
         for spelling, stress in _shift_lookup(norm):
             options.append((spelling, stress, "lexicon"))
+    elif norm.endswith("ей") and norm not in CORE:
+        # the short comparative keeps the stress of its -ее form even where the same
+        # spelling is another word: миле́й (милее), not only ми́лей (of miles)
+        for _, stress in TABLE.variants(norm[:-2] + "ее"):
+            options.append((norm, stress, "lexicon"))
     readings = []
     for spelling, stress, source in options:
         for p in stress:

@@ -211,3 +211,25 @@ def test_rain_rhymes_with_again():
     assert scan(
         "Through ice and silver rain\nThe wheel turned round again\n", from_dict({"rhyme": "AA"})
     ).ok
+
+
+@pytest.mark.parametrize(
+    "word,size,stress",
+    [
+        ("bustle's", 2, 0),
+        ("beauty's", 2, 0),
+        ("sorrow's", 2, 0),
+        ("rose's", 2, 0),
+        ("church's", 2, 0),
+    ],
+)
+def test_possessive_s_follows_the_dictionary_word(word, size, stress):
+    w = en.analyze_word(word)
+    assert not w.guessed and w.size == size and w.stress_options()[0] == stress
+
+
+@pytest.mark.parametrize(
+    "word,count", [("bustles", 2), ("candles", 2), ("tables", 2), ("names", 1)]
+)
+def test_spelling_count_of_consonant_le_plurals(word, count):
+    assert en.guess_syllables(word) == count
