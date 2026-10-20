@@ -1,0 +1,34 @@
+{
+  "samples": 5121,
+  "stress": {
+    "words": 60856,
+    "accuracy": 0.9698,
+    "first_reading_accuracy": 0.9177,
+    "by_source": {
+      "dictionary": {
+        "words": 49996,
+        "accuracy": 0.9808
+      },
+      "guess": {
+        "words": 5510,
+        "accuracy": 0.8819
+      },
+      "mark": {
+        "words": 1677,
+        "accuracy": 0.9917
+      },
+      "meter": {
+        "words": 3673,
+        "accuracy": 0.9415
+      }
+    },
+    "skipped_lines": 25,
+    "skipped_poems": 0
+  },
+  "rhyme_pairs": {
+    "pairs": 33798,
+    "precision": 0.9401,
+    "recall": 0.8766,
+    "f1": 0.9072
+  }
+}

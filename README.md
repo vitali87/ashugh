@@ -196,14 +196,38 @@ intelligibility rather than every sung schwa.
 
 ## How well it works
 
-All numbers are from the scripts in [eval/](eval/), on this commit.
+All numbers are from the scripts in [eval/](eval/); the full write-up is
+[eval/RESULTS.md](eval/RESULTS.md).
+
+**Claude alone and Claude with ashugh.** Twenty-four writing tasks, twelve
+everyday forms and twelve harder ones: per-line melody grids with set
+endings, a separate chorus form, ternary meters, Armenian feminine endings,
+and translations into the source's grid. A Claude writer with no access to
+ashugh drafted each song; then `fit` asked Claude for candidates for the
+lines that failed.
+
+| | lines meeting the spec | songs meeting the spec |
+|---|---|---|
+| everyday forms, alone | 139 / 140 | 11 / 12 |
+| everyday forms, with ashugh | **140 / 140** | **12 / 12** |
+| hard forms, alone | 192 / 196 | 9 / 12 |
+| hard forms, with ashugh | **196 / 196** | **12 / 12** |
+
+The repair changed five lines in at most two rounds. A strong model gets
+most lines right on its own. What it misses is what it cannot hear: a
+hidden Armenian schwa (աչքերս is աչ-քե-րըս), a stress on the weak beat of
+an anapest, an open rhyme whose consonants differ. The first scoring also
+showed how much depends on the checker: of the 18 lines it flagged, 14 were
+ashugh's mistakes, since fixed with tests. The sample is small, and the
+writer and proposers were Claude subagents, not API calls; RESULTS.md has
+the caveats.
 
 **Russian, on RIFMA** (Koziev 2025: 5,121 poems and stanzas with every
 stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,863) | **97.0%** correct |
+| stress of polysyllabic words (60,856) | **97.0%** correct |
 | each word's first reading, without meter or rhyme | 91.8% |
 | words the dictionary lists | 98.1% |
 | ambiguous words, resolved by meter and rhyme | 94.2% |
@@ -213,10 +237,10 @@ stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
 RIFMA was also the development set for the Russian rules, so these numbers
 are not from unseen data.
 
-**Armenian sung syllables** (`python eval/armenian.py`). On 68 words that
+**Armenian sung syllables** (`python eval/armenian.py`). On 76 words that
 each exercise one schwa rule (eval/data/hy_gold.tsv, checked by hand),
 ashugh matches every syllabification. espeak-ng, the reference
-phonemizer, gets 82% of the syllable counts. It misses two schwas in
+phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas in
 Մկրտիչ, the possessive schwa in սիրտս, and rising final clusters like աստղ.
 The gold list was written together with the rules, so treat ashugh's 100% as
 a regression test, not as an independent measurement.
@@ -239,7 +263,9 @@ as possible:
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
   միտք), so տետր is տե-տըր and աստղ is աս-տըղ;
 - a final ս or դ after an obstruent is the possessive and takes a schwa
-  (սիր-տըս, գը-լու-խըդ);
+  (սիր-տըս, գը-լու-խըդ), and so is ս after a sonorant (սե-րըս, բո-լո-րըս),
+  except where the stem ends that way (չորս, լույս, ծնունդ);
+- the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
 - among equal splits, the onset with յ wins, then the split whose codas
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
 
@@ -247,7 +273,8 @@ In connected speech, a vowel before a word swallows its leading ը (նա
 ստացավ), and a final schwa syllable links onto a vowel after it (կյանքն է).
 The check uses whichever length fits the slot. Stress falls on the last full
 vowel, or where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… is an unstressed
-enclitic that rhymes with the word before it.
+enclitic that rhymes with the word before it. A hyphenated reduplication
+(փափուկ-փափուկ, тихо-тихо) is one stressed word per part.
 
 **Russian** (`lang/ru.py`). Stress comes from, in order:
 
@@ -282,7 +309,8 @@ mismatches:
 
 - a polysyllable stressed on a weak beat costs the most;
 - a skipped beat (pyrrhic) is cheap in binary meters;
-- monosyllables, function words and secondary stresses may take either beat;
+- monosyllables, function words, pronouns and secondary stresses may take
+  either beat;
 - the last stress must land on a beat.
 
 English verse licences cost a little: a line may open on an inverted foot
@@ -303,7 +331,8 @@ consonant before the vowel (ты / красоты).
 ## Limits
 
 - Armenian schwas that come from morphology rather than from the cluster are
-  missed: կայսրություն keeps the schwa of կայսր. Fix them in `[lexicon]`.
+  missed: կայսրություն keeps the schwa of կայսր, and the possessive դ after ն
+  (տունդ) reads like the stem of ծնունդ. Fix them in `[lexicon]`.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Russian stress shifts onto prepositions (и́з лесу, на́ гору) are not
   modeled.

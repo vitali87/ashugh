@@ -1,0 +1,26 @@
+{
+  "lines": [
+    {
+      "id": "L2",
+      "candidates": [
+        {"text": "Մեր բակում մեծ հարսանիք, հա,", "faithfulness": 0.9},
+        {"text": "Բակում մեծ հարսանիք, ահա,", "faithfulness": 0.85},
+        {"text": "Մեր բակում հարսանիք, ահա,", "faithfulness": 0.85},
+        {"text": "Հարսանիք է մեր բակում, հա,", "faithfulness": 0.85},
+        {"text": "Բակում հարսանիք կա, ահա,", "faithfulness": 0.8},
+        {"text": "Մեր բակում մեծ տոն է, ահա,", "faithfulness": 0.7}
+      ]
+    },
+    {
+      "id": "L4",
+      "candidates": [
+        {"text": "Ահա հարսը, փեսան էլ կա,", "faithfulness": 0.9},
+        {"text": "Ահա հարսը, ու փեսան կա,", "faithfulness": 0.85},
+        {"text": "Հարսը այստեղ, փեսան էլ կա,", "faithfulness": 0.8},
+        {"text": "Հարսը եկավ, փեսան էլ կա,", "faithfulness": 0.75},
+        {"text": "Հարսը, փեսան՝ ամեն ինչ կա,", "faithfulness": 0.75},
+        {"text": "Հարսը, փեսան, ինչ ասես կա,", "faithfulness": 0.7}
+      ]
+    }
+  ]
+}

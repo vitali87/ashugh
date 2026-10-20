@@ -1,0 +1,20 @@
+{
+  "ru_stress": {
+    "test_words": 55255,
+    "prior_coverage": 0.9296,
+    "prior_accuracy_where_covered": 0.7814,
+    "prior_with_majority_fallback": 0.7565,
+    "majority_baseline": 0.4084
+  },
+  "en_stress": {
+    "test_words": 9405,
+    "prior_coverage": 0.9021,
+    "prior_accuracy_where_covered": 0.8014,
+    "prior_with_majority_fallback": 0.7702,
+    "majority_baseline": 0.667
+  },
+  "en_syllables": {
+    "test_words": 11748,
+    "spelling_count_accuracy": 0.877
+  }
+}
