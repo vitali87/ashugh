@@ -261,10 +261,13 @@ def _russian(
     letters = token.replace(ACUTE, "")
     marked_by_writer = letters != token
     candidates = [r for r in w.readings if r.stress == chosen] or list(w.readings)
-    spellings = {r.spelling for r in w.readings if r.source not in LICENCES}
+    # The readings of the stress the line chose: звёзды, not звезды́, is the one
+    # sung on the first syllable, so its ё goes back even though both are words.
+    spellings = {r.spelling for r in candidates if r.source not in LICENCES}
+    spellings = spellings or {r.spelling for r in candidates}
     new = letters
-    if len(spellings) == 1 and "ё" in candidates[0].spelling:
-        target = candidates[0].spelling.replace("-", "")
+    if len(spellings) == 1 and "ё" in (only := next(iter(spellings))):
+        target = only.replace("-", "")
         flat = [k for k, ch in enumerate(letters) if ch != "-"]
         if len(flat) == len(target):
             chars = list(letters)

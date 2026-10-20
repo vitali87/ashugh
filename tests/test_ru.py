@@ -77,8 +77,8 @@ def test_consonant_only_prepositions_have_no_syllables():
 @pytest.mark.parametrize(
     "word,stress,sound",
     [
-        ("сердце", 0, "sʲertsɨ"),
-        ("солнце", 0, "sontsɨ"),
+        ("сердце", 0, "sʲertsə"),
+        ("солнце", 0, "sontsə"),
         ("честный", 0, "tʃʲesnɨj"),
         ("что", 0, "ʃto"),
         ("любовь", 1, "lʲubofʲ"),

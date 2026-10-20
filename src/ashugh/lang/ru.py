@@ -118,6 +118,34 @@ WEAK |= set(
 )
 # Pronoun forms and function words the table lacks: spelling, stressed vowels.
 CORE: dict[str, tuple[str, tuple[int, ...]]] = {
+    # The plural ветра́ of songs and verse, which the table lacks.
+    "ветра": ("ветра", (0, 1)),
+    **{f: (f, (1,)) for f in "ветров ветрам ветрами ветрах".split()},
+    # начался́, началось́: the table also lists the colloquial на́чался.
+    "начался": ("начался", (2,)),
+    "началось": ("началось", (2,)),
+    "начались": ("начались", (2,)),
+    "диджей": ("диджей", (1,)),
+    # First names the table lacks, by their stressed vowel.
+    **{
+        name: (name, (k,))
+        for k, names in (
+            (
+                0,
+                "саша маша даша катя оля лена аня миша дима ваня петя коля игорь павел "
+                "анна ольга дмитрий борис вера надя таня",
+            ),
+            (
+                1,
+                "наташа татьяна ирина андрей сергей светлана полина владимир мария елена "
+                "иван олег марина алина кристина галина людмила",
+            ),
+            (2, "иисус александр михаил николай анастасия"),
+            (3, "екатерина"),
+        )
+        for name in names.split()
+    },
+    "алёна": ("алёна", (1,)),
     # The table stresses бант on its ending (банты́); it is ба́нт throughout.
     **{f: (f, (0,)) for f in "банта банту бантом банте банты бантов бантам бантами бантах".split()},
     "кого": ("кого", (1,)),
@@ -198,7 +226,7 @@ PARTICLES = {"то", "либо", "нибудь", "ка", "таки"}
 SECOND_LOCATIVE = frozenset(
     """
     аду балу бегу берегу бою бору боку борту бреду быту веку верху ветру возу
-    газу глазу гробу году дому дубу дыму жару клею кону краю кругу крюку ладу лбу лесу
+    аэропорту газу глазу гробу году дому дубу дыму жару клею кону краю кругу крюку ладу лбу лесу
     льду лугу мелу меду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
     полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
     сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу
@@ -221,6 +249,8 @@ PREPOSITION_SHIFT = {
     ),
     "по": set("лесу полю морю небу миру снегу лугу полу двое трое сердцу плечу уху".split()),
     "из": set("лесу дому виду носу".split()),
+    # не́ был, не́ было, не́ дали; but не была́, не дала́
+    "не": set("был было были дал дало дали жил жило жили пил пило пили".split()),
     "под": set("гору ноги руку руки вечер нос".split()),
     "без": set("вести толку году".split()),
     "до": set("дому смерти полу неба".split()),
@@ -387,11 +417,11 @@ def _rewrite(spelling: str) -> str:
     return s
 
 
-def _reduce(vowel: str, soft: bool, last: bool) -> str:
+def _reduce(vowel: str, soft: bool, last: bool, post: bool = False) -> str:
     if vowel in ("a", "o"):
         return "ɪ" if soft and not last else "ə"
-    if vowel == "e":
-        return "ɪ" if soft else "ɨ"
+    if vowel == "e":  # after ж ш ц: жена [ʐɨ], but сердце [tsə] after the stress
+        return "ɪ" if soft else ("ə" if post else "ɨ")
     if vowel == "i":
         return "ɪ"
     return vowel
@@ -423,7 +453,8 @@ def transcribe(spelling: str, stress: int | None) -> tuple[str, ...]:
             if prev in HARD:
                 soft = False
             if vowel_no != stress:
-                vowel = _reduce(vowel, soft, vowel_no == total - 1)
+                post = stress is not None and vowel_no > stress
+                vowel = _reduce(vowel, soft, vowel_no == total - 1, post)
             out.append(vowel)
             vowel_no += 1
         prev = ch
