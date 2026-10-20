@@ -1,7 +1,7 @@
 """ashugh: a prosody checker that gives LLM-written lyrics an ear."""
 
 __version__ = "0.1.0"
-SOURCE = "git+https://github.com/vitali87/surprise"
+SOURCE = "git+https://github.com/vitali87/ashugh"
 
 
 def install_hint(extra: str) -> str:
