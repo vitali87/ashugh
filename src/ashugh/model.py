@@ -7,8 +7,9 @@ from dataclasses import dataclass, field
 from .phon import is_vowel
 
 # Readings that verse allows but speech does not insist on: a compound's stress on its
-# second part (sometíme), a noun leaving its stress to the preposition (по́ лесу).
-LICENCES = frozenset({"shift", "lean"})
+# second part (sometíme), a noun leaving its stress to the preposition (по́ лесу), a
+# late stress moving back before a stressed word (Ténnessee whiskey).
+LICENCES = frozenset({"shift", "lean", "clash"})
 ACUTE = "\u0301"
 
 
@@ -26,7 +27,7 @@ class Reading:
     stress: int | None  # stressed syllable, None for a word with no stress of its own
     phones: tuple[str, ...]  # the n-th vowel here is the nucleus of syllable n
     spelling: str  # normalized spelling, ё restored for Russian
-    source: str  # mark | user | lexicon | rule | guess | clitic
+    source: str  # mark | user | lexicon | rule | guess | clitic, or a licence
     secondary: tuple[int, ...] = ()  # syllables with secondary stress (English)
     penalty: float = 0.0  # meter cost of choosing this reading (a guess the prior disfavors)
 

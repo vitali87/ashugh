@@ -105,3 +105,15 @@ def test_a_late_stress_moves_back_before_a_stressed_word(line):
 def test_a_late_stress_stays_where_nothing_clashes():
     rep = scan("I hope that you will understand\n", from_dict({"language": "en", "meter": "iamb4"}))
     assert rep.ok and rep.lines[0].fit.stresses[5] == 2  # un-der-stánd
+
+
+@pytest.mark.parametrize(
+    "line, meter",
+    [
+        ("Speaking in Japanese\n", "dactyl2"),  # nothing after it to clash with
+        ("Thirteen and seventeen\n", "dactyl2"),  # and takes no stress
+    ],
+)
+def test_a_late_stress_does_not_move_back_without_a_stressed_word_after_it(line, meter):
+    rep = scan(line, from_dict({"language": "en", "meter": meter}))
+    assert [i.code for i in rep.issues if i.code == "meter"] != []

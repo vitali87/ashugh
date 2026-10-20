@@ -135,12 +135,15 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
     borrowed: int | None = None  # start of a preposition the next word's slot takes over
     for i, w in enumerate(words):
         size = w.size
-        options = tuple(w.stress_options())
+        after = next((x for x in words[i + 1 :] if x.size), None)
+        clash = after is not None and not after.clitic and 0 in after.stress_options()
+        readings = [r for r in w.readings if clash or r.source != "clash"] or list(w.readings)
+        options = tuple(dict.fromkeys(r.stress for r in readings))
         if force and i in force and force[i] in options:
             options = (force[i],)
-        secondary = {k for r in w.readings for k in r.secondary}
+        secondary = {k for r in readings for k in r.secondary}
         costs: dict[int | None, float] = {}
-        for r in w.readings:
+        for r in readings:
             costs[r.stress] = min(costs.get(r.stress, r.penalty), r.penalty)
         if i in elided and w.drop is not None:
             d = w.drop

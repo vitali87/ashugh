@@ -520,19 +520,21 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/
     # A compound may move its stress onto its second part in verse (sometíme), and a
     # word stressed late onto an earlier secondary before a stressed word (the
-    # rhythm rule: Ténnessee whiskey, a Jápanese garden).
+    # rhythm rule: Ténnessee whiskey, a Jápanese garden); the meter takes that one
+    # only where such a word follows.
     for r in list(readings):
         for k in r.secondary:
             if r.stress is not None and k != r.stress and all(x.stress != k for x in readings):
                 rest = tuple(sorted({r.stress, *r.secondary} - {k}))
-                readings.append(Reading(k, r.phones, norm, "shift", rest, penalty=STRESS_SHIFT))
+                kind = "shift" if k > r.stress else "clash"
+                readings.append(Reading(k, r.phones, norm, kind, rest, penalty=STRESS_SHIFT))
     # Two primary stresses (well-known, thirteen) give way to a stressed word after
     # them, so the first may carry the line: a wéll-known vóice.
     for phones, stresses, _ in full[:1]:
         primary = [i for i, d in enumerate(stresses) if d == 1]
         if len(primary) > 1 and all(x.stress != primary[0] for x in readings):
             rest = tuple(i for i, d in enumerate(stresses) if d and i != primary[0])
-            readings.append(Reading(primary[0], phones, norm, "shift", rest, penalty=STRESS_SHIFT))
+            readings.append(Reading(primary[0], phones, norm, "clash", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
     _, stresses, bare = full[0]
     short = frozenset(k for k, (v, d) in enumerate(zip(bare, stresses)) if d and v in SHORT_VOWELS)

@@ -85,6 +85,8 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
     for reading in word.readings:
         if reading.stress is None or (not free and reading.stress != chosen):
             continue
+        if reading.source == "clash" and reading.stress != chosen:
+            continue  # no stressed word follows the rhyme to clash with
         # English also rhymes on a secondary stress after the main one (sunshine / mine).
         later = [k for k in reading.secondary if k > reading.stress]
         if fit.promoted:  # the beat on the last syllable carries the rhyme: memory / free

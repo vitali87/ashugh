@@ -388,7 +388,9 @@ mismatches:
 
 English verse licences cost a little: a line may open on an inverted foot
 (Sometime too hot the eye of heaven shines), a compound may move its stress
-to its second part (sometíme), and the last beat may fall on a final syllable
+to its second part (sometíme), a late stress may move back onto a secondary
+one when a stressed word follows (Ténnessee whiskey, but not a line that ends
+on Tennessee), and the last beat may fall on a final syllable
 two after the stress (témperàte), which can then carry the rhyme
 (memory / free).
 
