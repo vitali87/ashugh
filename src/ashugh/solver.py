@@ -6,7 +6,8 @@ allowed together (the ones that rhyme). The best choice maximizes the total
 weight. solve_exact is a branch and bound over lines with the fewest
 candidates first; solve_cpsat hands the same model to OR-Tools CP-SAT when it
 is installed (the cpsat extra), which is what the auto method falls back
-to on instances too big to enumerate.
+to on instances too big to enumerate. Without it, the fallback is the first
+choice that keeps every pair, found the same way but without the bound.
 """
 
 from __future__ import annotations
@@ -115,17 +116,39 @@ def solve(p: Problem, method: str = "auto") -> list[int] | None:
     except TooBig:
         if cpsat_available():
             return solve_cpsat(p)
-        return _greedy(p)
+        return _first_fit(p)
 
 
-def _greedy(p: Problem) -> list[int] | None:
+def _first_fit(p: Problem, node_limit: int = NODE_LIMIT) -> list[int] | None:
+    """The first choice that keeps every pair, trying each line's best
+    candidates first: a backtracking search without the bound, for instances
+    too big to optimize. None if there is none, or none within node_limit."""
+    n = len(p.weights)
+    if any(not ws for ws in p.weights):
+        return None
+    order = sorted(range(n), key=lambda k: len(p.weights[k]))
+    ranked = {k: sorted(range(len(p.weights[k])), key=lambda c: -p.weights[k][c]) for k in order}
     choice: dict[int, int] = {}
-    for k in sorted(range(len(p.weights)), key=lambda k: len(p.weights[k])):
-        options = sorted(range(len(p.weights[k])), key=lambda c: -p.weights[k][c])
-        pick = next(
-            (c for c in options if all(p.allowed(k, c, o, oc) for o, oc in choice.items())), None
-        )
-        if pick is None:
-            return None
-        choice[k] = pick
-    return [choice[k] for k in range(len(p.weights))]
+    nodes = 0
+
+    def walk(depth: int) -> bool:
+        nonlocal nodes
+        nodes += 1
+        if nodes > node_limit:
+            raise TooBig
+        if depth == n:
+            return True
+        line = order[depth]
+        for c in ranked[line]:
+            if all(p.allowed(line, c, other, oc) for other, oc in choice.items()):
+                choice[line] = c
+                if walk(depth + 1):
+                    return True
+                del choice[line]
+        return False
+
+    try:
+        found = walk(0)
+    except TooBig:
+        return None
+    return [choice[k] for k in range(n)] if found else None
