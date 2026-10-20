@@ -87,3 +87,47 @@ def test_heart_rhymes_with_to_warm_up():
     from ashugh.cli import main
 
     assert main(["rhyme", "сердце", "согреться"]) == 0
+
+
+@pytest.mark.parametrize(
+    "a,b", [("fire", "retire"), ("desire", "admire"), ("higher", "inspire"), ("hour", "power")]
+)
+def test_ire_and_our_rhyme_however_the_dictionary_spells_them(a, b):
+    from ashugh.cli import main
+
+    assert main(["rhyme", a, b]) == 0
+
+
+@pytest.mark.parametrize(
+    "word,size,first",
+    [("lovestruck", 2, "love"), ("lovebirds", 2, "love"), ("facetime", 2, "face")],
+)
+def test_an_unknown_compound_reads_as_its_two_words(word, size, first):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert w.size == size and w.readings[0].stress == 0 and w.syllables[0].text.lower() == first
+
+
+@pytest.mark.parametrize("word", ["memory", "mystery", "misery", "victory"])
+def test_er_before_a_final_y_may_drop(word):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert w.size == 3 and w.drop == 1
+    rep = scan(f"I hold the {word} close\n", from_dict({"language": "en", "syllables": 6}))
+    assert rep.ok
+
+
+@pytest.mark.parametrize(
+    "word,pieces", [("quiet", "qui-et"), ("Louisiana", "Lou-i-si-a-na"), ("queen", "queen")]
+)
+def test_more_english_pieces(word, pieces):
+    from ashugh.lang import en
+
+    assert "-".join(s.text for s in en.analyze_word(word).syllables) == pieces
+
+
+def test_split_follows_the_meters_short_form_without_a_count():
+    out = fmt("But every time you call my name\n", split="all").strip()
+    assert "e-ve-ry" not in out and len([p for w in out.split() for p in w.split("-")]) == 8

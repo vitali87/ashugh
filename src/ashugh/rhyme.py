@@ -101,6 +101,8 @@ def _tail(word, reading, stress, after) -> Tail | None:
     at = vs[stress]
     start = vs[stress - 1] + 1 if stress > 0 else 0
     rest = list(phones[at + 1 :])
+    if word.lang == "en" and phones[at] in ("aɪ", "aʊ") and rest[:1] == ["ɚ"]:
+        rest[0] = "ɹ"  # fire AY1 ER0 rhymes with retire AY1 R, hour with sour
     shown = [word.text]
     spelled = [reading.spelling]
     for later in after:

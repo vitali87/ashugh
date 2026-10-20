@@ -497,7 +497,8 @@ def _fit(words, meter, count, tolerance, force, feet, promote) -> tuple[tuple, F
         for f in fits:
             miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
             off_feet = feet is not None and f.feet != feet
-            scored.append(((miss, off_feet, f.cost, len(elided)), f))
+            licence = sum(words[i].drop_cost for i in elided)
+            scored.append(((miss, off_feet, f.cost + licence, len(elided)), f))
     return min(scored, key=lambda kf: kf[0])
 
 

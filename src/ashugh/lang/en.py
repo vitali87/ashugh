@@ -207,6 +207,10 @@ def lookup(norm: str) -> list[str] | None:
         base = lookup(norm[:-3])
         if base:
             return [v + " AH0 V" for v in base]
+    parts = _compound_parts(norm)
+    if parts:  # lovestruck, facetime: two words, stressed on the first
+        left, right = ((TABLE.get(p) or "").split("|")[0] for p in parts)
+        return [left + " " + right.replace("1", "2")]
     if norm.endswith("'s") and len(norm) > 3:  # bustle's: the word, then its -s
         raw = TABLE.get(norm[:-2])
         if raw:
@@ -240,8 +244,14 @@ def guess_syllables(token: str) -> int:
     return len(_counted_groups(re.sub(r"[^a-z]", "", token.lower())))
 
 
+def _vowel_groups(w: str) -> list[tuple[int, int]]:
+    """Runs of vowel letters; the u of qu is a consonant (qui-et, queen)."""
+    plain = re.sub(r"(?<=q)u", "w", w)
+    return [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", plain)]
+
+
 def _counted_groups(w: str) -> list[tuple[int, int]]:
-    groups = [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", w)]
+    groups = _vowel_groups(w)
     if w.startswith("y") and groups and groups[0][0] == 0:
         groups[0] = (1, groups[0][1]) if groups[0][1] > 1 else groups[0]
         if groups[0][0] >= groups[0][1]:
@@ -294,17 +304,30 @@ def split_spelling(token: str, n: int) -> list[str]:
         return split_spelling(token[:k], left) + split_spelling(token[k:], n - left)
     groups = _counted_groups(low)
     if len(groups) < n:  # a silent-looking vowel is sung after all: fi-re
-        groups = [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", low)] or groups
+        groups = _vowel_groups(low) or groups
     while len(groups) > n:
         k = _silent_e(low, groups) or len(groups) - 1
         a, b = groups[k - 1], groups.pop(k)
         groups[k - 1] = (a[0], b[1])
-    while len(groups) < n:
-        longest = max(range(len(groups)), key=lambda k: groups[k][1] - groups[k][0])
-        a, b = groups[longest]
-        if b - a < 2:
-            break
-        groups[longest : longest + 1] = [(a, a + 1), (a + 1, b)]
+    while len(groups) < n:  # one vowel run is two syllables: a hiatus first (Lou-i-si-a-na)
+        cut = next(
+            (
+                (k, a + low[a:b].find(h) + 1)
+                for h in HIATUS
+                for k, (a, b) in enumerate(groups)
+                if h in low[a:b]
+            ),
+            None,
+        )
+        if cut is None:
+            longest = max(range(len(groups)), key=lambda k: groups[k][1] - groups[k][0])
+            a, b = groups[longest]
+            if b - a < 2:
+                break
+            cut = (longest, a + 1)
+        k, at = cut
+        a, b = groups[k]
+        groups[k : k + 1] = [(a, at), (at, b)]
     cuts = []
     for (_, end), (start, _) in zip(groups, groups[1:]):
         gap = low[end:start]
@@ -327,6 +350,21 @@ def split_spelling(token: str, n: int) -> list[str]:
 
 
 MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
+SYNCOPE_COST = 0.5
+HIATUS = ("ia", "io", "iu", "ie", "ua", "ue", "ui", "uo", "eo", "oe", "ea")
+
+
+def _compound_parts(low: str) -> tuple[str, str] | None:
+    """A word the dictionary lacks as two words it has, the most even split."""
+    if not low.isalpha() or len(low) < 2 * MIN_COMPOUND_PART:
+        return None
+    best = None
+    for k in range(MIN_COMPOUND_PART, len(low) - MIN_COMPOUND_PART + 1):
+        if TABLE.get(low[:k]) and TABLE.get(low[k:]):
+            even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))  # love-struck
+            if best is None or even < best[0]:
+                best = (even, k)
+    return (low[: best[1]], low[best[1] :]) if best else None
 
 
 def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
@@ -340,7 +378,7 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
         a = sum(ch.isdigit() for ch in left.split("|")[0])
         b = sum(ch.isdigit() for ch in right.split("|")[0])
         if a and b and a + b == n:
-            even = abs(len(low) - 2 * k)
+            even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))
             if best is None or even < best[0]:
                 best = (even, k, a)
     return (best[1], best[2]) if best else None
@@ -396,6 +434,10 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     for _, stresses, bare in parsed:
         if len(stresses) == longest - 1 and word.drop is None:
             word.drop = _drop_index(full[0][2], bare, merge=True)
+    vowels, marks = full[0][2], full[0][1]
+    if word.drop is None and len(vowels) >= 3 and vowels[-2:] == ["ER", "IY"] and marks[-2] == 0:
+        word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er before a final y
+        word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
 
     readings: list[Reading] = []
     for phones, stresses, _ in full:

@@ -45,6 +45,7 @@ class Word:
     tail_schwa: bool = False  # ends in a schwa syllable whose consonant can link forward
     drop: int | None = None  # syllable whose schwa may drop in this line's context
     optional: int | None = None  # a schwa syllable that may drop anywhere (a compound's)
+    drop_cost: float = 0.0  # what dropping costs the meter: nothing for ev'ry, a licence for mem'ry
     notes: list[str] = field(default_factory=list)
 
     @property

@@ -245,7 +245,8 @@ def _render(
         return _armenian(w, token, dropped, mode, hold, schwa, n, notes, after_link)
     if hold and w.size > 1:
         pieces = [s.text for s in w.syllables]
-        if dropped and w.drop is not None and 0 <= w.drop < len(pieces):
+        short = dropped or i in lr.fit.elided  # the meter's own short form, count or not
+        if short and w.drop is not None and 0 <= w.drop < len(pieces):
             d = w.drop  # the line sings it shorter: eve-ry, fire
             at = d - 1 if d > 0 else 0
             pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
