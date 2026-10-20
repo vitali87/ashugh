@@ -518,10 +518,12 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         reading = Reading(stress, phones, norm, source, secondary)
         if all((r.stress, r.phones) != (stress, phones) for r in readings):
             readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/
-    # A compound may move its stress onto its second part in verse: sometíme.
+    # A compound may move its stress onto its second part in verse (sometíme), and a
+    # word stressed late onto an earlier secondary before a stressed word (the
+    # rhythm rule: Ténnessee whiskey, a Jápanese garden).
     for r in list(readings):
         for k in r.secondary:
-            if r.stress is not None and k > r.stress and all(x.stress != k for x in readings):
+            if r.stress is not None and k != r.stress and all(x.stress != k for x in readings):
                 rest = tuple(sorted({r.stress, *r.secondary} - {k}))
                 readings.append(Reading(k, r.phones, norm, "shift", rest, penalty=STRESS_SHIFT))
     # Two primary stresses (well-known, thirteen) give way to a stressed word after

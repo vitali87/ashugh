@@ -2,6 +2,7 @@ import pytest
 
 from ashugh import lang, meter, rhyme
 from ashugh.lang import en
+from ashugh.model import LICENCES
 from ashugh.scan import analyze_lines, scan
 from ashugh.spec import Spec, from_dict
 
@@ -32,7 +33,8 @@ def test_dictionary_syllables(token, size):
     [("beautiful", 0), ("today", 1), ("understand", 2), ("forever", 1)],
 )
 def test_primary_stress(token, stress):
-    assert word(token).stress_options() == [stress]
+    lexical = sorted({r.stress for r in word(token).readings if r.source not in LICENCES})
+    assert lexical == [stress]  # verse may shift it (únderstand) as a licence
 
 
 def test_secondary_stress_is_kept():

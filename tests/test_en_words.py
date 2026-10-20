@@ -92,3 +92,16 @@ def test_syl_warns_that_digits_are_not_counted(capsys):
 def test_an_accented_vowel_is_a_vowel_to_the_pieces():
     assert en.analyze_word("blessèd").sung() == "bles-sèd"  # a doubled consonant splits: lit-tle
     assert en.analyze_word("café").sung() == "ca-fé"
+
+
+@pytest.mark.parametrize(
+    "line", ["'Cause it's Tennessee whiskey and a Friday night", "A Japanese garden in the rain"]
+)
+def test_a_late_stress_moves_back_before_a_stressed_word(line):
+    rep = scan(line + "\n", from_dict({"language": "en", "meter": "dolnik"}))
+    assert [i.message for i in rep.issues if i.code == "meter"] == []  # TÉN-nes-see WHÍS-key
+
+
+def test_a_late_stress_stays_where_nothing_clashes():
+    rep = scan("I hope that you will understand\n", from_dict({"language": "en", "meter": "iamb4"}))
+    assert rep.ok and rep.lines[0].fit.stresses[5] == 2  # un-der-stánd
