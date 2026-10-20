@@ -142,3 +142,8 @@ def test_possessive_after_sonorants_and_the_negative_prefix(word, sung):
 )
 def test_words_that_end_or_cluster_like_that_without_a_schwa(word, sung):
     assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+@pytest.mark.parametrize("word", ["հարս", "վարս", "պարս", "ռեզոնանս", "կոնֆերանս"])
+def test_stems_ending_in_rs_or_ns(word):
+    assert all(not s.epenthetic for s in hy.analyze_word(word).syllables)

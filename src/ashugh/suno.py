@@ -70,7 +70,9 @@ LATIN = {
 }
 
 TAGS = lyrics.SECTION_NAMES
-TAG_RE = re.compile(r"^(\s*)\[\s*([^\]:\d]*?)\s*((?:x\s*)?\d+(?:\s*x)?|)\s*(:[^\]]*)?\]\s*$", re.I)
+TAG_RE = re.compile(
+    r"^(\s*)\[\s*([^\]:\d]*?)\s*((?:[xх×]\s*)?\d+(?:\s*[xх×])?|)\s*(:[^\]]*)?\]\s*$", re.I
+)
 
 
 @dataclass

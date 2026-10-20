@@ -438,7 +438,7 @@ def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> st
             mark = PUNCT_RE.search(body)
             if mark and not PUNCT_RE.search(content):
                 tail = mark.group(0)
-                if lang is not None:
+                if lang is not None and tail.strip() in (".", "։", "՝"):  # not an ellipsis
                     tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
                 content += tail  # keep the line's closing comma or full stop
             lines[number - 1] = lead + content + ending

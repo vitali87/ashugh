@@ -327,6 +327,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             stress = 0
         source = "clitic" if word.clitic else "lexicon"
         secondary = tuple(i for i in marked if i != stress)
+        if readings and not marked:
+            continue  # a reduced form (been as /bən/) is no reading of its own
         reading = Reading(stress, phones, norm, source, secondary)
         if all((r.stress, r.phones) != (stress, phones) for r in readings):
             readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/

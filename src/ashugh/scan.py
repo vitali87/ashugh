@@ -212,6 +212,7 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
                 if (
                     alt.fit.cost - lr.fit.cost > RHYME_STRESS_MARGIN
                     or alt.fit.count != lr.fit.count
+                    or _errors(alt) > _errors(lr)  # a rhyme never buys a feet or ending error
                 ):
                     continue
                 score = best(alt.tails)
@@ -219,6 +220,10 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
                     reports[k], current, lr, changed = alt, score, alt, True
         if not changed:
             return
+
+
+def _errors(lr: LineReport) -> int:
+    return sum(1 for i in lr.issues if i.severity == "error")
 
 
 def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:

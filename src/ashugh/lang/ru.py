@@ -182,18 +182,20 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
 PARTICLES = {"то", "либо", "нибудь", "ка", "таки"}
 # Nouns whose locative after в, во or на is stressed on the ending: в саду́, на ветру́,
 # в крови́. After these prepositions the stem-stressed dative or genitive cannot be meant.
+# Some take it after one preposition only: в полку́ but на по́лку, на виду́ but в ви́ду.
 SECOND_LOCATIVE = frozenset(
     """
-    аду балу бегу берегу бою бору боку борту бреду быту веку верху ветру виду возу
+    аду балу бегу берегу бою бору боку борту бреду быту веку верху ветру возу
     газу глазу гробу году дому дубу дыму жару клею кону краю кругу крюку ладу лбу лесу
-    льду лугу мелу меду мёду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
-    полку полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
-    сну соку строю суку тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу
-    глуби глуши горсти груди грязи крови мели ночи оси печи пыли руси связи степи сети
+    льду лугу мелу меду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
+    полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
+    сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу
+    глуби глуши горсти груди грязи крови мели ночи оси печи пыли руси степи
     тени тиши чести шерсти
     """.split()
 )
 LOCATIVE_PREPOSITIONS = frozenset({"в", "во", "на"})
+LOCATIVE_ONLY_AFTER = {"полку": {"в", "во"}, "связи": {"в", "во"}, "виду": {"на"}, "суку": {"на"}}
 # -ого / -его is said -ово / -ево, except in these words.
 NOT_OGO = {
     "много",
@@ -576,11 +578,6 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             for p, cost in SUFFIXES.order(norm.replace("-", ""), n)
         ]
         word.notes.append("stress unknown")
-    if "ё" not in norm:  # older verse may read an unwritten ё as е: безнадежной / нежный
-        for r in list(readings):
-            if r.spelling != norm and r.spelling.replace("ё", "е") == norm:
-                if all(x.spelling != norm or x.stress != r.stress for x in readings):
-                    readings.append(Reading(r.stress, transcribe(norm, r.stress), norm, "e-for-yo"))
     word.readings = tuple(readings)
     return word
 
@@ -590,7 +587,11 @@ def second_locatives(words: list[Word]) -> None:
     for prev, w in zip(words, words[1:]):
         if w.lang != CODE or prev.norm not in LOCATIVE_PREPOSITIONS:
             continue
-        if w.norm not in SECOND_LOCATIVE or w.size < 2:
+        allowed = LOCATIVE_ONLY_AFTER.get(w.norm)
+        if allowed is not None:
+            if prev.norm not in allowed:
+                continue
+        elif w.norm not in SECOND_LOCATIVE or w.size < 2:
             continue
         if w.readings and w.readings[0].source in ("mark", "user"):
             continue

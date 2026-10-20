@@ -276,6 +276,10 @@ def fit_classical(
             ending_off = end_off
             last_pos = pos
     stressed = _stressed_grid(ss, choice, strong, count)
+    if anchor is not None and choice[ss[anchor].word] is not None:
+        s = ss[anchor]  # a secondary stress on a beat after the main one ends the line: bútterflỳ
+        later = [s.start + k for k in s.secondary if k > choice[s.word] and strong(s.start + k)]
+        last_pos = max([last_pos, *later])
     promoted = False
     if promote and anchor == len(ss) - 1 and not ending_off:
         s = ss[anchor]
@@ -301,17 +305,25 @@ def fit_classical(
 
 
 def fit_dolnik(
-    words: list[Word], elided: frozenset[int] = frozenset(), force: dict | None = None
+    words: list[Word],
+    elided: frozenset[int] = frozenset(),
+    force: dict | None = None,
+    feet: int | None = None,
 ) -> Fit:
+    """Best dolnik fit; with feet, the best one with that many ictuses if any exists."""
     ss = slots(words, elided, force)
     count = sum(s.size for s in ss)
     ambiguous = [s for s in ss if len(s.options) > 1][:5]
     best: Fit | None = None
+
+    def key(f: Fit) -> tuple:
+        return (feet is not None and f.feet != feet, f.cost)
+
     for combo in product(*(s.options for s in ambiguous)):
         picked = {s.word: st for s, st in zip(ambiguous, combo)}
         choice = {s.word: picked.get(s.word, s.options[0]) for s in ss}
-        fit = _dolnik_one(words, ss, choice, count, elided)
-        if fit is not None and (best is None or fit.cost < best.cost):
+        fit = _dolnik_one(words, ss, choice, count, elided, feet)
+        if fit is not None and (best is None or key(fit) < key(best)):
             best = fit
     if best is None:
         choice = {s.word: s.options[0] for s in ss}
@@ -322,7 +334,7 @@ def fit_dolnik(
     return best
 
 
-def _dolnik_one(words, ss, choice, count, elided) -> Fit | None:
+def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fit | None:
     # S stressed polysyllable, W stressed function word, m monosyllable, c clitic, u unstressed
     kind = ["u"] * count
     for s in ss:
@@ -343,27 +355,30 @@ def _dolnik_one(words, ss, choice, count, elided) -> Fit | None:
     def off(i: int) -> float:
         return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind[i], 0.0)
 
-    inf = float("inf")
-    dp = [inf] * count
-    back = [-1] * count
+    # dp[i][n]: cheapest beats ending on syllable i with n ictuses, and the beat before
+    dp: list[dict[int, tuple[float, int]]] = [{} for _ in range(count)]
     for i in range(min(3, last + 1)):
-        dp[i] = on(i) + sum(off(j) for j in range(i))
+        dp[i][1] = (on(i) + sum(off(j) for j in range(i)), -1)
     for i in range(2, last + 1):
         for gap in (2, 3):
             j = i - gap
-            if j < 0 or dp[j] == inf:
+            if j < 0:
                 continue
-            c = dp[j] + on(i) + sum(off(t) for t in range(j + 1, i))
-            if c < dp[i]:
-                dp[i], back[i] = c, j
-    if dp[last] == inf:
+            for n, (c0, _) in dp[j].items():
+                c = c0 + on(i) + sum(off(t) for t in range(j + 1, i))
+                if n + 1 not in dp[i] or c < dp[i][n + 1][0]:
+                    dp[i][n + 1] = (c, j)
+    ends = dp[last]
+    if not ends:
         return None
+    n = feet if feet in ends else min(ends, key=lambda k: ends[k][0])
+    cost = ends[n][0]
     beats = [False] * count
-    i, feet = last, 0
+    i, ictuses = last, n
     while i >= 0:
         beats[i] = True
-        feet += 1
-        i = back[i]
+        i = dp[i][ictuses][1]
+        ictuses -= 1
     tail = sum(off(t) for t in range(last + 1, count))
     off_words = [
         s.word
@@ -375,10 +390,8 @@ def _dolnik_one(words, ss, choice, count, elided) -> Fit | None:
     ]
     return Fit(
         meter="dolnik",
-        cost=round(
-            dp[last] + tail + DOLNIK_PENALTY + sum(s.penalty(choice[s.word]) for s in ss), 3
-        ),
-        feet=feet,
+        cost=round(cost + tail + DOLNIK_PENALTY + sum(s.penalty(choice[s.word]) for s in ss), 3),
+        feet=n,
         count=count,
         elided=elided,
         stresses=_own(choice, words, elided),
@@ -413,16 +426,16 @@ def fit(
     english = any(w.lang == "en" for w in words)
     for elided in realizations(words):
         if meter == "dolnik":
-            fits = [fit_dolnik(words, elided, force)]
+            fits = [fit_dolnik(words, elided, force, feet)]
         elif meter == "free":
             fits = [free_fit(words, elided, force)]
         else:
-            fits = [] if promote else [fit_classical(words, meter, elided, force)]
+            fits = [] if promote and english else [fit_classical(words, meter, elided, force)]
             if english and promote is not False:
                 fits.append(fit_classical(words, meter, elided, force, promote=True))
         for f in fits:
             miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
-            off_feet = feet is not None and meter != "dolnik" and f.feet != feet
+            off_feet = feet is not None and f.feet != feet
             scored.append(((miss, off_feet, f.cost, len(elided)), f))
     return min(scored, key=lambda kf: kf[0])[1]
 

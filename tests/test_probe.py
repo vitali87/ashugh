@@ -150,3 +150,17 @@ def test_probe_cli(tmp_path, capsys):
     data = json.loads(policy.read_text(encoding="utf-8"))
     assert data["hy"]["default"] in ("script", "schwa", "latin")
     assert main(["suno", str(lyrics_dir / files[0]), "--policy", str(policy)]) == 0
+
+
+def test_a_reduplication_can_be_probed():
+    from ashugh import probe
+
+    assert probe.make_probes(["тихо-тихо"], "ru")
+
+
+@pytest.mark.parametrize("bad", ["два слова", "", "…"])
+def test_a_probe_is_one_word(bad):
+    from ashugh import probe
+
+    with pytest.raises(ValueError, match="word"):
+        probe.make_probes([bad], "ru")

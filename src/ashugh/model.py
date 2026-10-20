@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from .phon import is_vowel
 
 # Readings that verse allows but speech does not: a compound's stress on its second
-# part (en), an unwritten ё read as е in rhyme (ru).
-LICENCES = frozenset({"shift", "e-for-yo"})
+# part (sometíme).
+LICENCES = frozenset({"shift"})
 ACUTE = "\u0301"
 
 

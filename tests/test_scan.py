@@ -234,3 +234,87 @@ def test_a_pronoun_may_sit_on_a_weak_beat():
     assert scan("Вспоминай эту ночь легкокрылую", spec, lang="ru").ok
     assert scan("И согрей ею душу остылую", spec, lang="ru").ok
     assert not scan("Вспоминай дорогу легкокрылую", spec, lang="ru").ok
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("Where have you been", "under the sun"),
+        ("I know we can", "under the summer sun"),
+        ("I know it was", "the way it does"),
+        ("Tell me what it's for", "I was waiting for her"),
+    ],
+)
+def test_reduced_function_word_forms_do_not_rhyme(a, b):
+    rep = scan(f"{a}\n{b}\n", from_dict({"language": "en", "rhyme": "AA"}))
+    assert "rhyme" in codes(rep)
+
+
+@pytest.mark.parametrize(
+    "text,spec",
+    [
+        ("I keep the summer in my memory\nAnd every road will set me free\n", {"meter": "iamb4"}),
+        (
+            "I keep the summer in my memory\nAnd every road will set me free\n",
+            {"meter": "iamb", "endings": "dm"},
+        ),
+        ("плывут куда-то облака\nпришла издалека\n", {"language": "ru", "meter": "iamb3"}),
+    ],
+)
+def test_rhyme_never_buys_a_new_line_error(text, spec):
+    assert "feet" not in codes(scan(text, from_dict(spec)))
+    assert "ending" not in codes(scan(text, from_dict(spec)))
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [("Поставь эту книгу на полку", "Не будет от этого толку")],
+)
+def test_accusative_after_na_is_not_a_locative(a, b):
+    assert scan(f"{a}\n{b}\n", from_dict({"rhyme": "AA"}), lang="ru").ok
+
+
+def test_idiom_v_vidu_is_not_end_stressed():
+    rep = scan("Только имей в виду\nя к тебе не приду\n", from_dict({"rhyme": "AA"}), lang="ru")
+    assert "rhyme" in codes(rep)
+
+
+@pytest.mark.parametrize(
+    "text,lang",
+    [("О-о-о\nО-о-о\n", "ru"), ("Где же ты, моя любовь, о-о-о\nЯ тебя зову, о-о-о\n", "ru")],
+)
+def test_vocalise_refrains_still_rhyme(text, lang):
+    assert scan(text, from_dict({"rhyme": "AA"}), lang=lang).ok
+
+
+def test_line_final_secondary_stress_counts_as_a_foot():
+    rep = scan("I saw a butterfly", from_dict({"meter": "iamb2"}))
+    assert "feet" in codes(rep)
+    assert scan("I saw a butterfly", from_dict({"meter": "iamb3"})).ok
+
+
+def test_dolnik_feet_follow_the_asked_count():
+    assert scan("Я иду по тёмной улице", from_dict({"meter": "dolnik3"}), lang="ru").ok
+
+
+@pytest.mark.parametrize(
+    "a,b", [("Я люблю тебя еще", "Не люблю тебя вообще"), ("Снова дождь идет", "А тебя всё нет")]
+)
+def test_modern_yo_does_not_rhyme_with_e(a, b):
+    assert "rhyme" in codes(scan(f"{a}\n{b}\n", from_dict({"rhyme": "AA"}), lang="ru"))
+
+
+def test_cyrillic_repeat_marker():
+    from ashugh.lyrics import section_key
+
+    assert section_key("Припев х2") == "chorus"
+    assert section_key("Chorus ×2") == "chorus"
+
+
+def test_promote_on_a_line_without_english_is_harmless():
+    from ashugh import meter
+    from ashugh.lang import analyze
+    from ashugh.lyrics import tokenize
+
+    words = analyze("ru", tokenize("Мой дядя самых честных правил"), {})
+    assert meter.fit(words, "iamb", promote=True).count == 9

@@ -209,3 +209,7 @@ def test_line_separator_is_not_a_line_break():
 
 def test_yo_is_still_restored_where_verse_may_read_e():
     assert fmt("В томленьях грусти безнадежной", stress="none") == "В томленьях грусти безнадёжной"
+
+
+def test_cyrillic_repeat_marker_in_tags():
+    assert fmt("[Припев х2]\nЯ жду", tags=True) == "[Chorus х2]\nЯ жду"

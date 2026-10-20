@@ -166,14 +166,6 @@ def test_suffix_table_lookup():
     assert ru.analyze_word("кракозябрами").readings[0].penalty == 0
 
 
-def test_restored_yo_keeps_an_e_reading_for_rhyme_only():
-    w = ru.analyze_word("безнадежной")
-    assert not w.ambiguous
-    assert {r.spelling for r in w.readings} == {"безнадёжной", "безнадежной"}
-    assert all(r.spelling == "безнадёжной" for r in w.readings if r.source != "e-for-yo")
-    assert all(r.source != "e-for-yo" for r in ru.analyze_word("безнадёжной").readings)
-
-
 @pytest.mark.parametrize(
     "line,word,stress",
     [

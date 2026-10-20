@@ -332,3 +332,12 @@ def test_bad_proposer_timeout_is_refused(monkeypatch, bad):
     monkeypatch.setenv("ASHUGH_PROPOSER_TIMEOUT", bad)
     with pytest.raises(ProposerError, match="ASHUGH_PROPOSER_TIMEOUT"):
         make_proposer("cmd:echo")
+
+
+def test_ellipsis_is_not_turned_into_armenian_full_stops():
+    assert fit.replace_lines("Я жду тебя...\n", {1: "Սպասում եմ քեզ"}, lang="hy") == (
+        "Սպասում եմ քեզ...\n"
+    )
+    assert fit.replace_lines("Я жду тебя.\n", {1: "Սպասում եմ քեզ"}, lang="hy") == (
+        "Սպասում եմ քեզ։\n"
+    )

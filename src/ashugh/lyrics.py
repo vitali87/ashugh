@@ -58,7 +58,7 @@ SECTION_NAMES = {
 def section_key(tag: str) -> str:
     """[Verse 2] -> verse, [Pre-Chorus] -> pre-chorus, [Припев x2: тише] -> chorus."""
     name = tag.split(":")[0].lower()
-    name = re.sub(r"\bx\s*\d+\b|\b\d+\s*x\b|\d+", " ", name)
+    name = re.sub(r"(?<!\w)[xх×]\s*\d+\b|\b\d+\s*[xх×](?!\w)|\d+", " ", name)
     name = re.sub(r"[^\w\s-]", " ", name)
     name = re.sub(r"\s+", " ", name).strip() or "default"
     known = SECTION_NAMES.get(name)
@@ -84,8 +84,9 @@ def token_spans(text: str) -> list[tuple[int, int, str]]:
     spans = []
     for m in WORD_RE.finditer(masked):
         parts = m.group(0).split("-")
-        if len(parts) > 1 and len({p.lower() for p in parts}) == 1:
+        if len(parts) > 1 and len({p.lower() for p in parts}) == 1 and len(parts[0]) > 1:
             # a reduplication is one word per part, each with its own stress: тихо-тихо
+            # (but о-о-о is one sung vowel, not a row of clitics)
             at = m.start()
             for p in parts:
                 spans.append((at, at + len(p), p))

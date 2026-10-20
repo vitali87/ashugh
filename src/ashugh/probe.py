@@ -57,7 +57,7 @@ class ScoreResult:
 
 def _word(token: str, lang: str):
     words = analyze(lang, lyrics.tokenize(token), {})
-    if len(words) != 1:
+    if not words or len({w.norm for w in words}) != 1:  # тихо-тихо counts as one word
         raise ValueError(f"{token!r} is not a single word")
     return words[0]
 

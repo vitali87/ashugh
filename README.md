@@ -292,9 +292,7 @@ After в, во and на, about a hundred nouns take the stressed second locative
 (на берегу́, в саду́, в крови́). At the end of a line, the rhyme partner picks between readings the meter
 allows equally: облака́ / издалека́. A phonetic transcription reduces
 unstressed vowels, devoices and assimilates obstruents, and drops silent
-consonants (сердце, солнце, честный). Where the text writes е and the
-dictionary restores ё, a rhyme may still read е, as older verse does
-(безнадежной / нежный).
+consonants (сердце, солнце, честный).
 
 **English** (`lang/en.py`). Pronunciations come from CMUdict (126k words),
 with primary and secondary stress. A variant with one vowel fewer (every,
@@ -336,6 +334,8 @@ consonant before the vowel (ты / красоты).
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Russian stress shifts onto prepositions (и́з лесу, на́ гору) are not
   modeled.
+- Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
+  ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
 - Rhyme is judged within a stanza, so the cross-stanza rhymes of a sonnet
   (ABBA ABBA) go unseen.
 - `probe` needs you to generate the clips in Suno; ashugh cannot call Suno.
