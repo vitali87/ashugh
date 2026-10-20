@@ -11,7 +11,7 @@ import re
 
 from .model import Line
 
-TAG_RE = re.compile(r"^\s*\[([^\]]*)\]\s*$")
+TAG_RE = re.compile(r"^\ufeff?\s*\[([^\]]*)\]\s*$")  # a BOM may open the file
 PAREN_RE = re.compile(r"\([^)]*\)")
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*")

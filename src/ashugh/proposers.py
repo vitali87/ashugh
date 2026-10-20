@@ -275,6 +275,8 @@ class ClaudeProposer:
             response = client.beta.messages.create(**self.request_body(requests))
         except _api_errors() as e:
             raise ProposerError(_describe_api_error(e)) from None
+        except TypeError as e:
+            raise ProposerError(no_credentials(e, "--proposer cmd:<program>")) from None
         if response.stop_reason == "refusal":
             raise ProposerError("Claude declined to write these lines")
         if response.stop_reason == "max_tokens":
@@ -285,6 +287,16 @@ class ClaudeProposer:
         except json.JSONDecodeError:
             raise ProposerError("Claude did not return JSON") from None
         return parse_lines(data, requests)
+
+
+def no_credentials(e: TypeError, instead: str) -> str:
+    """The message for the SDK's 'no credentials' TypeError; any other one is raised."""
+    if "authentication" not in str(e).lower():
+        raise e
+    return (
+        "Claude needs credentials: set ANTHROPIC_API_KEY (or run `ant auth login`), "
+        f"or use {instead} instead"
+    )
 
 
 def _api_errors() -> tuple[type[BaseException], ...]:

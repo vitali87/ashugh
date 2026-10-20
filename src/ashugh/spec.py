@@ -124,6 +124,13 @@ def mixed_case(s: str) -> bool:
 
 
 def _int_list(name: str, value, where: str) -> tuple[int, ...]:
+    out = _numbers(name, value, where)
+    if any(n < 1 for n in out):
+        raise SpecError(f"{where}: {name} must be 1 or more, got {value!r}")
+    return out
+
+
+def _numbers(name: str, value, where: str) -> tuple[int, ...]:
     if isinstance(value, bool):
         raise SpecError(f"{where}: {name} must be a number or a list of numbers")
     if isinstance(value, int):
@@ -161,6 +168,8 @@ def apply(table: dict, base: Rule, where: str) -> Rule:
             raise SpecError(f"{where}: {e}") from None
         changes["meter"] = name
         if feet is not None:
+            if feet < 1:
+                raise SpecError(f"{where}: a meter has 1 or more feet, got {table['meter']!r}")
             changes["feet"] = (feet,)
     if "feet" in table:
         changes["feet"] = _int_list("feet", table["feet"], where)
@@ -273,7 +282,7 @@ def dumps(data: dict) -> str:
             continue
         for name, rules in entries.items():
             out += ["", f"[{table}.{name}]"] + [f"{k} = {_toml_value(v)}" for k, v in rules.items()]
-    return "\n".join(out) + "\n"
+    return "\n".join(out).lstrip("\n") + "\n"
 
 
 TEMPLATE = """\
@@ -301,6 +310,8 @@ rhyme = "AABB"
 def template(lang: str = "hy") -> str:
     if lang == "ru":
         return TEMPLATE.format(lang="ru", forbid="", lexicon='# "замок" = "замо́к"')
+    if lang == "en":
+        return TEMPLATE.format(lang="en", forbid="", lexicon='# "zorblax" = "Z AO1 R B L AE0 K S"')
     return TEMPLATE.format(
         lang="hy", forbid='forbid_final = ["ը"]\n', lexicon='# "սկսել" = "ըս-կը-սել"'
     )

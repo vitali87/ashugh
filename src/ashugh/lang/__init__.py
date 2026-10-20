@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from types import ModuleType
 
 from ..model import Reading, Syllable, Word
@@ -44,13 +45,22 @@ def detect(tokens: list[str]) -> str:
     return max(counts, key=lambda k: counts[k])
 
 
-_LATIN_VOWELS = re.compile(r"[aeiouy]+", re.I)
+# Vowel letters of scripts ashugh does not analyze, by their base letter: Latin
+# (with any accent), Greek, Georgian.
+FOREIGN_VOWELS = frozenset("aeiouyæøœαεηιοωυაეიოუ")
+
+
+def _vowel_groups(norm: str) -> list[re.Match]:
+    marks = "".join(
+        "v" if unicodedata.normalize("NFD", ch)[:1] in FOREIGN_VOWELS else "c" for ch in norm
+    )
+    return list(re.finditer("v+", marks))
 
 
 def foreign_word(token: str) -> Word:
     """A rough vowel-group count for a word in a script ashugh does not analyze."""
     norm = token.lower()
-    groups = list(_LATIN_VOWELS.finditer(norm))
+    groups = _vowel_groups(norm)
     if len(groups) > 1 and norm.endswith("e") and not norm.endswith(("le", "ee")):
         groups = groups[:-1]
     n = max(1, len(groups))

@@ -359,7 +359,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 ln.number,
                 "script",
                 "warning",
-                "not Armenian or Russian",
+                "not Armenian, Russian or English",
                 f"{names}: syllables counted by vowel groups, stress unknown",
             )
         )
@@ -402,7 +402,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                     ln.number,
                     "syllables",
                     "error",
-                    f"{f.count} syllables, slot is {lr.target}",
+                    f"{f.count} syllable{'s' if f.count != 1 else ''}, slot is {lr.target}",
                     detail,
                     {"expected": lr.target, "actual": f.count},
                 )

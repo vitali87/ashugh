@@ -391,7 +391,8 @@ def _infer_tags(raw: list[str], report: Report, notes: list[Note]) -> str:
     out = []
     for k, line in enumerate(raw, 1):
         if k in starts:
-            out.append(starts[k] + "\n")
+            ending = line[len(line.rstrip("\r\n")) :] or "\n"  # the file's own line endings
+            out.append(starts[k] + ending)
             notes.append(Note(k, "tag", "", starts[k], "inferred from repeated stanzas"))
         out.append(line)
     return "".join(out)

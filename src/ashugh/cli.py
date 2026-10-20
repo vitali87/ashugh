@@ -20,10 +20,25 @@ from .translate import derive_spec, parse_keep, translate_song
 
 
 def _read(path: str) -> str:
+    """The file as saved: its line endings kept, a BOM dropped."""
     if path == "-":
-        return sys.stdin.read()
-    with open(path, encoding="utf-8") as fh:
+        raw = getattr(sys.stdin, "buffer", None)
+        return raw.read().decode("utf-8-sig") if raw else sys.stdin.read()
+    with open(path, encoding="utf-8-sig", newline="") as fh:
         return fh.read()
+
+
+def _print_text(text: str) -> None:
+    """Lyrics to stdout with their own line endings, untranslated."""
+    if not text.endswith(("\n", "\r")):
+        text += "\n"
+    raw = getattr(sys.stdout, "buffer", None)
+    if raw is None:
+        sys.stdout.write(text)
+        return
+    sys.stdout.flush()
+    raw.write(text.encode("utf-8"))
+    raw.flush()
 
 
 def _inline_rule(args: argparse.Namespace) -> dict:
@@ -93,8 +108,9 @@ def cmd_pick(args: argparse.Namespace) -> int:
 
 
 def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
+    result.report.path = args.file
     if args.output:
-        with open(args.output, "w", encoding="utf-8") as fh:
+        with open(args.output, "w", encoding="utf-8", newline="") as fh:
             fh.write(result.text)
     if args.json:
         print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
@@ -112,7 +128,7 @@ def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
         file=log,
     )
     if not args.output:
-        print(result.text, end="" if result.text.endswith("\n") else "\n")
+        _print_text(result.text)
     return 0 if result.ok else 1
 
 
@@ -175,7 +191,7 @@ def cmd_suno(args: argparse.Namespace) -> int:
         notes = [vars(n) for n in result.notes]
         print(json.dumps({"text": result.text, "notes": notes}, ensure_ascii=False, indent=2))
     else:
-        print(result.text, end="" if result.text.endswith("\n") else "\n")
+        _print_text(result.text)
     return 0
 
 
@@ -290,6 +306,14 @@ def cmd_eval_report(args: argparse.Namespace) -> int:
         rows = data["rows"]
     except (OSError, json.JSONDecodeError, KeyError, TypeError) as e:
         raise ValueError(f"{args.results}: not an eval results file ({e})") from None
+    needed = ("task", "language", "mode", "lines", "passing", "song_ok")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError(f"{args.results}: not an eval results file (no rows)")
+    for k, row in enumerate(rows):
+        if not isinstance(row, dict) or any(key not in row for key in needed):
+            raise ValueError(
+                f"{args.results}: not an eval results file (row {k} lacks {', '.join(needed)})"
+            )
     print(evaluate.table(evaluate.summarize(rows)))
     for lang in sorted({r["language"] for r in rows}):
         print(f"\n{lang}")
@@ -316,7 +340,7 @@ def cmd_translate(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="ashugh",
-        description="Prosody checks for song lyrics in Armenian and Russian: "
+        description="Prosody checks for song lyrics in Armenian, Russian and English: "
         "syllables, stress, meter, rhyme.",
     )
     p.add_argument("--version", action="version", version=f"ashugh {__version__}")

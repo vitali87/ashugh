@@ -32,7 +32,14 @@ from typing import Protocol
 from . import install_hint
 from .fit import fit_song
 from .lang import ANALYZERS, NAMES
-from .proposers import DEFAULT_MODEL, Proposer, ProposerError, _api_errors, _describe_api_error
+from .proposers import (
+    DEFAULT_MODEL,
+    Proposer,
+    ProposerError,
+    _api_errors,
+    _describe_api_error,
+    no_credentials,
+)
 from .scan import Report, scan
 from .spec import Rule, Spec, SpecError, from_dict
 
@@ -218,6 +225,10 @@ class ClaudeWriter:
             )
         except _api_errors() as e:
             raise ProposerError(_describe_api_error(e)) from None
+        except TypeError as e:
+            raise ProposerError(
+                no_credentials(e, "--writer cmd:<program> or dir:<drafts>")
+            ) from None
         if response.stop_reason == "refusal":
             raise ProposerError(f"Claude declined task {task.id}")
         return "".join(b.text for b in response.content if getattr(b, "type", "") == "text")
