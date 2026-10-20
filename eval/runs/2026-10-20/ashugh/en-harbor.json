@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still circle round the pier,\nThe nets hang drying in the sun,\nBut not one sail has come this year,\nThe harbor bell rings out for none.\n[Chorus]\nSo sing, my love, of ships gone by,\nOf masts that rose like winter trees;\nThe lighthouse burns against the sky\nAnd guides no keel across the seas.\n[Verse 2]\nThe chandler's shop has shut its door,\nThe young ones leave on morning trains,\nWhile old men sit along the shore\nAnd count the rust on anchor chains.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

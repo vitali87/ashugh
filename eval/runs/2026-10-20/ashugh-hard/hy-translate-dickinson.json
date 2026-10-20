@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄահվան համար չկանգնեցի –\nԿանգնեց բարի Մահը –\nԿառքում մենք էինք երկուսով –\nԵվ մեզ հետ՝ Անմահը։\n\n[Verse 2]\nԴանդաղ էր քշում, անշտապ,\nԵս թողի հավիտյան\nԹե՛ գործս, թե՛ իմ հանգիստը՝\nՀանուն Իր հեզության։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

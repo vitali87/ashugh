@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-shanty",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nWe sailed from Bristol in the fog,\nThe captain's chair was bare,\nHis coat still hanging by the wheel,\nHis pipe still burning there.\nThe bosun swore he'd gone ashore,\nThe cook said he was drowned,\nBut still she ran before the wind\nAs if her way were found.\n\n[Verse 2]\nShe swung her bow into the north\nThrough ice and silver rain,\nThe compass spun, the lantern swung,\nThe wheel turned round again.\nWe heard a whistle on the deck,\nA tune we all knew well,\nAnd not a man among the crew\nWould dare to ring the bell.\n\n[Verse 3]\nAt dawn we sighted Bristol light\nAnd came in safe to shore,\nHis widow waiting on the quay\nAs she had stood before.\nShe smiled and said, \"He's never left,\nHe brought you through the foam,\nFor he was lost a year ago,\nAnd still he steers you home.\"\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

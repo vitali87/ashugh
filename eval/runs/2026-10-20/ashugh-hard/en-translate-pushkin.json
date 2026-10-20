@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-translate-pushkin",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nI still recall that wondrous meeting:\nWhen you appeared before my sight,\nAs though a vision, swiftly fleeting,\nLike beauty's genius, pure and bright.\n\n[Verse 2]\nIn hopeless sorrow's weary yearning,\nThrough vain and noisy days of care,\nYour tender voice kept long returning,\nI dreamed of features sweet and fair.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}
