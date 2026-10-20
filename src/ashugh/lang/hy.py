@@ -269,11 +269,12 @@ def _display(syllables: list[list[Seg]], original: str) -> list[Syllable]:
             if s.ligature and s.ph == "v" and k > 0 and syl[k - 1].ligature:
                 continue  # drawn with its ե as one և
             parts.append("և" if whole else s.src)
-        out.append(Syllable("".join(parts), any(s.epenthetic for s in syl)))
+        phones = tuple(s.ph for s in syl)
+        out.append(Syllable("".join(parts), any(s.epenthetic for s in syl), phones))
     if out and original[:1].isupper() and syllables[0][0].epenthetic:
         first = out[0].text
         fixed = "Ը" + first[1:2].lower() + first[2:]
-        out[0] = Syllable(fixed, True)
+        out[0] = Syllable(fixed, True, out[0].phones)
     return out
 
 

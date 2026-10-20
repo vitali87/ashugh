@@ -1,17 +1,19 @@
-"""Command line: ashugh scan | fit | pick | translate | syl | rhyme | spec."""
+"""Command line: ashugh scan | fit | pick | translate | suno | probe | syl | rhyme | spec."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from pathlib import Path
 
-from . import __version__, meter, report, rhyme
+from . import __version__, meter, probe, report, rhyme
 from . import lang as languages
 from .fit import FitResult, fit_song
 from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candidates, make_proposer
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, apply, dumps, load, template
+from .suno import format_song, load_policy
 from .translate import derive_spec, parse_keep, translate_song
 
 
@@ -140,6 +142,69 @@ def cmd_spec(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_suno(args: argparse.Namespace) -> int:
+    result = format_song(
+        _read(args.file),
+        _spec(args),
+        stress=args.stress,
+        armenian=args.armenian,
+        split=args.split,
+        schwa=args.schwa,
+        tags=not args.no_tags,
+        policy=load_policy(args.policy) if args.policy else None,
+        lang=args.lang,
+    )
+    if args.json:
+        notes = [vars(n) for n in result.notes]
+        print(json.dumps({"text": result.text, "notes": notes}, ensure_ascii=False, indent=2))
+    else:
+        print(result.text, end="" if result.text.endswith("\n") else "\n")
+    return 0
+
+
+def cmd_probe_make(args: argparse.Namespace) -> int:
+    plan = probe.make_probes(args.words, args.lang, args.modes.split(",") if args.modes else None)
+    probe.save_plan(plan, args.output)
+    if args.lyrics:
+        folder = Path(args.lyrics)
+        folder.mkdir(parents=True, exist_ok=True)
+        for p in plan:
+            (folder / f"{p.id}.txt").write_text(p.lyrics, encoding="utf-8")
+    print(
+        f"{len(plan)} probes -> {args.output}"
+        + (f", lyrics in {args.lyrics}" if args.lyrics else "")
+    )
+    print("Generate each in Suno, save the clips as <probe id>.mp3, then run probe transcribe.")
+    return 0
+
+
+def cmd_probe_transcribe(args: argparse.Namespace) -> int:
+    plan = probe.load_plan(args.plan)
+    transcripts = probe.transcribe(args.clips, plan, model=args.model)
+    Path(args.output).write_text(
+        json.dumps(transcripts, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"{len(transcripts)}/{len(plan)} clips transcribed -> {args.output}")
+    return 0 if transcripts else 1
+
+
+def cmd_probe_score(args: argparse.Namespace) -> int:
+    result = probe.score(probe.load_plan(args.plan), probe.load_transcripts(args.transcripts))
+    for word, modes in result.scores.items():
+        cells = "  ".join(f"{m} {s:.2f}" for m, s in modes.items())
+        print(f"{word:20} {cells}")
+    for lang, entry in result.policy.items():
+        print(f"{lang}: default {entry['default']}, overrides {entry['words'] or 'none'}")
+    if result.missing:
+        print(f"no transcript for {len(result.missing)} probe(s): {', '.join(result.missing)}")
+    data = {**result.policy, "scores": result.scores, "missing": result.missing}
+    if args.output:
+        Path(args.output).write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    return 0
+
+
 def cmd_translate(args: argparse.Namespace) -> int:
     proposer = make_proposer(args.proposer, args.model, args.effort)
     result = translate_song(
@@ -247,6 +312,52 @@ def _more_commands(sub) -> None:
     t.add_argument("--source-lang", choices=sorted(languages.ANALYZERS))
     t.set_defaults(func=cmd_spec)
 
+    su = sub.add_parser("suno", help="rewrite lyrics so Suno pronounces them as meant")
+    _song_args(su)
+    su.add_argument(
+        "--stress",
+        choices=["caps", "acute", "none"],
+        default="caps",
+        help="how to mark ambiguous Russian stress (default caps: зАмок)",
+    )
+    su.add_argument(
+        "--armenian",
+        choices=["script", "schwa", "latin"],
+        default="script",
+        help="Armenian as written, with hidden ը spelled out, or romanized",
+    )
+    su.add_argument("--schwa", default="ə", help="letter for the schwa in romanization")
+    su.add_argument(
+        "--split",
+        choices=["none", "last", "all"],
+        default="none",
+        help="hyphenate sung syllables for held notes",
+    )
+    su.add_argument("--no-tags", action="store_true", help="leave section tags alone")
+    su.add_argument("--policy", help="probe policy JSON choosing the Armenian mode per word")
+    su.set_defaults(func=cmd_suno)
+
+    pr = sub.add_parser("probe", help="measure how Suno pronounces different spellings")
+    prs = pr.add_subparsers(dest="probe", required=True)
+    pm = prs.add_parser("make", help="write probe lyrics for words")
+    pm.add_argument("words", nargs="+")
+    pm.add_argument("--lang", required=True, choices=sorted(probe.MODES))
+    pm.add_argument("--modes", help="comma-separated spellings to try (default all)")
+    pm.add_argument("-o", "--output", default="probes.json", help="plan file (default probes.json)")
+    pm.add_argument("--lyrics", help="also write one lyrics file per probe into this folder")
+    pm.set_defaults(func=cmd_probe_make)
+    pt = prs.add_parser("transcribe", help="transcribe clips with Whisper")
+    pt.add_argument("clips", help="folder of <probe id>.mp3 (or .wav, .m4a ...) clips")
+    pt.add_argument("--plan", default="probes.json")
+    pt.add_argument("--model", default="small", help="Whisper model (default small)")
+    pt.add_argument("-o", "--output", default="transcripts.json")
+    pt.set_defaults(func=cmd_probe_transcribe)
+    ps = prs.add_parser("score", help="score transcripts and write a spelling policy")
+    ps.add_argument("plan")
+    ps.add_argument("transcripts", help="JSON {probe id: text} or a folder of <probe id>.txt")
+    ps.add_argument("-o", "--output", help="write the policy here (for suno --policy)")
+    ps.set_defaults(func=cmd_probe_score)
+
     tr = sub.add_parser("translate", help="translate a song into the same syllable grid and rhymes")
     tr.add_argument("file", help="source lyrics, or - for stdin")
     tr.add_argument("--to", required=True, choices=sorted(languages.ANALYZERS))
@@ -265,7 +376,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     try:
         return args.func(args)
-    except (SpecError, ProposerError) as e:
+    except (SpecError, ProposerError, probe.ProbeError) as e:
         print(f"ashugh: {e}", file=sys.stderr)
         return 2
     except (OSError, ValueError) as e:

@@ -29,6 +29,12 @@ def tokenize(text: str) -> list[str]:
     return WORD_RE.findall(PAREN_RE.sub(" ", text))
 
 
+def token_spans(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, token) of every word outside parentheses, as tokenize sees them."""
+    masked = PAREN_RE.sub(lambda m: " " * len(m.group(0)), text)
+    return [(m.start(), m.end(), m.group(0)) for m in WORD_RE.finditer(masked)]
+
+
 def has_digits(text: str) -> bool:
     return bool(DIGIT_RE.search(PAREN_RE.sub(" ", text)))
 

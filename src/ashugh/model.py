@@ -13,6 +13,7 @@ ACUTE = "\u0301"
 class Syllable:
     text: str  # sung spelling in the source script, hidden vowels written out
     epenthetic: bool = False  # its vowel is not written (Armenian hidden ը)
+    phones: tuple[str, ...] = ()  # this syllable's phonemes, where the analyzer knows them
 
 
 @dataclass(frozen=True)
