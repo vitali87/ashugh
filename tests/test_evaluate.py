@@ -176,3 +176,72 @@ def test_eval_cli(tmp_path, capsys):
     assert json.loads(out.read_text(encoding="utf-8"))["summary"]["alone"]["tasks"] == 1
     assert main(["eval", "report", str(out)]) == 0
     assert main(["eval", "run", str(tmp_path), "--writer", "gpt"]) == 2
+
+
+def test_agent_round_trip(tmp_path):
+    write_task(tmp_path)
+    drafts = tmp_path / "drafts"
+    drafts.mkdir()
+    (drafts / "t1.txt").write_text(DRAFT, encoding="utf-8")
+    tasks = evaluate.load_tasks(tmp_path)
+    exported = evaluate.export_requests(tasks, drafts)
+    assert [r["line"] for r in exported["t1"]["requests"]] == [3]
+    out = tmp_path / "round1"
+    rows = evaluate.apply_candidates(tasks, drafts, {"t1": {"3": ["Ես նորից սպասում եմ քեզ"]}}, out)
+    assert rows[0]["changes"] == 1
+    fixed = (out / "t1.txt").read_text(encoding="utf-8")
+    assert "Ես նորից սպասում եմ քեզ" in fixed
+    assert evaluate.export_requests(tasks, out) == {}
+
+
+def test_apply_without_candidates_copies_the_draft(tmp_path):
+    write_task(tmp_path)
+    drafts = tmp_path / "drafts"
+    drafts.mkdir()
+    (drafts / "t1.txt").write_text(DRAFT, encoding="utf-8")
+    out = tmp_path / "round1"
+    evaluate.apply_candidates(evaluate.load_tasks(tmp_path), drafts, {}, out)
+    assert (out / "t1.txt").read_text(encoding="utf-8") == DRAFT
+
+
+def test_apply_refuses_bad_candidates(tmp_path):
+    write_task(tmp_path)
+    drafts = tmp_path / "drafts"
+    drafts.mkdir()
+    (drafts / "t1.txt").write_text(DRAFT, encoding="utf-8")
+    with pytest.raises(ValueError):
+        evaluate.apply_candidates(
+            evaluate.load_tasks(tmp_path), drafts, {"t1": {"x": ["a"]}}, tmp_path / "o"
+        )
+
+
+def test_eval_requests_and_apply_cli(tmp_path, capsys):
+    write_task(tmp_path)
+    drafts = tmp_path / "drafts"
+    drafts.mkdir()
+    (drafts / "t1.txt").write_text(DRAFT, encoding="utf-8")
+    req = tmp_path / "req.json"
+    assert main(["eval", "requests", str(tmp_path), "--drafts", str(drafts), "-o", str(req)]) == 0
+    assert "t1" in json.loads(req.read_text(encoding="utf-8"))
+    cands = tmp_path / "c.json"
+    cands.write_text(
+        json.dumps({"t1": {"3": ["Ես նորից սպասում եմ քեզ"]}}, ensure_ascii=False), encoding="utf-8"
+    )
+    out = tmp_path / "r1"
+    assert (
+        main(
+            [
+                "eval",
+                "apply",
+                str(tmp_path),
+                "--drafts",
+                str(drafts),
+                "--candidates",
+                str(cands),
+                "--out",
+                str(out),
+            ]
+        )
+        == 0
+    )
+    assert (out / "t1.txt").exists()

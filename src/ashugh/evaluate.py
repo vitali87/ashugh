@@ -321,3 +321,49 @@ def table(summary: dict) -> str:
         lines, songs = f"{s['line_pass_rate']:.1%}", f"{s['songs_ok']:.1%}"
         rows.append(f"{mode:8} {s['tasks']:>5}  {lines:>13}  {songs:>13}  {s['failed']:>6}")
     return "\n".join(rows)
+
+
+def export_requests(tasks: list[Task], drafts: str | Path, n: int = 6) -> dict[str, dict]:
+    """The repair requests of every draft that fails its spec, for an outside proposer."""
+    from .fit import requests_for
+    from .proposers import SYSTEM as PROPOSER_SYSTEM
+
+    out = {}
+    writer = DirWriter(drafts)
+    for task in tasks:
+        try:
+            text = writer.write(task)
+        except ProposerError:
+            continue
+        reqs = requests_for(text, task.spec, n=n, lang=task.language)
+        if reqs:
+            out[task.id] = {"system": PROPOSER_SYSTEM, "requests": [r.as_dict() for r in reqs]}
+    return out
+
+
+def apply_candidates(
+    tasks: list[Task], drafts: str | Path, candidates: dict, out: str | Path
+) -> list[dict]:
+    """pick each draft against its candidates ({task id: {line: [...]}}) and save the result."""
+    from .proposers import StaticProposer, parse_candidates
+
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    writer, rows = DirWriter(drafts), []
+    for task in tasks:
+        try:
+            text = writer.write(task)
+        except ProposerError:
+            continue
+        row = {"task": task.id, "changes": 0, "unresolved": 0}
+        if task.id in candidates:
+            try:
+                parsed = parse_candidates(candidates[task.id], task.id)
+            except ProposerError as e:
+                raise ValueError(str(e)) from None
+            result = fit_song(text, task.spec, StaticProposer(parsed), rounds=1, lang=task.language)
+            text = result.text
+            row.update(changes=len(result.changes), unresolved=len(result.unresolved))
+        (out / f"{task.id}.txt").write_text(text, encoding="utf-8")
+        rows.append(row)
+    return rows

@@ -250,6 +250,36 @@ def cmd_eval_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_eval_requests(args: argparse.Namespace) -> int:
+    from . import evaluate
+
+    data = evaluate.export_requests(evaluate.load_tasks(args.tasks), args.drafts, n=args.n)
+    text = json.dumps(data, ensure_ascii=False, indent=2)
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+        print(f"{sum(len(v['requests']) for v in data.values())} requests in {len(data)} songs")
+    else:
+        print(text)
+    return 0
+
+
+def cmd_eval_apply(args: argparse.Namespace) -> int:
+    from . import evaluate
+
+    try:
+        candidates = json.loads(Path(args.candidates).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise ValueError(f"{args.candidates}: {e}") from None
+    if not isinstance(candidates, dict):
+        raise ValueError(f"{args.candidates}: expected {{task id: {{line: [candidates]}}}}")
+    rows = evaluate.apply_candidates(
+        evaluate.load_tasks(args.tasks), args.drafts, candidates, args.out
+    )
+    changed = sum(r["changes"] for r in rows)
+    print(f"{changed} line(s) changed in {len(rows)} songs -> {args.out}")
+    return 0
+
+
 def cmd_eval_report(args: argparse.Namespace) -> int:
     from . import evaluate
 
@@ -414,6 +444,18 @@ def _more_commands(sub) -> None:
     er.add_argument("-o", "--output", help="write every row as JSON here")
     _proposer_args(er)
     er.set_defaults(func=cmd_eval_run)
+    eq = evs.add_parser("requests", help="repair requests of failing drafts, for an outside agent")
+    eq.add_argument("tasks")
+    eq.add_argument("--drafts", required=True, help="folder of <task id>.txt drafts")
+    eq.add_argument("-n", type=int, default=6)
+    eq.add_argument("-o", "--output")
+    eq.set_defaults(func=cmd_eval_requests)
+    ea = evs.add_parser("apply", help="pick each draft against an agent's candidates")
+    ea.add_argument("tasks")
+    ea.add_argument("--drafts", required=True)
+    ea.add_argument("--candidates", required=True, help='JSON {task id: {"3": ["..."]}}')
+    ea.add_argument("--out", required=True, help="folder for the repaired drafts")
+    ea.set_defaults(func=cmd_eval_apply)
     ep = evs.add_parser("report", help="summarize a results file, overall and per language")
     ep.add_argument("results")
     ep.set_defaults(func=cmd_eval_report)

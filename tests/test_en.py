@@ -149,3 +149,13 @@ def test_pieces_always_match_the_syllable_count():
     for token in ["idea", "rhythm", "fire", "every", "queue", "zorblaxian", "flz"]:
         w = word(token)
         assert len(w.syllables) == w.size and all(s.text for s in w.syllables)
+
+
+def test_lexicon_override_in_arpabet():
+    w = en.analyze_word("zorblax", {"zorblax": "Z AO1 R B L AE0 K S"})
+    assert not w.guessed and w.size == 2 and w.stress_options() == [0]
+
+
+def test_lexicon_override_without_digits_is_ignored():
+    w = en.analyze_word("zorblax", {"zorblax": "zor-blax"})
+    assert w.guessed
