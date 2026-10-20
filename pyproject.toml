@@ -52,5 +52,11 @@ python-version = "3.14"
 extra-paths = ["scripts"]  # eval and tests import the build scripts
 
 [tool.ty.analysis]
-# optional, installed only for probe transcription and the espeak-ng comparison
-allowed-unresolved-imports = ["whisper", "phonemizer", "phonemizer.**", "espeakng_loader"]
+# optional extras: probe transcription, the espeak-ng comparison, the CP-SAT solver
+allowed-unresolved-imports = [
+    "whisper",
+    "phonemizer",
+    "phonemizer.**",
+    "espeakng_loader",
+    "ortools.**",  # the cpsat extra: no wheels for Python 3.15 yet
+]
