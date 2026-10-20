@@ -20,6 +20,7 @@ from .phon import align_cost, distance, is_vowel, vowel_distance
 
 LEVELS = (("perfect", 0.9), ("near", 0.7), ("slant", 0.45), ("assonance", 0.25), ("none", 0.0))
 THRESHOLD = dict(LEVELS)
+POST_TONIC_VOWELS = 0.5  # weight of vowel differences after the stressed vowel
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,13 @@ def level(score: float) -> str:
         if score >= floor:
             return name
     return "none"
+
+
+def anchor_word(line: Line, fit: Fit) -> int | None:
+    """Index of the word carrying the line's last stress."""
+    ss = slots(line.words, fit.elided)
+    k = _anchor(ss)
+    return ss[k].word if k is not None else None
 
 
 def tails(line: Line, fit: Fit) -> list[Tail]:
@@ -122,7 +130,7 @@ def score(a: Tail | None, b: Tail | None) -> float:
     s = 1.0 - vd
     if a.post != b.post:
         s -= 0.35
-    s -= 0.5 * align_cost(a.rest, b.rest)
+    s -= 0.5 * align_cost(a.rest, b.rest, vowel_weight=POST_TONIC_VOWELS)
     if not a.rest and not b.rest:
         # Russian and Armenian open rhymes want the consonant before the vowel too.
         x, y = a.onset[-1:], b.onset[-1:]

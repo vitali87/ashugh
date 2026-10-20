@@ -1,0 +1,8 @@
+id = "hy-lullaby"
+language = "hy"
+prompt = "A lullaby for a small child, gentle and repetitive."
+
+[spec]
+syllables = 6
+rhyme = "-A-A"
+forbid_final = ["ը"]

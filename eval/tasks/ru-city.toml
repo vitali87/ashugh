@@ -1,0 +1,8 @@
+id = "ru-city"
+language = "ru"
+prompt = "An indie rock song about a sleepless night in a big city."
+
+[spec]
+syllables = 9
+rhyme = "ABAB"
+tolerance = 1

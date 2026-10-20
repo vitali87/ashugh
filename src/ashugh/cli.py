@@ -67,6 +67,20 @@ def cmd_fit(args: argparse.Namespace) -> int:
     return _emit_fit(result, args)
 
 
+def cmd_requests(args: argparse.Namespace) -> int:
+    from .fit import requests_for
+    from .proposers import SCHEMA, SYSTEM
+
+    reqs = requests_for(_read(args.file), _spec(args), n=args.n, lang=args.lang)
+    data = {
+        "system": SYSTEM,
+        "answer_format": SCHEMA,
+        "requests": [r.as_dict() for r in reqs],
+    }
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_pick(args: argparse.Namespace) -> int:
     spec = _spec(args)
     proposer = StaticProposer(load_candidates(args.candidates))
@@ -218,6 +232,39 @@ def cmd_lsp(args: argparse.Namespace) -> int:
     return serve()
 
 
+def cmd_eval_run(args: argparse.Namespace) -> int:
+    from . import evaluate
+
+    tasks = evaluate.load_tasks(args.tasks)
+    modes = [m.strip() for m in args.modes.split(",") if m.strip()]
+    writer = evaluate.make_writer(args.writer, args.model, args.effort)
+    proposer = make_proposer(args.proposer, args.model, args.effort) if "ashugh" in modes else None
+    rows = evaluate.run(tasks, writer, modes, proposer, rounds=args.rounds)
+    summary = evaluate.summarize(rows)
+    print(evaluate.table(summary))
+    if args.output:
+        Path(args.output).write_text(
+            json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    return 0
+
+
+def cmd_eval_report(args: argparse.Namespace) -> int:
+    from . import evaluate
+
+    try:
+        data = json.loads(Path(args.results).read_text(encoding="utf-8"))
+        rows = data["rows"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as e:
+        raise ValueError(f"{args.results}: not an eval results file ({e})") from None
+    print(evaluate.table(evaluate.summarize(rows)))
+    for lang in sorted({r["language"] for r in rows}):
+        print(f"\n{lang}")
+        print(evaluate.table(evaluate.summarize([r for r in rows if r["language"] == lang])))
+    return 0
+
+
 def cmd_translate(args: argparse.Namespace) -> int:
     proposer = make_proposer(args.proposer, args.model, args.effort)
     result = translate_song(
@@ -253,6 +300,11 @@ def build_parser() -> argparse.ArgumentParser:
     _proposer_args(f)
     _fit_args(f)
     f.set_defaults(func=cmd_fit)
+
+    q = sub.add_parser("requests", help="the repair requests for a song's failing lines, as JSON")
+    _song_args(q)
+    q.add_argument("-n", type=int, default=6, help="candidates to ask for per line")
+    q.set_defaults(func=cmd_requests)
 
     k = sub.add_parser("pick", help="choose among candidate lines you already have")
     _song_args(k)
@@ -352,6 +404,19 @@ def _more_commands(sub) -> None:
 
     sub.add_parser("mcp", help="run the MCP server on stdio").set_defaults(func=cmd_mcp)
     sub.add_parser("lsp", help="run the language server on stdio").set_defaults(func=cmd_lsp)
+
+    ev = sub.add_parser("eval", help="measure spec pass rates: a writer alone vs with ashugh")
+    evs = ev.add_subparsers(dest="eval", required=True)
+    er = evs.add_parser("run", help="draft every task and score it")
+    er.add_argument("tasks", help="a folder of task .toml files (see eval/tasks) or one file")
+    er.add_argument("--writer", help="claude (default), cmd:<command> or dir:<drafts folder>")
+    er.add_argument("--modes", default="alone,ashugh", help="alone,ashugh (default both)")
+    er.add_argument("-o", "--output", help="write every row as JSON here")
+    _proposer_args(er)
+    er.set_defaults(func=cmd_eval_run)
+    ep = evs.add_parser("report", help="summarize a results file, overall and per language")
+    ep.add_argument("results")
+    ep.set_defaults(func=cmd_eval_report)
 
     pr = sub.add_parser("probe", help="measure how Suno pronounces different spellings")
     prs = pr.add_subparsers(dest="probe", required=True)

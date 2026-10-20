@@ -97,6 +97,7 @@ _CLOSE_VOWELS = {
     frozenset("ɨɪ"): 0.25,
     frozenset("oə"): 0.35,
     frozenset("eə"): 0.4,
+    frozenset("əɨ"): 0.15,  # unstressed -ой / -ый
     frozenset(("ɝ", "ɚ")): 0.1,
     frozenset(("ʌ", "ə")): 0.2,
     frozenset(("ɑ", "ɔ")): 0.2,
@@ -121,6 +122,8 @@ def consonant_distance(a: str, b: str) -> float:
         return 0.15
     if fa.manner == fb.manner and fa.place == fb.place:
         return 0.2
+    if {fa.base, fb.base} == {"k", "x"}:
+        return 0.3  # успех / снег
     front = ("cor", "pal")
     if {fa.manner, fb.manner} == {"stop", "affr"} and fa.place in front and fb.place in front:
         return 0.45  # ветер / вечер
@@ -131,10 +134,10 @@ def consonant_distance(a: str, b: str) -> float:
     return 0.85
 
 
-def distance(a: str, b: str) -> float:
+def distance(a: str, b: str, vowel_weight: float = 1.0) -> float:
     va, vb = a in VOWELS, b in VOWELS
     if va and vb:
-        return vowel_distance(a, b)
+        return vowel_weight * vowel_distance(a, b)
     if va or vb:
         return 1.0
     return consonant_distance(a, b)
@@ -148,8 +151,11 @@ def indel_cost(ph: str) -> float:
     return 0.5
 
 
-def align_cost(xs: tuple[str, ...], ys: tuple[str, ...]) -> float:
-    """Weighted edit distance between two phoneme sequences."""
+def align_cost(xs: tuple[str, ...], ys: tuple[str, ...], vowel_weight: float = 1.0) -> float:
+    """Weighted edit distance between two phoneme sequences.
+
+    vowel_weight scales vowel-for-vowel substitutions: after the stress they are
+    reduced, so a rhyme cares less about them than about the consonants."""
     prev = [0.0]
     for y in ys:
         prev.append(prev[-1] + indel_cost(y))
@@ -160,7 +166,7 @@ def align_cost(xs: tuple[str, ...], ys: tuple[str, ...]) -> float:
                 min(
                     prev[j] + indel_cost(x),
                     cur[j - 1] + indel_cost(y),
-                    prev[j - 1] + distance(x, y),
+                    prev[j - 1] + distance(x, y, vowel_weight),
                 )
             )
         prev = cur

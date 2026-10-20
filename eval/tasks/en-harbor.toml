@@ -1,0 +1,7 @@
+id = "en-harbor"
+language = "en"
+prompt = "A folk song about a harbor town where the ships no longer come."
+
+[spec]
+meter = "iamb4"
+rhyme = "ABAB"

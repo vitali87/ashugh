@@ -145,6 +145,7 @@ def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
     else:
         meter_name, source = meter.detect(lines), "detected"
     reports = [check_line(ln, rule, meter_name, source) for ln in lines]
+    _rhyme_stress(reports, rule, meter_name, source)
     letters = rhyme.scheme([lr.tails for lr in reports])
     for lr, letter in zip(reports, letters):
         lr.letter = letter
@@ -152,13 +153,57 @@ def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
     return UnitReport(first.section, first.key, meter_name, source, letters, rule, reports)
 
 
-def check_line(ln: Line, rule: Rule, meter_name: str, source: str) -> LineReport:
+def check_line(
+    ln: Line, rule: Rule, meter_name: str, source: str, force: dict | None = None
+) -> LineReport:
     """Fit one analyzed line to its slot and collect its line-level issues."""
     target = rule.syllables_at(ln.index)
-    f = meter.fit(ln.words, meter_name, target, rule.tolerance)
+    f = meter.fit(ln.words, meter_name, target, rule.tolerance, force)
     lr = LineReport(ln, f, rhyme.tails(ln, f), target=target)
     _check_line(lr, rule, meter_name, source)
     return lr
+
+
+RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
+RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
+
+
+def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source: str) -> None:
+    """Let rhymes choose the stress of ambiguous line-final words (облака́ / издалека́).
+
+    The meter alone often cannot tell о́блака from облака́. When another reading
+    of a line's rhyme word costs the meter little more and rhymes clearly better
+    with a line of the same stanza, that reading wins.
+    """
+    floor = rhyme.THRESHOLD["near"]
+    for _ in range(2):
+        changed = False
+        for k, lr in enumerate(reports):
+            w = rhyme.anchor_word(lr.line, lr.fit)
+            if w is None or not lr.line.words[w].ambiguous:
+                continue
+            others = [r.tails for m, r in enumerate(reports) if m != k]
+            if not others:
+                return
+
+            def best(tails, others=others) -> float:
+                return max((rhyme.match(tails, t)[0] for t in others), default=0.0)
+
+            current = best(lr.tails)
+            for option in lr.line.words[w].stress_options():
+                if option == lr.fit.stresses.get(w) or option is None:
+                    continue
+                alt = check_line(lr.line, rule, meter_name, source, force={w: option})
+                if (
+                    alt.fit.cost - lr.fit.cost > RHYME_STRESS_MARGIN
+                    or alt.fit.count != lr.fit.count
+                ):
+                    continue
+                score = best(alt.tails)
+                if score >= floor and score > current + RHYME_STRESS_GAIN:
+                    reports[k], current, lr, changed = alt, score, alt, True
+        if not changed:
+            return
 
 
 def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:

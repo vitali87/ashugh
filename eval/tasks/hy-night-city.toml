@@ -1,0 +1,8 @@
+id = "hy-night-city"
+language = "hy"
+prompt = "A short song about waiting for someone at night in Yerevan: one verse and one chorus."
+
+[spec]
+syllables = 8
+rhyme = "ABAB"
+forbid_final = ["ը"]

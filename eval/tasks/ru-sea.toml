@@ -1,0 +1,7 @@
+id = "ru-sea"
+language = "ru"
+prompt = "A ballad about the sea, a lighthouse and someone waiting on the shore."
+
+[spec]
+meter = "amphibrach3"
+rhyme = "AABB"

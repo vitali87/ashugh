@@ -25,6 +25,7 @@ class Reading:
     spelling: str  # normalized spelling, ё restored for Russian
     source: str  # mark | user | lexicon | rule | guess | clitic
     secondary: tuple[int, ...] = ()  # syllables with secondary stress (English)
+    penalty: float = 0.0  # meter cost of choosing this reading (a guess the prior disfavors)
 
 
 @dataclass

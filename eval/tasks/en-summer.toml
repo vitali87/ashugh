@@ -1,0 +1,7 @@
+id = "en-summer"
+language = "en"
+prompt = "A pop chorus-driven song about the last night of summer."
+
+[spec]
+syllables = 7
+rhyme = "AABB"

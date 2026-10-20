@@ -1,0 +1,7 @@
+id = "ru-road"
+language = "ru"
+prompt = "A road song about driving south at dawn with an old friend."
+
+[spec]
+meter = "trochee4"
+rhyme = "ABAB"

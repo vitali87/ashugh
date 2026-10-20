@@ -98,3 +98,59 @@ def test_transcription(word, stress, sound):
 )
 def test_display_syllables(word, parts):
     assert ru.split_syllables(word) == parts
+
+
+@pytest.mark.parametrize(
+    "word,expected",
+    [
+        ("буду", [0]),
+        ("будешь", [0]),
+        ("будут", [0]),
+        ("нашу", [0]),
+        ("одном", [1]),
+        ("теряя", [1]),
+        ("зная", [0]),
+        ("мечтая", [1]),
+        ("дыша", [1]),
+        ("видя", [0]),
+        ("томясь", [1]),
+        ("касаясь", [1]),
+        ("начав", [1]),
+        ("вспомнив", [0]),
+        ("упав", [1]),
+        ("забыв", [1]),
+        ("создавший", [1]),
+        ("враждующих", [1]),
+    ],
+)
+def test_forms_the_dictionary_lacks(word, expected):
+    w = ru.analyze_word(word)
+    assert not w.guessed
+    assert sorted(w.stress_options()) == expected
+
+
+def test_a_real_unknown_word_is_still_guessed():
+    assert ru.analyze_word("кракозябрами").guessed
+
+
+def test_unknown_words_get_a_suffix_prior():
+    w = ru.analyze_word("зюзюкация")  # -ация is stressed on its а: информа́ция
+    assert w.guessed
+    first = w.readings[0]
+    assert first.stress == 2 and first.penalty == 0
+    assert all(r.penalty > 0 for r in w.readings[1:])
+
+
+def test_suffix_prior_is_a_preference_not_a_rule():
+    from ashugh import meter
+
+    w = ru.analyze_word("зюзюкация")
+    assert meter.fit([w], "free").stresses[0] == 2
+    assert meter.fit([w], "trochee").stresses[0] in (0, 2)
+    assert meter.fit([w], "dactyl").stresses[0] == 0  # the meter can still overrule it
+
+
+def test_suffix_table_lookup():
+    assert ru.suffix_prior("информация") == 2
+    assert ru.suffix_prior("ы") is None
+    assert ru.analyze_word("кракозябрами").readings[0].penalty == 0

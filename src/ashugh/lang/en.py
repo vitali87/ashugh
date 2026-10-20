@@ -13,12 +13,13 @@ from __future__ import annotations
 import re
 
 from ..model import Reading, Syllable, Word
-from ..table import SortedTable
+from ..table import SortedTable, SuffixPrior
 
 CODE = "en"
 NAME = "English"
 
 TABLE = SortedTable("data/en_cmudict.tsv")
+SUFFIXES = SuffixPrior("data/en_suffix.tsv")
 
 VOWELS_ARPA = {
     "AA": "ɑ",
@@ -319,7 +320,8 @@ def _guessed(word: Word, token: str, norm: str) -> Word:
     n = max(1, guess_syllables(norm))
     phones = _guess_phones(norm)
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, n))
-    word.readings = tuple(Reading(p, phones, norm, "guess") for p in range(n))
+    order = SUFFIXES.order(re.sub(r"[^a-z]", "", norm), n)
+    word.readings = tuple(Reading(p, phones, norm, "guess", penalty=c) for p, c in order)
     word.weak = word.weak or word.clitic or n == 1
     word.notes.append("not in the dictionary")
     return word

@@ -1,0 +1,7 @@
+id = "hy-mountains"
+language = "hy"
+prompt = "A proud folk-style song about Mount Aragats and the villages below it."
+
+[spec]
+syllables = [8, 7, 8, 7]
+rhyme = "ABAB"

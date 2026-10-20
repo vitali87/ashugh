@@ -67,3 +67,21 @@ def test_scheme_detection():
     ls = analyze_lines(text, Spec(), "ru")
     ts = [rhyme.tails(ln, meter.fit(ln.words, "iamb")) for ln in ls]
     assert rhyme.scheme(ts) == "ABAB"
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("вселенной", "пленный"),
+        ("благовонный", "утомлённой"),
+        ("ограды", "отрада"),
+        ("успех", "снег"),
+    ],
+)
+def test_reduced_vowels_after_the_stress_still_rhyme(a, b):
+    assert level(a, b, "ru") in ("perfect", "near")
+
+
+@pytest.mark.parametrize("a,b", [("окон", "строгий"), ("замок", "бьётся"), ("ночь", "день")])
+def test_non_rhymes_stay_out(a, b):
+    assert level(a, b, "ru") not in ("perfect", "near")

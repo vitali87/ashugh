@@ -228,3 +228,21 @@ def test_replace_keeps_indent_line_endings_and_trailing_punctuation():
     assert out == "  Я всё жду,\r\nТы где же!\n"
     assert fit.replace_lines("a։\n", {1: "b"}) == "b։\n"
     assert fit.replace_lines("a\n", {5: "x"}) == "a\n"
+
+
+def test_requests_cli_exports_what_a_proposer_would_get(tmp_path, capsys):
+    song = tmp_path / "s.txt"
+    song.write_text(SONG, encoding="utf-8")
+    assert main(["requests", str(song), "--spec", str(EXAMPLES / "song.hy.toml")]) == 0
+    data = json.loads(capsys.readouterr().out)
+    by_line = {r["line"]: r for r in data["requests"]}
+    assert set(by_line) == {3, 9, 11, 14}
+    assert by_line[3]["syllables"] == 8 and by_line[3]["id"] == "L3"
+    assert "system" in data and "lines" in data["answer_format"]["properties"]
+
+
+def test_requests_cli_on_a_passing_song(tmp_path, capsys):
+    song = tmp_path / "s.txt"
+    song.write_text("Мой дядя самых честных правил\n", encoding="utf-8")
+    assert main(["requests", str(song), "--syllables", "9"]) == 0
+    assert json.loads(capsys.readouterr().out)["requests"] == []

@@ -86,6 +86,10 @@ class Slot:
     clitic: bool
     enclitic: bool
     secondary: frozenset[int] = frozenset()  # may take a beat or skip it for free
+    penalties: tuple[tuple[int | None, float], ...] = ()  # extra cost of a stress option
+
+    def penalty(self, stress: int | None) -> float:
+        return next((c for s, c in self.penalties if s == stress), 0.0)
 
 
 @dataclass
@@ -119,21 +123,34 @@ class Fit:
         return 0
 
 
-def slots(words: list[Word], elided: frozenset[int]) -> list[Slot]:
+def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) -> list[Slot]:
     out = []
     pos = 0
     for i, w in enumerate(words):
         size = w.size
         options = tuple(w.stress_options())
+        if force and i in force and force[i] in options:
+            options = (force[i],)
         secondary = {k for r in w.readings for k in r.secondary}
+        costs: dict[int | None, float] = {}
+        for r in w.readings:
+            costs[r.stress] = min(costs.get(r.stress, r.penalty), r.penalty)
         if i in elided and w.drop is not None:
             d = w.drop
             size -= 1
             options = tuple(o - (o > d) for o in options if o is None or o != d) or (None,)
             secondary = {k - (k > d) for k in secondary if k != d}
+            costs = {
+                (s - (s > d) if s is not None else None): c for s, c in costs.items() if s != d
+            }
         if size == 0:
             continue
-        out.append(Slot(i, pos, size, options, w.weak, w.clitic, w.enclitic, frozenset(secondary)))
+        penalties = tuple((s, c) for s, c in costs.items() if c)
+        out.append(
+            Slot(
+                i, pos, size, options, w.weak, w.clitic, w.enclitic, frozenset(secondary), penalties
+            )
+        )
         pos += size
     return out
 
@@ -158,6 +175,11 @@ def _anchor(ss: list[Slot]) -> int | None:
 
 
 def _slot_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float, bool]:
+    cost, off = _beat_cost(s, stress, strong, period)
+    return cost + s.penalty(stress), off
+
+
+def _beat_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float, bool]:
     if s.size == 1 and stress in (0, None):
         on = strong(s.start)
         if s.clitic or stress is None:
@@ -198,13 +220,15 @@ def _stressed_grid(ss: list[Slot], choice: dict[int, int | None], strong, count:
     return tuple(grid)
 
 
-def fit_classical(words: list[Word], meter: str, elided: frozenset[int] = frozenset()) -> Fit:
+def fit_classical(
+    words: list[Word], meter: str, elided: frozenset[int] = frozenset(), force: dict | None = None
+) -> Fit:
     period, phase = CLASSICAL[meter]
 
     def strong(p: int) -> bool:
         return p % period == phase
 
-    ss = slots(words, elided)
+    ss = slots(words, elided, force)
     count = sum(s.size for s in ss)
     anchor = _anchor(ss)
     total = 0.0
@@ -247,8 +271,10 @@ def fit_classical(words: list[Word], meter: str, elided: frozenset[int] = frozen
     )
 
 
-def fit_dolnik(words: list[Word], elided: frozenset[int] = frozenset()) -> Fit:
-    ss = slots(words, elided)
+def fit_dolnik(
+    words: list[Word], elided: frozenset[int] = frozenset(), force: dict | None = None
+) -> Fit:
+    ss = slots(words, elided, force)
     count = sum(s.size for s in ss)
     ambiguous = [s for s in ss if len(s.options) > 1][:5]
     best: Fit | None = None
@@ -320,7 +346,9 @@ def _dolnik_one(words, ss, choice, count, elided) -> Fit | None:
     ]
     return Fit(
         meter="dolnik",
-        cost=round(dp[last] + tail + DOLNIK_PENALTY, 3),
+        cost=round(
+            dp[last] + tail + DOLNIK_PENALTY + sum(s.penalty(choice[s.word]) for s in ss), 3
+        ),
         feet=feet,
         count=count,
         elided=elided,
@@ -340,23 +368,31 @@ def _own(choice: dict[int, int | None], words: list[Word], elided: frozenset[int
     return out
 
 
-def fit(words: list[Word], meter: str, count: int | None = None, tolerance: int = 0) -> Fit:
+def fit(
+    words: list[Word],
+    meter: str,
+    count: int | None = None,
+    tolerance: int = 0,
+    force: dict[int, int | None] | None = None,
+) -> Fit:
     """Best fit of words to meter, preferring realizations whose length matches count."""
     scored = []
     for elided in realizations(words):
         if meter == "dolnik":
-            f = fit_dolnik(words, elided)
+            f = fit_dolnik(words, elided, force)
         elif meter == "free":
-            f = free_fit(words, elided)
+            f = free_fit(words, elided, force)
         else:
-            f = fit_classical(words, meter, elided)
+            f = fit_classical(words, meter, elided, force)
         miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
         scored.append(((miss, f.cost, len(elided)), f))
     return min(scored, key=lambda kf: kf[0])[1]
 
 
-def free_fit(words: list[Word], elided: frozenset[int] = frozenset()) -> Fit:
-    ss = slots(words, elided)
+def free_fit(
+    words: list[Word], elided: frozenset[int] = frozenset(), force: dict | None = None
+) -> Fit:
+    ss = slots(words, elided, force)
     count = sum(s.size for s in ss)
     choice = {s.word: s.options[0] for s in ss}
     stressed = _stressed_grid(ss, choice, None, count)

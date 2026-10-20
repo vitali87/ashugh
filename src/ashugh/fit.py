@@ -159,6 +159,17 @@ def fit_song(
     return FitResult(new_text, final, changes, unresolved, used, asked)
 
 
+def requests_for(
+    text: str, spec: Spec | None = None, n: int = 6, lang: str | None = None
+) -> list[Request]:
+    """The first round of requests fit would send, for a proposer outside ashugh."""
+    spec = spec or Spec()
+    report = scan(text, spec, lang=lang)
+    variables, groups = _variables(report, keep_original=True)
+    lines = {lr.line.number: lr for lr in report.lines}
+    return [_request(variables[k], variables, groups, lines, n, None) for k in sorted(variables)]
+
+
 def run(
     variables: dict[int, _Var],
     groups: dict[str, list[int]],

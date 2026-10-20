@@ -18,7 +18,10 @@ assimilates obstruents, and drops the silent consonants of сердце, сол�
 from __future__ import annotations
 
 from ..model import Reading, Syllable, Word
+from ..table import SuffixPrior
 from .ru_lexicon import TABLE
+
+SUFFIXES = SuffixPrior("data/ru_suffix.tsv")
 
 CODE = "ru"
 NAME = "Russian"
@@ -142,6 +145,19 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "ваше": ("ваше", (0,)),
     "зачем": ("зачем", (1,)),
     "годы": ("годы", (0,)),
+    "буду": ("буду", (0,)),
+    "будешь": ("будешь", (0,)),
+    "будет": ("будет", (0,)),
+    "будем": ("будем", (0,)),
+    "будете": ("будете", (0,)),
+    "будут": ("будут", (0,)),
+    "нашу": ("нашу", (0,)),
+    "вашу": ("вашу", (0,)),
+    "нашем": ("нашем", (0,)),
+    "вашем": ("вашем", (0,)),
+    "одном": ("одном", (1,)),
+    "годов": ("годов", (1,)),
+    "издалека": ("издалека", (3,)),  # the table has only the colloquial издалёка
     "кем-то": ("кем-то", (0,)),
     "из-за": ("из-за", (1,)),
     "из-под": ("из-под", (1,)),
@@ -378,7 +394,67 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
             twin(norm[2:], lambda p: p + 1)
+    if not found:
+        size = vowel_count(norm)
+        for form in verb_twins(norm):
+            stress = TABLE.get(form)
+            if stress and all(p < size for p in stress):
+                found.append((norm, stress))
+                break
     return found
+
+
+ALTERNATIONS = (("д", "ж"), ("т", "ч"), ("с", "ш"), ("з", "ж"), ("ст", "щ"), ("ск", "щ"))
+LABIALS = set("бпвмф")
+PARTICIPLE_ENDINGS = (
+    "ий", "ая", "ее", "ие", "его", "ей", "ему", "им", "их", "ими", "ую", "ем", "ою", "ее",
+)  # fmt: skip
+
+
+def verb_twins(norm: str) -> list[str]:
+    """Dictionary forms that share a gerund's or participle's stress, most telling first.
+
+    теряя -> теряю (1st person), видя -> вижу, томясь -> томлюсь; начав -> начать
+    (infinitive), упав -> упасть; создавший -> создать; враждующих -> враждуют.
+    """
+    out: list[str] = []
+    reflexive = norm.endswith(("сь", "ся")) and len(norm) > 4
+    base = norm[:-2] if reflexive else norm
+    sg_tail, pl_tail, inf_tail = ("сь", "ся", "ся") if reflexive else ("", "", "")
+    if base.endswith(("я", "а")) and len(base) > 2:
+        stem = base[:-1]
+        if base.endswith("я"):
+            out.append(stem + "ю" + sg_tail)
+            if stem[-1:] in LABIALS:
+                out.append(stem + "лю" + sg_tail)
+            for old, new in ALTERNATIONS:
+                if stem.endswith(old):
+                    out.append(stem[: -len(old)] + new + "у" + sg_tail)
+            out += [stem + "ят" + pl_tail, stem + "ют" + pl_tail]
+        else:
+            out += [stem + "у" + sg_tail, stem + "ат" + pl_tail]
+    for tail, inf in (("вшись", "ться"), ("вши", "ть"), ("в", "ть")):
+        if norm.endswith(tail) and len(norm) > len(tail) + 1:
+            stem = norm[: -len(tail)]
+            out += [stem + inf, stem + "с" + inf]
+    for ending in PARTICIPLE_ENDINGS:
+        word = base if reflexive else norm
+        if not word.endswith("вш" + ending):
+            continue
+        stem = word[: -len("вш" + ending)]
+        out.append(stem + "ть" + inf_tail)
+        break
+    for marker, plural in (("ющ", "ют"), ("ущ", "ут"), ("ящ", "ят"), ("ащ", "ат")):
+        word = base if reflexive else norm
+        for ending in PARTICIPLE_ENDINGS:
+            if word.endswith(marker + ending):
+                out.append(word[: -len(marker + ending)] + plural + pl_tail)
+    return out
+
+
+def suffix_prior(norm: str) -> int | None:
+    """Vowels most likely to follow the stress of an unknown word, from its ending."""
+    return SUFFIXES.after(norm)
 
 
 def _mono(form: str) -> list[tuple[str, tuple[int, ...]]]:
@@ -461,7 +537,10 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     elif not readings:
         readings = _lexicon_readings(norm)
     if not readings:
-        readings = [Reading(p, transcribe(norm, p), norm, "guess") for p in range(n)]
+        readings = [
+            Reading(p, transcribe(norm, p), norm, "guess", penalty=cost)
+            for p, cost in SUFFIXES.order(norm.replace("-", ""), n)
+        ]
         word.notes.append("stress unknown")
     word.readings = tuple(readings)
     return word

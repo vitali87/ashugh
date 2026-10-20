@@ -63,7 +63,7 @@ def test_lexicon_fixes_a_line():
 
 
 def test_unknown_stress_is_a_warning():
-    rep = scan("Вихри снежные крутя", from_dict({"meter": "trochee"}), lang="ru")
+    rep = scan("Вихри снежные кракозябрами", from_dict({"meter": "trochee"}), lang="ru")
     assert (1, "stress") in issues(rep, "warning")
 
 
@@ -91,3 +91,25 @@ def test_cli_syl_and_rhyme(capsys):
     assert "Մը-կըր-տի́չ ըս-պա-սե́լ" in capsys.readouterr().out
     assert main(["rhyme", "сердце", "дверце"]) == 0
     assert main(["rhyme", "սիրտ", "կյանք"]) == 1
+
+
+def test_rhyme_resolves_an_ambiguous_stress_at_the_line_end():
+    rep = scan("Плывут по небу облака\nЛетят они издалека", lang="ru")
+    first = rep.lines[0]
+    assert first.fit.stresses[3] == 2  # облака́, the stress that rhymes with издалека́
+    assert rep.units[0].scheme == "AA"
+
+
+def test_rhyme_does_not_override_the_meter():
+    spec = from_dict({"meter": "iamb", "language": "ru"})
+    rep = scan("Висит на двери замок\nИ в нём звенит звонок", spec)
+    assert rep.lines[0].fit.stresses[3] == 0  # за́мок keeps the iamb; замо́к would rhyme
+
+
+def test_forced_stress_in_the_meter():
+    from ashugh import meter
+
+    words = scan("Плывут по небу облака", lang="ru").lines[0].line.words
+    assert meter.fit(words, "iamb", force={3: 0}).stresses[3] == 0
+    assert meter.fit(words, "iamb", force={3: 2}).stresses[3] == 2
+    assert meter.fit(words, "iamb", force={3: 7}).stresses[3] in (0, 2)  # impossible: ignored

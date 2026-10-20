@@ -1,0 +1,8 @@
+id = "hy-mother"
+language = "hy"
+prompt = "A tender song to a mother far away, two verses and a chorus."
+
+[spec]
+syllables = 8
+rhyme = "AABB"
+forbid_final = ["ը"]

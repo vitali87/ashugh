@@ -1,0 +1,7 @@
+id = "ru-winter"
+language = "ru"
+prompt = "A song about a snowy winter evening and a letter that never came."
+
+[spec]
+meter = "iamb4"
+rhyme = "AbAb"

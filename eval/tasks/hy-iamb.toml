@@ -1,0 +1,7 @@
+id = "hy-iamb"
+language = "hy"
+prompt = "A slow ballad about memory and an old house, in iambic tetrameter."
+
+[spec]
+meter = "iamb4"
+rhyme = "ABAB"

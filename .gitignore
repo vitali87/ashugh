@@ -5,3 +5,5 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
+eval/data/rifma_dataset.json
+eval/out/

@@ -1,0 +1,12 @@
+id = "hy-spring"
+language = "hy"
+prompt = "A light pop song about the first warm day of spring and falling in love."
+
+[spec]
+syllables = 7
+rhyme = "ABAB"
+forbid_final = ["ը"]
+
+[section.chorus]
+syllables = [6, 6, 6, 6]
+rhyme = "AABB"

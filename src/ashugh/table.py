@@ -9,6 +9,31 @@ from __future__ import annotations
 
 from importlib import resources
 
+GUESS_PENALTY = 0.25  # meter cost of a guessed stress the suffix prior did not predict
+
+
+class SuffixPrior:
+    """Vowels after the stress, by word ending, learned from a dictionary."""
+
+    def __init__(self, resource: str) -> None:
+        self.table = SortedTable(resource)
+
+    def after(self, word: str) -> int | None:
+        for n in range(5, 1, -1):
+            if len(word) > n:
+                raw = self.table.get(word[-n:])
+                if raw:
+                    return int(raw.split("\t")[0])
+        return None
+
+    def order(self, word: str, size: int) -> list[tuple[int, float]]:
+        """Every stress position with its penalty, the predicted one first."""
+        after = self.after(word)
+        if after is None:
+            return [(p, 0.0) for p in range(size)]
+        best = max(0, min(size - 1, size - 1 - after))
+        return [(best, 0.0)] + [(p, GUESS_PENALTY) for p in range(size) if p != best]
+
 
 class SortedTable:
     def __init__(self, resource: str | None = None, data: bytes | None = None) -> None:
