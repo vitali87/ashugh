@@ -17,6 +17,8 @@ assimilates obstruents, and drops the silent consonants of сердце, сол�
 
 from __future__ import annotations
 
+import unicodedata
+
 from ..model import Reading, Syllable, Word
 from ..table import SuffixPrior
 from .ru_lexicon import TABLE
@@ -101,6 +103,7 @@ WEAK = {
 # Pronouns are weakly stressed in verse and may sit on a weak beat: вспоминай эту ночь.
 WEAK |= set(
     """
+    она оно они
     меня тебя себя мне его ему её ее ею нею него нему неё нее ими ними нами вами мною
     тобой собой тобою собою кого кому чего чему
     этот эта это эти эту этой этом этим этих этого этому этою
@@ -113,6 +116,8 @@ WEAK |= set(
 )
 # Pronoun forms and function words the table lacks: spelling, stressed vowels.
 CORE: dict[str, tuple[str, tuple[int, ...]]] = {
+    # The table stresses бант on its ending (банты́); it is ба́нт throughout.
+    **{f: (f, (0,)) for f in "банта банту бантом банте банты бантов бантам бантами бантах".split()},
     "кого": ("кого", (1,)),
     "чему": ("чему", (1,)),
     "него": ("него", (1,)),
@@ -581,7 +586,22 @@ def _user_readings(value: str) -> list[Reading]:
     return [Reading(stress, transcribe(norm, stress), norm, "user")]
 
 
+# Latin letters that look like Cyrillic ones, as a Latin keyboard types them into
+# a Russian word: зáмок with a Latin á, мoре with a Latin o.
+LOOK_ALIKE = str.maketrans("aeopcyxAEOPCYXBKMHT", "аеорсухАЕОРСУХВКМНТ")
+
+
+def cyrillic(token: str) -> str:
+    """token with Latin look-alike letters made Cyrillic and a precomposed accent
+    (á, ó) split into its letter and the stress mark."""
+    if token.isascii() or not any(is_cyrillic(ch) for ch in token):
+        return token
+    decomposed = unicodedata.normalize("NFD", token).translate(LOOK_ALIKE)
+    return unicodedata.normalize("NFC", decomposed)  # й and ё again; а + ́ has no single form
+
+
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
+    token = cyrillic(token)
     norm, marked = read_marks(token)
     shown = token.replace(ACUTE, "")
     syllables = tuple(Syllable(s) for s in split_syllables(shown)) if vowel_count(norm) else ()
