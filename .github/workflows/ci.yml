@@ -3,6 +3,7 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:  # run by hand from the Actions tab
 
 concurrency:  # a new push cancels the run of the commit it replaces
   group: ci-${{ github.ref }}

@@ -210,31 +210,28 @@ All numbers are from the scripts in [eval/](eval/); the full write-up is
 **Claude alone and Claude with ashugh.** Twenty-four writing tasks, twelve
 everyday forms and twelve harder ones: per-line melody grids with set
 endings, a separate chorus form, ternary meters, Armenian feminine endings,
-and translations into the source's grid. A Claude writer with no access to
+and translations into the source's grid. Claude writers with no access to
 ashugh drafted each song; then `fit` asked Claude for candidates for the
-lines that failed.
+lines that failed. These are the two holdout sets, 72 drafts from six
+writers, scored and repaired with the analyzer frozen before they were
+written:
 
 | | lines meeting the spec | songs meeting the spec |
 |---|---|---|
-| everyday forms, alone | 139 / 140 | 11 / 12 |
-| everyday forms, with ashugh | **140 / 140** | **12 / 12** |
-| hard forms, alone | 192 / 196 | 9 / 12 |
-| hard forms, with ashugh | **196 / 196** | **12 / 12** |
+| Claude alone | 1,464 / 1,482 (98.8%) | 63 / 72 |
+| Claude with ashugh | **1,482 / 1,482** | **72 / 72** |
 
-The repair changed five lines in at most two rounds. Two holdout sets, 72
-fresh drafts from six more writers scored with the analyzer frozen, gave the
-same picture: 1,464 of 1,482 lines met the spec alone, and every line and
-song did with ashugh.
-
-A strong model gets most lines right on its own. What it misses is what it
-cannot hear: a hidden Armenian schwa (աչքերս is աչ-քե-րըս), a stress on the
-weak beat of a dactyl or an anapest, a rhyme that lands on an unstressed
-auxiliary. The checker matters as much: of the lines flagged on fresh
-drafts, most were ashugh's own mistakes (14 of 18 on the first set, 14 of
-18 again on the holdouts), each since fixed with a test. A false flag costs
-a needless rewrite, which fit made without losing the meaning. The writers
-and proposers were Claude subagents, not API calls; RESULTS.md has the
-caveats.
+Every repair took one round. A strong model gets most lines right on its
+own; what it misses is what it cannot hear: a rhyme that lands on an
+unstressed Armenian auxiliary, a stress on the weak beat of a dactyl or an
+anapest. The checker is the weak point: of the 18 lines it flagged, 14 were
+its own mistakes (a dictionary gap such as кружи́тся, the Armenian
+possessive after a plural, a particle counted as stressed). Each cost a
+needless but harmless rewrite, and each has since been fixed with a test;
+the numbers above are from before those fixes. An earlier set of 24 drafts
+was the development set the rules were tuned on, so it is reported in
+RESULTS.md but not here. The writers and proposers were Claude subagents,
+not API calls; RESULTS.md has every flagged line and the caveats.
 
 **Russian, on RIFMA** (Koziev 2025: 5,121 poems and stanzas with every
 stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):

@@ -41,10 +41,33 @@ test more than a measurement.
 Twenty-four tasks: twelve everyday forms (`tasks/`) and twelve harder ones
 (`tasks-hard/`: per-line melody grids with set endings, a different form for
 the chorus, ternary meters, Armenian trochees and feminine endings, and
-three translations into their source's grid). A fresh subagent with no
-access to ashugh wrote one draft per task from its brief. Fresh subagents
-then answered fit's repair requests through
-[agent_bridge.py](agent_bridge.py), one per round.
+three translations into their source's grid). Fresh subagents with no
+access to ashugh wrote the drafts from the briefs; fresh subagents then
+answered fit's repair requests through [agent_bridge.py](agent_bridge.py),
+one per round.
+
+### The measurement: two holdouts, analyzer frozen
+
+Both holdout sets were written after the analyzer was frozen, and scored and
+repaired with that frozen analyzer; nothing was fixed until both steps had
+run. These are the numbers to quote:
+
+| | lines meeting the spec | songs meeting the spec |
+|---|---|---|
+| holdout 1 (24 drafts, frozen at 268da1e), alone | 479 / 482 | 21 / 24 |
+| holdout 2 (48 drafts, frozen at 5c2962f), alone | 985 / 1,000 | 42 / 48 |
+| **both, Claude alone** | **1,464 / 1,482 (98.8%)** | **63 / 72** |
+| **both, Claude with ashugh** | **1,482 / 1,482** | **72 / 72** |
+
+Of the 18 lines the frozen checkers flagged, 4 were real errors and 14
+were the checker's own mistakes; fit repaired all 18 in one round, the 14
+needlessly but without losing the meaning. Both sets are detailed below.
+
+### The development set
+
+The first 24 drafts were scored while the analyzer was still being
+corrected, and its rules were fixed on them, so they are a development set:
+their "alone" numbers are from a checker that has seen them.
 
 | | lines meeting the spec | songs meeting the spec |
 |---|---|---|
@@ -68,7 +91,7 @@ Armenian schwa it does not write, a lexical stress landing on the weak slot
 of a three-syllable foot, an open rhyme whose consonants differ. ashugh finds
 them, and one or two rounds of candidates fix them.
 
-### How often ashugh itself was wrong
+### How often ashugh was wrong on the development set
 
 The first scoring of the drafts flagged 18 lines. Read one by one, only 4
 were the writer's. The other 14 were ashugh's mistakes, and each was fixed in
@@ -86,7 +109,7 @@ gave the same numbers. Before the fixes the drafts scored 133/140 and 185/196
 lines (8/12 and 5/12 songs). Those scores measured ashugh's errors more than
 the writer's.
 
-### Holdout: fresh drafts, analyzer frozen
+### Holdout 1
 
 Because the analyzer was corrected on the drafts above, a second set was
 written afterwards: new cold writers, the same 24 briefs, drafts in
@@ -112,10 +135,10 @@ Of the three lines the frozen checker flagged, one was a real error and
 two were its own mistakes; fit rewrote those two without harm to the
 meaning, but they did not need it. The mistakes were fixed afterwards
 (the -ее twin of a short comparative, the possessive *'s* and the *-les*
-ending of English), and with that analyzer the holdout drafts score 322/322
-and 159/160 alone, the one remaining flag being the real one.
+ending of English). As a regression check, not a measurement: with the fixed
+analyzer the same drafts raise only the one real flag.
 
-### Holdout 2: four more writers, analyzer frozen again
+### Holdout 2
 
 Four further cold writers wrote two more drafts per task (48 drafts, 1,000
 lines, in [runs/2026-10-20/holdout2/](runs/2026-10-20/holdout2/)). They were
@@ -140,19 +163,19 @@ alarms:
 | hy-lullaby (3 lines): Աչուկներդ փակիր | no: after the plural -եր, դ is the possessive (ա-չուկ-նե-րըդ, 6 syllables) | Դու աչուկներդ փակիր |
 | ru-grid-call: …номер искрится | no: the table has и́скрится for искри́тся | …номер лучится |
 
-The false alarms were fixed afterwards. With the fixed analyzer the same
-drafts score 997/1,000 alone, and the three remaining flags are the real
-errors above.
+The false alarms were fixed afterwards. As a regression check, not a
+measurement: with the fixed analyzer the same drafts raise only the three
+real flags.
 
 ### What this does and does not show
 
-- 96 drafts of 24 tasks, from seven writers: the first set, holdout 1 and
-  holdout 2.
+- The measurement is 72 holdout drafts of 24 tasks from six writers; the
+  first 24 drafts, from a seventh, are the development set.
 - The writers and the proposers were Claude subagents of the session that
   built ashugh, not calls to the API. They had no access to the code, the
   tool or the conversation, only their briefs and fit's requests.
-- The first set's "alone" numbers come from a checker corrected on those
-  drafts; the holdout set's come from a frozen one. They agree: Claude
+- The development set's "alone" numbers come from a checker corrected on
+  those drafts; the holdouts' come from frozen ones. They agree: Claude
   alone meets these forms in 98–100% of lines.
 - On fresh drafts, most flags were ashugh's own mistakes: 2 of 3 on
   holdout 1, 12 of 15 on holdout 2, and 14 of 18 on the first set before
