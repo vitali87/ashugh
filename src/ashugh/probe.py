@@ -18,6 +18,8 @@ first.
 from __future__ import annotations
 
 import json
+import shlex
+import subprocess
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -27,6 +29,7 @@ from .model import ACUTE
 from .phon import align_cost, indel_cost
 
 MODES = {"hy": ("script", "schwa", "latin"), "ru": ("plain", "caps", "acute")}
+COMMAND_TIMEOUT = 600.0
 AUDIO = (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".webm")
 OVERRIDE_MARGIN = 0.1
 
@@ -139,24 +142,66 @@ def load_transcripts(path: str | Path) -> dict[str, str]:
     return data
 
 
-def transcribe(clips: str | Path, plan: list[Probe], model: str = "small") -> dict[str, str]:
-    """Transcribe <probe id>.<audio> clips with openai-whisper."""
-    try:
-        import whisper
-    except ImportError:
-        whisper = None
-    if whisper is None:
-        raise ProbeError("transcribing needs Whisper: pip install openai-whisper")
+def transcribe(
+    clips: str | Path, plan: list[Probe], model: str = "small", engine: str = "whisper"
+) -> dict[str, str]:
+    """Transcribe <probe id>.<audio> clips with openai-whisper, or with any recognizer
+    given as engine="cmd:<command>", where {audio} and {lang} stand for the clip and
+    its language and the command prints the transcript."""
+    if engine == "whisper":
+        hear = _whisper(model)
+    elif engine.startswith("cmd:"):
+        hear = _command(engine[4:])
+    else:
+        raise ProbeError(f"unknown engine {engine!r}; use whisper or cmd:<command>")
     clips = Path(clips)
-    engine = whisper.load_model(model)
     out = {}
     for p in plan:
         audio = next(
             (clips / f"{p.id}{ext}" for ext in AUDIO if (clips / f"{p.id}{ext}").exists()), None
         )
         if audio is not None:
-            out[p.id] = engine.transcribe(str(audio), language=p.lang)["text"].strip()
+            out[p.id] = hear(audio, p.lang)
     return out
+
+
+def _whisper(model: str):
+    try:
+        import whisper
+    except ImportError:
+        whisper = None
+    if whisper is None:
+        raise ProbeError("transcribing needs Whisper: pip install openai-whisper")
+    loaded = whisper.load_model(model)
+    return lambda audio, lang: loaded.transcribe(str(audio), language=lang)["text"].strip()
+
+
+def _command(template: str):
+    argv = shlex.split(template)
+    if not argv:
+        raise ProbeError("the transcription command is empty")
+    if not any("{audio}" in a for a in argv):
+        argv.append("{audio}")
+
+    def hear(audio: Path, lang: str) -> str:
+        args = [a.replace("{audio}", str(audio)).replace("{lang}", lang) for a in argv]
+        try:
+            done = subprocess.run(
+                args, capture_output=True, text=True, encoding="utf-8", timeout=COMMAND_TIMEOUT
+            )
+        except (OSError, subprocess.TimeoutExpired) as e:
+            raise ProbeError(f"transcription command failed on {audio.name}: {e}") from None
+        if done.returncode != 0:
+            raise ProbeError(
+                f"transcription command exited {done.returncode} on {audio.name}: "
+                f"{done.stderr.strip()[:200]}"
+            )
+        text = done.stdout.strip()
+        if not text:
+            raise ProbeError(f"transcription command printed nothing for {audio.name}")
+        return text
+
+    return hear
 
 
 def _similarity(p: Probe, transcript: str) -> float:

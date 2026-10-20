@@ -195,7 +195,7 @@ def cmd_probe_make(args: argparse.Namespace) -> int:
 
 def cmd_probe_transcribe(args: argparse.Namespace) -> int:
     plan = probe.load_plan(args.plan)
-    transcripts = probe.transcribe(args.clips, plan, model=args.model)
+    transcripts = probe.transcribe(args.clips, plan, model=args.model, engine=args.engine)
     Path(args.output).write_text(
         json.dumps(transcripts, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -473,6 +473,11 @@ def _more_commands(sub) -> None:
     pt.add_argument("clips", help="folder of <probe id>.mp3 (or .wav, .m4a ...) clips")
     pt.add_argument("--plan", default="probes.json")
     pt.add_argument("--model", default="small", help="Whisper model (default small)")
+    pt.add_argument(
+        "--engine",
+        default="whisper",
+        help='whisper (default), or cmd:"<command with {audio} and {lang}>" printing the text',
+    )
     pt.add_argument("-o", "--output", default="transcripts.json")
     pt.set_defaults(func=cmd_probe_transcribe)
     ps = prs.add_parser("score", help="score transcripts and write a spelling policy")
