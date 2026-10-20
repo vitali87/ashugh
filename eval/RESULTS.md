@@ -12,10 +12,10 @@ benchmarks in its `rifma.json`, `armenian.json` and `oov.json`.
 |---|---|
 | stress of polysyllabic words (60,856) | 97.0% |
 | each word's first reading, without meter or rhyme | 91.8% |
-| words the dictionary lists (49,996) | 98.1% |
-| ambiguous words resolved by meter and rhyme (3,673) | 94.2% |
-| unknown words guessed from the ending, meter and rhyme (5,510) | 88.2% |
-| "these two lines rhyme", 33,798 pairs within stanzas | P 0.940, R 0.877, F1 0.907 |
+| words the dictionary lists (49,995) | 98.1% |
+| ambiguous words resolved by meter and rhyme (3,674) | 94.2% |
+| unknown words guessed from the ending, meter and rhyme (5,510) | 88.0% |
+| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.875, F1 0.907 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
 led to the gerund and participle twins, the ending prior, the second
@@ -80,7 +80,9 @@ the analyzer before the numbers above were taken:
 | hard drafts: 11 lines | 4 | 7 | the possessive ս after a sonorant (բոլորս is բո-լո-րըս); ան- keeps its stem's schwa (ան-շը-տապ); reduplications are separate words (ճիվ-ճիվ); *again* also rhymes with *rain*; Russian pronouns are metrically weak |
 
 The possessive fix also caught a real error the first scoring had missed
-(աչքերս above). Before the fixes the drafts scored 133/140 and 185/196
+(աչքերս above). A second code review after these runs fixed more analyzer
+bugs; rescoring every draft and every repaired text with the final analyzer
+gave the same numbers. Before the fixes the drafts scored 133/140 and 185/196
 lines (8/12 and 5/12 songs). Those scores measured ashugh's errors more than
 the writer's.
 
