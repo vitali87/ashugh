@@ -497,7 +497,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
 
     want = rule.ending_at(ln.index)
-    if want is not None and f.ending != want:
+    if want is not None and f.ending != want and not (want == 3 and f.ending > 3):  # h: 3 or more
         detail = _quote(ln.words[-1].text) if ln.words else ""
         letter = rule.rhyme[ln.index % len(rule.rhyme)] if rule.rhyme and not rule.endings else ""
         if letter.isalpha():  # AbAb: a capital letter asks a feminine ending, a small one masculine

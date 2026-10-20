@@ -89,7 +89,7 @@ tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
 rhyme = "AbAb"             # "-" or "." = free line; mixed case also asks endings:
                            # a capital letter feminine, a small one masculine
-endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
+endings = "fmfm"           # m masculine, f feminine, d dactylic, h 3+ after, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]       # a line may not end in these letters
 
@@ -261,9 +261,9 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 | | |
 |---|---|
 | stress of polysyllabic words (60,854) | **97.1%** correct |
-| each word's first reading, without meter or rhyme | 91.9% |
+| each word's first reading, without meter or rhyme | 92.0% |
 | words the dictionary lists | 98.2% |
-| ambiguous words, resolved by meter and rhyme | 94.2% |
+| ambiguous words, resolved by meter and rhyme | 94.6% |
 | unknown words (9%), guessed from the ending, meter and rhyme | 88.1% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.87, F1 0.91 |
 
@@ -332,7 +332,9 @@ vowel, or where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… is an uns
 enclitic that rhymes with the word before it. ես is the pronoun I [jes]
 instead where it opens its clause (Ես եմ, ու ես) or its clause has a verb of
 I (հիմա ես գիտեմ), and the auxiliary [es] otherwise (ինչու ես լռում). A hyphenated reduplication
-(փափուկ-փափուկ, тихо-тихо) is one stressed word per part.
+(փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other
+hyphenated word the dictionary lacks keeps each part's stress, the last part
+carrying the rhyme (давны́м-давно́, баю́-ба́юшки-баю́, ice-cóld, twenty-four-séven).
 
 **Russian** (`lang/ru.py`). Stress comes from, in order:
 

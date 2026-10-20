@@ -112,7 +112,7 @@ meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free 
 rhyme = "ABAB"             # "-" or "." = free line; AbAb also asks endings:
                            # a capital letter feminine, a small one masculine
                            # "ABBA ABBA CDC DCD": one part per stanza, letters shared
-endings = "fmfm"           # m masculine, f feminine, d dactylic, - any
+endings = "fmfm"           # m masculine, f feminine, d dactylic, h 3+ after, - any
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]
 

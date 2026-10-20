@@ -148,6 +148,8 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "алёна": ("алёна", (1,)),
     # The table stresses бант on its ending (банты́); it is ба́нт throughout.
     **{f: (f, (0,)) for f in "банта банту бантом банте банты бантов бантам бантами бантах".split()},
+    "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
+    "баюшки": ("баюшки", (0,)),
     "кого": ("кого", (1,)),
     "чему": ("чему", (1,)),
     # The table has кому and никого only from ком (a lump) and the archaic никой.
@@ -598,15 +600,8 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     else:
         for spelling, stress in TABLE.variants(norm):
             options.append((spelling, stress, "lexicon"))
-    if not options and "-" in norm:
-        head, _, tail = norm.rpartition("-")
-        parts = [(head, 0)] if tail in PARTICLES else [(head, 0), (tail, vowel_count(head))]
-        for part, offset in parts:
-            if vowel_count(part) == 1:
-                stresses = [0]
-            else:
-                stresses = [r.stress for r in _lexicon_readings(part) if r.stress is not None]
-            options.extend((norm, (p + offset,), "lexicon") for p in stresses)
+    if not options and "-" in norm.strip("-"):
+        return _hyphenated(norm)
     if not options:
         for spelling, stress in _shift_lookup(norm):
             options.append((spelling, stress, "lexicon"))
@@ -617,8 +612,49 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             options.append((norm, stress, "lexicon"))
     readings = []
     for spelling, stress, source in options:
+        if "-" in spelling and len(stress) > 1 and len({_part_of(spelling, p) for p in stress}) > 1:
+            # давны́м-давно́ is stressed in both parts, not in one or the other
+            main = max(stress)
+            secondary = tuple(p for p in stress if p != main)
+            readings.append(Reading(main, transcribe(spelling, main), spelling, source, secondary))
+            continue
         for p in stress:
             readings.append(Reading(p, transcribe(spelling, p), spelling, source))
+    return readings
+
+
+def _part_of(spelling: str, vowel: int) -> int:
+    """Which hyphenated part of spelling has its vowel number vowel."""
+    seen = 0
+    for k, part in enumerate(spelling.split("-")):
+        seen += vowel_count(part)
+        if vowel < seen:
+            return k
+    return k
+
+
+def _hyphenated(norm: str) -> list[Reading]:
+    """A hyphenated word the table lacks, read part by part: the last stressed
+    part carries the stress and the rhyme, the parts before keep theirs as
+    secondary stresses (давны́м-давно́, баю́-ба́юшки-баю́); a particle after
+    them takes none (кто́-то, когда́-нибудь)."""
+    parts = norm.split("-")
+    offsets = [vowel_count("".join(parts[:k])) for k in range(len(parts))]
+    stresses = []
+    for part in parts:
+        if part in PARTICLES or not vowel_count(part):
+            stresses.append([])
+        else:  # a part the table lacks is guessed like any word: ба́юшки
+            stresses.append([r.stress for r in analyze_word(part).readings if r.stress is not None])
+    stressed = [k for k, options in enumerate(stresses) if options]
+    if not stressed:
+        return []
+    last = stressed[-1]
+    secondary = tuple(offsets[k] + stresses[k][0] for k in stressed[:-1])
+    readings = []
+    for p in dict.fromkeys(stresses[last]):
+        at = offsets[last] + p
+        readings.append(Reading(at, transcribe(norm, at), norm, "lexicon", secondary))
     return readings
 
 

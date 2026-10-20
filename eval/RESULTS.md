@@ -11,10 +11,10 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 | | |
 |---|---|
 | stress of polysyllabic words (60,854) | 97.1% |
-| each word's first reading, without meter or rhyme | 91.9% |
-| words the dictionary lists (50,048) | 98.2% |
-| ambiguous words resolved by meter and rhyme (3,701) | 94.2% |
-| unknown words guessed from the ending, meter and rhyme (5,428) | 88.1% |
+| each word's first reading, without meter or rhyme | 92.0% |
+| words the dictionary lists (50,073) | 98.2% |
+| ambiguous words resolved by meter and rhyme (3,677) | 94.6% |
+| unknown words guessed from the ending, meter and rhyme (5,427) | 88.1% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.876, F1 0.907 |
 
 RIFMA was the development set for the Russian rules: the misses it showed

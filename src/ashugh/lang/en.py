@@ -428,6 +428,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
         variants = voiced + [v for v in variants if v not in voiced]
     word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
+    if not variants and "-" in norm.strip("-"):
+        return _hyphenated(word, token, overrides)
     if not variants:
         return _guessed(word, token, norm)
 
@@ -483,6 +485,54 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     word.readings = tuple(readings)
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest))
     word.weak = word.weak or word.clitic or longest == 1
+    return word
+
+
+def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Word:
+    """A hyphenated word the dictionary lacks, read part by part: the last
+    stressed part carries the stress and the rhyme, the parts before keep theirs
+    as secondary stresses (ice-cóld, twenty-four-séven); a clitic part takes
+    none (up-to-dáte)."""
+    parts = [analyze_word(p, overrides) for p in token.split("-") if p.strip("'")]
+    offsets = [sum(p.size for p in parts[:k]) for k in range(len(parts))]
+    stressed = [k for k, p in enumerate(parts) if not p.clitic and p.size]
+    last = stressed[-1] if stressed else len(parts) - 1
+    before = [
+        offsets[k] + s
+        for k in stressed
+        if k != last
+        for s in {parts[k].readings[0].stress, *parts[k].readings[0].secondary}
+        if s is not None
+    ]
+    head = tuple(ph for p in parts[:last] for ph in p.readings[0].phones)
+    tail = tuple(ph for p in parts[last + 1 :] for ph in p.readings[0].phones)
+    readings = []
+    for r in parts[last].readings:
+        stress = None if r.stress is None else offsets[last] + r.stress
+        own = [offsets[last] + k for k in r.secondary]
+        secondary = tuple(sorted(set(before + own) - {stress}))
+        readings.append(
+            Reading(stress, head + r.phones + tail, word.norm, r.source, secondary, r.penalty)
+        )
+    # Before a stressed noun, or as a compound noun, the first part takes the main
+    # stress: a lóng-lost friend, at clósing-time; the meter takes it as a licence.
+    for k in stressed[:-1]:
+        first = parts[k].readings[0].stress
+        if first is None:
+            continue
+        stress = offsets[k] + first
+        secondary = tuple(
+            sorted({*before, offsets[last] + (parts[last].readings[0].stress or 0)} - {stress})
+        )
+        phones = readings[0].phones if readings else ()
+        readings.append(Reading(stress, phones, word.norm, "shift", secondary, STRESS_SHIFT))
+    word.readings = tuple(readings)
+    word.syllables = tuple(s for p in parts for s in p.syllables)
+    dropping = next((k for k, p in enumerate(parts) if p.drop is not None), None)
+    if dropping is not None:
+        word.drop = offsets[dropping] + (parts[dropping].drop or 0)
+        word.drop_cost = parts[dropping].drop_cost
+    word.weak = word.weak or word.size == 1
     return word
 
 
