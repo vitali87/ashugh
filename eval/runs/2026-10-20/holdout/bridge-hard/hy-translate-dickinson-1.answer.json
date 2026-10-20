@@ -1,0 +1,26 @@
+{
+  "lines": [
+    {
+      "id": "L9",
+      "candidates": [
+        {"text": "Ես մի կողմ թողեցի", "faithfulness": 0.88},
+        {"text": "Ու արդեն թողեցի", "faithfulness": 0.85},
+        {"text": "Ես հեռու թողեցի", "faithfulness": 0.8},
+        {"text": "Ես արդեն լքեցի", "faithfulness": 0.8},
+        {"text": "Եվ ես վայր դրեցի", "faithfulness": 0.75},
+        {"text": "Ու ես էլ թողեցի", "faithfulness": 0.7}
+      ]
+    },
+    {
+      "id": "L11",
+      "candidates": [
+        {"text": "Գթին ձոնել էի։", "faithfulness": 0.72},
+        {"text": "Գթով գերվել էի։", "faithfulness": 0.7},
+        {"text": "Գթին զոհել էի։", "faithfulness": 0.68},
+        {"text": "Գթին տվել էի։", "faithfulness": 0.65},
+        {"text": "Գթով տարվել էի։", "faithfulness": 0.6},
+        {"text": "Նրան տվել էի։", "faithfulness": 0.55}
+      ]
+    }
+  ]
+}

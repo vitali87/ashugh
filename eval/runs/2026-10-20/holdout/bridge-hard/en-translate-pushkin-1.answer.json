@@ -1,0 +1,15 @@
+{
+  "lines": [
+    {
+      "id": "L9",
+      "candidates": [
+        {"text": "In restless bustle's noisy race,", "faithfulness": 0.95},
+        {"text": "Amid the bustle's noisy race,", "faithfulness": 0.9},
+        {"text": "Through all the bustle's restless race,", "faithfulness": 0.85},
+        {"text": "Amid the clamor's restless race,", "faithfulness": 0.85},
+        {"text": "In anxious bustle's hurried pace,", "faithfulness": 0.8},
+        {"text": "Through all the noisy, anxious race,", "faithfulness": 0.75}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵս Մահվան համար կանգ չառա —\nԿանգնեց՝ ի՜նչ բարություն —\nԿառքի մեջ միայն մենք էինք,\nՄեզ հետ՝ Անմահություն։\n\n[Verse 2]\nԳնացինք, Նա չէր շտապում,\nՈւ արդեն թողեցի\nԹե գործս, թե հանգիստս էլ՝\nՀանուն Նրա գթի։\n",
+      "changes": 1,
+      "rounds": 1,
+      "requests": 2
+    }
+  ]
+}
