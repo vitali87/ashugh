@@ -1,12 +1,15 @@
-"""Command line: ashugh scan | syl | rhyme | spec."""
+"""Command line: ashugh scan | fit | pick | syl | rhyme | spec."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from . import __version__, meter, report, rhyme
 from . import lang as languages
+from .fit import FitResult, fit_song
+from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candidates, make_proposer
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, apply, load, template
 
@@ -20,27 +23,17 @@ def _read(path: str) -> str:
 
 def _inline_rule(args: argparse.Namespace) -> dict:
     table: dict = {}
-    if args.syllables:
-        table["syllables"] = args.syllables
-    if args.meter:
-        table["meter"] = args.meter
-    if args.feet:
-        table["feet"] = args.feet
-    if args.rhyme:
-        table["rhyme"] = args.rhyme
-    if args.endings:
-        table["endings"] = args.endings
-    if args.tolerance is not None:
+    for key in ("syllables", "meter", "feet", "rhyme", "endings", "min_rhyme", "forbid_final"):
+        value = getattr(args, key, None)
+        if value:
+            table[key] = value
+    if getattr(args, "tolerance", None) is not None:
         table["tolerance"] = args.tolerance
-    if args.min_rhyme:
-        table["min_rhyme"] = args.min_rhyme
-    if args.forbid_final:
-        table["forbid_final"] = args.forbid_final
     return table
 
 
 def _spec(args: argparse.Namespace) -> Spec:
-    spec = load(args.spec) if args.spec else Spec()
+    spec = load(args.spec) if getattr(args, "spec", None) else Spec()
     inline = _inline_rule(args)
     if inline:  # flags override the spec's top level and every section
         spec.base = apply(inline, spec.base, "flags")
@@ -53,6 +46,54 @@ def cmd_scan(args: argparse.Namespace) -> int:
     rep = scan(_read(args.file), spec, path=args.file, lang=args.lang)
     print(report.as_json(rep) if args.json else report.text(rep, show_all=args.all))
     return 0 if rep.ok else 1
+
+
+def cmd_fit(args: argparse.Namespace) -> int:
+    spec = _spec(args)
+    proposer = make_proposer(args.proposer, args.model, args.effort)
+    result = fit_song(
+        _read(args.file),
+        spec,
+        proposer,
+        rounds=args.rounds,
+        n=args.n,
+        solver=args.solver,
+        lang=args.lang,
+    )
+    return _emit_fit(result, args)
+
+
+def cmd_pick(args: argparse.Namespace) -> int:
+    spec = _spec(args)
+    proposer = StaticProposer(load_candidates(args.candidates))
+    result = fit_song(
+        _read(args.file), spec, proposer, rounds=1, solver=args.solver, lang=args.lang
+    )
+    return _emit_fit(result, args)
+
+
+def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as fh:
+            fh.write(result.text)
+    if args.json:
+        print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
+        return 0 if result.ok else 1
+    log = sys.stderr if not args.output else sys.stdout
+    for c in result.changes:
+        print(f"L{c.line}  {c.old}\n   → {c.new}", file=log)
+    for u in result.unresolved:
+        print(f"L{u.line}  unresolved: {'; '.join(u.reasons)}", file=log)
+    rep = result.report
+    passing = sum(1 for lr in rep.lines if lr.ok)
+    print(
+        f"{len(result.changes)} line(s) changed in {result.rounds} round(s) · "
+        f"{len(result.unresolved)} unresolved · {passing}/{len(rep.lines)} lines pass",
+        file=log,
+    )
+    if not args.output:
+        print(result.text, end="" if result.text.endswith("\n") else "\n")
+    return 0 if result.ok else 1
 
 
 def cmd_syl(args: argparse.Namespace) -> int:
@@ -102,11 +143,38 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     s = sub.add_parser("scan", help="check a lyrics file against a spec (exit 1 on errors)")
+    _song_args(s)
+    s.add_argument("-a", "--all", action="store_true", help="show every line, not only problems")
+    s.set_defaults(func=cmd_scan)
+
+    f = sub.add_parser("fit", help="repair failing lines with candidates from an LLM")
+    _song_args(f)
+    f.add_argument(
+        "--proposer",
+        help="claude (default), cmd:<command reading JSON requests>, or file:<candidates.json>",
+    )
+    f.add_argument("--model", help=f"Claude model (default {DEFAULT_MODEL})")
+    f.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
+    f.add_argument("--rounds", type=int, default=3, help="proposal rounds (default 3)")
+    f.add_argument("-n", type=int, default=6, help="candidates per line per round (default 6)")
+    _fit_args(f)
+    f.set_defaults(func=cmd_fit)
+
+    k = sub.add_parser("pick", help="choose among candidate lines you already have")
+    _song_args(k)
+    k.add_argument("--candidates", required=True, help='JSON: {"3": ["line", "line"], ...}')
+    _fit_args(k)
+    k.set_defaults(func=cmd_pick)
+
+    _more_commands(sub)
+    return p
+
+
+def _song_args(s: argparse.ArgumentParser) -> None:
     s.add_argument("file", help="lyrics file, or - for stdin")
     s.add_argument("--spec", help="song spec (TOML)")
     s.add_argument("--lang", choices=sorted(languages.ANALYZERS), help="force the language")
     s.add_argument("--json", action="store_true", help="machine-readable output")
-    s.add_argument("-a", "--all", action="store_true", help="show every line, not only problems")
     g = s.add_argument_group("inline rules (override the spec everywhere)")
     g.add_argument("--syllables", help='syllables per line: 8 or "8,8,8,6"')
     g.add_argument(
@@ -122,8 +190,14 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument(
         "--forbid-final", action="append", help="a line may not end in this (repeatable)"
     )
-    s.set_defaults(func=cmd_scan)
 
+
+def _fit_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("-o", "--output", help="write the repaired lyrics here (default: stdout)")
+    p.add_argument("--solver", choices=["auto", "exact", "cpsat"], default="auto")
+
+
+def _more_commands(sub) -> None:
     y = sub.add_parser("syl", help="show how words or lines are sung: syllables and stress")
     y.add_argument("text", nargs="*", help="text (default: stdin)")
     y.add_argument("--lang", choices=sorted(languages.ANALYZERS))
@@ -140,7 +214,6 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("spec", help="print a starter spec")
     t.add_argument("--lang", choices=sorted(languages.ANALYZERS))
     t.set_defaults(func=cmd_spec)
-    return p
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -149,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     try:
         return args.func(args)
-    except SpecError as e:
+    except (SpecError, ProposerError) as e:
         print(f"ashugh: {e}", file=sys.stderr)
         return 2
     except (OSError, ValueError) as e:

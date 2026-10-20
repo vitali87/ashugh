@@ -143,18 +143,30 @@ def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
         meter_name, source = rule.meter, "spec"
     else:
         meter_name, source = meter.detect(lines), "detected"
-    reports = []
-    for ln in lines:
-        target = rule.syllables_at(ln.index)
-        f = meter.fit(ln.words, meter_name, target, rule.tolerance)
-        lr = LineReport(ln, f, rhyme.tails(ln, f), target=target)
-        _check_line(lr, rule, meter_name, source)
-        reports.append(lr)
+    reports = [check_line(ln, rule, meter_name, source) for ln in lines]
     letters = rhyme.scheme([lr.tails for lr in reports])
     for lr, letter in zip(reports, letters):
         lr.letter = letter
     _check_rhyme(reports, rule)
     return UnitReport(first.section, first.key, meter_name, source, letters, rule, reports)
+
+
+def check_line(ln: Line, rule: Rule, meter_name: str, source: str) -> LineReport:
+    """Fit one analyzed line to its slot and collect its line-level issues."""
+    target = rule.syllables_at(ln.index)
+    f = meter.fit(ln.words, meter_name, target, rule.tolerance)
+    lr = LineReport(ln, f, rhyme.tails(ln, f), target=target)
+    _check_line(lr, rule, meter_name, source)
+    return lr
+
+
+def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
+    """A copy of ln holding text instead, analyzed in the same slot."""
+    tokens = lyrics.tokenize(text)
+    code = lang or spec.language or languages.detect(tokens) or ln.lang
+    new = Line(ln.number, text.strip(), ln.section, ln.key, ln.unit, ln.index, code)
+    new.words = languages.analyze(code, tokens, spec.lexicon)
+    return new
 
 
 def _hidden_vowels(ln: Line) -> str:

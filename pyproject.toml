@@ -20,7 +20,10 @@ classifiers = [
 ashugh = "ashugh.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+claude = ["anthropic>=1.15"]
+cpsat = ["ortools>=9.10"]
+all = ["anthropic>=1.15", "ortools>=9.10"]
+dev = ["pytest>=8", "ruff>=0.6", "anthropic>=1.15", "ortools>=9.10"]
 
 [build-system]
 requires = ["hatchling>=1.26"]
