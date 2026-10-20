@@ -10,11 +10,11 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,856) | 97.0% |
+| stress of polysyllabic words (60,854) | 97.0% |
 | each word's first reading, without meter or rhyme | 91.8% |
 | words the dictionary lists (49,981) | 98.1% |
 | ambiguous words resolved by meter and rhyme (3,688) | 94.2% |
-| unknown words guessed from the ending, meter and rhyme (5,510) | 88.1% |
+| unknown words guessed from the ending, meter and rhyme (5,508) | 88.1% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.875, F1 0.907 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
@@ -75,9 +75,9 @@ draft scores the same.
 
 | | ashugh | baseline (commonest position) |
 |---|---|---|
-| Russian stress (55,255 words) | 75.7% | 40.8% |
+| Russian stress (55,417 words) | 75.6% | 40.8% |
 | English stress (9,405) | 77.0% | 66.7% |
-| English syllables from spelling (11,748) | 87.7% | |
+| English syllables from spelling (11,748) | 88.0% | |
 
 ## Claude alone and Claude with ashugh
 

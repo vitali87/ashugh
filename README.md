@@ -257,7 +257,7 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,856) | **97.0%** correct |
+| stress of polysyllabic words (60,854) | **97.0%** correct |
 | each word's first reading, without meter or rhyme | 91.8% |
 | words the dictionary lists | 98.1% |
 | ambiguous words, resolved by meter and rhyme | 94.2% |
@@ -285,9 +285,9 @@ glide (դանիացի). The real misses are compounds no listed word explains
 (աստ-ղա-գը-նաց): 27 words, 1.5%.
 
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
-stress-by-ending prior gets 75.7% of Russian words right (always guessing the
+stress-by-ending prior gets 75.6% of Russian words right (always guessing the
 commonest position: 40.8%) and 77.0% of English words (66.7%). The English
-syllable count from spelling is right for 87.7% of words.
+syllable count from spelling is right for 88.0% of words.
 
 ## How it works
 

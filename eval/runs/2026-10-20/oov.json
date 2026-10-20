@@ -1,10 +1,10 @@
 {
   "ru_stress": {
-    "test_words": 55255,
-    "prior_coverage": 0.9296,
-    "prior_accuracy_where_covered": 0.7814,
-    "prior_with_majority_fallback": 0.7565,
-    "majority_baseline": 0.4084
+    "test_words": 55417,
+    "prior_coverage": 0.9292,
+    "prior_accuracy_where_covered": 0.7812,
+    "prior_with_majority_fallback": 0.7562,
+    "majority_baseline": 0.4083
   },
   "en_stress": {
     "test_words": 9405,
@@ -15,6 +15,6 @@
   },
   "en_syllables": {
     "test_words": 11748,
-    "spelling_count_accuracy": 0.877
+    "spelling_count_accuracy": 0.8797
   }
 }

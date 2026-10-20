@@ -1,7 +1,7 @@
 {
   "samples": 5121,
   "stress": {
-    "words": 60856,
+    "words": 60854,
     "accuracy": 0.9699,
     "first_reading_accuracy": 0.9178,
     "by_source": {
@@ -10,8 +10,8 @@
         "accuracy": 0.9811
       },
       "guess": {
-        "words": 5510,
-        "accuracy": 0.8811
+        "words": 5508,
+        "accuracy": 0.8809
       },
       "mark": {
         "words": 1677,
@@ -27,8 +27,8 @@
   },
   "rhyme_pairs": {
     "pairs": 33798,
-    "precision": 0.9408,
-    "recall": 0.8751,
+    "precision": 0.9409,
+    "recall": 0.8752,
     "f1": 0.9068
   }
 }
