@@ -1,0 +1,144 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still circle round the pier,\nThe nets hang drying in the sun,\nBut not one sail has come this year,\nThe harbor bell rings out for none.\n[Chorus]\nSo sing, my love, of ships gone by,\nOf masts that rose like winter trees;\nThe lighthouse burns against the sky\nAnd guides no keel across the seas.\n[Verse 2]\nThe chandler's shop has shut its door,\nThe young ones leave on morning trains,\nWhile old men sit along the shore\nAnd count the rust on anchor chains.\n"
+    },
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSandals swinging in my hand,\nFootprints fading in the sand,\nRadio is playing low,\nNeither of us wants to go.\n[Chorus]\nHold me till the morning light,\nSummer ends tonight, tonight,\nDance until the stars burn out,\nThat's what summer's all about.\n[Verse 2]\nAutumn's waiting at the door,\nKiss me like the year before,\nSalty hair and sunburned skin,\nLet the final wave roll in.\n"
+    },
+    {
+      "task": "hy-iamb",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՆորից եկա պապիս հին տուն,\nԿանգնած եմ լուռ իր քար շեմին,\nՀիշում եմ մի դեղին աշուն,\nԵվ մայրս էր բաց պատուհանին։\n[Chorus]\nԻմ տուն, ես միշտ հիշում եմ քեզ,\nՔո բակը լի էր արևով,\nՈւր մայրը օրորում էր մեզ\nՀացի բույրով ու մեծ սիրով։\n[Verse 2]\nԱյսօր պատին կա լոկ մի հուշ,\nՈւ ժամացույցն է լուռ վաղուց,\nԲայց մոր օրորն է միշտ անուշ,\nԵվ սերն է դեռ կանչում հեռուց։\n"
+    },
+    {
+      "task": "hy-lullaby",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՕրոր, օրոր, բալիկ,\nԱրդեն եկել է քուն,\nԼուսինը փայլում է,\nՓակիր աչքերդ, սիրուն։\n[Chorus]\nՕրոր, օրոր, նանի,\nԼուռ են հիմա բոլոր,\nԾառերն էլ են հոգնած,\nԵրգում եմ քեզ օրոր։\n[Verse 2]\nՓակիր աչքերդ, հոգիս,\nՃախրիր դու երազում,\nԵս կողքիդ եմ հիմա,\nՈւ քեզ շատ եմ սիրում։\n"
+    },
+    {
+      "task": "hy-mother",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, հեռու եմ ես քեզնից,\nՀիշում եմ քո ձայնը նորից,\nԵրբ գիշերն իջնում է կամաց,\nԻմ աչքերն են արցունքից թաց։\n[Chorus]\nՄայրիկ, մայրիկ, իմ մայր անուշ,\nԴու ես իմ ամենաթանկ հուշ,\nԹող քամին քեզ բերի իմ սեր\nՈւ կարոտ, ու ջերմ համբույրներ։\n[Verse 2]\nՄի օր ես ետ եմ գալու տուն,\nՈւ նորից պիտի գա գարուն,\nԾիրանենու տակ՝ մեր բակում\nՔո ձեռքերն եմ ես համբուրում։\n"
+    },
+    {
+      "task": "hy-mountains",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրագած, քո գագաթին ձյուն,\nԱմպերին ես դու հասնում,\nՔո փեշերին՝ գյուղ, այգի, տուն,\nՈւ հովիվն է երգ երգում։\n[Chorus]\nԱրագած, մեր քաջ պահապան,\nԴու կանգնած ես դարերով,\nՔեզ է նայում ողջ Հայաստան,\nՔեզ է երգում մեծ սիրով։\n[Verse 2]\nԳյուղերում վաղ լուսաբացին\nԹոնրից տաք հաց է բուրում,\nՊապերը կանգնած են շեմին,\nՔեզ են նայում ու սիրում։\n"
+    },
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳիշերն իջավ Երևանում,\nԼույսերն են վառվել ամեն տեղ,\nԿասկադի մոտ, լուռ փողոցում,\nԱչքերս քո ճամփին են այստեղ։\n[Chorus]\nԱրի, իմ սեր, մի ուշանա,\nԵս քեզ բերել եմ կարմիր վարդ,\nԹող ամբողջ քաղաքն իմանա,\nԴու ես իմ միակ սիրած մարդ։\n"
+    },
+    {
+      "task": "hy-spring",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳարնան առաջին տաք օր,\nԱրևն է շողում բակում,\nԾաղկել են ծառերն այսօր,\nՈւ հանկարծ քեզ եմ տեսնում։\n[Chorus]\nԳարուն է, իմ անուշ յար,\nԾաղիկներ եմ բերել քեզ,\nԱմեն ինչ է քեզ համար,\nԵրկինքն էլ նայում է մեզ։\n[Verse 2]\nՔայլում ենք ծառուղիով,\nՔամին մազերդ է շոյում,\nԱչքերդ լի են ծիծաղով,\nԵս քեզ արդեն եմ սիրում։\n"
+    },
+    {
+      "task": "ru-city",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nГород не спит — и мне не спится,\nНеон мигает в мокром стекле,\nШумит огромная столица,\nОстывший чай на моём столе.\n[Chorus]\nА я опять смотрю в потолок,\nСчитаю окна в чужих домах,\nЯ в этом городе одинок,\nИ ночь гудит, как ток в проводах.\n[Verse 2]\nСирена где-то воет вдали,\nЗа стеной рыдает гитара,\nДома, как корабли, на мели,\nИ в лужах — отблеск фар с бульвара.\n"
+    },
+    {
+      "task": "ru-road",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nУтро. Пусто. Спит дорога.\nМы с тобой опять в пути.\nСтарый друг, ещё немного —\nЮг нас ждёт, давай, крути!\n[Chorus]\nЕдем к югу на рассвете,\nОкна настежь, ветер в грудь.\nЛучше нет на белом свете,\nЧем вдвоём держать свой путь.\n[Verse 2]\nПомнишь, мы мечтали в школе\nСесть в машину — и вперёд?\nНынче — степь, подсолнух в поле,\nТам, где море, — наш восход.\n"
+    },
+    {
+      "task": "ru-sea",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nНад морем ложится туман,\nШумит за скалой океан,\nМаяк на утёсе не спит\nИ в тёмную даль он глядит.\n[Chorus]\nЯ жду на пустом берегу,\nТвой голос в душе стерегу.\nГори же, маяк, до утра —\nТебе возвращаться пора.\n[Verse 2]\nПроходят года и года,\nНо я прихожу, как всегда.\nЛишь чайки кричат надо мной,\nИ жду я тебя, мой родной.\n"
+    },
+    {
+      "task": "ru-winter",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nМетель кружит над спящим садом,\nФонарь мерцает за окном,\nИ тишина ложится рядом\nСо мной за стынущим столом.\n[Chorus]\nА писем нет, и нет ответа,\nЛишь снег засыпал всё крыльцо.\nТы обещал писать до лета —\nНо помню я твоё лицо.\n[Verse 2]\nПочтарь прошёл, не постучался,\nИ вечер синий догорел.\nМне только голос твой остался\nДа снег, что за стеклом белел.\n"
+    }
+  ]
+}
