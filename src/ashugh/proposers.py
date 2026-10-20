@@ -98,6 +98,10 @@ def load_candidates(path: str | Path) -> dict[int, list[str]]:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as e:
         raise ProposerError(f"{path}: {e}") from None
+    return parse_candidates(data, str(path))
+
+
+def parse_candidates(data, path: str = "candidates") -> dict[int, list[str]]:
     if isinstance(data, list):
         pairs = []
         for entry in data:

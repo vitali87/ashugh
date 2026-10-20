@@ -1,4 +1,5 @@
-"""Command line: ashugh scan | fit | pick | translate | suno | probe | syl | rhyme | spec."""
+"""Command line: ashugh scan | fit | pick | translate | suno | probe | syl | rhyme | spec |
+mcp | lsp."""
 
 from __future__ import annotations
 
@@ -205,6 +206,18 @@ def cmd_probe_score(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    from .mcp import serve
+
+    return serve()
+
+
+def cmd_lsp(args: argparse.Namespace) -> int:
+    from .lsp import serve
+
+    return serve()
+
+
 def cmd_translate(args: argparse.Namespace) -> int:
     proposer = make_proposer(args.proposer, args.model, args.effort)
     result = translate_song(
@@ -336,6 +349,9 @@ def _more_commands(sub) -> None:
     su.add_argument("--no-tags", action="store_true", help="leave section tags alone")
     su.add_argument("--policy", help="probe policy JSON choosing the Armenian mode per word")
     su.set_defaults(func=cmd_suno)
+
+    sub.add_parser("mcp", help="run the MCP server on stdio").set_defaults(func=cmd_mcp)
+    sub.add_parser("lsp", help="run the language server on stdio").set_defaults(func=cmd_lsp)
 
     pr = sub.add_parser("probe", help="measure how Suno pronounces different spellings")
     prs = pr.add_subparsers(dest="probe", required=True)
