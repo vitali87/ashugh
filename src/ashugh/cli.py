@@ -19,6 +19,13 @@ from .suno import format_song, load_policy
 from .translate import derive_spec, parse_keep, translate_song
 
 
+def _positive(value: str) -> int:
+    n = int(value)
+    if n < 1:
+        raise argparse.ArgumentTypeError(f"must be 1 or more, got {value}")
+    return n
+
+
 def _read(path: str) -> str:
     """The file as saved: its line endings kept, a BOM dropped."""
     if path == "-":
@@ -360,7 +367,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     q = sub.add_parser("requests", help="the repair requests for a song's failing lines, as JSON")
     _song_args(q)
-    q.add_argument("-n", type=int, default=6, help="candidates to ask for per line")
+    q.add_argument("-n", type=_positive, default=6, help="candidates to ask for per line")
     q.set_defaults(func=cmd_requests)
 
     k = sub.add_parser("pick", help="choose among candidate lines you already have")
@@ -402,8 +409,10 @@ def _proposer_args(p: argparse.ArgumentParser) -> None:
     )
     p.add_argument("--model", help=f"Claude model (default {DEFAULT_MODEL})")
     p.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
-    p.add_argument("--rounds", type=int, default=3, help="proposal rounds (default 3)")
-    p.add_argument("-n", type=int, default=6, help="candidates per line per round (default 6)")
+    p.add_argument("--rounds", type=_positive, default=3, help="proposal rounds (default 3)")
+    p.add_argument(
+        "-n", type=_positive, default=6, help="candidates per line per round (default 6)"
+    )
 
 
 def _fit_args(p: argparse.ArgumentParser) -> None:
@@ -474,7 +483,7 @@ def _more_commands(sub) -> None:
     eq = evs.add_parser("requests", help="repair requests of failing drafts, for an outside agent")
     eq.add_argument("tasks")
     eq.add_argument("--drafts", required=True, help="folder of <task id>.txt drafts")
-    eq.add_argument("-n", type=int, default=6)
+    eq.add_argument("-n", type=_positive, default=6)
     eq.add_argument("-o", "--output")
     eq.set_defaults(func=cmd_eval_requests)
     ea = evs.add_parser("apply", help="pick each draft against an agent's candidates")

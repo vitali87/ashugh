@@ -81,11 +81,15 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
     for k, token in enumerate(words):
         w = _word(token, lang)
         reading = w.readings[0]
+        seen: set[str] = set()
         for mode in modes:
             if lang == "hy":
                 shown = format_song(token, armenian=mode, tags=False).text
             else:
                 shown = _russian_variant(token, reading.stress, mode)
+            if shown in seen:
+                continue  # о́блака: caps on the first letter is the acute, one clip is enough
+            seen.add(shown)
             line = f"{shown}, {shown}, {shown}"
             plan.append(
                 Probe(

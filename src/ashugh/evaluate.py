@@ -152,7 +152,8 @@ class DirWriter:
     def write(self, task: Task) -> str:
         path = self.folder / f"{task.id}.txt"
         try:
-            return path.read_text(encoding="utf-8")
+            with open(path, encoding="utf-8-sig", newline="") as fh:  # its line endings kept
+                return fh.read()
         except (OSError, UnicodeDecodeError) as e:
             raise ProposerError(f"no draft for {task.id}: {e}") from None
 
@@ -381,6 +382,6 @@ def apply_candidates(
             result = fit_song(text, task.spec, StaticProposer(parsed), rounds=1, lang=task.language)
             text = result.text
             row.update(changes=len(result.changes), unresolved=len(result.unresolved))
-        (out / f"{task.id}.txt").write_text(text, encoding="utf-8")
+        (out / f"{task.id}.txt").write_text(text, encoding="utf-8", newline="")
         rows.append(row)
     return rows

@@ -261,6 +261,8 @@ def load(path: str | Path) -> Spec:
             data = tomllib.load(fh)
     except tomllib.TOMLDecodeError as e:
         raise SpecError(f"{path}: {e}") from None
+    except UnicodeDecodeError:
+        raise SpecError(f"{path}: not UTF-8 text") from None
     return from_dict(data, str(path))
 
 

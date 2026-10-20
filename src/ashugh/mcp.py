@@ -27,6 +27,7 @@ from collections.abc import Callable
 
 from . import __version__, meter, report, rhyme
 from .fit import fit_song
+from .lang import ANALYZERS
 from .proposers import ProposerError, StaticProposer, parse_candidates
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, dumps, loads, template
@@ -47,6 +48,13 @@ def _opt(args: dict, key: str) -> str | None:
     return value
 
 
+def _lang(args: dict) -> str | None:
+    lang = _opt(args, "lang")
+    if lang and lang not in ANALYZERS:
+        raise ToolError(f"lang must be one of {', '.join(sorted(ANALYZERS))}, not {lang!r}")
+    return lang
+
+
 def _str(args: dict, key: str) -> str:
     value = _opt(args, key)
     if value is None:
@@ -57,7 +65,7 @@ def _str(args: dict, key: str) -> str:
 def _spec(args: dict) -> Spec:
     text = _opt(args, "spec")
     spec = loads(text, "spec") if text else Spec()
-    lang = _opt(args, "lang")
+    lang = _lang(args)
     if lang:
         spec.language = lang
     return spec
@@ -69,7 +77,7 @@ def t_scan(args: dict) -> dict:
 
 def t_syllables(args: dict) -> dict:
     lines = []
-    for ln in analyze_lines(_str(args, "text"), _spec(args), _opt(args, "lang")):
+    for ln in analyze_lines(_str(args, "text"), _spec(args), _lang(args)):
         f = meter.fit(ln.words, meter.parse_meter(_opt(args, "meter") or "free")[0])
         sung = " ".join(w.sung(f.stresses.get(i), mark=True) for i, w in enumerate(ln.words))
         ambiguous = [w.text for w in ln.words if w.ambiguous and w.size > 1]
@@ -87,7 +95,7 @@ def t_syllables(args: dict) -> dict:
 
 def t_rhyme(args: dict) -> dict:
     a, b = _str(args, "a"), _str(args, "b")
-    lang = _opt(args, "lang")
+    lang = _lang(args)
     lines = analyze_lines(f"{a}\n{b}", Spec(language=lang), lang)
     if len(lines) != 2:
         raise ToolError("a and b must each be a word or a line")
@@ -123,14 +131,14 @@ def t_suno(args: dict) -> dict:
 def t_derive_spec(args: dict) -> dict:
     keep = parse_keep(_opt(args, "keep"))
     data = derive_spec(scan(_str(args, "lyrics")), keep)
-    lang = _opt(args, "lang")
+    lang = _lang(args)
     if lang:
         data = {"language": lang, **data}
     return {"toml": dumps(data)}
 
 
 def t_spec_template(args: dict) -> dict:
-    return {"toml": template(_opt(args, "lang") or "hy")}
+    return {"toml": template(_lang(args) or "hy")}
 
 
 def _schema(required: list[str], **props: str) -> dict:
@@ -184,6 +192,7 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             lyrics="the lyrics",
             spec=SPEC_DOC,
             candidates="line number -> candidate lines",
+            lang=LANG_DOC,
         ),
         t_pick,
     ),
