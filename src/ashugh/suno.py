@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import lyrics
-from .model import ACUTE, Word
+from .model import ACUTE, LICENCES, Word
 from .scan import LineReport, Report, scan
 from .spec import Spec
 
@@ -213,7 +213,7 @@ def _russian(
     letters = token.replace(ACUTE, "")
     marked_by_writer = letters != token
     candidates = [r for r in w.readings if r.stress == chosen] or list(w.readings)
-    spellings = {r.spelling for r in w.readings}
+    spellings = {r.spelling for r in w.readings if r.source not in LICENCES}
     new = letters
     if len(spellings) == 1 and "ё" in candidates[0].spelling:
         target = candidates[0].spelling.replace("-", "")

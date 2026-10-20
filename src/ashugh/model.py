@@ -6,6 +6,9 @@ from dataclasses import dataclass, field
 
 from .phon import is_vowel
 
+# Readings that verse allows but speech does not: a compound's stress on its second
+# part (en), an unwritten ё read as е in rhyme (ru).
+LICENCES = frozenset({"shift", "e-for-yo"})
 ACUTE = "\u0301"
 
 
@@ -67,7 +70,7 @@ class Word:
     @property
     def ambiguous(self) -> bool:
         """More than one stress the language allows, not counting verse licences."""
-        return len({r.stress for r in self.readings if r.source != "shift"}) > 1
+        return len({r.stress for r in self.readings if r.source not in LICENCES}) > 1
 
     def sung(self, stress: int | None = None, mark: bool = False) -> str:
         if not self.syllables:

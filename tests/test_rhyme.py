@@ -85,3 +85,23 @@ def test_reduced_vowels_after_the_stress_still_rhyme(a, b):
 @pytest.mark.parametrize("a,b", [("окон", "строгий"), ("замок", "бьётся"), ("ночь", "день")])
 def test_non_rhymes_stay_out(a, b):
     assert level(a, b, "ru") not in ("perfect", "near")
+
+
+def test_unwritten_yo_may_rhyme_as_e():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    text = (
+        "В томленьях грусти безнадежной,\nВ тревогах шумной суеты,\n"
+        "Звучал мне долго голос нежный\nИ снились милые черты.\n"
+    )
+    assert scan(text, from_dict({"meter": "iamb4", "rhyme": "AbAb"}), lang="ru").ok
+
+
+def test_a_written_yo_is_not_read_as_e():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    text = "В томленьях грусти безнадёжной,\nЗвучал мне долго голос нежный\n"
+    rep = scan(text, from_dict({"rhyme": "AA"}), lang="ru")
+    assert "rhyme" in [i.code for i in rep.issues]

@@ -2,6 +2,7 @@ import pytest
 
 from ashugh.lang import ru
 from ashugh.lang.ru_lexicon import TABLE, StressTable
+from ashugh.model import LICENCES
 
 
 def stresses(word):
@@ -52,10 +53,11 @@ def test_marks_override_the_table():
 
 
 def test_yo_is_restored():
-    spellings = {r.spelling for r in ru.analyze_word("еще").readings}
-    assert spellings == {"ещё"}
-    spellings = {r.spelling for r in ru.analyze_word("все").readings}
-    assert spellings == {"все", "всё"}
+    def spellings(word):
+        return {r.spelling for r in ru.analyze_word(word).readings if r.source not in LICENCES}
+
+    assert spellings("еще") == {"ещё"}
+    assert spellings("все") == {"все", "всё"}
 
 
 def test_unknown_word_offers_every_vowel():
@@ -162,3 +164,41 @@ def test_suffix_table_lookup():
     assert ru.suffix_prior("информация") == 2
     assert ru.suffix_prior("ы") is None
     assert ru.analyze_word("кракозябрами").readings[0].penalty == 0
+
+
+def test_restored_yo_keeps_an_e_reading_for_rhyme_only():
+    w = ru.analyze_word("безнадежной")
+    assert not w.ambiguous
+    assert {r.spelling for r in w.readings} == {"безнадёжной", "безнадежной"}
+    assert all(r.spelling == "безнадёжной" for r in w.readings if r.source != "e-for-yo")
+    assert all(r.source != "e-for-yo" for r in ru.analyze_word("безнадёжной").readings)
+
+
+@pytest.mark.parametrize(
+    "line,word,stress",
+    [
+        ("Я жду на берегу", "берегу", 2),
+        ("Гуляет он в саду", "саду", 1),
+        ("Дрожит на ветру", "ветру", 1),
+        ("Живём в ладу", "ладу", 1),
+        ("Ты вся в крови", "крови", 1),
+        ("Во степи глухой", "степи", 1),
+        ("Лежит на груди", "груди", 1),
+    ],
+)
+def test_second_locative_after_v_and_na(line, word, stress):
+    from ashugh.lang import analyze
+    from ashugh.lyrics import tokenize
+
+    words = analyze("ru", tokenize(line), {})
+    (w,) = [x for x in words if x.norm == word]
+    assert w.stress_options() == [stress]
+
+
+@pytest.mark.parametrize("line,word", [("Иду к берегу", "берегу"), ("Нет крови", "крови")])
+def test_no_locative_without_the_preposition(line, word):
+    from ashugh.lang import analyze
+    from ashugh.lyrics import tokenize
+
+    (w,) = [x for x in analyze("ru", tokenize(line), {}) if x.norm == word]
+    assert 0 in w.stress_options()

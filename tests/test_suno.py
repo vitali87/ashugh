@@ -205,3 +205,7 @@ def test_line_separator_is_not_a_line_break():
     text = "Мой тёплый замок\u2028ещё\nНе уходи"
     out = fmt(text, stress="none")
     assert out.split("\n")[1] == "Не уходи"
+
+
+def test_yo_is_still_restored_where_verse_may_read_e():
+    assert fmt("В томленьях грусти безнадежной", stress="none") == "В томленьях грусти безнадёжной"
