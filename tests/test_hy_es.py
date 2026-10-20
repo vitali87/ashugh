@@ -1,5 +1,7 @@
 """ես: the pronoun I [jes], or the auxiliary (you are) [es] that leans on the word before."""
 
+import unicodedata
+
 import pytest
 
 from ashugh import lyrics, meter, rhyme, suno
@@ -52,3 +54,54 @@ def test_the_auxiliary_rhymes_like_its_neighbours():
 )
 def test_latin_letters_follow_the_same_reading(line, want):
     assert suno.format_song(line, armenian="latin", tags=False).text == want
+
+
+def latin(text: str) -> str:
+    out = suno.format_song(text, armenian="latin", tags=False).text
+    return unicodedata.normalize("NFC", out)
+
+
+def test_held_note_pieces_in_armenian_letters_keep_the_writers_marks():
+    out = suno.format_song("Ինչո՞ւ ես լռում, քնի՛ր, օրո՜ր", split="all", tags=False).text
+    assert out == "Ին-չո՞ւ ես լռում, քնի՛ր, օ-րո՜ր"  # the hidden ը stays hidden
+
+
+@pytest.mark.parametrize(
+    "line,want",
+    [
+        ("Ո՞ւր ես, ո՞ւր", "Úr es, úr?"),
+        ("Ինչո՞ւ ես լռում", "Inchú es lərrum?"),
+        ("Օրո՜ր, բալիկ", "Orór, balik!"),
+        ("Ո՞ւր ես։ Եկ", "Úr es? Yek"),
+    ],
+)
+def test_a_question_or_exclamation_mark_goes_to_the_end_of_its_sentence(line, want):
+    assert latin(line) == want
+
+
+def test_a_line_that_is_only_a_backing_vocal_is_romanized_too():
+    assert latin("Քաղաքում\n(Քաղաքին, քաղաքին)") == "Kaghakum\n(Kaghakin, kaghakin)"
+
+
+def test_a_new_line_keeps_the_authors_order_of_full_stop_and_backing_vocal():
+    from ashugh.fit import replace_lines
+
+    text = "Բալիկ իմ, իմ արև։ (օրո՜ր, օրո՜ր)\n"
+    assert replace_lines(text, {1: "Բալիկ իմ ոսկի, իմ գանձ։"}, "hy") == (
+        "Բալիկ իմ ոսկի, իմ գանձ։ (օրո՜ր, օրո՜ր)\n"
+    )
+    text = "I sing a song (oh baby).\n"
+    assert replace_lines(text, {1: "I hum a tune."}, "en") == "I hum a tune (oh baby).\n"
+
+
+def test_the_pick_summary_shows_the_line_as_written(tmp_path, capsys):
+    import json
+
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    song.write_text("Բալիկ իմ, իմ արև։ (օրո՜ր)\n", encoding="utf-8")
+    cands = tmp_path / "c.json"
+    cands.write_text(json.dumps({"1": ["Բալիկ իմ, իմ գանձ։"]}), encoding="utf-8")
+    main(["pick", str(song), "--candidates", str(cands), "--syllables", "5", "--lang", "hy"])
+    assert "→ Բալիկ իմ, իմ գանձ։ (օրո՜ր)" in capsys.readouterr().err

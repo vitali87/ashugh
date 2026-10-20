@@ -58,9 +58,9 @@ def text(report: Report, show_all: bool = False) -> str:
                     continue
                 mark = {"error": "", "warning": "warning: ", "info": "note: "}[issue.severity]
                 label = f"L{issue.line}" if not show_all else ""
-                rows.append(
-                    f"  {_pad(label, 5)}{_pad(mark + issue.message, 34)} {issue.detail}".rstrip()
-                )
+                head = mark + issue.message
+                sep = ": " if _width(head) >= 34 and issue.detail else " "  # not one run-on line
+                rows.append(f"  {_pad(label, 5)}{_pad(head, 34)}{sep}{issue.detail}".rstrip())
         if rows:
             out.append("")
             out.append(_unit_header(u))
@@ -95,6 +95,7 @@ def _line_dict(lr: LineReport) -> dict:
             {
                 "text": w.text,
                 "syllables": [s.text for s in w.syllables],
+                "dropped": w.drop if i in lr.fit.elided else None,  # sung one shorter
                 "stress": lr.fit.stresses.get(i),
                 "source": w.reading(lr.fit.stresses.get(i)).source if w.readings else None,
             }

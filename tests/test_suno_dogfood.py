@@ -27,7 +27,8 @@ def test_a_written_stress_mark_survives_schwa_and_latin_modes():
 
 
 def test_a_question_mark_on_a_word_becomes_a_question_in_latin():
-    assert fmt("Ո՞ւր ես գնում\n", armenian="latin").split()[0].endswith("?")
+    out = fmt("Ո՞ւր ես գնում\n", armenian="latin")
+    assert out.rstrip().endswith("gənum?") and "?" not in out.split()[0]  # the sentence asks
 
 
 def test_the_auxiliary_after_a_linking_n_has_no_y():

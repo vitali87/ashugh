@@ -163,10 +163,20 @@ def format_song(
             last = b
         pieces.append(body[last:])
         line_out = "".join(pieces)
-        if lr.line.lang == "hy" and default_mode != "script":
-            line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, notes, lr)
+        armenian_line = lr.line.lang == "hy" or any(hy.is_armenian(ch) for ch in line_out)
+        if armenian_line and default_mode != "script":
+            line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, notes)
+            line_out = _place_marks(line_out)
         line_out = _russian_asides(line_out, lr.line.number, notes)
         raw[lr.line.number - 1] = line_out + ending
+    sung = {lr.line.number for lr in report.lines}
+    for k, line_raw in enumerate(raw):  # a line that is only a backing vocal: (օ՜, օ՜)
+        if k + 1 in sung or lyrics.TAG_RE.match(line_raw) or "(" not in line_raw:
+            continue
+        body, ending = _split_ending(line_raw)
+        if default_mode != "script" and any(hy.is_armenian(ch) for ch in body):
+            body = _armenian_asides(body, words_policy, default_mode, schwa, notes)
+        raw[k] = _russian_asides(body, k + 1, notes) + ending
     out = "".join(raw)
     if tags:
         out = _retag(out, report, notes)
@@ -176,9 +186,7 @@ def format_song(
 ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
 
 
-def _armenian_asides(
-    line: str, policy: dict, mode: str, schwa: str, notes: list[Note], lr: LineReport
-) -> str:
+def _armenian_asides(line: str, policy: dict, mode: str, schwa: str, notes: list[Note]) -> str:
     """The backing vocals in parentheses spelled like the rest of the line, and in
     Latin letters the Armenian full stop and pause as . and ,."""
 
@@ -192,7 +200,7 @@ def _armenian_asides(
             how = policy.get(w.norm, mode)
             out += [inner[last:a], _armenian(w, token, False, how, False, schwa, 0, [])]
             last = b
-        return "".join(out) + inner[last:]
+        return _place_marks("".join(out) + inner[last:])
 
     line = lyrics.PAREN_RE.sub(aside, line)
     if mode == "latin":
@@ -379,14 +387,14 @@ def _armenian(
         parts = [_written(s.text, s.epenthetic) for s in w.syllables]
     mark = next((ch for ch in token if ch in hy.STRESS_MARKS), None)
     stressed = w.readings[0].stress if mark and w.readings else None
-    if mark and mode != "script" and stressed is not None and stressed < len(parts):
+    if mark and stressed is not None and stressed < len(parts):
         parts[stressed] = _put_mark(parts[stressed], mark, mode)  # the writer's own stress
     parts = _merge_vowelless(parts, mode)
     new = ("-" if hold else "").join(parts)
     if mode == "latin":
         new = _case_like(token, new)
         if mark in LATIN_MARKS:
-            new += LATIN_MARKS[mark]  # ո՞ւր: a question in Latin letters
+            new += SENTENCE_MARKS[mark]  # ո՞ւր: its sentence is a question
     if mode == "script" and not hold:
         return token
     if new != token:
@@ -394,19 +402,42 @@ def _armenian(
     return new
 
 
-# ՞ and ՜ sit on the stressed vowel of a question or an exclamation.
+# ՞ and ՜ sit on the stressed vowel of a question or an exclamation; in Latin
+# letters the ? or ! goes to the end of the sentence, held meanwhile by a sign.
 LATIN_MARKS = {"\u055e": "?", "\u055c": "!"}
+SENTENCE_MARKS = {"\u055e": "\x01", "\u055c": "\x02"}
+PENDING = {"\x01": "?", "\x02": "!"}
 ARMENIAN_VOWEL_LETTERS = set("աեէըիոօԱԵԷԸԻՈՕ")
 
 
 def _put_mark(syllable: str, mark: str, mode: str) -> str:
     """The stress mark back on the syllable's vowel: ՛ ՜ ՞ in Armenian letters, an
     acute in Latin ones."""
-    vowels = ARMENIAN_VOWEL_LETTERS if mode == "schwa" else set("aeiouəAEIOU")
+    latin = mode == "latin"
+    vowels = set("aeiouəAEIOU") if latin else ARMENIAN_VOWEL_LETTERS
     for k, ch in enumerate(syllable):
         if ch in vowels:
-            return syllable[: k + 1] + (mark if mode == "schwa" else ACUTE) + syllable[k + 1 :]
+            return syllable[: k + 1] + (ACUTE if latin else mark) + syllable[k + 1 :]
     return syllable
+
+
+def _place_marks(text: str) -> str:
+    """Each pending ? or ! at the end of its sentence: Úr es, úr? and Úr es? Yek."""
+    out, pending = [], ""
+    for ch in text:
+        if ch in PENDING:
+            pending = pending or PENDING[ch]
+            continue
+        if pending and ch in ".?!":
+            out.append(pending if ch == "." else ch)
+            pending = ""
+            continue
+        out.append(ch)
+    line = "".join(out)
+    if pending:
+        body = line.rstrip()
+        line = body + pending + line[len(body) :]
+    return line
 
 
 def _written(text: str, epenthetic: bool) -> str:

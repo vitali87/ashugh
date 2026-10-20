@@ -1,5 +1,7 @@
 """Round five of dogfooding: RIFMA's errors and three expert users."""
 
+import unicodedata
+
 import pytest
 
 from ashugh.lang import ru
@@ -184,3 +186,42 @@ def test_russian_backing_vocals_get_their_yo_back():
     out = suno.format_song("Это сердце мое (мое, еще)", tags=False).text
     assert out == "Это сердце моё (моё, ещё)"
     assert suno.format_song("Я жду (все)", tags=False).text == "Я жду (все)"  # все or всё
+
+
+def syl_output(capsys, *argv: str) -> str:
+    from ashugh.cli import main
+
+    main(["syl", *argv])
+    return unicodedata.normalize("NFC", capsys.readouterr().out)
+
+
+def test_syl_shows_a_dropped_syllable_as_the_count_has_it(capsys):
+    out = syl_output(capsys, "--meter", "iamb", "And every sailor that I know")
+    assert out.split()[0] == "8" and "é-ve-ry" not in out and "éve-ry" in out
+    out = syl_output(capsys, "--lang", "hy", "Դու իմ սերն ես")
+    assert out.split()[0] == "4" and "սե́-ր(ը)ն" in out
+
+
+def test_scan_shows_an_english_drop_too():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    lr = scan(
+        "And every sailor that I know\n", from_dict({"language": "en", "meter": "iamb4"})
+    ).lines[0]
+    assert "eve-ry" in lr.sung
+
+
+def test_the_json_names_the_dropped_syllable():
+    from ashugh.report import as_dict
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    rep = scan("And every sailor that I know\n", from_dict({"language": "en", "meter": "iamb4"}))
+    (line,) = as_dict(rep)["sections"][0]["lines"]
+    every = line["words"][1]
+    assert every["dropped"] == 1 and len(every["syllables"]) - 1 == 2
+
+
+def test_the_acute_lands_on_a_syllable_with_ev(capsys):
+    assert "ա-րև́" in syl_output(capsys, "--lang", "hy", "արև")

@@ -515,7 +515,8 @@ def replace_lines(
     A line's closing punctuation stays when the new text has none, written the
     way lang writes it (the Armenian full stop is ։) when lang is given, and so
     does a backing vocal that ends it, unless the new text brings its own; the new
-    line's own full stop then goes after it. With asides=False (a translation) the
+    line's own full stop then goes where the old one was, before or after it.
+    With asides=False (a translation) the
     backing vocal, in the source's language, is left out.
     """
     if not new:
@@ -537,7 +538,9 @@ def replace_lines(
             paren, after = (aside.group(1), aside.group(2)) if aside and asides else ("", "")
             own = PUNCT_RE.search(content)
             mark = PUNCT_RE.search(body)
-            if own and paren:  # I sing a lonely tune (oh baby).
+            if own and paren and mark and not after:  # Բալիկ իմ, իմ գանձ։ (օրո՜ր)
+                content += paren
+            elif own and paren:  # I sing a lonely tune (oh baby).
                 content = content[: own.start()] + paren + own.group(0).strip()
             elif not own:
                 if mark:

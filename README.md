@@ -181,12 +181,15 @@ ashugh suno song.hy.txt --armenian latin        # əspasum, Məkərtich
 ashugh suno song.txt --split last               # пра-вил: syllables of held notes
 ```
 
-* Russian: ё is restored only where the dictionary is sure.
+* Russian: ё is restored only where the dictionary is sure, in backing vocals
+  too.
 * Russian: stress is marked only on words whose stress is ambiguous or
   guessed, by a capital vowel (the convention Suno users rely on) or with
-  `--stress acute`.
+  `--stress acute`, and on a preposition that took the stress (пО лесу).
 * Armenian: kept in script, written with every sung schwa (linking schwas
-  dropped, as they are in speech), or romanized.
+  dropped, as they are in speech), or romanized, backing vocals included; the
+  writer's ՛ ՜ ՞ stay on held-note pieces, and in Latin letters a ՞ or ՜ makes
+  its sentence a question or an exclamation (Ո՞ւր ես, ո՞ւր: Úr es, úr?).
 * Section tags in Russian or Armenian are translated to Suno's names. An
   untagged song gets `[Verse n]` and `[Chorus]` from its repeated stanzas.
 

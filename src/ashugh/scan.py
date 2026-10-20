@@ -59,12 +59,7 @@ class LineReport:
         parts = []
         for i, w in enumerate(self.line.words):
             stress = self.fit.stresses.get(i, w.stress_options()[0])
-            text = w.sung(stress, mark=w.lang == "ru")
-            if i in self.fit.elided and w.drop is not None:
-                syls = [s.text for s in w.syllables]
-                syls[w.drop] = syls[w.drop].replace("ը", "(ը)", 1).replace("Ը", "(Ը)", 1)
-                text = "-".join(syls)
-            parts.append(text)
+            parts.append(w.sung(stress, mark=w.lang == "ru", dropped=i in self.fit.elided))
         return " ".join(p for p in parts if p)
 
     @property

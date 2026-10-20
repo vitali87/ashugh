@@ -9,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import __version__, meter, probe, report, rhyme
+from . import __version__, lyrics, meter, probe, report, rhyme
 from . import lang as languages
 from .fit import FitResult, fit_song
 from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candidates, make_proposer
@@ -124,8 +124,10 @@ def _emit_fit(result: FitResult, args: argparse.Namespace) -> int:
         print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
         return 0 if result.ok else 1
     log = sys.stderr if not args.output else sys.stdout
-    for c in result.changes:
-        print(f"L{c.line}  {c.old}\n   → {c.new}", file=log)
+    written = lyrics.split_lines(result.text)
+    for c in result.changes:  # the line as written, its backing vocal and stop in place
+        shown = written[c.line - 1].strip() if c.line <= len(written) else c.new
+        print(f"L{c.line}  {c.old}\n   → {shown}", file=log)
     for u in result.unresolved:
         print(f"L{u.line}  unresolved: {'; '.join(u.reasons)}", file=log)
     rep = result.report
@@ -148,7 +150,7 @@ def cmd_syl(args: argparse.Namespace) -> int:
         parts = []
         for i, w in enumerate(ln.words):
             st = f.stresses.get(i)
-            sung = w.sung(st, mark=True)
+            sung = w.sung(st, mark=True, dropped=i in f.elided)
             note = ""
             if w.guessed and w.size > 1:
                 note = "?"

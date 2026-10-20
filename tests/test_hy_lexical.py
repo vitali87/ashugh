@@ -301,3 +301,22 @@ def test_a_word_may_end_on_a_fricative_and_m(word, want):
 )
 def test_a_fricative_and_n_or_a_sonorant_and_r_keep_the_schwa(word, want):
     assert sung(word) == want  # 14 of 17 fricative + ն entries split
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [
+        ("Էդուարդ", "Է-դու-արդ"),
+        ("Ռոնալդ", "Ռո-նալդ"),
+        ("Արնոլդ", "Ար-նոլդ"),
+        ("Էդմոնդ", "Էդ-մոնդ"),
+        ("Ջեյմս", "Ջեյմս"),
+        ("Հանս", "Հանս"),
+    ],
+)
+def test_foreign_names_end_on_their_own_consonants(word, want):
+    assert sung(word) == want  # not Է-դու-ա-րըդ, your Eduar
+
+
+def test_a_common_noun_still_takes_the_possessive():
+    assert sung("սիրտդ") == "սիր-տըդ" and sung("տունս") == "տու-նըս"

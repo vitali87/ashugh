@@ -27,3 +27,15 @@ def test_notes_show_only_with_all():
     text = "Լեռն է բոլորին գրկում\n"
     assert "note:" not in report.text(scan(text, spec))
     assert "note: fits if «Լեռն» drops its ը" in report.text(scan(text, spec), show_all=True)
+
+
+def test_a_long_message_is_set_off_from_its_detail():
+    from ashugh.report import text as format_text
+    from ashugh.scan import Issue, scan
+    from ashugh.spec import from_dict
+
+    rep = scan("Սերն է մեր կյանքի լույսը\n", from_dict({"language": "hy", "syllables": 7}))
+    long = "a message long enough to fill its whole column"
+    rep.lines[0].issues.append(Issue(1, "x", "warning", long, "the detail"))
+    shown = format_text(rep, show_all=True)
+    assert f"{long}: the detail" in shown and "ը   the article" in shown

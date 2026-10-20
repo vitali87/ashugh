@@ -80,7 +80,10 @@ class Word:
         """More than one stress the language allows, not counting verse licences."""
         return len({r.stress for r in self.readings if r.source not in LICENCES}) > 1
 
-    def sung(self, stress: int | None = None, mark: bool = False) -> str:
+    def sung(self, stress: int | None = None, mark: bool = False, dropped: bool = False) -> str:
+        """Syllables joined by hyphens; with dropped, the droppable one as the line
+        sings it: an Armenian schwa in brackets (սե-ր(ը)ն), an English syllable run
+        into the one before it (eve-ry)."""
         if not self.syllables:
             return self.text
         parts = []
@@ -89,10 +92,17 @@ class Word:
             if mark and i == stress and self.size > 1:
                 text = mark_stress(text)
             parts.append(text)
+        d = self.drop
+        if dropped and d is not None and 0 <= d < len(parts) and len(parts) > 1:
+            if "ը" in parts[d] or "Ը" in parts[d]:
+                parts[d] = parts[d].replace("ը", "(ը)", 1).replace("Ը", "(Ը)", 1)
+            else:
+                at = d - 1 if d > 0 else 0
+                parts[at : at + 2] = ["".join(parts[at : at + 2])]
         return "-".join(parts)
 
 
-VOWEL_LETTERS = set("аеёиоуыэюяaeiouyաեէըիոօ")
+VOWEL_LETTERS = set("аеёиоуыэюяaeiouyաեէըիոօև")
 
 
 def mark_stress(text: str) -> str:
