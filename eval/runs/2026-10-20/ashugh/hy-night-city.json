@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳիշերն իջավ Երևանում,\nԼույսերն են վառվել ամեն տեղ,\nԿասկադի մոտ, լուռ փողոցում,\nԱչքերս ճամփիդ են այստեղ։\n[Chorus]\nԱրի, իմ սեր, մի ուշանա,\nԵս քեզ բերել եմ կարմիր վարդ,\nԹող ամբողջ քաղաքն իմանա,\nԴու ես իմ միակ սիրած մարդ։\n",
+      "changes": 1,
+      "rounds": 1,
+      "requests": 1
+    }
+  ]
+}

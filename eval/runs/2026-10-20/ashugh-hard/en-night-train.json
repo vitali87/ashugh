@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSteady wheels on silver rails,\nNorthbound through the prairie gales,\nLonely windows black as coal,\nWhistle crying through my soul.\nGrain and fences, mile on mile,\nSleeping towns in single file,\nSomewhere past the county line\nMoonlight spills like summer wine.\n\n[Chorus]\nOh the night train is calling me home,\nThrough the dark where the grasses all sway,\nUnder stars, over fields where I roam,\nTill I wake to the gold of the day.\n\n[Verse 2]\nCoffee cooling, lights turned low,\nFrozen stubble, fields of snow,\nOld man snoring by the door,\nSoldier dreaming of the shore.\nCrossing bells go ringing by,\nSilos tall against the sky,\nHold me, rhythm, hold me tight,\nCarry me across the night.\n\n[Chorus]\nOh the night train is calling me home,\nThrough the dark where the grasses all sway,\nUnder stars, over fields where I roam,\nTill I wake to the gold of the day.\n",
+      "changes": 2,
+      "rounds": 1,
+      "requests": 2
+    }
+  ]
+}

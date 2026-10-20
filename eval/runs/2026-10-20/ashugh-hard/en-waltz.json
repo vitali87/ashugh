@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nDust on the mirrors and dust on the curtain,\nVelvet gone gray at the edge of the stage,\nNobody speaks, but the dancers are certain,\nSomeone has written the end on the page.\nOnce there were hundreds of couples in satin,\nRoses and ribbons and pearls in their hair,\nSwaying all night to a band from Manhattan,\nWaltzing till morning with never a care.\n\n[Verse 2]\nNow there's a padlock, the window is broken,\nPigeons are nesting where trumpeters played,\nOnly a ribbon is left as a token,\nTied to the rail by the couple who stayed.\nHold me once more as the music grows slower,\nOne, two and three, on the boards we know well,\nDip me down low, then a little bit lower,\nKiss me goodbye at the closing-time bell.\n",
+      "changes": 1,
+      "rounds": 1,
+      "requests": 1
+    }
+  ]
+}

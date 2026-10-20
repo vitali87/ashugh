@@ -1,0 +1,15 @@
+{
+  "lines": [
+    {
+      "id": "L15",
+      "candidates": [
+        {"text": "Tied to the rail by the couple who stayed.", "faithfulness": 0.9},
+        {"text": "Tied to the rail where the couple had stayed.", "faithfulness": 0.85},
+        {"text": "Tied to the rail where the last of them stayed.", "faithfulness": 0.85},
+        {"text": "Tied to the rail where the lovers had stayed.", "faithfulness": 0.8},
+        {"text": "Tied by the last of the couples who stayed.", "faithfulness": 0.75},
+        {"text": "Tied to the rail where the dancers had swayed.", "faithfulness": 0.7}
+      ]
+    }
+  ]
+}

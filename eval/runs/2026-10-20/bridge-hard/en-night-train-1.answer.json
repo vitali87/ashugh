@@ -1,0 +1,26 @@
+{
+  "lines": [
+    {
+      "id": "L13",
+      "candidates": [
+        {"text": "Through the dark where the grasses all sway,", "faithfulness": 0.9},
+        {"text": "Through the dark where the grasses will sway,", "faithfulness": 0.85},
+        {"text": "Through the dark where the wildflowers sway,", "faithfulness": 0.85},
+        {"text": "Through the dark where the grass is at play,", "faithfulness": 0.75},
+        {"text": "Through the dark, past the grasses at play,", "faithfulness": 0.75},
+        {"text": "Through the dark where the barley would sway,", "faithfulness": 0.7}
+      ]
+    },
+    {
+      "id": "L29",
+      "candidates": [
+        {"text": "Through the dark where the grasses all sway,", "faithfulness": 0.9},
+        {"text": "Through the dark where the grasses will sway,", "faithfulness": 0.85},
+        {"text": "Through the dark where the wildflowers sway,", "faithfulness": 0.85},
+        {"text": "Through the dark where the grass is at play,", "faithfulness": 0.75},
+        {"text": "Through the dark, past the grasses at play,", "faithfulness": 0.75},
+        {"text": "Through the dark where the barley would sway,", "faithfulness": 0.7}
+      ]
+    }
+  ]
+}
