@@ -93,3 +93,55 @@ def test_counts_on_the_command_line_must_be_positive(tmp_path, capsys, flag):
         main(["fit", str(song), "--proposer", "cmd:true", *flag])
     assert e.value.code == 2
     assert "must be 1 or more" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "word,count",
+    [
+        ("café", 2),
+        ("naïve", 2),
+        ("José", 2),
+        ("résumé", 3),
+        ("Beyoncé", 3),
+        ("Zoë", 2),
+        ("Renée", 2),
+        ("shouldn't've", 3),
+        ("couldn't've", 3),
+        ("we'd've", 2),
+    ],
+)
+def test_accented_english_and_stacked_contractions(word, count):
+    from ashugh.lang import en
+
+    assert en.analyze_word(word).size == count
+
+
+@pytest.mark.parametrize(
+    "word,pieces",
+    [
+        ("laughing", "laugh-ing"),
+        ("weighing", "weigh-ing"),
+        ("couldn't", "could-n't"),
+        ("wouldn't", "would-n't"),
+        ("heartache", "heart-ache"),
+        ("moonlight", "moon-light"),
+        ("beautiful", "beau-ti-ful"),
+        ("reading", "rea-ding"),
+        ("little", "lit-tle"),
+    ],
+)
+def test_english_spelling_pieces(word, pieces):
+    from ashugh.lang import en
+
+    assert "-".join(s.text for s in en.analyze_word(word).syllables) == pieces
+
+
+def test_split_all_follows_the_lines_short_forms():
+    from ashugh import suno
+    from ashugh.spec import from_dict
+
+    line = "Every fire in our hearts is burning"
+    spec = from_dict({"language": "en", "syllables": 9})
+    out = suno.format_song(line + "\n", spec, split="all", tags=False).text.strip()
+    pieces = [p for word in out.split() for p in word.split("-")]
+    assert len(pieces) == 9, out

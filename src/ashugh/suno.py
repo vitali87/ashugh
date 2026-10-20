@@ -244,7 +244,12 @@ def _render(
         after_link = linked and w.norm in hy.AUXILIARIES  # լույսն ես: [es], not the pronoun
         return _armenian(w, token, dropped, mode, hold, schwa, n, notes, after_link)
     if hold and w.size > 1:
-        return "-".join(s.text for s in w.syllables)
+        pieces = [s.text for s in w.syllables]
+        if dropped and w.drop is not None and 0 <= w.drop < len(pieces):
+            d = w.drop  # the line sings it shorter: eve-ry, fire
+            at = d - 1 if d > 0 else 0
+            pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
+        return "-".join(pieces)
     return token
 
 

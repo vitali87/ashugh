@@ -11,6 +11,7 @@ a candidate, and the report warns about them.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from ..model import Reading, Syllable, Word
 from ..table import SortedTable, SuffixPrior
@@ -147,7 +148,9 @@ def is_latin(ch: str) -> bool:
 
 
 def normalize(token: str) -> str:
-    norm = token.lower().replace("’", "'")
+    """Lowercase, plain letters (café -> cafe, naïve -> naive), straight apostrophes."""
+    decomposed = unicodedata.normalize("NFD", token.lower().replace("’", "'"))
+    norm = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     if norm.endswith("in'"):
         return norm.lstrip("'")  # goin': CMUdict lists it, and lookup tries going
     return norm.strip("'")
@@ -197,6 +200,10 @@ def lookup(norm: str) -> list[str] | None:
         raw = TABLE.get(c)
         if raw:
             return raw.split("|")
+    if norm.endswith("'ve"):  # shouldn't've, we'd've: the word, then [əv]
+        base = lookup(norm[:-3])
+        if base:
+            return [v + " AH0 V" for v in base]
     if norm.endswith("'s") and len(norm) > 3:  # bustle's: the word, then its -s
         raw = TABLE.get(norm[:-2])
         if raw:
@@ -273,8 +280,15 @@ def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
 
 
 def split_spelling(token: str, n: int) -> list[str]:
-    """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful."""
+    """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful;
+    could-n't; a compound of two dictionary words at its seam: heart-ache."""
     low = token.lower()
+    if n >= 2 and low.endswith(("n't", "n’t")) and len(_counted_groups(low[:-3])) < n:
+        return split_spelling(token[:-3], n - 1) + [token[-3:]]
+    seam = _compound_seam(low, n)
+    if seam is not None:
+        k, left = seam
+        return split_spelling(token[:k], left) + split_spelling(token[k:], n - left)
     groups = _counted_groups(low)
     if len(groups) < n:  # a silent-looking vowel is sung after all: fi-re
         groups = [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", low)] or groups
@@ -293,6 +307,8 @@ def split_spelling(token: str, n: int) -> list[str]:
         gap = low[end:start]
         if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
+        elif gap.endswith("gh"):
+            onset = 0  # laugh-ing, weigh-ing
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
         cuts.append(start - min(onset, len(gap)))
@@ -305,6 +321,26 @@ def split_spelling(token: str, n: int) -> list[str]:
         half = len(pieces[k]) // 2
         pieces[k : k + 1] = [pieces[k][:half], pieces[k][half:]]
     return pieces
+
+
+MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
+
+
+def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
+    """Where low splits into two dictionary words whose syllables add up to n, and
+    how many the first has; the most even such split."""
+    best = None
+    for k in range(MIN_COMPOUND_PART, len(low) - MIN_COMPOUND_PART + 1):
+        left, right = TABLE.get(low[:k]), TABLE.get(low[k:])
+        if not left or not right or not low[:k].isalpha() or not low[k:].isalpha():
+            continue
+        a = sum(ch.isdigit() for ch in left.split("|")[0])
+        b = sum(ch.isdigit() for ch in right.split("|")[0])
+        if a and b and a + b == n:
+            even = abs(len(low) - 2 * k)
+            if best is None or even < best[0]:
+                best = (even, k, a)
+    return (best[1], best[2]) if best else None
 
 
 def _guess_phones(norm: str) -> tuple[str, ...]:
@@ -336,6 +372,9 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     user = (overrides or {}).get(norm)
     if user:
         variants = [user] if any(ch.isdigit() for ch in user) else variants
+    elif variants and token.lower().endswith("é"):  # résumé: the reading that sings its é
+        voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
+        variants = voiced + [v for v in variants if v not in voiced]
     word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
     if not variants:
         return _guessed(word, token, norm)
