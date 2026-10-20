@@ -13,7 +13,7 @@ from __future__ import annotations
 from .fit import Change, FitResult, Unresolved, _variables, replace_lines, run
 from .lang import ANALYZERS
 from .proposers import Proposer
-from .scan import Report, UnitReport, scan
+from .scan import Issue, Report, UnitReport, scan
 from .spec import Spec, from_dict
 
 KEEP = ("syllables", "meter", "rhyme", "endings")
@@ -147,7 +147,15 @@ def translate_with_spec(
                 Change(k, var.lr.line.text, text, round(chosen.weight, 3) if chosen else 0.0)
             )
     out = replace_lines(src.text, new, lang=target)
-    return FitResult(out, scan(out, spec, lang=target), changes, unresolved, used, asked)
+    report = scan(out, spec, lang=target)
+    for lr in report.lines:  # still the source's words: not a translation that passes
+        if lr.line.number in variables and lr.line.number not in new:
+            lr.issues.append(
+                Issue(
+                    lr.line.number, "translate", "error", "not translated", "no candidate came back"
+                )
+            )
+    return FitResult(out, report, changes, unresolved, used, asked)
 
 
 def _first_attempt(rejected: list[tuple[str, str]]) -> str | None:

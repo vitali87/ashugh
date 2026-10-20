@@ -97,7 +97,7 @@ NO_VO = {"ով", "ովքեր"}
 
 # The auxiliary "to be": no stress of its own, leans on the word before it.
 AUXILIARIES = {"եմ", "ես", "է", "ենք", "եք", "են", "էի", "էիր", "էր", "էինք", "էիք", "էին"}
-CLITICS = AUXILIARIES | {"ու", "և", "եւ", "էլ", "թե", "որ", "մի", "ի"}
+CLITICS = AUXILIARIES | {"ու", "և", "եւ", "եվ", "էլ", "թե", "որ", "մի", "ի"}  # Եվ opens a sentence
 
 PROTHESIS_FIRST = {"s", "z", "ʃ"}
 MAX_CODA = 2

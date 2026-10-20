@@ -26,6 +26,7 @@ from .spec import Spec
 
 MAX_LINE = 300
 PUNCT_RE = re.compile(r"[,.;:!?…։՝—-]+\s*$")  # not ՛ ՜ ՞: they mark a stressed vowel
+ASIDE_RE = re.compile(r"\s*\([^)]*\)[,.;:!?…։՝]*\s*$")  # a backing vocal ending the line
 TO_ARMENIAN = str.maketrans({".": "։"})
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
@@ -428,7 +429,8 @@ def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> st
     """text with the given 1-based lines replaced, indentation and line endings kept.
 
     A line's closing punctuation stays when the new text has none, written the
-    way lang writes it (the Armenian full stop is ։) when lang is given.
+    way lang writes it (the Armenian full stop is ։) when lang is given, and so
+    does a backing vocal that ends it, unless the new text brings its own.
     """
     if not new:
         return text
@@ -440,11 +442,19 @@ def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> st
             ending = line[len(body) :]
             lead = body[: len(body) - len(body.lstrip())]
             body = body[len(lead) :]
+            aside = ASIDE_RE.search(body)
+            if aside and "(" in content:
+                lines[number - 1] = lead + content + ending
+                continue
+            if aside:
+                body = body[: aside.start()]
             mark = PUNCT_RE.search(body)
             if mark and not PUNCT_RE.search(content):
                 tail = mark.group(0)
                 if lang is not None and tail.strip() in (".", "։", "՝"):  # not an ellipsis
                     tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
                 content += tail  # keep the line's closing comma or full stop
+            if aside:
+                content += aside.group(0)
             lines[number - 1] = lead + content + ending
     return "".join(lines)

@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import lyrics
+from .lang import hy
 from .model import ACUTE, LICENCES, Word
 from .scan import LineReport, Report, scan
 from .spec import Spec
@@ -161,11 +162,41 @@ def format_song(
             pieces.append(new)
             last = b
         pieces.append(body[last:])
-        raw[lr.line.number - 1] = "".join(pieces) + ending
+        line_out = "".join(pieces)
+        if lr.line.lang == "hy" and default_mode != "script":
+            line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, notes, lr)
+        raw[lr.line.number - 1] = line_out + ending
     out = "".join(raw)
     if tags:
         out = _retag(out, report, notes)
     return SunoResult(out, notes)
+
+
+ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
+
+
+def _armenian_asides(
+    line: str, policy: dict, mode: str, schwa: str, notes: list[Note], lr: LineReport
+) -> str:
+    """The backing vocals in parentheses spelled like the rest of the line, and in
+    Latin letters the Armenian full stop and pause as . and ,."""
+
+    def aside(m: re.Match) -> str:
+        inner = m.group(0)
+        out, last = [], 0
+        for a, b, token in lyrics.word_spans(inner):
+            if not any(hy.is_armenian(ch) for ch in token):
+                continue
+            w = hy.analyze_word(token)
+            how = policy.get(w.norm, mode)
+            out += [inner[last:a], _armenian(w, token, False, how, False, schwa, 0, [])]
+            last = b
+        return "".join(out) + inner[last:]
+
+    line = lyrics.PAREN_RE.sub(aside, line)
+    if mode == "latin":
+        line = line.translate(ARMENIAN_STOPS)
+    return line
 
 
 def _split_ending(line: str) -> tuple[str, str]:
@@ -208,7 +239,10 @@ def _render(
         new = _russian(w, token, lr.fit.stresses.get(i), stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy":
-        return _armenian(w, token, dropped, mode, hold, schwa, n, notes)
+        prev = lr.line.words[i - 1] if i > 0 else None
+        linked = prev is not None and prev.lang == "hy" and prev.drop == prev.size - 1
+        after_link = linked and w.norm in hy.AUXILIARIES  # լույսն ես: [es], not the pronoun
+        return _armenian(w, token, dropped, mode, hold, schwa, n, notes, after_link)
     if hold and w.size > 1:
         return "-".join(s.text for s in w.syllables)
     return token
@@ -288,10 +322,13 @@ def _armenian(
     schwa: str,
     n: int,
     notes: list[Note],
+    after_link: bool = False,
 ) -> str:
     drop = w.drop if dropped else None
     if mode == "latin":
         parts = [_latin(s.phones, k == drop, schwa) for k, s in enumerate(w.syllables)]
+        if after_link and parts and parts[0].startswith("y"):
+            parts[0] = parts[0][1:]
     elif mode == "schwa":
         parts = [
             s.text.replace("ը", "", 1).replace("Ը", "", 1) if k == drop else s.text
@@ -299,15 +336,36 @@ def _armenian(
         ]
     else:
         parts = [_written(s.text, s.epenthetic) for s in w.syllables]
+    mark = next((ch for ch in token if ch in hy.STRESS_MARKS), None)
+    stressed = w.readings[0].stress if mark and w.readings else None
+    if mark and mode != "script" and stressed is not None and stressed < len(parts):
+        parts[stressed] = _put_mark(parts[stressed], mark, mode)  # the writer's own stress
     parts = _merge_vowelless(parts, mode)
     new = ("-" if hold else "").join(parts)
     if mode == "latin":
         new = _case_like(token, new)
+        if mark in LATIN_MARKS:
+            new += LATIN_MARKS[mark]  # ո՞ւր: a question in Latin letters
     if mode == "script" and not hold:
         return token
     if new != token:
         notes.append(Note(n, "armenian" if mode != "script" else "split", token, new, mode))
     return new
+
+
+# ՞ and ՜ sit on the stressed vowel of a question or an exclamation.
+LATIN_MARKS = {"\u055e": "?", "\u055c": "!"}
+ARMENIAN_VOWEL_LETTERS = set("աեէըիոօԱԵԷԸԻՈՕ")
+
+
+def _put_mark(syllable: str, mark: str, mode: str) -> str:
+    """The stress mark back on the syllable's vowel: ՛ ՜ ՞ in Armenian letters, an
+    acute in Latin ones."""
+    vowels = ARMENIAN_VOWEL_LETTERS if mode == "schwa" else set("aeiouəAEIOU")
+    for k, ch in enumerate(syllable):
+        if ch in vowels:
+            return syllable[: k + 1] + (mark if mode == "schwa" else ACUTE) + syllable[k + 1 :]
+    return syllable
 
 
 def _written(text: str, epenthetic: bool) -> str:

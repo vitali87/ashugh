@@ -82,6 +82,11 @@ def tokenize(text: str) -> list[str]:
     return [t for _, _, t in token_spans(text)]
 
 
+def word_spans(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, token) of every word, parentheses or not."""
+    return [(m.start(), m.end(), m.group(0)) for m in WORD_RE.finditer(text)]
+
+
 def token_spans(text: str) -> list[tuple[int, int, str]]:
     """(start, end, token) of every word outside parentheses, as tokenize sees them."""
     masked = PAREN_RE.sub(lambda m: " " * len(m.group(0)), text)
