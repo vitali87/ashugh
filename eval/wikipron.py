@@ -9,7 +9,8 @@ the list is rebuilt here without every tenth word, and ashugh is scored on
 those alone: its sung syllables against the vowels of Wiktionary's broad
 transcription, schwas included. A word that Wiktionary transcribes more than
 one way (կերակրել with and without the schwa of its second root) matches
-when ashugh agrees with any of them. --src points at another checkout's src/
+when ashugh agrees with any of them, and a word whose schwa ashugh makes
+optional matches at either length. --src points at another checkout's src/
 to score an older analyzer.
 
 Wiktionary is not a record of singing, so the disagreements are sorted by
@@ -84,7 +85,8 @@ def evaluate(table: dict[str, list[list[str]]], hy, builder) -> dict:
         counts = {sum(1 for p in v if p[0] in VOWELS) for v in variants}
         tally["words"] += 1
         tally["schwa words"] += "ə" in phones
-        if w.size in counts:
+        sizes = {w.size} | ({w.size - 1} if getattr(w, "optional", None) is not None else set())
+        if sizes & counts:  # an optional schwa: ashugh accepts both lengths
             tally["agree"] += 1
             tally["schwa agree"] += "ə" in phones
             continue

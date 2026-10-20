@@ -437,7 +437,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 w = ln.words[i]
                 if w.lang == "hy" and w.drop == w.optional:
                     what = "drops its ը"
-                    detail = "speech often leaves out the ը of a compound's second root"
+                    detail = w.optional_why
                 elif w.lang == "hy":
                     how = (
                         "merges into the vowel before it"

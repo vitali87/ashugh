@@ -280,7 +280,7 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-91.4% of words (86.7% of those written with a schwa). Most of the rest are
+91.6% of words (86.7% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
 glide (դանիացի). The real misses are compounds no listed word explains
@@ -310,6 +310,8 @@ as possible:
   (չորս, մարդ, ադամանդ, մաքս), compounds joined by ա or ե that end in one
   (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
 - the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
+- the article -ն after ր, լ or ն may be sung with a schwa or without it
+  (սե-րըն or սերն, like կյան-քըն or կյանքն): a line may count either;
 - a compound keeps its second root's schwa (մե-ղա-դը-րել, from դրել): 253
   word beginnings that do this are listed from Wiktionary, and since speech
   often drops that schwa, a line may sing it or not;

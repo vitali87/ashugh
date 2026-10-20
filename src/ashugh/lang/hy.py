@@ -243,6 +243,8 @@ def stem_final(norm: str) -> bool:
     """Whether a final ս or դ of norm is the stem's own rather than the possessive."""
     if norm in POSSESSIVE_FORMS:
         return False
+    if norm.endswith("քս") and norm[-3:-2] in "աեէըիոօու":
+        return True  # ռեմիքս, ինդեքս: after a vowel, քս is a loanword's stem
     words = lexical_endings()
     if norm in words or any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
         return True
@@ -407,6 +409,21 @@ def override_error(word: str, value: str) -> str | None:
     return None
 
 
+ARTICLE_SONORANTS = {"ɾ", "l", "n"}  # սերն, ջուրն, տունն; ռն and մն always split
+ARTICLE_PREFERENCE = -0.05  # the short սերն, unless a count asks for սե-րըն
+
+
+def _article_schwa(syllables: list[list[Seg]]) -> list[list[Seg]] | None:
+    """սերն, տունն: the article -ն after a sonorant, as սե-րըն with a schwa that
+    may drop, as կյանքն's does (կյան-քըն, կյանք-նէ)."""
+    last = syllables[-1] if syllables else []
+    if len(last) < 3 or last[-1].ph != "n" or last[-2].ph not in ARTICLE_SONORANTS:
+        return None
+    if not last[-3].vowel:
+        return None
+    return [*syllables[:-1], last[:-2], [last[-2], _schwa(), last[-1]]]
+
+
 def _from_override(spec: str) -> list[list[Seg]]:
     """A [lexicon] entry: syllables separated by "-", hidden ը written out."""
     syllables = []
@@ -420,7 +437,7 @@ def _from_override(spec: str) -> list[list[Seg]]:
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     norm = normalize(token)
     override = (overrides or {}).get(norm)
-    optional = None
+    optional, prefer_short = None, False
     if override:
         syllables = _from_override(override)
         source = "user"
@@ -436,6 +453,9 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
             (k for k, syl in enumerate(syllables) if any(s is t for s in syl for t in inserted)),
             None,
         )
+        article = _article_schwa(syllables)
+        if article is not None and optional is None:
+            syllables, optional, prefer_short = article, len(article) - 1, True
     shown = _display(syllables, token)
     phones = tuple(s.ph for syl in syllables for s in syl)
     clitic = norm in CLITICS
@@ -461,4 +481,12 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         tail_schwa=len(syllables) > 1 and linkable,
         drop=optional,
         optional=optional,
+        drop_cost=ARTICLE_PREFERENCE if prefer_short else 0.0,
+        optional_why=(
+            "the article -ն is sung with or without its ը"
+            if prefer_short
+            else "speech often leaves out the ը of a compound's second root"
+            if optional is not None
+            else ""
+        ),
     )

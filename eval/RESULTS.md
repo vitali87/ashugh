@@ -34,19 +34,21 @@ lists, stems whose final ս or դ is their own and compounds that keep a
 root's schwa, come from the same data, so they are rebuilt without every
 tenth word and ashugh is scored on those 1,768. A word Wiktionary
 transcribes more than one way (կերակրել with and without its root's schwa)
-matches when ashugh agrees with any of them.
+matches when ashugh agrees with any of them, and a word whose schwa ashugh
+makes optional (a compound's, or the article -ն's in սերն) matches at
+either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **91.4%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **91.6%** |
 | the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **86.7%** |
 
-The 152 disagreements left, by kind:
+The 149 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
 | a schwa at the start | 55 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
-| a schwa at the end | 38 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ, մետաքս), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
+| a schwa at the end | 35 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
 | a schwa inside | 27 | compounds whose beginning no listed word shares (աստ-ղա-գը-նաց) |
 

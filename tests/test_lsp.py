@@ -63,7 +63,7 @@ def test_diagnostics_for_the_example(tmp_path):
     diags = publish["params"]["diagnostics"]
     errors = [(d["range"]["start"]["line"], d["code"]) for d in diags if d["severity"] == 1]
     assert errors == [(2, "syllables"), (10, "rhyme"), (13, "final")]
-    first = next(d for d in diags if d["code"] == "syllables")
+    first = next(d for d in diags if d["code"] == "syllables" and d["severity"] == 1)
     assert first["range"]["start"]["character"] == 0
     assert "ըս-պա-սում" in first["message"] and first["source"] == "ashugh"
 

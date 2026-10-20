@@ -26,9 +26,15 @@ def test_final_mn_and_rn_take_a_schwa(word, want):
     assert sung(word) == want
 
 
-@pytest.mark.parametrize("word", ["այն", "նրան", "կարմիր", "սարն", "դարն", "ձայն", "տունն"])
+@pytest.mark.parametrize("word", ["այն", "նրան", "կարմիր", "ձայն"])
 def test_other_final_sonorant_pairs_stay_closed(word):
     assert all("ը" not in s.text for s in hy.analyze_word(word).syllables[-1:])
+
+
+@pytest.mark.parametrize("word", ["սարն", "դարն", "տունն"])
+def test_the_article_n_after_a_sonorant_has_an_optional_schwa(word):
+    w = hy.analyze_word(word)
+    assert w.drop == w.optional == w.size - 1 and "article" in w.optional_why
 
 
 @pytest.mark.parametrize(

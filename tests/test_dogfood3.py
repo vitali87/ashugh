@@ -131,3 +131,49 @@ def test_more_english_pieces(word, pieces):
 def test_split_follows_the_meters_short_form_without_a_count():
     out = fmt("But every time you call my name\n", split="all").strip()
     assert "e-ve-ry" not in out and len([p for w in out.split() for p in w.split("-")]) == 8
+
+
+@pytest.mark.parametrize("words", ["Սերն է մեր կյանքի լույսը", "Տունն է մեր կյանքի լույսը"])
+def test_an_article_n_after_a_sonorant_may_take_a_schwa(words):
+    for count in (7, 8):
+        assert scan(words + "\n", from_dict({"language": "hy", "syllables": count})).ok
+
+
+def test_the_count_decides_whether_the_article_schwa_is_sung():
+    from ashugh.lang import hy
+
+    w = hy.analyze_word("սերն")
+    assert "-".join(s.text for s in w.syllables) == "սե-րըն" and w.drop == 1
+    line = "Սերն է մեր կյանքի լույսը\n"
+    (short,) = scan(line, from_dict({"language": "hy", "syllables": 7})).lines
+    (full,) = scan(line, from_dict({"language": "hy", "syllables": 8})).lines
+    assert short.sung.startswith("Սե-ր(ը)ն") and full.sung.startswith("Սե-րըն")
+    assert hy.analyze_word("ձայն").drop is None  # յ: the stem's own ն, no article schwa
+
+
+@pytest.mark.parametrize(
+    "line,latin",
+    [
+        ("Դու գեղեցիկ ես", "geghetsik es"),
+        ("Որտեղ ես", "Vortegh es"),
+        ("Ու ես սիրում եմ", "U yes"),  # the pronoun after a conjunction
+        ("Ես գնում եմ", "Yes"),
+    ],
+)
+def test_the_auxiliary_es_has_no_y_in_latin(line, latin):
+    assert latin in fmt(line + "\n", armenian="latin")
+
+
+@pytest.mark.parametrize(
+    "word,sung", [("ռեմիքս", "ռե-միքս"), ("ինդեքս", "ին-դեքս"), ("կոմպլեքս", "կոմպ-լեքս")]
+)
+def test_a_vowel_then_ks_is_the_stem(word, sung):
+    from ashugh.lang import hy
+
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+def test_a_consonant_then_ks_is_still_the_possessive():
+    from ashugh.lang import hy
+
+    assert "-".join(s.text for s in hy.analyze_word("դեմքս").syllables) == "դեմ-քըս"
