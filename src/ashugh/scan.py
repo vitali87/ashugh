@@ -190,7 +190,7 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
             if w is None:
                 continue
             word = lr.line.words[w]
-            tries = [
+            tries: list[tuple[dict[int, int | None] | None, bool | None]] = [
                 ({w: option}, None)
                 for option in word.stress_options()
                 if word.ambiguous and option not in (None, lr.fit.stresses.get(w))

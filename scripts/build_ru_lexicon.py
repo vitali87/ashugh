@@ -4,7 +4,7 @@ The source is https://github.com/Badestrand/russian-dictionary (CC BY-SA 4.0):
 nouns.csv, verbs.csv, adjectives.csv and others.csv, tab separated, with every
 inflected form written with an apostrophe after the stressed vowel.
 
-    python scripts/build_ru_lexicon.py path/to/russian-dictionary
+    uv run scripts/build_ru_lexicon.py path/to/russian-dictionary
 
 writes src/ashugh/data/ru_stress.tsv: one form per line, sorted by UTF-8 bytes,
 followed by a tab and the 1-based positions of its stressed vowels ("12" means

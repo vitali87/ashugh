@@ -62,3 +62,14 @@ def test_armenian_elision_chooses_the_count_that_fits():
     words = lang.analyze("hy", lyrics.tokenize("Նա ստացավ իր նամակը"), {})
     assert meter.fit(words, "free", count=8).count == 8
     assert meter.fit(words, "free", count=7).count == 7
+
+
+def test_elision_keeps_an_unstressed_option():
+    from ashugh.model import Reading, Syllable, Word
+
+    w = Word(
+        "ըստ", "ըստ", "hy", (Syllable("ը"), Syllable("ստ")), (Reading(None, (), "ըստ", "clitic"),)
+    )
+    w.drop = 0
+    (slot,) = meter.slots([w], frozenset({0}))
+    assert slot.options == (None,) and slot.size == 1

@@ -450,7 +450,7 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     if not found:
         size = vowel_count(norm)
         for form in verb_twins(norm):
-            stress = TABLE.get(form)
+            stress = TABLE.stresses(form)
             if stress and all(p < size for p in stress):
                 found.append((norm, stress))
                 break

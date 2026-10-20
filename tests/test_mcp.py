@@ -96,7 +96,8 @@ def test_protocol_errors():
     r = call(s, "tools/call", {"arguments": {}})
     assert r["error"]["code"] == -32602
     assert s.handle({"jsonrpc": "2.0", "method": "notifications/cancelled"}) is None
-    assert s.handle("garbage")["error"]["code"] == -32600
+    garbage = s.handle("garbage")
+    assert garbage is not None and garbage["error"]["code"] == -32600
     assert call(s, "ping")["result"] == {}
 
 

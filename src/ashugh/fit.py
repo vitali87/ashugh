@@ -433,8 +433,11 @@ def replace_lines(text: str, new: dict[int, str], lang: str | None = None) -> st
     lines = lyrics.split_lines(text, keepends=True)
     for number, content in new.items():
         if 1 <= number <= len(lines):
-            m = re.match(r"(\s*)(.*?)(\r\n|\r|\n)?$", lines[number - 1], re.S)
-            lead, body, ending = m.group(1), m.group(2), m.group(3) or ""
+            line = lines[number - 1]
+            body = line.rstrip("\r\n")
+            ending = line[len(body) :]
+            lead = body[: len(body) - len(body.lstrip())]
+            body = body[len(lead) :]
             mark = PUNCT_RE.search(body)
             if mark and not PUNCT_RE.search(content):
                 tail = mark.group(0)

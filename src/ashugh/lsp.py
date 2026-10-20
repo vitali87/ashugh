@@ -116,7 +116,7 @@ class Server:
         try:
             spec = load(spec_path) if spec_path else Spec()
         except (SpecError, OSError) as e:
-            return None, f"{spec_path.name}: {e}"
+            return None, f"{spec_path.name if spec_path else 'spec'}: {e}"
         return scan(text, spec, path=str(path or uri)), None
 
     def _publish(self, uri: str) -> dict:
@@ -184,7 +184,7 @@ def serve(stdin=None, stdout=None) -> int:
     while not server.done:
         try:
             msg = read_message(stdin)
-        except (ValueError, json.JSONDecodeError):
+        except ValueError, json.JSONDecodeError:
             continue
         if msg is None:
             break

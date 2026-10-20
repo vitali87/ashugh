@@ -2,7 +2,7 @@
 
     ASHUGH_PROPOSER_TIMEOUT=7200 ashugh eval run eval/tasks-hard/ru-dog.toml \\
         --writer dir:DRAFTS --modes ashugh \\
-        --proposer "cmd:python eval/agent_bridge.py BRIDGE ru-dog" -o OUT.json
+        --proposer "cmd:uv run eval/agent_bridge.py BRIDGE ru-dog" -o OUT.json
 
 Each time fit asks for candidates, this writes BRIDGE/<task>-<round>.request.json
 (the requests and the proposer's system prompt) and waits until an agent writes
@@ -11,7 +11,7 @@ BRIDGE/<task>-<round>.answer.json in the proposer answer format
 This is how the eval's "with ashugh" runs were made with a coding agent as the
 proposer, through the same check, solve and re-ask loop as `ashugh fit`.
 
-    python eval/agent_bridge.py --pending BRIDGE
+    uv run eval/agent_bridge.py --pending BRIDGE
 
 lists the request files that have no answer yet.
 """

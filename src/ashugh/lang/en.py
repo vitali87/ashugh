@@ -347,7 +347,7 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     # A compound may move its stress onto its second part in verse: sometíme.
     for r in list(readings):
         for k in r.secondary:
-            if k > r.stress and all(x.stress != k for x in readings):
+            if r.stress is not None and k > r.stress and all(x.stress != k for x in readings):
                 rest = tuple(sorted({r.stress, *r.secondary} - {k}))
                 readings.append(Reading(k, r.phones, norm, "shift", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)

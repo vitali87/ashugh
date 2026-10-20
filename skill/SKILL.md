@@ -14,14 +14,16 @@ So never assert a syllable count, a meter or a rhyme yourself. Draft, let
 
 ## Running it
 
-The skill bundles the tool (pure Python ≥ 3.11, no dependencies):
+The skill bundles the tool (pure Python, no dependencies). uv runs it and
+fetches Python 3.14 if the machine lacks it:
 
 ```bash
-python3 <skill-dir>/scripts/run_ashugh.py --version
+uv run <skill-dir>/scripts/run_ashugh.py --version
 ```
 
-Below, `ashugh` means `python3 <skill-dir>/scripts/run_ashugh.py`, or the
-`ashugh` command if it is installed.
+Below, `ashugh` means `uv run <skill-dir>/scripts/run_ashugh.py`, or the
+`ashugh` command if it is installed (`uv tool install`). Without uv, a
+Python 3.14 runs the same script directly.
 
 | Command | What it does |
 |---|---|

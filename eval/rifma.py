@@ -3,7 +3,7 @@
 RIFMA (Koziev 2025, MIT, https://github.com/Koziev/Rifma) holds 5,121 Russian
 poems and stanzas with every stress marked by hand and a rhyme scheme.
 
-    python eval/rifma.py [--limit N] [--out eval/out/rifma.json]
+    uv run eval/rifma.py [--limit N] [--out eval/out/rifma.json]
 
 downloads the dataset into eval/data/ on first use and reports:
 

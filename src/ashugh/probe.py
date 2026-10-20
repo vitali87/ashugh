@@ -5,7 +5,7 @@ you care about, `probe make` writes short lyric clips that differ only in
 how the word is spelled (Armenian as script, with its schwas written, or
 romanized; Russian plain, with a capital stress vowel, or with an acute).
 Generate each clip in Suno, transcribe it with Whisper (`probe transcribe`,
-needs pip install openai-whisper), and `probe score` analyzes the
+the whisper extra) or any recognizer you name, and `probe score` analyzes the
 transcripts with ashugh's own phonology: the spelling whose transcript comes
 back closest to the intended sung form wins. The result is a policy file
 that `ashugh suno --policy` applies word by word.
@@ -23,7 +23,7 @@ import subprocess
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from . import lyrics
+from . import install_hint, lyrics
 from .lang import analyze
 from .model import ACUTE
 from .phon import align_cost, indel_cost
@@ -171,7 +171,9 @@ def _whisper(model: str):
     except ImportError:
         whisper = None
     if whisper is None:
-        raise ProbeError("transcribing needs Whisper: pip install openai-whisper")
+        raise ProbeError(
+            f"transcribing needs Whisper: {install_hint('whisper')}, or --engine cmd:<command>"
+        )
     loaded = whisper.load_model(model)
     return lambda audio, lang: loaded.transcribe(str(audio), language=lang)["text"].strip()
 

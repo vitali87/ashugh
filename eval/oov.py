@@ -1,6 +1,6 @@
 """How ashugh does on words its dictionaries lack, estimated on held-out words.
 
-    python eval/oov.py [--out eval/out/oov.json]
+    uv run eval/oov.py [--out eval/out/oov.json]
 
 Every tenth dictionary entry (by a hash of the word) is held out; the suffix
 stress prior is learned from the rest, the way scripts/build_suffix_stress.py

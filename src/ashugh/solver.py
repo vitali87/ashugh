@@ -5,7 +5,7 @@ keeps the meaning) and, for some pairs of lines, the candidate pairs that are
 allowed together (the ones that rhyme). The best choice maximizes the total
 weight. solve_exact is a branch and bound over lines with the fewest
 candidates first; solve_cpsat hands the same model to OR-Tools CP-SAT when it
-is installed (pip install ortools), which is what the auto method falls back
+is installed (the cpsat extra), which is what the auto method falls back
 to on instances too big to enumerate.
 """
 

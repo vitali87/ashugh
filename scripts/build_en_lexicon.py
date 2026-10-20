@@ -3,7 +3,7 @@
 The source is https://github.com/cmusphinx/cmudict (cmudict.dict, BSD-style
 license, see NOTICE.md).
 
-    python scripts/build_en_lexicon.py path/to/cmudict.dict
+    uv run scripts/build_en_lexicon.py path/to/cmudict.dict
 
 writes src/ashugh/data/en_cmudict.tsv: one lowercase word per line, sorted by
 UTF-8 bytes, a tab, then its pronunciations in ARPABET with stress digits,

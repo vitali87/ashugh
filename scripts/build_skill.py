@@ -1,6 +1,6 @@
 """Package ashugh as a Claude skill.
 
-    python scripts/build_skill.py
+    uv run scripts/build_skill.py
 
 writes dist/ashugh/ (SKILL.md, the ashugh package, scripts/run_ashugh.py) and
 dist/ashugh-skill.zip. Upload the zip in Claude (Settings > Capabilities >
@@ -17,8 +17,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 SKILL = DIST / "ashugh"
 
-RUNNER = '''#!/usr/bin/env python3
-"""Run the ashugh bundled with this skill."""
+RUNNER = '''#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Run the ashugh bundled with this skill: uv run scripts/run_ashugh.py ..."""
 
 import sys
 from pathlib import Path

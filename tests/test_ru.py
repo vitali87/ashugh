@@ -6,24 +6,28 @@ from ashugh.model import LICENCES
 
 
 def stresses(word):
-    return sorted(ru.analyze_word(word).stress_options())
+    return sorted(ru.analyze_word(word).stress_options(), key=_order)
+
+
+def _order(stress: int | None) -> int:
+    return -1 if stress is None else stress
 
 
 def test_table_binary_search_hits_and_misses():
-    assert TABLE.get("ещё") == (1,)
-    assert TABLE.get("замок") == (0, 1)
-    assert TABLE.get("ыыыы") is None
-    assert TABLE.get("") is None
+    assert TABLE.stresses("ещё") == (1,)
+    assert TABLE.stresses("замок") == (0, 1)
+    assert TABLE.stresses("ыыыы") is None
+    assert TABLE.stresses("") is None
 
 
 def test_table_edges():
     data = "аб\t1\nвг\t2\nяя\t12\n".encode()
     t = StressTable(data)
-    assert t.get("аб") == (0,)
-    assert t.get("яя") == (0, 1)
-    assert t.get("вг") == (1,)
-    assert t.get("бб") is None
-    assert t.get("яяя") is None
+    assert t.stresses("аб") == (0,)
+    assert t.stresses("яя") == (0, 1)
+    assert t.stresses("вг") == (1,)
+    assert t.stresses("бб") is None
+    assert t.stresses("яяя") is None
 
 
 @pytest.mark.parametrize(
@@ -136,7 +140,7 @@ def test_display_syllables(word, parts):
 def test_forms_the_dictionary_lacks(word, expected):
     w = ru.analyze_word(word)
     assert not w.guessed
-    assert sorted(w.stress_options()) == expected
+    assert sorted(w.stress_options(), key=_order) == expected
 
 
 def test_a_real_unknown_word_is_still_guessed():

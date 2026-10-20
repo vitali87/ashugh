@@ -1,6 +1,6 @@
 """Learn stress-by-ending priors for words the dictionaries do not list.
 
-    python scripts/build_suffix_stress.py
+    uv run scripts/build_suffix_stress.py
 
 For every word ending (2 to 5 letters) shared by enough dictionary forms,
 records how many vowels most often follow the stressed vowel. Russian comes

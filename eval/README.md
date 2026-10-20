@@ -5,9 +5,9 @@ Four measurements, each a script you can rerun. Results are in
 
 | script | what it measures | data |
 |---|---|---|
-| `python eval/rifma.py` | Russian stress and rhyme against hand-marked poems | RIFMA (downloaded on first use) |
-| `python eval/armenian.py` | Armenian sung syllables against a hand-checked list, and espeak-ng | `data/hy_gold.tsv` |
-| `python eval/oov.py` | stress and syllables of words the dictionaries lack, on held-out entries | the bundled tables |
+| `uv run eval/rifma.py` | Russian stress and rhyme against hand-marked poems | RIFMA (downloaded on first use) |
+| `uv run eval/armenian.py` | Armenian sung syllables against a hand-checked list, and espeak-ng | `data/hy_gold.tsv` |
+| `uv run eval/oov.py` | stress and syllables of words the dictionaries lack, on held-out entries | the bundled tables |
 | `ashugh eval run TASKS` | how many lines and songs meet their spec, written alone and with ashugh | `tasks/`, `tasks-hard/` |
 
 ## Writing tasks
@@ -41,7 +41,7 @@ playing Claude:
 1. One subagent wrote every draft from its brief, cold, into a folder.
 2. `ashugh eval run TASKS --writer dir:DRAFTS --modes alone` scored them.
 3. For the `ashugh` mode, each task's fit loop ran with
-   `--proposer "cmd:python eval/agent_bridge.py BRIDGE <task id>"`. The
+   `--proposer "cmd:uv run eval/agent_bridge.py BRIDGE <task id>"`. The
    bridge writes every round's requests to `BRIDGE/<task>-<round>.request.json`
    and waits for an answer file; a fresh subagent per round read the pending
    requests and wrote the answers, with nothing but the requests to go on.

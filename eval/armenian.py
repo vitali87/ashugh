@@ -1,12 +1,12 @@
 """Armenian sung syllables: ashugh against a hand-checked gold list and espeak-ng.
 
-    python eval/armenian.py [--out eval/out/armenian.json]
+    uv run eval/armenian.py [--out eval/out/armenian.json]
 
 eval/data/hy_gold.tsv lists Eastern Armenian words with their sung syllables,
 one rule of schwa epenthesis per word. The script reports how often ashugh's
 syllabification and syllable count match, and, when espeak-ng is available
-(pip install espeakng-loader phonemizer), how often espeak-ng's syllable
-count does, with every disagreement listed.
+(uv run --with espeakng-loader --with phonemizer eval/armenian.py), how
+often espeak-ng's syllable count does, with every disagreement listed.
 """
 
 from __future__ import annotations
@@ -60,9 +60,10 @@ def ipa_syllables(ipa: str) -> int:
 def evaluate() -> dict:
     rows = gold()
     speak = espeak()
-    out = {"words": len(rows), "ashugh": {"exact": 0, "count": 0}, "disagreements": []}
+    tally: dict[str, dict[str, float]] = {"ashugh": {"exact": 0, "count": 0}}
     if speak:
-        out["espeak"] = {"count": 0}
+        tally["espeak"] = {"count": 0}
+    disagreements: list[dict] = []
     for word, sung, rule in rows:
         w = hy.analyze_word(word)
         mine = w.sung().lower()
@@ -70,21 +71,21 @@ def evaluate() -> dict:
         n = want.count("-") + 1
         exact = mine == want
         right_count = w.size == n
-        out["ashugh"]["exact"] += exact
-        out["ashugh"]["count"] += right_count
+        tally["ashugh"]["exact"] += exact
+        tally["ashugh"]["count"] += right_count
         row = {"word": word, "gold": sung, "ashugh": mine, "rule": rule}
         if speak:
             ipa = speak(word)
             row["espeak"] = ipa
             row["espeak_syllables"] = ipa_syllables(ipa)
-            out["espeak"]["count"] += row["espeak_syllables"] == n
+            tally["espeak"]["count"] += row["espeak_syllables"] == n
         if not exact or (speak and row["espeak_syllables"] != n):
-            out["disagreements"].append(row)
-    for system in ("ashugh", "espeak"):
-        if system in out:
-            for key in list(out[system]):
-                out[system][key] = round(out[system][key] / len(rows), 4)
-    return out
+            disagreements.append(row)
+    rates = {
+        system: {key: round(value / len(rows), 4) for key, value in counts.items()}
+        for system, counts in tally.items()
+    }
+    return {"words": len(rows), **rates, "disagreements": disagreements}
 
 
 def main() -> None:

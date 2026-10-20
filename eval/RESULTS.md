@@ -137,4 +137,4 @@ and 159/160 alone, the one remaining flag being the real one.
   its spec after fit.
 
 To rerun with the API: `ashugh eval run eval/tasks-hard` (needs
-`ANTHROPIC_API_KEY` and `pip install 'ashugh[claude]'`).
+`ANTHROPIC_API_KEY` and the claude extra: `uv sync --extra claude`).

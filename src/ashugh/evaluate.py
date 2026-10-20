@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from . import install_hint
 from .fit import fit_song
 from .lang import ANALYZERS, NAMES
 from .proposers import DEFAULT_MODEL, Proposer, ProposerError, _api_errors, _describe_api_error
@@ -195,7 +196,7 @@ class ClaudeWriter:
                 import anthropic
             except ImportError:
                 raise ProposerError(
-                    "the Claude writer needs: pip install 'ashugh[claude]'"
+                    f"the Claude writer needs the Anthropic SDK: {install_hint('claude')}"
                 ) from None
             self._client = anthropic.Anthropic()
         return self._client

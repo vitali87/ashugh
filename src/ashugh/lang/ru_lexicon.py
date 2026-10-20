@@ -15,9 +15,9 @@ class StressTable(SortedTable):
     def __init__(self, data: bytes | None = None) -> None:
         super().__init__("data/ru_stress.tsv", data)
 
-    def get(self, form: str) -> tuple[int, ...] | None:  # type: ignore[override]
+    def stresses(self, form: str) -> tuple[int, ...] | None:
         """0-based stressed vowel indices of form, or None if it is not listed."""
-        raw = super().get(form)
+        raw = self.get(form)
         return None if raw is None else tuple(int(d) - 1 for d in raw)
 
     def variants(self, form: str) -> list[tuple[str, tuple[int, ...]]]:
@@ -30,7 +30,7 @@ class StressTable(SortedTable):
                 if yo:
                     chars[slot] = "ё"
             spelling = "".join(chars)
-            stress = self.get(spelling)
+            stress = self.stresses(spelling)
             if stress is not None:
                 out.append((spelling, stress))
         return out

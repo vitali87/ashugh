@@ -4,8 +4,8 @@ A proposer takes Requests (one per line to write, with its constraints and
 what went wrong before) and returns candidates per request id. The engine
 checks every candidate itself, so a proposer only has to be fluent, not right.
 
-* ClaudeProposer asks Claude through the Anthropic SDK (pip install
-  'ashugh[claude]'), one batched call per round.
+* ClaudeProposer asks Claude through the Anthropic SDK (the claude extra),
+  one batched call per round.
 * CommandProposer runs any program: the requests go to its stdin as JSON and
   it prints the candidates as JSON. This plugs in other models or scripts.
 * StaticProposer serves candidates someone already wrote, e.g. an agent that
@@ -25,6 +25,8 @@ import subprocess
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Protocol
+
+from . import install_hint
 
 DEFAULT_MODEL = "claude-opus-5-5"
 
@@ -118,7 +120,7 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list[str]]:
     for key, cands in pairs:
         try:
             number = int(key)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise ProposerError(f"{path}: {key!r} is not a line number") from None
         if not isinstance(cands, list) or not all(isinstance(c, str) for c in cands):
             raise ProposerError(f"{path}: line {number} needs a list of strings")
@@ -246,7 +248,7 @@ class ClaudeProposer:
                 import anthropic
             except ImportError:
                 raise ProposerError(
-                    "the Claude proposer needs the Anthropic SDK: pip install 'ashugh[claude]'"
+                    f"the Claude proposer needs the Anthropic SDK: {install_hint('claude')}"
                 ) from None
             self._client = anthropic.Anthropic()
         return self._client
@@ -292,7 +294,7 @@ def _api_errors() -> tuple[type[BaseException], ...]:
     return (anthropic.APIError,)
 
 
-def _describe_api_error(e: Exception) -> str:
+def _describe_api_error(e: BaseException) -> str:
     import anthropic
 
     if isinstance(e, anthropic.AuthenticationError):

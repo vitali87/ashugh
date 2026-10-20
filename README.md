@@ -37,12 +37,15 @@ dependencies; the Claude proposer and the CP-SAT solver are optional extras.
 ## Install
 
 ```bash
-pip install "ashugh[all] @ git+https://github.com/vitali87/surprise"
-# or the bare checker: pip install git+https://github.com/vitali87/surprise
+uv tool install "ashugh[all] @ git+https://github.com/vitali87/surprise"
+# the bare checker:  uv tool install "git+https://github.com/vitali87/surprise"
+# or once, no install: uvx --from "git+https://github.com/vitali87/surprise" ashugh scan song.txt
 ```
 
-Python 3.11 or newer. `[claude]` adds the Anthropic SDK for `fit`,
-`translate` and `eval`; `[cpsat]` adds OR-Tools for large repair problems.
+Python 3.14; uv fetches it when the machine lacks it. The extras: `[claude]`
+adds the Anthropic SDK for `fit`, `translate` and `eval`, `[cpsat]` adds
+OR-Tools for large repair problems, `[whisper]` adds openai-whisper for
+`probe transcribe`. `[all]` is `claude` and `cpsat`.
 
 ## Commands
 
@@ -170,7 +173,7 @@ Suno does not document its pronunciation, so `probe` measures it:
 ```bash
 ashugh probe make սպասել Մկրտիչ --lang hy --lyrics probes/   # one clip lyric per spelling
 # generate each clip in Suno, save as probes/<id>.mp3
-ashugh probe transcribe probes/ --plan probes.json           # Whisper (pip install openai-whisper)
+ashugh probe transcribe probes/ --plan probes.json           # Whisper (the whisper extra)
 ashugh probe transcribe probes/ --engine "cmd:whisper-cli -m ggml-small.bin -l {lang} -nt -f {audio}"
 ashugh probe score probes.json transcripts.json -o policy.json
 ashugh suno song.hy.txt --policy policy.json                  # the winning spelling, word by word
@@ -184,13 +187,15 @@ intelligibility rather than every sung schwa.
 
 ## Agents and editors
 
-* **Claude skill.** `python scripts/build_skill.py` writes
+* **Claude skill.** `uv run scripts/build_skill.py` writes
   `dist/ashugh-skill.zip` (CI attaches it to every build). Upload it as a
   skill in Claude, or copy `dist/ashugh` to `~/.claude/skills/` for Claude Code. It
   bundles the tool and tells Claude to draft, scan, repair with `requests` and
   `pick`, and re-scan before it shows you a song. See
   [skill/SKILL.md](skill/SKILL.md).
-* **MCP.** `claude mcp add ashugh -- ashugh mcp` gives an agent the tools
+* **MCP.** `claude mcp add ashugh -- ashugh mcp` (or, with nothing installed,
+  `claude mcp add ashugh -- uvx --from git+https://github.com/vitali87/surprise ashugh mcp`)
+  gives an agent the tools
   `scan`, `syllables`, `rhyme`, `pick`, `suno`, `derive_spec` and
   `spec_template`.
 * **Language server.** `ashugh lsp` underlines the lines that do not scan and
@@ -228,7 +233,7 @@ writer and proposers were Claude subagents, not API calls; RESULTS.md has
 the caveats.
 
 **Russian, on RIFMA** (Koziev 2025: 5,121 poems and stanzas with every
-stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
+stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
@@ -242,7 +247,7 @@ stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
 RIFMA was also the development set for the Russian rules, so these numbers
 are not from unseen data.
 
-**Armenian sung syllables** (`python eval/armenian.py`). On 79 words that
+**Armenian sung syllables** (`uv run eval/armenian.py`). On 79 words that
 each exercise one schwa rule (eval/data/hy_gold.tsv, checked by hand),
 ashugh matches every syllabification. espeak-ng, the reference
 phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas in
@@ -250,7 +255,7 @@ phonemizer, got 82% of the syllable counts on the first 68. It misses two schwas
 The gold list was written together with the rules, so treat ashugh's 100% as
 a regression test, not as an independent measurement.
 
-**Words outside the dictionaries**, held out (`python eval/oov.py`): the
+**Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.7% of Russian words right (always guessing the
 commonest position: 40.8%) and 77.0% of English words (66.7%). The English
 syllable count from spelling is right for 87.7% of words.
@@ -348,10 +353,13 @@ consonant before the vowel (ты / красоты).
 ## Development
 
 ```bash
-uv venv && uv pip install -e '.[dev]'
-.venv/bin/pytest
-.venv/bin/ruff check . && .venv/bin/ruff format --check .
+uv sync --extra all          # Python 3.14, the dev tools, and the claude and cpsat extras
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+uv run ty check
 ```
+
+CI runs the same on Python 3.14, and on 3.15 while it is in beta.
 
 The data tables are rebuilt by `scripts/build_ru_lexicon.py` (from the
 [OpenRussian dump](https://github.com/Badestrand/russian-dictionary)),

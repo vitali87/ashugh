@@ -145,7 +145,9 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
         if i in elided and w.drop is not None:
             d = w.drop
             size -= 1
-            options = tuple(o - (o > d) for o in options if o is None or o != d) or (None,)
+            options = tuple(
+                o if o is None else o - (o > d) for o in options if o is None or o != d
+            ) or (None,)
             secondary = {k - (k > d) for k in secondary if k != d}
             costs = {
                 (s - (s > d) if s is not None else None): c for s, c in costs.items() if s != d
@@ -288,6 +290,7 @@ def fit_classical(
             key = (cost, st is None)
             if best is None or key < best[0]:
                 best = (key, st, is_off, end_off, pos)
+        assert best is not None  # every slot has at least one option
         (cost, _), st, is_off, end_off, pos = best
         total += cost
         choice[s.word] = st
@@ -297,9 +300,10 @@ def fit_classical(
             ending_off = end_off
             last_pos = pos
     stressed = _stressed_grid(ss, choice, strong, count)
-    if anchor is not None and choice[ss[anchor].word] is not None:
+    main = choice[ss[anchor].word] if anchor is not None else None
+    if anchor is not None and main is not None:
         s = ss[anchor]  # a secondary stress on a beat after the main one ends the line: bútterflỳ
-        later = [s.start + k for k in s.secondary if k > choice[s.word] and strong(s.start + k)]
+        later = [s.start + k for k in s.secondary if k > main and strong(s.start + k)]
         last_pos = max([last_pos, *later])
     promoted = False
     if promote and anchor == len(ss) - 1 and not ending_off:
@@ -401,7 +405,7 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
     ends = dp[last]
     if not ends:
         return None
-    n = feet if feet in ends else min(ends, key=lambda k: ends[k][0])
+    n = feet if feet is not None and feet in ends else min(ends, key=lambda k: ends[k][0])
     cost = ends[n][0]
     beats = [False] * count
     i, ictuses = last, n

@@ -1,16 +1,17 @@
 [project]
 name = "ashugh"
 version = "0.1.0"
-description = "Prosody checks for song lyrics in Armenian and Russian: syllables, hidden schwas, stress, meter, rhyme."
+description = "A prosody compiler for song lyrics in Armenian, Russian and English: sung syllables, hidden schwas, stress, meter, rhyme, and repair."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "NOTICE.md"]
 authors = [{ name = "Vitali Avagyan" }]
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = []
 keywords = ["lyrics", "prosody", "meter", "rhyme", "armenian", "russian", "suno", "llm"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Text Processing :: Linguistic",
     "Natural Language :: Armenian",
     "Natural Language :: Russian",
@@ -22,8 +23,11 @@ ashugh = "ashugh.cli:main"
 [project.optional-dependencies]
 claude = ["anthropic>=1.15"]
 cpsat = ["ortools>=9.10"]
+whisper = ["openai-whisper>=20240930"]
 all = ["anthropic>=1.15", "ortools>=9.10"]
-dev = ["pytest>=8", "ruff>=0.6", "anthropic>=1.15", "ortools>=9.10"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.15", "ty>=0.0.90"]
 
 [build-system]
 requires = ["hatchling>=1.26"]
@@ -34,7 +38,7 @@ packages = ["src/ashugh"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
@@ -42,3 +46,11 @@ ignore = ["B905"]  # zip() over sequences known to match
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ty.environment]
+python-version = "3.14"
+extra-paths = ["scripts"]  # eval and tests import the build scripts
+
+[tool.ty.analysis]
+# optional, installed only for probe transcription and the espeak-ng comparison
+allowed-unresolved-imports = ["whisper", "phonemizer", "phonemizer.**", "espeakng_loader"]
