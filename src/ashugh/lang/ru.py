@@ -150,6 +150,14 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     **{f: (f, (0,)) for f in "банта банту бантом банте банты бантов бантам бантами бантах".split()},
     "кого": ("кого", (1,)),
     "чему": ("чему", (1,)),
+    # The table has кому and никого only from ком (a lump) and the archaic никой.
+    "кому": ("кому", (1,)),
+    "никого": ("никого", (2,)),
+    "никому": ("никому", (2,)),
+    "никем": ("никем", (1,)),
+    **{f: (f, (0,)) for f in "некому нечему некем нечем".split()},
+    # пе́нье is verse's пе́ние; the table has only пенье́ of пеньё (stumps).
+    **{f: (f, (0,)) for f in "пенье пенья пенью пеньем".split()},
     "него": ("него", (1,)),
     "нему": ("нему", (1,)),
     "нее": ("неё", (1,)),
@@ -494,8 +502,10 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
             twin(norm[:-2] + full, lambda p: p)
     if norm.endswith("ей") and not found:
         twin(norm[:-2] + "ее", lambda p: p)
+    # стараясь is стара́юсь's gerund, not ста́рая with сь: a gerund asks its verb first.
+    gerund = norm.endswith(("ясь", "ась")) and not norm.endswith("лась")
     for suffix in ("ся", "сь"):
-        if norm.endswith(suffix) and not found:
+        if norm.endswith(suffix) and not found and not gerund:
             twin(norm[:-2], lambda p: p)
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
@@ -507,6 +517,8 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
             if stress and all(p < size for p in stress):
                 found.append((norm, stress))
                 break
+    if gerund and not found:
+        twin(norm[:-2], lambda p: p)
     return found
 
 
