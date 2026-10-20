@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nDust on the floorboards and light through the shutters,\nNotices posted: the last dance is here.\nSomewhere a ribbon of paper still flutters,\nLeft from the ball at the end of the year.\nOnce there were hundreds of dancers all turning,\nOnce there were fiddles that played to the dawn,\nLanterns were glowing and candles were burning,\nNow all the curtains are faded and drawn.\n\n[Verse 2]\nJust for tonight the old band will be playing,\nOne more slow waltz for the ones who remain;\nSilver-haired lovers are gracefully swaying,\nHere where they met, they are dancing again.\nSoon all the plaster and gold will be falling,\nMirrors and ribbons and lanterns and all,\nStill in the silence the music keeps calling:\nOne, two and three, round the empty old hall.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

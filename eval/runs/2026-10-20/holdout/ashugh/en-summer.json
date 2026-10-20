@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 30,
+      "passing": 30,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSunburn fading on my skin,\nWindows down, the night rolls in,\nAll the stars are burning bright,\nWe could stay awake all night.\n\n[Verse 2]\nSand is cooling on the shore,\nAutumn knocking at the door,\nHold me close and don't let go,\nDancing to the radio.\n\n[Chorus]\nLast night of the summer sun,\nFeels like we have just begun,\nTurn it up and sing it loud,\nHands up high above the crowd,\nNever let the morning come,\nHearts are beating like a drum,\nOh, tonight we're shining gold,\nSummer, don't you leave us cold.\n\n[Bridge]\nSoon the leaves will turn to red,\nSay the words we haven't said,\nBut tonight the sky is wide,\nStay a little by my side.\n\n[Chorus]\nLast night of the summer sun,\nFeels like we have just begun,\nTurn it up and sing it loud,\nHands up high above the crowd,\nNever let the morning come,\nHearts are beating like a drum,\nOh, tonight we're shining gold,\nSummer, don't you leave us cold.\n\n[Outro]\nLast night of the summer sun,\nFeels like we have just begun.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

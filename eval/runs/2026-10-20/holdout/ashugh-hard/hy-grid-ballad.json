@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "ashugh",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ ջան, հիշում եմ մեր տունը,\nԳրում եմ քեզ մեծ կարոտով,\nԱյստեղ՝ սահմանին, խոր է ձյունը,\nՈւ գրկում եմ քեզ շատ սիրով։\n\n[Verse 2]\nՄայրիկ, կգամ, երբ գա գարունը,\nԾիրանը կծաղկի բակում,\nՈւ խաղաղ կլինի քո քունը,\nԿգրկեմ քեզ, ոչ երազում։\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

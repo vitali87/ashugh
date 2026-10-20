@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nIron wheels on silver rails,\nMile by mile the moonlight pales,\nWheat lies sleeping, black and wide,\nNot a single light outside.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dark where the prairie lies still,\nAnd the rhythm of wheels is a song\nThat keeps time like a heart in the chill.\n\n[Verse 2]\nSomewhere east a city sleeps,\nSomewhere west a river creeps,\nI have left my home behind,\nIron road to ease my mind.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dark where the prairie lies still,\nAnd the rhythm of wheels is a song\nThat keeps time like a heart in the chill.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}

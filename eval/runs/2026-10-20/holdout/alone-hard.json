@@ -1,0 +1,150 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 0.9875,
+      "songs_ok": 0.8333,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nIron wheels on silver rails,\nMile by mile the moonlight pales,\nWheat lies sleeping, black and wide,\nNot a single light outside.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dark where the prairie lies still,\nAnd the rhythm of wheels is a song\nThat keeps time like a heart in the chill.\n\n[Verse 2]\nSomewhere east a city sleeps,\nSomewhere west a river creeps,\nI have left my home behind,\nIron road to ease my mind.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dark where the prairie lies still,\nAnd the rhythm of wheels is a song\nThat keeps time like a heart in the chill.\n"
+    },
+    {
+      "task": "en-shanty",
+      "language": "en",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe captain went ashore at dawn\nAnd never came aboard,\nBut still the Mary Ellen sailed\nWhile all the north wind roared.\n\n[Verse 2]\nNo hand was laid upon the wheel,\nNo bosun gave a cry,\nYet true she steered for southern seas\nBeneath an empty sky.\n\n[Verse 3]\nAnd sailors say on moonlit nights\nYou'll see her running free,\nStill searching for the man she lost\nAcross the rolling sea.\n"
+    },
+    {
+      "task": "en-translate-pushkin",
+      "language": "en",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 7,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "feet": 1,
+        "meter": 1,
+        "syllables": 1
+      },
+      "text": "[Verse 1]\nI still recall our wondrous meeting:\nWhen you appeared before my sight,\nJust like a vision, swift and fleeting,\nLike beauty's spirit, pure and bright.\n\n[Verse 2]\nIn hopeless sorrow's weary yearning,\nThrough restless bustle's noisy race,\nYour tender voice kept long returning,\nAnd in my dreams I saw your face.\n"
+    },
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nDust on the floorboards and light through the shutters,\nNotices posted: the last dance is here.\nSomewhere a ribbon of paper still flutters,\nLeft from the ball at the end of the year.\nOnce there were hundreds of dancers all turning,\nOnce there were fiddles that played to the dawn,\nLanterns were glowing and candles were burning,\nNow all the curtains are faded and drawn.\n\n[Verse 2]\nJust for tonight the old band will be playing,\nOne more slow waltz for the ones who remain;\nSilver-haired lovers are gracefully swaying,\nHere where they met, they are dancing again.\nSoon all the plaster and gold will be falling,\nMirrors and ribbons and lanterns and all,\nStill in the silence the music keeps calling:\nOne, two and three, round the empty old hall.\n"
+    },
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ ջան, հիշում եմ մեր տունը,\nԳրում եմ քեզ մեծ կարոտով,\nԱյստեղ՝ սահմանին, խոր է ձյունը,\nՈւ գրկում եմ քեզ շատ սիրով։\n\n[Verse 2]\nՄայրիկ, կգամ, երբ գա գարունը,\nԾիրանը կծաղկի բակում,\nՈւ խաղաղ կլինի քո քունը,\nԿգրկեմ քեզ, ոչ երազում։\n"
+    },
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 7,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "rhyme": 1
+      },
+      "text": "[Verse 1]\nԵս Մահվան համար կանգ չառա —\nԿանգնեց՝ ի՜նչ բարություն —\nԿառքի մեջ միայն մենք էինք,\nՄեզ հետ՝ Անմահություն։\n\n[Verse 2]\nԳնացինք, Նա չէր շտապում,\nՈւ ես թողել էի\nԹե գործս, թե հանգիստս էլ՝\nՀանուն Նրա գթի։\n"
+    },
+    {
+      "task": "hy-trochee",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 12,
+      "passing": 12,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄեկ՝ կատուն պառկած թախտին,\nՈւ երկու ճուտեր գետնին,\nԻսկ երեք բադեր լճում,\nՉորս սագեր՝ ջրի ափում։\n\n[Verse 2]\nՀինգ գառներ՝ բակի ծայրին,\nՎեց ուլեր թռան քարին,\nՅոթ հավեր՝ թառած գոմում,\nՈւթ ծիտեր՝ ծառի ծոցում։\n\n[Verse 3]\nԻնը նապաստակ՝ խոտում,\nՏասը մեղուներ՝ ծաղկում,\nԵկ հաշվենք մենք բոլորին,\nՄեր բակի ընկերներին։\n"
+    },
+    {
+      "task": "hy-wedding",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԲակում հարսանիք է այսօր,\nԶուռնան կանչում է անդադար,\nՀարսը նազով, փեսան՝ հզոր,\nԾեր ու ջահել բռնել են պար։\n\n[Chorus]\nՀարս ու փեսա, ջան ու յար,\nՁեզ երջանկություն հազար,\nՇնորհավոր ջան,\nԹող ձեր կյանքը լինի պար։\n\n[Verse 2]\nԴհոլը զարկում է ուժգին,\nԼիք են բաժակները բոլոր,\nՈւրախ է ամենքի հոգին,\nԿենաց ենք խմում ամբողջ օր։\n\n[Chorus]\nՀարս ու փեսա, ջան ու յար,\nՁեզ երջանկություն հազար,\nՇնորհավոր ջան,\nԹող ձեր կյանքը լինի պար։\n"
+    },
+    {
+      "task": "ru-dog",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nДождь стучит по старой крыше,\nПёс бредёт один впотьмах,\nВсё темней вокруг и тише,\nИ тоска в его глазах.\nОн отстал в толпе вокзальной,\nПотерял хозяйский след,\nИ теперь тропой печальной\nИщет в окнах тёплый свет.\n\n[Chorus]\nЛапы в грязи, но домой,\nСердце ведёт за собой,\nТолько б дойти до крыльца\nДруга, что ждёт без конца.\n\n[Verse 2]\nМимо парка, мимо рынка,\nЧерез мост, сквозь чей-то двор,\nВот знакомая тропинка,\nВот и дом, родной забор.\nНа крыльце стоит Серёжка,\nЖдёт и плачет третий день,\nТут и кончилась дорожка,\nЛай, прыжок — и сквозь плетень!\n\n[Chorus]\nЛапы в грязи, но домой,\nСердце ведёт за собой,\nТолько б дойти до крыльца\nДруга, что ждёт без конца.\n"
+    },
+    {
+      "task": "ru-grid-call",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nВ три часа ночи звонит мобильный,\nГолос твой в трубке, тихий, бессильный,\nТы шепчешь: «Знаешь, мне не уснуть,\nПрошу, не вешай трубку, побудь».\nГород за окнами спит в тумане,\nСиний свет экрана на диване,\nМы говорим, и время течёт,\nИ ночь, как тайна, нас бережёт.\n\n[Verse 2]\nЯ не спрошу, отчего не спится,\nПусть этот голос подольше длится,\nЯ столько лет ждала твой звонок,\nПока ты где-то был одинок.\nСкоро рассвет заглянет в окошко,\nНе уходи, поболтай немножко,\nТри часа ночи, и мы вдвоём,\nИ мир молчит о чём-то своём.\n"
+    },
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, огнём горишь\nВ чаще, где ночная тишь,\nЧьей бессмертною рукой\nБыл сотворён твой страшный строй?\n\n[Verse 2]\nВ безднах ли, на небесах\nЖёг огонь в твоих глазах?\nНа каких крылах взлетел,\nКто огонь схватить посмел?\n"
+    },
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nЭх ты, тройка, и даль бесконечная,\nКолокольчик звенит под дугой,\nИ душа, как и прежде, беспечная,\nТы со мною, мой друг дорогой.\nПролетает равнина безбрежная,\nОгоньки деревень вдалеке,\nПрижимаешься, милая, нежная,\nДа снежинки на тёплой щеке.\n\n[Verse 2]\nНо умчались те годы далёкие,\nОтзвенел колокольчик давно,\nЗамело все дороги широкие,\nИ в морозном узоре окно.\nИ мне снится та ночь серебристая,\nБубенцов переливчатый звон,\nДа коса за спиной золотистая,\nИ не знаю: то явь или сон.\n"
+    }
+  ]
+}

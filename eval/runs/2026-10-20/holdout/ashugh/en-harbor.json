@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "ashugh": {
+      "tasks": 1,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "ashugh",
+      "lines": 32,
+      "passing": 32,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe harbor lights are dim and low,\nThe pier is gray with salt and rust,\nThe tides still come, the tides still go,\nBut no one waits here, only dust.\n\n[Verse 2]\nMy father mended nets by hand\nAnd sang the songs his father knew,\nThe boats came home to Kestrel Strand\nWith silver herring, bright and blue.\n\n[Chorus]\nOh, where have all the sailors gone?\nThe bell is silent on the quay,\nWe keep the lantern burning on\nFor ships that never come from sea.\n\n[Verse 3]\nThe salting sheds have closed their doors,\nThe children left for city lights,\nThe gulls still circle round the shores\nAnd cry along the empty nights.\n\n[Verse 4]\nI walk along the wall at dawn\nAnd count the moorings, one by one,\nThe nets lie folded on the lawn,\nThe rope is rotting in the sun.\n\n[Chorus]\nOh, where have all the sailors gone?\nThe bell is silent on the quay,\nWe keep the lantern burning on\nFor ships that never come from sea.\n\n[Bridge]\nPerhaps one morning, through the gray,\nA sail will rise beyond the bar\nAnd bring the old ones home to stay,\nOr so I tell the evening star.\n\n[Chorus]\nOh, where have all the sailors gone?\nThe bell is silent on the quay,\nWe keep the lantern burning on\nFor ships that never come from sea.\n",
+      "changes": 0,
+      "rounds": 0,
+      "requests": 0
+    }
+  ]
+}
