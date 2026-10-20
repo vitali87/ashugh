@@ -110,6 +110,7 @@ WEAK = {
     "until",
 }
 
+STRESS_SHIFT = 0.3  # meter cost of a compound's stress moving onto its secondary stress
 LETTER_VOWELS = "aeiouy"
 LETTER_PHONES = {
     "a": "æ",
@@ -225,6 +226,15 @@ ONSETS = {
 }  # fmt: skip
 
 
+def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
+    """The first inner e that only lengthens the vowel before it: love-ly, some-time."""
+    for k in range(1, len(groups) - 1):
+        a, b = groups[k]
+        if low[a:b] == "e" and groups[k - 1][1] == a - 1:
+            return k
+    return None
+
+
 def split_spelling(token: str, n: int) -> list[str]:
     """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful."""
     low = token.lower()
@@ -232,8 +242,9 @@ def split_spelling(token: str, n: int) -> list[str]:
     if len(groups) < n:  # a silent-looking vowel is sung after all: fi-re
         groups = [(m.start(), m.end()) for m in re.finditer(f"[{LETTER_VOWELS}]+", low)] or groups
     while len(groups) > n:
-        a, b = groups[-2], groups.pop()
-        groups[-1] = (a[0], b[1])
+        k = _silent_e(low, groups) or len(groups) - 1
+        a, b = groups[k - 1], groups.pop(k)
+        groups[k - 1] = (a[0], b[1])
     while len(groups) < n:
         longest = max(range(len(groups)), key=lambda k: groups[k][1] - groups[k][0])
         a, b = groups[longest]
@@ -243,7 +254,10 @@ def split_spelling(token: str, n: int) -> list[str]:
     cuts = []
     for (_, end), (start, _) in zip(groups, groups[1:]):
         gap = low[end:start]
-        onset = next((k for k in (3, 2) if gap[-k:] in ONSETS and len(gap) > k), 1)
+        if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
+            onset = 2  # lit-tle, can-dle, ta-ble
+        else:
+            onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
         cuts.append(start - min(onset, len(gap)))
     pieces = [token[a:b].strip("-'") or token[a:b] for a, b in zip([0, *cuts], [*cuts, len(token)])]
     while len(pieces) < n:  # too few vowel letters to cut: split the longest piece
@@ -310,6 +324,12 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         reading = Reading(stress, phones, norm, source, secondary)
         if all(r.stress != reading.stress for r in readings):
             readings.append(reading)
+    # A compound may move its stress onto its second part in verse: sometíme.
+    for r in list(readings):
+        for k in r.secondary:
+            if k > r.stress and all(x.stress != k for x in readings):
+                rest = tuple(sorted({r.stress, *r.secondary} - {k}))
+                readings.append(Reading(k, r.phones, norm, "shift", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest))
     word.weak = word.weak or word.clitic or longest == 1

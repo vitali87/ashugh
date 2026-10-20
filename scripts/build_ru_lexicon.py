@@ -50,6 +50,25 @@ def stress_positions(form: str) -> tuple[str, set[int], int]:
     return form.replace("'", ""), positions, count
 
 
+def past_forms(infinitive: str) -> list[str]:
+    """The past tense of a verb whose dump row lists none, stressed like its infinitive.
+
+    Only -ть and -ться verbs with a vowel before the ending and a stress mark
+    qualify; -сть, -сти and -чь verbs change their stem in the past.
+    """
+    if "'" not in infinitive and "ё" not in infinitive:
+        return []
+    if infinitive.endswith("ться"):
+        stem, endings = infinitive[:-4], ("лся", "лась", "лось", "лись")
+    elif infinitive.endswith("ть"):
+        stem, endings = infinitive[:-2], ("л", "ла", "ло", "ли")
+    else:
+        return []
+    if not stem.rstrip("'") or stem.rstrip("'")[-1] not in VOWELS:
+        return []
+    return [stem + e for e in endings]
+
+
 def build(source: Path) -> dict[str, set[int]]:
     csv.field_size_limit(sys.maxsize)
     table: dict[str, set[int]] = defaultdict(set)
@@ -58,18 +77,20 @@ def build(source: Path) -> dict[str, set[int]]:
             rows = csv.reader(fh, delimiter="\t")
             header = next(rows)
             columns = [i for i, h in enumerate(header) if h not in NOT_FORMS]
+            past = header.index("past_m") if "past_m" in header else None
+            accented = header.index("accented") if "accented" in header else None
             for row in rows:
-                for i in columns:
-                    if i >= len(row):
+                forms = [v for i in columns if i < len(row) for v in re.split(r"[,;/]", row[i])]
+                if past is not None and accented is not None and not "".join(row[past : past + 1]).strip():
+                    forms += past_forms(row[accented].strip().lower())
+                for variant in forms:
+                    form = variant.strip().lower().replace("\u0301", "'").replace("*", "")
+                    if not FORM_RE.fullmatch(form):
                         continue
-                    for variant in re.split(r"[,;/]", row[i]):
-                        form = variant.strip().lower().replace("\u0301", "'").replace("*", "")
-                        if not FORM_RE.fullmatch(form):
-                            continue
-                        bare, positions, count = stress_positions(form)
-                        if not positions or (count < 2 and "ё" not in bare):
-                            continue
-                        table[bare] |= positions
+                    bare, positions, count = stress_positions(form)
+                    if not positions or (count < 2 and "ё" not in bare):
+                        continue
+                    table[bare] |= positions
     return table
 
 

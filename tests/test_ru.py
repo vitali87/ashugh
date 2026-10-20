@@ -121,6 +121,10 @@ def test_display_syllables(word, parts):
         ("забыв", [1]),
         ("создавший", [1]),
         ("враждующих", [1]),
+        ("звучал", [1]),
+        ("звучали", [1]),
+        ("свалилась", [1]),
+        ("краю", [0, 1]),
     ],
 )
 def test_forms_the_dictionary_lacks(word, expected):

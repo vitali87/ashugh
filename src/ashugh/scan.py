@@ -154,11 +154,17 @@ def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
 
 
 def check_line(
-    ln: Line, rule: Rule, meter_name: str, source: str, force: dict | None = None
+    ln: Line,
+    rule: Rule,
+    meter_name: str,
+    source: str,
+    force: dict | None = None,
+    promote: bool | None = None,
 ) -> LineReport:
     """Fit one analyzed line to its slot and collect its line-level issues."""
     target = rule.syllables_at(ln.index)
-    f = meter.fit(ln.words, meter_name, target, rule.tolerance, force)
+    feet = rule.feet_at(ln.index)
+    f = meter.fit(ln.words, meter_name, target, rule.tolerance, force, feet, promote)
     lr = LineReport(ln, f, rhyme.tails(ln, f), target=target)
     _check_line(lr, rule, meter_name, source)
     return lr
@@ -169,7 +175,8 @@ RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
 
 
 def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source: str) -> None:
-    """Let rhymes choose the stress of ambiguous line-final words (облака́ / издалека́).
+    """Let rhymes choose the stress of ambiguous line-final words (облака́ / издалека́),
+    or put an English line's last beat on its final syllable (memory / free).
 
     The meter alone often cannot tell о́блака from облака́. When another reading
     of a line's rhyme word costs the meter little more and rhymes clearly better
@@ -180,7 +187,17 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
         changed = False
         for k, lr in enumerate(reports):
             w = rhyme.anchor_word(lr.line, lr.fit)
-            if w is None or not lr.line.words[w].ambiguous:
+            if w is None:
+                continue
+            word = lr.line.words[w]
+            tries = [
+                ({w: option}, None)
+                for option in word.stress_options()
+                if word.ambiguous and option not in (None, lr.fit.stresses.get(w))
+            ]
+            if word.lang == "en" and not lr.fit.promoted:
+                tries.append((None, True))
+            if not tries:
                 continue
             others = [r.tails for m, r in enumerate(reports) if m != k]
             if not others:
@@ -190,10 +207,8 @@ def _rhyme_stress(reports: list[LineReport], rule: Rule, meter_name: str, source
                 return max((rhyme.match(tails, t)[0] for t in others), default=0.0)
 
             current = best(lr.tails)
-            for option in lr.line.words[w].stress_options():
-                if option == lr.fit.stresses.get(w) or option is None:
-                    continue
-                alt = check_line(lr.line, rule, meter_name, source, force={w: option})
+            for force, promote in tries:
+                alt = check_line(lr.line, rule, meter_name, source, force, promote)
                 if (
                     alt.fit.cost - lr.fit.cost > RHYME_STRESS_MARGIN
                     or alt.fit.count != lr.fit.count
@@ -320,6 +335,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 },
             )
         )
+
+    if source == "spec" and meter_name != "free":
         feet = rule.feet_at(ln.index)
         if feet is not None and f.feet != feet:
             need = meter.length(meter_name, feet, f.ending)

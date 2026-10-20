@@ -159,3 +159,31 @@ def test_lexicon_override_in_arpabet():
 def test_lexicon_override_without_digits_is_ignored():
     w = en.analyze_word("zorblax", {"zorblax": "zor-blax"})
     assert w.guessed
+
+
+@pytest.mark.parametrize(
+    "word,n,parts",
+    [
+        ("between", 2, ["be", "tween"]),
+        ("without", 2, ["wi", "thout"]),
+        ("declines", 2, ["de", "clines"]),
+        ("father", 2, ["fa", "ther"]),
+        ("sometime", 2, ["some", "time"]),
+        ("lovely", 2, ["love", "ly"]),
+        ("careful", 2, ["care", "ful"]),
+        ("little", 2, ["lit", "tle"]),
+        ("candle", 2, ["can", "dle"]),
+        ("table", 2, ["ta", "ble"]),
+        ("summer", 2, ["sum", "mer"]),
+        ("beautiful", 3, ["beau", "ti", "ful"]),
+        ("complete", 2, ["com", "plete"]),
+    ],
+)
+def test_spelling_split_for_display(word, n, parts):
+    assert en.split_spelling(word, n) == parts
+
+
+@pytest.mark.parametrize("word,n", [("strengths", 1), ("rhythm", 2), ("a", 1), ("fire", 2)])
+def test_spelling_split_always_gives_n_pieces(word, n):
+    pieces = en.split_spelling(word, n)
+    assert len(pieces) == n and "".join(pieces).replace("-", "") in (word, word * 2)

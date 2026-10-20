@@ -113,3 +113,61 @@ def test_forced_stress_in_the_meter():
     assert meter.fit(words, "iamb", force={3: 0}).stresses[3] == 0
     assert meter.fit(words, "iamb", force={3: 2}).stresses[3] == 2
     assert meter.fit(words, "iamb", force={3: 7}).stresses[3] in (0, 2)  # impossible: ignored
+
+
+def test_second_locative_scans_in_meter():
+    rep = scan("Что кинул он в краю родном", from_dict({"meter": "iamb4"}), lang="ru")
+    assert rep.ok
+
+
+def codes(rep):
+    return [i.code for i in rep.issues if i.severity == "error"]
+
+
+def test_wrong_number_of_feet_is_an_error_even_when_stresses_are_clean():
+    rep = scan("Я жду тебя у окон", from_dict({"meter": "iamb4"}), lang="ru")
+    assert codes(rep) == ["feet"]
+    assert scan("Я жду тебя у старых окон", from_dict({"meter": "iamb4"}), lang="ru").ok
+
+
+def test_english_initial_inversion_is_allowed():
+    rep = scan("Sometime too hot the eye of heaven shines", from_dict({"meter": "iamb5"}))
+    assert rep.ok
+
+
+def test_inversion_only_at_the_start_of_an_english_line():
+    rep = scan("The night was a summer in the hall", from_dict({"meter": "iamb4"}))
+    assert "meter" in codes(rep)
+    rep = scan("Белая ночь пришла ко мне", from_dict({"meter": "iamb4"}), lang="ru")
+    assert "meter" in codes(rep), "a Russian iamb may not start on a stressed polysyllable"
+
+
+def test_english_compound_may_shift_its_stress_onto_the_second_part():
+    rep = scan("And every fair from fair sometime declines", from_dict({"meter": "iamb5"}))
+    assert rep.ok
+
+
+def test_long_word_stress_does_not_shift_backwards():
+    # in-for-MA-tion keeps its primary stress: the secondary before it does not take over
+    rep = scan("I want the information now", from_dict({"meter": "trochee4"}))
+    assert "meter" in codes(rep)
+
+
+def test_english_line_may_end_on_a_promoted_syllable():
+    rep = scan("Thou art more lovely and more temperate", from_dict({"meter": "iamb5"}))
+    assert rep.ok
+    rep = scan("Thou art more lovely and more temperate", from_dict({"meter": "iamb4"}))
+    assert rep.ok, "or as four feet with a dactylic ending"
+
+
+def test_english_promoted_beat_can_carry_the_rhyme():
+    text = "I keep the summer in my memory\nAnd every road will set me free\n"
+    rep = scan(text, from_dict({"meter": "iamb", "rhyme": "AA"}))
+    assert rep.ok
+    assert rep.lines[0].fit.promoted
+
+
+def test_promotion_does_not_make_any_dactyl_rhyme():
+    text = "I keep the summer in my memory\nAnd every road will lead me home\n"
+    rep = scan(text, from_dict({"meter": "iamb", "rhyme": "AA"}))
+    assert "rhyme" in codes(rep)

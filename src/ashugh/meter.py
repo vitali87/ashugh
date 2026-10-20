@@ -52,6 +52,8 @@ PYRRHIC = {2: 0.1, 3: 0.4}
 MONO_OFF_BEAT = 0.1
 CLITIC_ON_BEAT = 0.1
 CLAUSULA = 1.5
+INVERSION = 0.3  # an English line may open on a stressed syllable: "Sometime too hot"
+PROMOTION = 0.3  # an English line may put its last beat two syllables after the stress
 DOLNIK_PENALTY = 0.3
 DOLNIK_SKIP = 0.6
 MAX_ELIDABLE = 4
@@ -87,6 +89,7 @@ class Slot:
     enclitic: bool
     secondary: frozenset[int] = frozenset()  # may take a beat or skip it for free
     penalties: tuple[tuple[int | None, float], ...] = ()  # extra cost of a stress option
+    lang: str = ""
 
     def penalty(self, stress: int | None) -> float:
         return next((c for s, c in self.penalties if s == stress), 0.0)
@@ -104,6 +107,7 @@ class Fit:
     stressed: tuple[bool, ...]  # per sung syllable: carries the stress?
     off_beat: list[int] = field(default_factory=list)  # words whose stress hits a weak beat
     ending_off: bool = False  # the line's last stress hits a weak beat
+    promoted: bool = False  # the last beat falls on an unstressed final syllable: témperàte
 
     @property
     def grid(self) -> str:
@@ -148,7 +152,16 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
         penalties = tuple((s, c) for s, c in costs.items() if c)
         out.append(
             Slot(
-                i, pos, size, options, w.weak, w.clitic, w.enclitic, frozenset(secondary), penalties
+                i,
+                pos,
+                size,
+                options,
+                w.weak,
+                w.clitic,
+                w.enclitic,
+                frozenset(secondary),
+                penalties,
+                w.lang,
             )
         )
         pos += size
@@ -192,6 +205,8 @@ def _beat_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float,
             if not on:
                 if s.weak or s.clitic:
                     cost += WEAK_WORD_OFF_BEAT
+                elif s.lang == "en" and s.start == 0 and k == 0:
+                    cost += INVERSION
                 else:
                     cost += STRESS_OFF_BEAT
                     off = True
@@ -221,7 +236,11 @@ def _stressed_grid(ss: list[Slot], choice: dict[int, int | None], strong, count:
 
 
 def fit_classical(
-    words: list[Word], meter: str, elided: frozenset[int] = frozenset(), force: dict | None = None
+    words: list[Word],
+    meter: str,
+    elided: frozenset[int] = frozenset(),
+    force: dict | None = None,
+    promote: bool = False,
 ) -> Fit:
     period, phase = CLASSICAL[meter]
 
@@ -256,6 +275,15 @@ def fit_classical(
         if k == anchor:
             ending_off = end_off
             last_pos = pos
+    stressed = _stressed_grid(ss, choice, strong, count)
+    promoted = False
+    if promote and anchor == len(ss) - 1 and not ending_off:
+        s = ss[anchor]
+        st = choice[s.word]
+        if s.lang == "en" and st is not None and s.size - st == 3 and strong(count - 1):
+            promoted, last_pos = True, count - 1
+            total += PROMOTION
+            stressed = stressed[:-1] + (True,)
     feet = (last_pos - phase) // period + 1 if last_pos >= phase else 0
     return Fit(
         meter=meter,
@@ -265,9 +293,10 @@ def fit_classical(
         elided=elided,
         stresses=_own(choice, words, elided),
         beats=tuple(strong(p) for p in range(count)),
-        stressed=_stressed_grid(ss, choice, strong, count),
+        stressed=stressed,
         off_beat=off,
         ending_off=ending_off,
+        promoted=promoted,
     )
 
 
@@ -374,18 +403,27 @@ def fit(
     count: int | None = None,
     tolerance: int = 0,
     force: dict[int, int | None] | None = None,
+    feet: int | None = None,
+    promote: bool | None = None,
 ) -> Fit:
-    """Best fit of words to meter, preferring realizations whose length matches count."""
+    """Best fit of words to meter, preferring realizations whose length matches count,
+    then those with the asked number of feet. English lines also try a promoted last
+    beat (promote=None), or only that (promote=True)."""
     scored = []
+    english = any(w.lang == "en" for w in words)
     for elided in realizations(words):
         if meter == "dolnik":
-            f = fit_dolnik(words, elided, force)
+            fits = [fit_dolnik(words, elided, force)]
         elif meter == "free":
-            f = free_fit(words, elided, force)
+            fits = [free_fit(words, elided, force)]
         else:
-            f = fit_classical(words, meter, elided, force)
-        miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
-        scored.append(((miss, f.cost, len(elided)), f))
+            fits = [] if promote else [fit_classical(words, meter, elided, force)]
+            if english and promote is not False:
+                fits.append(fit_classical(words, meter, elided, force, promote=True))
+        for f in fits:
+            miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
+            off_feet = feet is not None and meter != "dolnik" and f.feet != feet
+            scored.append(((miss, off_feet, f.cost, len(elided)), f))
     return min(scored, key=lambda kf: kf[0])[1]
 
 

@@ -72,6 +72,8 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
             continue
         # English also rhymes on a secondary stress after the main one (sunshine / mine).
         later = [k for k in reading.secondary if k > reading.stress]
+        if fit.promoted:  # the beat on the last syllable carries the rhyme: memory / free
+            later.append(word.size - 1)
         for stress in [reading.stress, *later]:
             t = _tail(word, reading, stress, words[w + 1 :])
             if t is not None and t not in out:
