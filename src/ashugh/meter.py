@@ -463,7 +463,26 @@ def fit(
 ) -> Fit:
     """Best fit of words to meter, preferring realizations whose length matches count,
     then those with the asked number of feet. English lines also try a promoted last
-    beat (promote=None), or only that (promote=True)."""
+    beat (promote=None), or only that (promote=True). When the feet are missed, each
+    ambiguous word's other readings are tried too: four feet of trochee make
+    облака́, not о́блака."""
+    key, best = _fit(words, meter, count, tolerance, force, feet, promote)
+    if feet is None or best.feet == feet or meter == "free":
+        return best
+    for i, w in enumerate(words):
+        options = w.stress_options()
+        if (force and i in force) or len(options) < 2:
+            continue
+        for option in options:
+            if option == best.stresses.get(i):
+                continue
+            k, f = _fit(words, meter, count, tolerance, {**(force or {}), i: option}, feet, promote)
+            if k < key:
+                key, best = k, f
+    return best
+
+
+def _fit(words, meter, count, tolerance, force, feet, promote) -> tuple[tuple, Fit]:
     scored = []
     english = any(w.lang == "en" for w in words)
     for elided in realizations(words):
@@ -479,7 +498,7 @@ def fit(
             miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
             off_feet = feet is not None and f.feet != feet
             scored.append(((miss, off_feet, f.cost, len(elided)), f))
-    return min(scored, key=lambda kf: kf[0])[1]
+    return min(scored, key=lambda kf: kf[0])
 
 
 def free_fit(

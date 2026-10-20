@@ -211,10 +211,17 @@ def _s_ending(variant: str) -> str:
     return " S" if last in ("P", "T", "K", "F", "TH") else " Z"
 
 
-def _drop_index(longer: list[str], shorter: list[str]) -> int | None:
+def _drop_index(longer: list[str], shorter: list[str], merge: bool = False) -> int | None:
+    """The vowel of longer that shorter goes without: dropped (every: EH V ER IY,
+    EH V R IY), or with merge, merged into the one before it ahead of a vowel
+    both share (ourselves: AW ER EH, AA EH; but not us, AH, against U.S.)."""
     for i in range(len(longer)):
         if longer[:i] + longer[i + 1 :] == shorter:
             return i
+    if merge and len(shorter) == len(longer) - 1:
+        for i in range(1, len(longer) - 1):
+            if longer[: i - 1] == shorter[: i - 1] and longer[i + 1 :] == shorter[i:]:
+                return i
     return None
 
 
@@ -346,7 +353,7 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     full = [p for p in parsed if len(p[1]) == longest]
     for _, stresses, bare in parsed:
         if len(stresses) == longest - 1 and word.drop is None:
-            word.drop = _drop_index(full[0][2], bare)
+            word.drop = _drop_index(full[0][2], bare, merge=True)
 
     readings: list[Reading] = []
     for phones, stresses, _ in full:
