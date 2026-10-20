@@ -7,11 +7,11 @@
     "by_source": {
       "dictionary": {
         "words": 49995,
-        "accuracy": 0.9809
+        "accuracy": 0.9808
       },
       "guess": {
         "words": 5510,
-        "accuracy": 0.8804
+        "accuracy": 0.8811
       },
       "mark": {
         "words": 1677,
@@ -19,7 +19,7 @@
       },
       "meter": {
         "words": 3674,
-        "accuracy": 0.9415
+        "accuracy": 0.9418
       }
     },
     "skipped_lines": 25,
@@ -27,8 +27,8 @@
   },
   "rhyme_pairs": {
     "pairs": 33798,
-    "precision": 0.9411,
-    "recall": 0.8749,
-    "f1": 0.9068
+    "precision": 0.9408,
+    "recall": 0.8748,
+    "f1": 0.9066
   }
 }

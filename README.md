@@ -231,7 +231,7 @@ stress marked by hand and a rhyme scheme; `python eval/rifma.py`):
 | each word's first reading, without meter or rhyme | 91.8% |
 | words the dictionary lists | 98.1% |
 | ambiguous words, resolved by meter and rhyme | 94.2% |
-| unknown words (9%), guessed from the ending, meter and rhyme | 88.0% |
+| unknown words (9%), guessed from the ending, meter and rhyme | 88.1% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.87, F1 0.91 |
 
 RIFMA was also the development set for the Russian rules, so these numbers
@@ -289,7 +289,9 @@ enclitic that rhymes with the word before it. A hyphenated reduplication
 6. else a prior learned from word endings, which the meter can overrule.
 
 After в, во and на, about a hundred nouns take the stressed second locative
-(на берегу́, в саду́, в крови́). At the end of a line, the rhyme partner picks between readings the meter
+(на берегу́, в саду́, в крови́). In about a hundred set pairs the stress may
+move onto the preposition (по́ лесу, на́ ночь, за́ руку); the meter takes
+whichever reading fits, and a shifted line end rhymes from the preposition. At the end of a line, the rhyme partner picks between readings the meter
 allows equally: облака́ / издалека́. A phonetic transcription reduces
 unstressed vowels, devoices and assimilates obstruents, and drops silent
 consonants (сердце, солнце, честный).
@@ -332,8 +334,6 @@ consonant before the vowel (ты / красоты).
   կայսրություն keeps the schwa of կայսր (կայ-սը-րու-թյուն). The rules cannot
   see that; write the word into `[lexicon]` once and every song uses it.
 - Only Eastern Armenian. Western Armenian is not supported yet.
-- Russian stress shifts onto prepositions (и́з лесу, на́ гору) are not
-  modeled.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
 - Rhyme is judged within a stanza, so the cross-stanza rhymes of a sonnet

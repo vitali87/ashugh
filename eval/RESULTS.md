@@ -14,7 +14,7 @@ benchmarks in its `rifma.json`, `armenian.json` and `oov.json`.
 | each word's first reading, without meter or rhyme | 91.8% |
 | words the dictionary lists (49,995) | 98.1% |
 | ambiguous words resolved by meter and rhyme (3,674) | 94.2% |
-| unknown words guessed from the ending, meter and rhyme (5,510) | 88.0% |
+| unknown words guessed from the ending, meter and rhyme (5,510) | 88.1% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.875, F1 0.907 |
 
 RIFMA was the development set for the Russian rules: the misses it showed

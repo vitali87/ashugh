@@ -195,6 +195,26 @@ SECOND_LOCATIVE = frozenset(
     """.split()
 )
 LOCATIVE_PREPOSITIONS = frozenset({"в", "во", "на"})
+# Pairs where the stress may move from the noun onto the preposition: по́ лесу, на́ ночь,
+# за́ руку. Both readings stay possible; the shifted one costs the meter a little.
+PREPOSITION_SHIFT = {
+    "на": set(
+        """берег воду гору день ночь зиму лето год два три дом ногу ноги руку руки
+        голову спину бок пол нос плечи поле небо море мель смех слух спор сторону
+        душу борт ветер""".split()
+    ),
+    "за": set(
+        """руку руки ногу ноги голову волосы бок борт город год день ночь зиму лето
+        душу уши плечи спину нос полночь морем""".split()
+    ),
+    "по": set("лесу полю морю небу миру снегу лугу полу двое трое сердцу плечу уху".split()),
+    "из": set("лесу дому виду носу".split()),
+    "под": set("гору ноги руку руки вечер нос".split()),
+    "без": set("вести толку году".split()),
+    "до": set("дому смерти полу неба".split()),
+    "от": set("роду".split()),
+}
+LEAN_COST = 0.2
 LOCATIVE_ONLY_AFTER = {"полку": {"в", "во"}, "связи": {"в", "во"}, "виду": {"на"}, "суку": {"на"}}
 # -ого / -его is said -ово / -ево, except in these words.
 NOT_OGO = {
@@ -597,3 +617,19 @@ def second_locatives(words: list[Word]) -> None:
             continue
         last = w.size - 1
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+
+
+def preposition_shift(words: list[Word]) -> None:
+    """Let the noun of a listed pair lend its stress to the preposition: по́ лесу."""
+    for prev, w in zip(words, words[1:]):
+        if w.lang != CODE or prev.lang != CODE or prev.size != 1 or not prev.clitic:
+            continue
+        if w.norm not in PREPOSITION_SHIFT.get(prev.norm, ()) or not w.readings:
+            continue
+        if w.readings[0].source in ("mark", "user"):
+            continue
+        base = w.readings[0]
+        lean = Reading(
+            None, transcribe(base.spelling, None), base.spelling, "lean", penalty=LEAN_COST
+        )
+        w.readings = (*w.readings, lean)

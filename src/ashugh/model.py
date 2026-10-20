@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 
 from .phon import is_vowel
 
-# Readings that verse allows but speech does not: a compound's stress on its second
-# part (sometíme).
-LICENCES = frozenset({"shift"})
+# Readings that verse allows but speech does not insist on: a compound's stress on its
+# second part (sometíme), a noun leaving its stress to the preposition (по́ лесу).
+LICENCES = frozenset({"shift", "lean"})
 ACUTE = "\u0301"
 
 
@@ -62,6 +62,11 @@ class Word:
             if r.stress == stress:
                 return r
         return self.readings[0]
+
+    @property
+    def leans(self) -> bool:
+        """May lend its stress to the preposition before it."""
+        return any(r.source == "lean" for r in self.readings)
 
     @property
     def guessed(self) -> bool:

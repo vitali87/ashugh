@@ -66,6 +66,17 @@ def tails(line: Line, fit: Fit) -> list[Tail]:
     w = ss[k].word
     word = words[w]
     chosen = fit.stresses.get(w)
+    if chosen is None and ss[k].lead and w > 0:  # по́ лесу: the preposition took the stress
+        prep, lean = words[w - 1], word.readings[-1]
+        t = _tail(prep, prep.readings[0], 0, [])
+        if t is None:
+            return []
+        rest = t.rest + lean.phones + tuple(p for x in words[w + 1 :] for p in x.readings[0].phones)
+        shown = " ".join(x.text for x in words[w - 1 :])
+        spelled = " ".join([prep.norm, lean.spelling, *(x.norm for x in words[w + 1 :])])
+        return [
+            Tail(t.onset, t.vowel, rest, sum(is_vowel(p) for p in rest), shown, spelled, word.lang)
+        ]
     out = []
     for reading in word.readings:
         if reading.stress is None or (fit.meter != "free" and reading.stress != chosen):

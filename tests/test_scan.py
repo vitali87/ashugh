@@ -318,3 +318,32 @@ def test_promote_on_a_line_without_english_is_harmless():
 
     words = analyze("ru", tokenize("Мой дядя самых честных правил"), {})
     assert meter.fit(words, "iamb", promote=True).count == 9
+
+
+def test_stress_may_move_onto_a_preposition():
+    spec = from_dict({"meter": "trochee4"})
+    assert scan("Ходит по сердцу тревога", spec, lang="ru").ok  # по́ сердцу
+    assert scan("Мама за руку берёт", spec, lang="ru").ok  # за́ руку
+    rep = scan("Ходит по дому тревога", spec, lang="ru")
+    assert "meter" in codes(rep), "по до́му is not a listed shift"
+
+
+def test_preposition_stress_is_optional():
+    assert scan("Пойдём гулять по лесу мы", from_dict({"meter": "iamb4"}), lang="ru").ok
+
+
+def test_shifted_line_end_rhymes_on_the_preposition():
+    rep = scan("Мама ведёт меня за руку", from_dict({"meter": "dactyl3"}), lang="ru")
+    assert rep.ok
+    (tail,) = rep.lines[0].tails
+    assert tail.word == "за руку" and tail.vowel == "a" and tail.post == 2
+
+
+def test_noun_alone_keeps_its_stress():
+    from ashugh.lang import analyze
+    from ashugh.lyrics import tokenize
+
+    (w,) = analyze("ru", tokenize("сердцу"), {})
+    assert None not in w.stress_options()
+    words = analyze("ru", tokenize("по сердцу"), {})
+    assert None in words[1].stress_options() and not words[1].ambiguous

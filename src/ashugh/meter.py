@@ -90,6 +90,7 @@ class Slot:
     secondary: frozenset[int] = frozenset()  # may take a beat or skip it for free
     penalties: tuple[tuple[int | None, float], ...] = ()  # extra cost of a stress option
     lang: str = ""
+    lead: int = 0  # syllables at the start borrowed from a preposition (по́ лесу)
 
     def penalty(self, stress: int | None) -> float:
         return next((c for s, c in self.penalties if s == stress), 0.0)
@@ -128,8 +129,10 @@ class Fit:
 
 
 def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) -> list[Slot]:
+    """One slot per sung word; a preposition and a noun that may take its stress share one."""
     out = []
     pos = 0
+    borrowed: int | None = None  # start of a preposition the next word's slot takes over
     for i, w in enumerate(words):
         size = w.size
         options = tuple(w.stress_options())
@@ -149,11 +152,25 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
             }
         if size == 0:
             continue
-        penalties = tuple((s, c) for s, c in costs.items() if c)
+        nxt = words[i + 1] if i + 1 < len(words) else None
+        if nxt is not None and nxt.leans and size == 1 and w.clitic:
+            borrowed, pos = pos, pos + 1
+            continue
+        start, lead = pos, 0
+        if w.leans and borrowed is not None:  # None, the noun unstressed, is the preposition's
+            start, lead, size = borrowed, 1, size + 1
+            options = tuple(0 if o is None else o + 1 for o in options)
+            secondary = {k + 1 for k in secondary}
+            costs = {(0 if st is None else st + 1): c for st, c in costs.items()}
+        elif w.leans:
+            options = tuple(o for o in options if o is not None) or options
+            costs = {st: c for st, c in costs.items() if st is not None}
+        borrowed = None
+        penalties = tuple((st, c) for st, c in costs.items() if c)
         out.append(
             Slot(
                 i,
-                pos,
+                start,
                 size,
                 options,
                 w.weak,
@@ -162,9 +179,10 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
                 frozenset(secondary),
                 penalties,
                 w.lang,
+                lead,
             )
         )
-        pos += size
+        pos = start + size
     return out
 
 
@@ -201,6 +219,9 @@ def _beat_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float,
     cost, off = 0.0, False
     for k in range(s.size):
         on = strong(s.start + k)
+        if k < s.lead and k != stress:  # the preposition, unstressed as usual
+            cost += CLITIC_ON_BEAT if on else 0.0
+            continue
         if k == stress:
             if not on:
                 if s.weak or s.clitic:
@@ -295,7 +316,7 @@ def fit_classical(
         feet=feet,
         count=count,
         elided=elided,
-        stresses=_own(choice, words, elided),
+        stresses=_own(choice, words, elided, ss),
         beats=tuple(strong(p) for p in range(count)),
         stressed=stressed,
         off_beat=off,
@@ -329,7 +350,14 @@ def fit_dolnik(
         choice = {s.word: s.options[0] for s in ss}
         grid = _stressed_grid(ss, choice, None, count)
         return Fit(
-            "dolnik", 99.0, 0, count, elided, _own(choice, words, elided), (False,) * count, grid
+            "dolnik",
+            99.0,
+            0,
+            count,
+            elided,
+            _own(choice, words, elided, ss),
+            (False,) * count,
+            grid,
         )
     return best
 
@@ -342,7 +370,9 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
         if s.size == 1:
             kind[s.start] = "c" if (s.clitic or st is None) else "m"
         elif st is not None:
-            kind[s.start + st] = "W" if (s.weak or s.clitic) else "S"
+            for k in range(s.lead):
+                kind[s.start + k] = "c"
+            kind[s.start + st] = "m" if st < s.lead else ("W" if (s.weak or s.clitic) else "S")
     anchor = _anchor(ss)
     if anchor is None:
         return None
@@ -394,16 +424,24 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
         feet=n,
         count=count,
         elided=elided,
-        stresses=_own(choice, words, elided),
+        stresses=_own(choice, words, elided, ss),
         beats=tuple(beats),
         stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
         off_beat=off_words,
     )
 
 
-def _own(choice: dict[int, int | None], words: list[Word], elided: frozenset[int]) -> dict:
-    """Stress indices back in each word's own syllables, undoing dropped schwas."""
+def _own(
+    choice: dict[int, int | None], words: list[Word], elided: frozenset[int], ss: list[Slot]
+) -> dict:
+    """Stress indices back in each word's own syllables, undoing dropped schwas and the
+    syllable a noun borrowed from its preposition (None when the preposition took it)."""
     out = {}
+    choice = dict(choice)
+    for s in ss:
+        if s.lead and s.word in choice:
+            st = choice[s.word]
+            choice[s.word] = None if st is None or st < s.lead else st - s.lead
     for w, st in choice.items():
         d = words[w].drop
         out[w] = st + 1 if w in elided and st is not None and d is not None and st >= d else st
@@ -448,7 +486,14 @@ def free_fit(
     choice = {s.word: s.options[0] for s in ss}
     stressed = _stressed_grid(ss, choice, None, count)
     return Fit(
-        "free", 0.0, sum(stressed), count, elided, _own(choice, words, elided), stressed, stressed
+        "free",
+        0.0,
+        sum(stressed),
+        count,
+        elided,
+        _own(choice, words, elided, ss),
+        stressed,
+        stressed,
     )
 
 
