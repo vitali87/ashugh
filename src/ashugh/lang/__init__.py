@@ -75,7 +75,7 @@ def foreign_word(token: str) -> Word:
     )
 
 
-PHRASE_END = re.compile(r"\s*[,.;:!?…—–]")
+PHRASE_END = re.compile(r"\s*[,.;:!?…—–։՝]")
 
 
 def analyze(
@@ -99,11 +99,19 @@ def analyze(
     end = words[-1] if words else None
     if end is not None and end.lang == "en" and end.clitic and end.norm not in ("a", "an", "the"):
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in
+    ends = [False] * len(words)
     if text is not None:
         spans = lyrics.token_spans(text)
-        for w, (_, stop, _) in zip(words, spans):
-            if w.lang == "en" and w.norm in en.PARTICLES and PHRASE_END.match(text, stop):
+        for k, (w, (_, stop, _)) in enumerate(zip(words, spans)):
+            ends[k] = bool(PHRASE_END.match(text, stop))
+            if w.lang == "en" and w.norm in en.PARTICLES and ends[k]:
                 w.clitic = False
+    if ends:
+        ends[-1] = True
+    norms = [w.norm for w in words]
+    for k, w in enumerate(words):
+        if w.lang == "hy" and w.norm == "ես":
+            hy.read_es(w, hy.auxiliary_es(norms, k, ends))
     return words
 
 

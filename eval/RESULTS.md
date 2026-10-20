@@ -40,15 +40,15 @@ either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **92.9%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **93.3%** |
 | the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **92.9%** |
 
-The 125 disagreements left, by kind:
+The 118 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
 | a schwa at the start | 49 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
-| a schwa at the end | 30 | rising clusters of loanwords that Wiktionary writes closed (ռազմ, նուդիզմ), and -րդ stems the held-out list lacks (նյարդ, Ալվարդ) |
+| a schwa at the end | 23 | stems in -նդ, -րդ and -րս that the held-out list lacks, read as the possessive (տաղանդ, մարդ, աղերս), and abbreviations (ԵՏՄ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
 | a schwa inside | 14 | compounds whose second root is listed in no form of its own (ծո-վա-գը-նաց, from գնալ) or was left out for breaking an entry (պատ-կե-րա-սը-րահ) |
 
@@ -56,7 +56,8 @@ Wiktionary transcribes speech, not singing, so this is agreement rather than
 accuracy. The comparison gave ashugh four things:
 
 - four rules: a word does not end in մն or ռն (ու-րե-մըն, սա-ռըն, as in 19
-  of 21 entries); it may end on three consonants that fall in sonority
+  of 21 entries), though it may end on a fricative and մ (կողմ, -իզմ: all 84
+  such entries are closed); it may end on three consonants that fall in sonority
   (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops: all 67 such
   entries are written closed, where ashugh had sung a schwa); a schwa
   syllable closes on two consonants only when the second is a stop

@@ -344,25 +344,29 @@ def _settle(
 
 
 def _problem(pools: list[list[Candidate]]) -> Problem:
-    """Each line against the group's first, judged by its own stanza's min_rhyme, with
-    the readings a partner may choose (облака́ beside свысока́); and no two lines
-    on the same rhyme word unless both were written that way."""
+    """Each line against one earlier member of its group, judged by its own
+    stanza's min_rhyme, with the readings a partner may choose (облака́ beside
+    свысока́); and no two lines on the same rhyme word unless both were written
+    that way. A line's anchor is the earlier member its candidates rhyme with
+    most, so the chosen lines hold together as scan asks (friends with end where
+    pen would not do), and the first line only where nothing else fits better."""
     weights = [[c.weight for c in pool] for pool in pools]
     pairs: dict[tuple[int, int], set[tuple[int, int]]] = {}
-    head = pools[0]
     for b in range(1, len(pools)):
-        ok = set()
-        for i, x in enumerate(head):
-            for j, y in enumerate(pools[b]):
-                s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
-                same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
-                if s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
-                    same_word and not (x.original and y.original)
-                ):
-                    ok.add((i, j))
-        pairs[(0, b)] = ok
-    for a in range(1, len(pools)):
-        for b in range(a + 1, len(pools)):
+        rhymed = {
+            a: {
+                (i, j)
+                for i, x in enumerate(pools[a])
+                for j, y in enumerate(pools[b])
+                if _rhyme_ok(x, y)
+            }
+            for a in range(b)
+        }
+        anchor = max(range(b), key=lambda a: (len(rhymed[a]), -a))
+        pairs[(anchor, b)] = rhymed[anchor]
+        for a in range(b):
+            if a == anchor:
+                continue
             ok = {
                 (i, j)
                 for i, x in enumerate(pools[a])
@@ -372,6 +376,16 @@ def _problem(pools: list[list[Candidate]]) -> Problem:
             if len(ok) < len(pools[a]) * len(pools[b]):
                 pairs[(a, b)] = ok
     return Problem(weights, pairs)
+
+
+def _rhyme_ok(x: Candidate, y: Candidate) -> bool:
+    """y rhymes with x at y's min_rhyme, and not on the same word unless both
+    lines were written that way."""
+    s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
+    same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
+    return s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
+        same_word and not (x.original and y.original)
+    )
 
 
 def _rhymes(c: Candidate) -> list:

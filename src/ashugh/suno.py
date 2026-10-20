@@ -242,11 +242,9 @@ def _render(
         prev = lr.line.words[i - 1] if i > 0 else None
         linked = prev is not None and prev.lang == "hy" and prev.drop == prev.size - 1
         after_link = linked and w.norm in hy.AUXILIARIES  # լույսն ես: [es], not the pronoun
-        # Further into a clause ես is the auxiliary (գեղեցիկ ես, որտեղ ես); after a
-        # conjunction, or opening the line, it is the pronoun I (ու ես, Ես գնում եմ).
-        after_link = after_link or (
-            w.norm == "ես" and prev is not None and prev.norm not in CLAUSE_OPENERS
-        )
+        # The line's analysis tells the auxiliary ես (գեղեցիկ ես, ինչու ես լռում)
+        # from the pronoun I (ու ես, Ես եմ, հիմա ես գիտեմ).
+        after_link = after_link or (w.norm == "ես" and w.enclitic)
         return _armenian(w, token, dropped, mode, hold, schwa, n, notes, after_link)
     if hold and w.size > 1:
         pieces = [s.text for s in w.syllables]
@@ -367,7 +365,6 @@ def _armenian(
     return new
 
 
-CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե երբ եթե քանի մինչ ապա հետո և էլ".split())
 # ՞ and ՜ sit on the stressed vowel of a question or an exclamation.
 LATIN_MARKS = {"\u055e": "?", "\u055c": "!"}
 ARMENIAN_VOWEL_LETTERS = set("աեէըիոօԱԵԷԸԻՈՕ")

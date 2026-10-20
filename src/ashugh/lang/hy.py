@@ -39,12 +39,12 @@ spec's [lexicon] table fixes them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from importlib import resources
 
 from ..model import Reading, Syllable, Word
-from ..phon import is_obstruent, is_stop, sonority
+from ..phon import features, is_obstruent, is_stop, sonority
 
 CODE = "hy"
 NAME = "Armenian"
@@ -216,7 +216,8 @@ def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
         if final and (a, b) in FINAL_SPLIT:
             return False
         if sonority(a) < sonority(b) and not (final and not possessive and b == "s"):
-            return False  # a stem may end in a stop and ս: մաքս, բոքս
+            if not (final and b == "m" and features(a).manner == "fric"):
+                return False  # a stem may end in a stop and ս (մաքս), a fricative and մ (կողմ)
         if final and possessive and _possessive(a, b):
             return False
     return True
@@ -464,6 +465,39 @@ def _from_override(spec: str) -> list[list[Seg]]:
         if segs:
             syllables.append(segs)
     return syllables
+
+
+# Words that open a clause, so a ես after them is the pronoun: ու ես, որ ես.
+CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե երբ եթե քանի մինչ ապա հետո էլ".split())
+FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
+
+
+def auxiliary_es(norms: list[str], i: int, clause_end: list[bool]) -> bool:
+    """Whether the ես at i is the auxiliary (you are, [es]) leaning on the word
+    before it, not the pronoun I ([jes]). The pronoun opens its clause (Ես եմ,
+    ու ես, ..., ես) or comes with a verb of I (հիմա ես գիտեմ); the auxiliary
+    follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես)."""
+    if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS:
+        return False
+    for k in range(i + 1, len(norms)):
+        if norms[k] in FIRST_PERSON or norms[k].endswith(("եմ", "ամ")):
+            return False
+        if clause_end[k]:
+            break
+    return True
+
+
+def read_es(word: Word, auxiliary: bool) -> None:
+    """Make a ես the auxiliary [es], an enclitic, or the pronoun [jes], a word."""
+    if auxiliary:
+        word.readings = tuple(
+            replace(r, phones=r.phones[1:]) if r.phones[:1] == ("j",) else r for r in word.readings
+        )
+    else:
+        word.enclitic = word.clitic = False
+        word.readings = tuple(
+            replace(r, stress=0, source="rule") if r.stress is None else r for r in word.readings
+        )
 
 
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:

@@ -286,3 +286,18 @@ def test_a_root_listed_opens_on_a_cluster_with_its_schwa_inside():
     assert {"նշան", "սղոց", "նմուշ"} <= roots
     assert not any(r.startswith(("ստ", "սպ", "զգ", "շտ")) for r in roots)  # ըս-տեղ-ծել
     assert "կցել" not in roots  # it would break համագործակցել
+
+
+@pytest.mark.parametrize(
+    "word,want",
+    [("կողմ", "կողմ"), ("մեղմ", "մեղմ"), ("կազմ", "կազմ"), ("ռեալիզմ", "ռե-ա-լիզմ")],
+)
+def test_a_word_may_end_on_a_fricative_and_m(word, want):
+    assert sung(word) == want  # Wiktionary: all 84 such entries closed (koʁm, ɾeɑlizm)
+
+
+@pytest.mark.parametrize(
+    "word,want", [("դաշն", "դա-շըն"), ("դյուցազն", "դյու-ցա-զըն"), ("ծանր", "ծա-նըր")]
+)
+def test_a_fricative_and_n_or_a_sonorant_and_r_keep_the_schwa(word, want):
+    assert sung(word) == want  # 14 of 17 fricative + ն entries split

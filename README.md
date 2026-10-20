@@ -280,7 +280,7 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-92.9% of words (92.9% of those written with a schwa). Most of the rest are
+93.3% of words (92.9% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
 glide (դանիացի). The real misses are compounds no listed word explains
@@ -302,7 +302,8 @@ as possible:
   ըս-պա-սել, ըզ-գեստ, and ըս-կը-սել when the cluster goes on;
 - an onset is one consonant, or a consonant plus յ (կյանք, -թյուն);
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
-  միտք), so տետր is տե-տըր and աստղ is աս-տըղ; a word may end on three
+  միտք), so տետր is տե-տըր and աստղ is աս-տըղ, though a word may end on a
+  fricative and մ (կողմ, ռեալիզմ) or on three
   (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops); a schwa syllable
   closes on two consonants only when the second is a stop (մը-կըրտ-չյան,
   հընդ-կաս-տան), so զրնգալ is զը-րըն-գալ and բժշկել is բը-ժըշ-կել;
@@ -327,7 +328,9 @@ In connected speech, a vowel before a word swallows its leading ը (նա
 ստացավ), and a final schwa syllable links onto a vowel after it (կյանքն է).
 The check uses whichever length fits the slot. Stress falls on the last full
 vowel, or where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… is an unstressed
-enclitic that rhymes with the word before it. A hyphenated reduplication
+enclitic that rhymes with the word before it. ես is the pronoun I [jes]
+instead where it opens its clause (Ես եմ, ու ես) or its clause has a verb of
+I (հիմա ես գիտեմ), and the auxiliary [es] otherwise (ինչու ես լռում). A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part.
 
 **Russian** (`lang/ru.py`). Stress comes from, in order:
@@ -384,7 +387,10 @@ and falls back to free verse.
 of the line, enclitics included. Two tails score by their stressed vowels
 and a feature-weighted alignment of what follows, where reduced vowels after
 the stress count half. Russian and Armenian open rhymes also need the
-consonant before the vowel (ты / красоты).
+consonant before the vowel (ты / красоты). A rhyme group holds where its
+lines rhyme with one another, each line at its own stanza's `min_rhyme`:
+the largest set that does stands, and the lines outside it are flagged
+(pen / end / friends / ends holds, though pen and ends are only slant).
 
 ## Limits
 

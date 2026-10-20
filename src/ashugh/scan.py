@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 
@@ -553,14 +554,21 @@ def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]
 
 
 def _check_groups(groups: dict[str, list[LineReport]]) -> None:
+    """A group holds where its lines rhyme with one another, each pair judged by
+    the later line's min_rhyme: the largest such set stands (the first line's on
+    a tie), and every line outside it is broken, shown with the member it comes
+    closest to. cup / end / friends / ends breaks at cup."""
     for g, members in groups.items():
-        head = members[0]
-        for lr in members[1:]:
-            s, ta, tb = rhyme.match(head.tails, lr.tails)
-            if s >= rhyme.THRESHOLD[lr.min_rhyme]:
+        kept, pair = rhyming_set(members)
+        for k, lr in enumerate(members):
+            if k in kept:
                 continue
-            a = ta.word if ta else head.line.text
-            b = tb.word if tb else lr.line.text
+            partner = max(sorted(kept), key=lambda m: pair(m, k)[0])
+            s, ta, tb = pair(partner, k)
+            other = members[partner]
+            a, b = (ta.word if ta else other.line.text), (tb.word if tb else lr.line.text)
+            if partner > k:
+                a, b = b, a
             lr.issues.append(
                 Issue(
                     lr.line.number,
@@ -570,9 +578,42 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
                     f"{_quote(a)} / {_quote(b)}: {rhyme.level(s)} {s:.2f}, need {lr.min_rhyme}",
                     {
                         "group": g[0],
-                        "with_line": head.line.number,
+                        "with_line": other.line.number,
                         "score": s,
                         "level": rhyme.level(s),
                     },
                 )
             )
+
+
+def rhyming_set(members: list[LineReport]):
+    """The members that hold a rhyme group together, and pair(i, j): rhyme.match
+    of members i and j, tails in that order."""
+    n = len(members)
+    scores = {
+        (i, j): rhyme.match(members[i].tails, members[j].tails)
+        for i in range(n)
+        for j in range(i + 1, n)
+    }
+
+    def pair(i: int, j: int):
+        if i < j:
+            return scores[i, j]
+        s, a, b = scores[j, i]
+        return s, b, a
+
+    need = [rhyme.THRESHOLD[lr.min_rhyme] for lr in members]
+    root = list(range(n))
+    for (i, j), (s, _, _) in scores.items():
+        if s >= need[j]:
+            root[_find(root, j)] = _find(root, i)
+    sizes = Counter(_find(root, k) for k in range(n))
+    main = max(sizes, key=lambda r: (sizes[r], r == _find(root, 0)))
+    return {k for k in range(n) if _find(root, k) == main}, pair
+
+
+def _find(root: list[int], k: int) -> int:
+    while root[k] != k:
+        root[k] = root[root[k]]
+        k = root[k]
+    return k
