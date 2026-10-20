@@ -85,7 +85,9 @@ def _rule_words(rule: Rule) -> list[str]:
             f"{each} {counts} sung syllables" + (f" (±{rule.tolerance})" if rule.tolerance else "")
         )
     if rule.meter and rule.meter != "free":
-        feet = f" with {', '.join(str(f) for f in rule.feet)} stressed beats" if rule.feet else ""
+        turn = ", in turn" if rule.feet and len(rule.feet) > 1 else ""
+        beats = ", ".join(str(f) for f in rule.feet or ())
+        feet = f" with {beats} stressed beats per line{turn}" if rule.feet else ""
         out.append(f"the meter is {rule.meter}{feet}")
     if rule.rhyme:
         mixed = rule.rhyme != rule.rhyme.upper() and rule.rhyme != rule.rhyme.lower()

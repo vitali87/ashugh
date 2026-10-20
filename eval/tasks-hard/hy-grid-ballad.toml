@@ -1,0 +1,8 @@
+id = "hy-grid-ballad"
+language = "hy"
+prompt = "A ballad for an existing melody: a soldier on the border writes a letter home to his mother. Two verses."
+
+[spec]
+syllables = [9, 8, 9, 8]
+endings = "fmfm"
+rhyme = "AbAb"

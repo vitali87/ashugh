@@ -159,6 +159,9 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "годов": ("годов", (1,)),
     "издалека": ("издалека", (3,)),  # the table has only the colloquial издалёка
     "краю": ("краю", (0, 1)),  # кра́ю, and the locative в краю́ the table lacks
+    "года": ("года", (0, 1)),  # го́да, and the plural года́ of songs and verse
+    "кружит": ("кружит", (0, 1)),  # кружи́т; the table has only кру́жит
+    "кружат": ("кружат", (0, 1)),
     "кем-то": ("кем-то", (0,)),
     "из-за": ("из-за", (1,)),
     "из-под": ("из-под", (1,)),
@@ -449,7 +452,10 @@ def verb_twins(norm: str) -> list[str]:
         word = base if reflexive else norm
         for ending in PARTICIPLE_ENDINGS:
             if word.endswith(marker + ending):
-                out.append(word[: -len(marker + ending)] + plural + pl_tail)
+                stem = word[: -len(marker + ending)]
+                # the participle's own nominative first: спящим -> спящий (спят has no
+                # stress to copy); then the verb's 3rd person plural
+                out += [stem + marker + "ий" + pl_tail, stem + plural + pl_tail]
     return out
 
 

@@ -1,0 +1,12 @@
+id = "hy-wedding"
+language = "hy"
+prompt = "A fast wedding dance song: verse, chorus, verse, chorus. The chorus is short and catchy."
+
+[spec]
+syllables = 8
+rhyme = "ABAB"
+forbid_final = ["ը"]
+
+[spec.section.chorus]
+syllables = [7, 7, 5, 7]
+rhyme = "AABA"

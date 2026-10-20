@@ -1,0 +1,9 @@
+id = "en-shanty"
+language = "en"
+prompt = "A sea shanty in ballad meter about a ship that sails without its captain. Three verses."
+
+[spec]
+syllables = [8, 6, 8, 6]
+meter = "iamb"
+feet = [4, 3]
+rhyme = "ABCB"

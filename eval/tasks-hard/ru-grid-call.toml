@@ -1,0 +1,8 @@
+id = "ru-grid-call"
+language = "ru"
+prompt = "A pop song for an existing melody about a phone call at three in the morning. Two verses."
+
+[spec]
+syllables = [10, 10, 9, 9]
+endings = "ffmm"
+rhyme = "AABB"

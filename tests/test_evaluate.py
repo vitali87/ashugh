@@ -245,3 +245,10 @@ def test_eval_requests_and_apply_cli(tmp_path, capsys):
         == 0
     )
     assert (out / "t1.txt").exists()
+
+
+def test_describe_alternating_feet(tmp_path):
+    (task,) = evaluate.load_tasks(
+        write_task(tmp_path, language="en", spec={"meter": "iamb", "feet": [4, 3]})
+    )
+    assert "iamb with 4, 3 stressed beats per line, in turn" in evaluate.describe(task.spec)

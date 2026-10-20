@@ -1,0 +1,8 @@
+id = "en-waltz"
+language = "en"
+prompt = "A waltz about an old dance hall that is closing down. Two verses."
+
+[spec]
+meter = "dactyl4"
+endings = "fmfm"
+rhyme = "AbAb"

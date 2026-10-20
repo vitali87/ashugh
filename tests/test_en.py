@@ -187,3 +187,13 @@ def test_spelling_split_for_display(word, n, parts):
 def test_spelling_split_always_gives_n_pieces(word, n):
     pieces = en.split_spelling(word, n)
     assert len(pieces) == n and "".join(pieces).replace("-", "") in (word, word * 2)
+
+
+@pytest.mark.parametrize("word,size", [("us", 1), ("ab", 1), ("mam", 1), ("every", 3), ("fire", 2)])
+def test_spelled_out_abbreviations_are_not_readings(word, size):
+    assert en.analyze_word(word).size == size
+
+
+def test_droppable_syllables_survive():
+    assert en.analyze_word("every").drop is not None
+    assert en.analyze_word("fire").drop is not None

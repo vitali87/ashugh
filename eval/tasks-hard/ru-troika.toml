@@ -1,0 +1,8 @@
+id = "ru-troika"
+language = "ru"
+prompt = "A romance in the old Russian style about a winter troika ride, two verses."
+
+[spec]
+meter = "anapest3"
+endings = "dmdm"
+rhyme = "ABAB"

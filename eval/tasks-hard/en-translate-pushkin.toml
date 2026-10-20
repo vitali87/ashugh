@@ -1,0 +1,18 @@
+id = "en-translate-pushkin"
+language = "en"
+prompt = """Translate these two stanzas of Pushkin into English so they can be sung to the same tune: every line keeps its number of syllables, its iambic meter and its feminine or masculine ending, and the rhyme scheme stays.
+
+Я помню чудное мгновенье:
+Передо мной явилась ты,
+Как мимолетное виденье,
+Как гений чистой красоты.
+
+В томленьях грусти безнадежной,
+В тревогах шумной суеты,
+Звучал мне долго голос нежный
+И снились милые черты."""
+
+[spec]
+syllables = [9, 8, 9, 8]
+meter = "iamb4"
+rhyme = "AbAb"

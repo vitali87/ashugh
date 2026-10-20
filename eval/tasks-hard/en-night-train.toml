@@ -1,0 +1,12 @@
+id = "en-night-train"
+language = "en"
+prompt = "A song about a night train across the plains: verse, chorus, verse, chorus."
+
+[spec]
+meter = "trochee4"
+endings = "mmmm"
+rhyme = "AABB"
+
+[spec.section.chorus]
+meter = "anapest3"
+rhyme = "ABAB"

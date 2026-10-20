@@ -1,0 +1,8 @@
+id = "hy-trochee"
+language = "hy"
+prompt = "A children's counting song about animals in a village yard, in trochaic tetrameter."
+
+[spec]
+meter = "trochee4"
+rhyme = "AABB"
+forbid_final = ["ը"]

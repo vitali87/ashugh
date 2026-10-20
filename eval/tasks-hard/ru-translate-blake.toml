@@ -1,0 +1,22 @@
+id = "ru-translate-blake"
+language = "ru"
+prompt = """Translate these two stanzas of William Blake into Russian so they can be sung to the same tune: every line keeps its number of syllables, and the lines rhyme in pairs.
+
+Tyger Tyger, burning bright,
+In the forests of the night;
+What immortal hand or eye,
+Could frame thy fearful symmetry?
+
+In what distant deeps or skies.
+Burnt the fire of thine eyes?
+On what wings dare he aspire?
+What the hand, dare seize the fire?"""
+
+[spec]
+rhyme = "AABB"
+
+[spec.stanza.1]
+syllables = [7, 7, 7, 8]
+
+[spec.stanza.2]
+syllables = 7

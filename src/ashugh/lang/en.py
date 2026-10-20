@@ -304,7 +304,13 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         return _guessed(word, token, norm)
 
     parsed = [_parse(v) for v in variants]
-    longest = max(len(stresses) for _, stresses, _ in parsed)
+    # The first pronunciation counts; a longer one only when it differs by one vowel
+    # that can drop (every, fire), not when it spells out an abbreviation (us: U.S.).
+    longest = len(parsed[0][1])
+    for _, stresses, bare in parsed[1:]:
+        if len(stresses) == longest + 1 and _drop_index(bare, parsed[0][2]) is not None:
+            longest += 1
+            break
     if longest == 0:
         return _guessed(word, token, norm)
     full = [p for p in parsed if len(p[1]) == longest]

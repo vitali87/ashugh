@@ -1,0 +1,17 @@
+id = "hy-translate-dickinson"
+language = "hy"
+prompt = """Translate these two stanzas of Emily Dickinson into Armenian so they can be sung to the same tune: every line keeps its number of syllables, and the rhyme scheme stays.
+
+Because I could not stop for Death –
+He kindly stopped for me –
+The Carriage held but just Ourselves –
+And Immortality.
+
+We slowly drove – He knew no haste
+And I had put away
+My labor and my leisure too,
+For His Civility –"""
+
+[spec]
+syllables = [8, 6, 8, 6]
+rhyme = "-A-A"

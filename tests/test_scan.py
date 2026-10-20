@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from ashugh import lyrics, report
 from ashugh.cli import main
 from ashugh.scan import scan
@@ -177,3 +179,27 @@ def test_syl_cli_takes_meter_names_with_feet(capsys):
     assert main(["syl", "--meter", "iamb4", "Я помню чудное мгновенье"]) == 0
     assert "9" in capsys.readouterr().out
     assert main(["syl", "--meter", "sonnet", "Я помню"]) == 2
+
+
+def test_neither_of_us_has_seven_syllables():
+    assert scan("Neither of us wants to go", from_dict({"syllables": 7})).ok
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("So sing my love of ships gone by", "The lighthouse burns against the sky"),
+        ("Salty hair and sunburned skin", "Let the final wave roll in"),
+    ],
+)
+def test_english_line_final_particle_takes_the_stress_and_the_rhyme(a, b):
+    assert scan(f"{a}\n{b}\n", from_dict({"rhyme": "AA"})).ok
+
+
+def test_line_final_particle_in_meter():
+    assert scan("So sing my love of ships gone by", from_dict({"meter": "iamb4"})).ok
+
+
+def test_poetic_plural_of_year_scans_and_rhymes():
+    text = "Проходят года и года\nНо я прихожу как всегда\n"
+    assert scan(text, from_dict({"meter": "amphibrach3", "rhyme": "AA"}), lang="ru").ok

@@ -1,0 +1,13 @@
+id = "ru-dog"
+language = "ru"
+prompt = "A song about a lost dog finding its way home: two verses and a chorus."
+
+[spec]
+meter = "trochee4"
+endings = "fmfm"
+rhyme = "AbAb"
+
+[spec.section.chorus]
+meter = "dactyl3"
+endings = "mmmm"
+rhyme = "aabb"

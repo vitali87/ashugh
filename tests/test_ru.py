@@ -125,6 +125,10 @@ def test_display_syllables(word, parts):
         ("звучали", [1]),
         ("свалилась", [1]),
         ("краю", [0, 1]),
+        ("спящим", [0]),
+        ("спящих", [0]),
+        ("года", [0, 1]),
+        ("кружит", [0, 1]),
     ],
 )
 def test_forms_the_dictionary_lacks(word, expected):
