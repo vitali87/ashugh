@@ -6,6 +6,7 @@ import re
 import unicodedata
 from types import ModuleType
 
+from .. import lyrics
 from ..model import Reading, Syllable, Word
 from ..phon import is_vowel
 from . import en, hy, ru
@@ -74,8 +75,15 @@ def foreign_word(token: str) -> Word:
     )
 
 
-def analyze(lang: str, tokens: list[str], lexicon: dict[str, str]) -> list[Word]:
-    """Words of one line; tokens in another script than lang get their own analyzer."""
+PHRASE_END = re.compile(r"\s*[,.;:!?…—–]")
+
+
+def analyze(
+    lang: str, tokens: list[str], lexicon: dict[str, str], text: str | None = None
+) -> list[Word]:
+    """Words of one line; tokens in another script than lang get their own analyzer.
+    With the line's text, a preposition before a comma or full stop is stressed
+    like one at the end of the line: hold on, hold on."""
     words: list[Word] = []
     for token in tokens:
         script = script_of(token)
@@ -91,6 +99,11 @@ def analyze(lang: str, tokens: list[str], lexicon: dict[str, str]) -> list[Word]
     end = words[-1] if words else None
     if end is not None and end.lang == "en" and end.clitic and end.norm not in ("a", "an", "the"):
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in
+    if text is not None:
+        spans = lyrics.token_spans(text)
+        for w, (_, stop, _) in zip(words, spans):
+            if w.lang == "en" and w.norm in en.PARTICLES and PHRASE_END.match(text, stop):
+                w.clitic = False
     return words
 
 

@@ -70,6 +70,9 @@ CONSONANTS_ARPA = {
 # Unstressed in verse and never the rhyme word: articles, short prepositions
 # and conjunctions. Pronouns and auxiliaries are only metrically free (weak),
 # because a line can end on them ("for me", "you are").
+# Prepositions that are stressed when they end a phrase, as particles or stranded:
+# hold on, come in, what is it for. Not articles or conjunctions.
+PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
     "a",
     "an",

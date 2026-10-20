@@ -50,3 +50,24 @@ def test_a_word_with_two_primary_stresses_may_take_either():
 def test_one_primary_stress_does_not_move_back():
     assert {r.stress for r in en.analyze_word("today").readings} == {1}
     assert {r.stress for r in en.analyze_word("river").readings} == {0}
+
+
+def test_a_particle_that_ends_a_phrase_takes_the_stress():
+    spec = from_dict({"language": "en", "meter": "iamb2"})
+    rep = scan("Hold on, hold on\nThe night is young\n", spec)
+    assert [i for i in rep.issues if i.severity == "error"] == []
+    (hold,) = analyze_lines("Hold on, hold on\n", Spec(language="en"))
+    assert [w.clitic for w in hold.words] == [False, False, False, False]  # on, before the comma
+    (come,) = analyze_lines("Come in, my friend\n", Spec(language="en"))
+    assert not come.words[1].clitic
+
+
+def test_a_preposition_inside_a_phrase_or_an_article_stays_light():
+    (ln,) = analyze_lines("I walk on the road, and the night\n", Spec(language="en"))
+    by_word = {w.norm: w for w in ln.words}
+    assert by_word["on"].clitic and by_word["the"].clitic and by_word["and"].clitic
+
+
+def test_the_chorus_is_iambic():
+    text = "[Chorus]\nHold on, hold on\nThe night is young\nHold on, hold on\nOur song is sung\n"
+    assert scan(text).units[0].meter == "iamb"

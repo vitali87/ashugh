@@ -125,7 +125,7 @@ def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line
     default = forced or spec.language or languages.detect([t for ts in tokens for t in ts])
     for ln, ts in zip(lines, tokens):
         ln.lang = forced or spec.language or languages.detect(ts) or default
-        ln.words = languages.analyze(ln.lang, ts, spec.lexicon)
+        ln.words = languages.analyze(ln.lang, ts, spec.lexicon, ln.text)
     return lines
 
 
@@ -361,7 +361,7 @@ def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
     tokens = lyrics.tokenize(text)
     code = lang or spec.language or languages.detect(tokens) or ln.lang
     new = Line(ln.number, text.strip(), ln.section, ln.key, ln.unit, ln.index, code)
-    new.words = languages.analyze(code, tokens, spec.lexicon)
+    new.words = languages.analyze(code, tokens, spec.lexicon, text)
     return new
 
 
