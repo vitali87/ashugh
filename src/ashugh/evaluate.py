@@ -55,7 +55,7 @@ def load_tasks(path: str | Path) -> list[Task]:
     for file in files:
         try:
             data = tomllib.loads(file.read_text(encoding="utf-8"))
-        except (OSError, tomllib.TOMLDecodeError) as e:
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as e:
             raise ValueError(f"{file}: {e}") from None
         tid, lang, prompt = data.get("id"), data.get("language"), data.get("prompt")
         if not isinstance(tid, str) or not tid:
@@ -146,7 +146,7 @@ class DirWriter:
         path = self.folder / f"{task.id}.txt"
         try:
             return path.read_text(encoding="utf-8")
-        except OSError as e:
+        except (OSError, UnicodeDecodeError) as e:
             raise ProposerError(f"no draft for {task.id}: {e}") from None
 
 
@@ -168,6 +168,7 @@ class CommandWriter:
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                errors="replace",  # a stray byte must not end the run
                 timeout=self.timeout,
             )
         except (OSError, subprocess.TimeoutExpired) as e:

@@ -189,7 +189,12 @@ def _command(template: str):
         args = [a.replace("{audio}", str(audio)).replace("{lang}", lang) for a in argv]
         try:
             done = subprocess.run(
-                args, capture_output=True, text=True, encoding="utf-8", timeout=COMMAND_TIMEOUT
+                args,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",  # a stray byte must not end the run
+                timeout=COMMAND_TIMEOUT,
             )
         except (OSError, subprocess.TimeoutExpired) as e:
             raise ProbeError(f"transcription command failed on {audio.name}: {e}") from None

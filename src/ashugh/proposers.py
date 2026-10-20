@@ -146,6 +146,7 @@ class CommandProposer:
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                errors="replace",  # a stray byte must not end the run
                 timeout=self.timeout,
             )
         except (OSError, subprocess.TimeoutExpired) as e:

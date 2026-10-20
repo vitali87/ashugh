@@ -289,3 +289,88 @@ def test_agent_bridge_round_trip(tmp_path):
         [sys.executable, str(bridge), "--pending", str(folder)], capture_output=True, text=True
     )
     assert listed.stdout == ""
+
+
+@pytest.mark.parametrize(
+    "body,message",
+    [
+        ("id = [", "tasks/t.toml"),
+        ('language = "hy"\nprompt = "p"', "needs an id"),
+        ('id = "t"\nlanguage = "fr"\nprompt = "p"', "language must be"),
+        ('id = "t"\nlanguage = "hy"\nprompt = "  "', "needs a prompt"),
+        ('id = "t"\nlanguage = "hy"\nprompt = "p"\n[spec]\nmeter = "waltz"', "meter"),
+    ],
+)
+def test_bad_task_files_are_refused_by_name(tmp_path, body, message):
+    folder = tmp_path / "tasks"
+    folder.mkdir()
+    (folder / "t.toml").write_text(body, encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        evaluate.load_tasks(folder)
+
+
+def test_duplicate_ids_and_empty_folders_are_refused(tmp_path):
+    with pytest.raises(ValueError, match="no tasks"):
+        evaluate.load_tasks(tmp_path)
+    for name in ("a", "b"):
+        (tmp_path / f"{name}.toml").write_text(
+            'id = "t"\nlanguage = "ru"\nprompt = "p"\n', encoding="utf-8"
+        )
+    with pytest.raises(ValueError, match="duplicate task id"):
+        evaluate.load_tasks(tmp_path)
+
+
+def _task():
+    from ashugh.spec import from_dict
+
+    return evaluate.Task("t", "ru", "a song", from_dict({"language": "ru"}), "t.toml")
+
+
+def test_a_draft_that_is_not_utf8_fails_its_task_only(tmp_path):
+    (tmp_path / "t.txt").write_bytes(b"\xff\xfe broken")
+    with pytest.raises(evaluate.ProposerError, match="no draft for t"):
+        evaluate.DirWriter(tmp_path).write(_task())
+    with pytest.raises(evaluate.ProposerError, match="no draft for t"):
+        evaluate.DirWriter(tmp_path / "missing").write(_task())
+
+
+def test_a_failing_writer_command_is_a_writer_error():
+    with pytest.raises(evaluate.ProposerError, match="exited 3"):
+        evaluate.CommandWriter([sys.executable, "-c", "import sys; sys.exit(3)"]).write(_task())
+    with pytest.raises(evaluate.ProposerError, match="writer command failed"):
+        evaluate.CommandWriter(["/no/such/writer"]).write(_task())
+    slow = evaluate.CommandWriter([sys.executable, "-c", "import time; time.sleep(5)"], timeout=0.2)
+    with pytest.raises(evaluate.ProposerError, match="writer command failed"):
+        slow.write(_task())
+
+
+def test_the_brief_names_sections_stanzas_endings_and_forbidden_endings():
+    from ashugh.spec import from_dict
+
+    spec = from_dict(
+        {
+            "language": "hy",
+            "endings": "fm",
+            "forbid_final": ["ը"],
+            "section": {"chorus": {"syllables": 7}},
+            "stanza": {"2": {"rhyme": "AABB"}},
+        }
+    )
+    words = evaluate.describe(spec)
+    assert "line endings are fm" in words and "no line ends in ը" in words
+    assert "In [Chorus] sections" in words and "Stanza 2:" in words
+
+
+BAD_BYTES = "import sys; sys.stdout.buffer.write(b'\\xff\\xfe not utf-8')"
+
+
+def test_command_output_that_is_not_utf8_does_not_crash():
+    from ashugh import probe
+    from ashugh.proposers import CommandProposer, ProposerError
+
+    draft = evaluate.CommandWriter([sys.executable, "-c", BAD_BYTES]).write(_task())
+    assert "not utf-8" in draft  # the bad bytes become replacement characters
+    with pytest.raises(ProposerError, match="did not print JSON"):
+        CommandProposer([sys.executable, "-c", BAD_BYTES]).propose([])
+    hear = probe._command(f'{sys.executable} -c "{BAD_BYTES}"')
+    assert "not utf-8" in hear(Path("clip.mp3"), "hy")
