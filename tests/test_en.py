@@ -197,3 +197,17 @@ def test_spelled_out_abbreviations_are_not_readings(word, size):
 def test_droppable_syllables_survive():
     assert en.analyze_word("every").drop is not None
     assert en.analyze_word("fire").drop is not None
+
+
+def test_pronunciations_with_the_same_stress_are_all_kept():
+    phones = {r.phones for r in en.analyze_word("again").readings}
+    assert len(phones) == 2
+
+
+def test_rain_rhymes_with_again():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    assert scan(
+        "Through ice and silver rain\nThe wheel turned round again\n", from_dict({"rhyme": "AA"})
+    ).ok

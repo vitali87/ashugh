@@ -81,7 +81,8 @@ def build(source: Path) -> dict[str, set[int]]:
             accented = header.index("accented") if "accented" in header else None
             for row in rows:
                 forms = [v for i in columns if i < len(row) for v in re.split(r"[,;/]", row[i])]
-                if past is not None and accented is not None and not "".join(row[past : past + 1]).strip():
+                listed_past = "".join(row[past : past + 1]).strip() if past is not None else "?"
+                if accented is not None and not listed_past:
                     forms += past_forms(row[accented].strip().lower())
                 for variant in forms:
                     form = variant.strip().lower().replace("\u0301", "'").replace("*", "")

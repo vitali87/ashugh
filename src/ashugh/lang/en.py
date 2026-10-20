@@ -328,8 +328,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         source = "clitic" if word.clitic else "lexicon"
         secondary = tuple(i for i in marked if i != stress)
         reading = Reading(stress, phones, norm, source, secondary)
-        if all(r.stress != reading.stress for r in readings):
-            readings.append(reading)
+        if all((r.stress, r.phones) != (stress, phones) for r in readings):
+            readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/
     # A compound may move its stress onto its second part in verse: sometíme.
     for r in list(readings):
         for k in r.secondary:

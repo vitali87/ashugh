@@ -75,13 +75,24 @@ def split_lines(text: str, keepends: bool = False) -> list[str]:
 
 
 def tokenize(text: str) -> list[str]:
-    return WORD_RE.findall(PAREN_RE.sub(" ", text))
+    return [t for _, _, t in token_spans(text)]
 
 
 def token_spans(text: str) -> list[tuple[int, int, str]]:
     """(start, end, token) of every word outside parentheses, as tokenize sees them."""
     masked = PAREN_RE.sub(lambda m: " " * len(m.group(0)), text)
-    return [(m.start(), m.end(), m.group(0)) for m in WORD_RE.finditer(masked)]
+    spans = []
+    for m in WORD_RE.finditer(masked):
+        parts = m.group(0).split("-")
+        if len(parts) > 1 and len({p.lower() for p in parts}) == 1:
+            # a reduplication is one word per part, each with its own stress: тихо-тихо
+            at = m.start()
+            for p in parts:
+                spans.append((at, at + len(p), p))
+                at += len(p) + 1
+        else:
+            spans.append((m.start(), m.end(), m.group(0)))
+    return spans
 
 
 def has_digits(text: str) -> bool:

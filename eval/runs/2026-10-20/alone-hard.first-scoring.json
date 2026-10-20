@@ -1,0 +1,159 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 0.9439,
+      "songs_ok": 0.4167,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 22,
+      "line_pass_rate": 0.9167,
+      "song_ok": false,
+      "errors": {
+        "meter": 2
+      },
+      "text": "[Verse 1]\nSteady wheels on silver rails,\nNorthbound through the prairie gales,\nLonely windows black as coal,\nWhistle crying through my soul.\nGrain and fences, mile on mile,\nSleeping towns in single file,\nSomewhere past the county line\nMoonlight spills like summer wine.\n\n[Chorus]\nOh the night train is calling me home,\nThrough the dark where the wild grasses sway,\nUnder stars, over fields where I roam,\nTill I wake to the gold of the day.\n\n[Verse 2]\nCoffee cooling, lights turned low,\nFrozen stubble, fields of snow,\nOld man snoring by the door,\nSoldier dreaming of the shore.\nCrossing bells go ringing by,\nSilos tall against the sky,\nHold me, rhythm, hold me tight,\nCarry me across the night.\n\n[Chorus]\nOh the night train is calling me home,\nThrough the dark where the wild grasses sway,\nUnder stars, over fields where I roam,\nTill I wake to the gold of the day.\n"
+    },
+    {
+      "task": "en-shanty",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 23,
+      "line_pass_rate": 0.9583,
+      "song_ok": false,
+      "errors": {
+        "rhyme": 1
+      },
+      "text": "[Verse 1]\nWe sailed from Bristol in the fog,\nThe captain's chair was bare,\nHis coat still hanging by the wheel,\nHis pipe still burning there.\nThe bosun swore he'd gone ashore,\nThe cook said he was drowned,\nBut still she ran before the wind\nAs if her way were found.\n\n[Verse 2]\nShe swung her bow into the north\nThrough ice and silver rain,\nThe compass spun, the lantern swung,\nThe wheel turned round again.\nWe heard a whistle on the deck,\nA tune we all knew well,\nAnd not a man among the crew\nWould dare to ring the bell.\n\n[Verse 3]\nAt dawn we sighted Bristol light\nAnd came in safe to shore,\nHis widow waiting on the quay\nAs she had stood before.\nShe smiled and said, \"He's never left,\nHe brought you through the foam,\nFor he was lost a year ago,\nAnd still he steers you home.\"\n"
+    },
+    {
+      "task": "en-translate-pushkin",
+      "language": "en",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nI still recall that wondrous meeting:\nWhen you appeared before my sight,\nAs though a vision, swiftly fleeting,\nLike beauty's genius, pure and bright.\n\n[Verse 2]\nIn hopeless sorrow's weary yearning,\nThrough vain and noisy days of care,\nYour tender voice kept long returning,\nI dreamed of features sweet and fair.\n"
+    },
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 15,
+      "line_pass_rate": 0.9375,
+      "song_ok": false,
+      "errors": {
+        "meter": 1
+      },
+      "text": "[Verse 1]\nDust on the mirrors and dust on the curtain,\nVelvet gone gray at the edge of the stage,\nNobody speaks, but the dancers are certain,\nSomeone has written the end on the page.\nOnce there were hundreds of couples in satin,\nRoses and ribbons and pearls in their hair,\nSwaying all night to a band from Manhattan,\nWaltzing till morning with never a care.\n\n[Verse 2]\nNow there's a padlock, the window is broken,\nPigeons are nesting where trumpeters played,\nOnly a ribbon is left as a token,\nTied to the rail where the last couple stayed.\nHold me once more as the music grows slower,\nOne, two and three, on the boards we know well,\nDip me down low, then a little bit lower,\nKiss me goodbye at the closing-time bell.\n"
+    },
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄայրիկ, գրում եմ քեզ գիշերը,\nՍահմանից, սարերի գլխից,\nԵվ ինձ չեն թողնում հին հուշերը,\nԵս կարոտում եմ քեզ հեռվից։\nԱյստեղ ցուրտ է, իջնում է ձյունը,\nԲայց ես ամուր եմ, մի՛ վախիր,\nՈւ երազում տեսնում եմ տունը,\nԼույսը պատուհանին պահիր։\n\n[Verse 2]\nԿարոտել եմ քո հացի բույրը,\nՈւ տաք լավաշը քո թոնրից,\nԻնչպե՞ս է իմ սիրելի քույրը,\nՀամբուրիր նրան իմ կողմից։\nԿանցնի ձյունը, կգա գարունը,\nԵս կվերադառնամ մեր տուն,\nՈւ քո աչքերին կիջնի քունը,\nԷլ երբեք չես մնա արթուն։\n"
+    },
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 7,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "syllables": 1
+      },
+      "text": "[Verse 1]\nՄահվան համար չկանգնեցի –\nԿանգնեց բարի Մահը –\nԿառքում մենք էինք երկուսով –\nԵվ մեզ հետ՝ Անմահը։\n\n[Verse 2]\nԴանդաղ էր քշում, անշտապ,\nԵս թողի հավիտյան\nԹե՛ գործս, թե՛ իմ հանգիստը՝\nՀանուն Իր հեզության։\n"
+    },
+    {
+      "task": "hy-trochee",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 19,
+      "line_pass_rate": 0.95,
+      "song_ok": false,
+      "errors": {
+        "meter": 1
+      },
+      "text": "[Verse 1]\nՄեկ աքլոր, կարմիր կատար,\nԾուղրուղու՜ — երգ անդադար։\nԻսկ երկու ճերմակ գառնուկ\nԲուրդ ունեն փափուկ-փափուկ։\n\n[Verse 2]\nՈւ երեք կատու քնկոտ\nԴեռ քնում են առավոտ։\nՉորս ճուտիկ դեղին-դեղին\nՄիշտ կպչում են մայրիկին։\n\n[Verse 3]\nՀինգ սագեր շարան-շարան\nՈւ գնում են դեպ բոստան։\nՎեց ծիտիկ ցանկապատին\nԵրգ ասում են արևին։\n\n[Verse 4]\nՅոթ մկնիկ — թաքուն, թաքուն,\nՄինչ կատուն դեռ չէ արթուն։\nՈւթ մեղու հյութ են քաղում,\nՈւ բզզում են մեր բակում։\n\n[Verse 5]\nԻնը ծիծեռնակ բնում,\nՃիվ-ճիվ-ճիվ-ճիվ — ճռվողում։\nՏասը մատ — և վերջ հաշվին,\nՋան ասենք մենք ամենքին։\n"
+    },
+    {
+      "task": "hy-wedding",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 13,
+      "line_pass_rate": 0.8125,
+      "song_ok": false,
+      "errors": {
+        "rhyme": 1,
+        "syllables": 2
+      },
+      "text": "[Verse 1]\nՄեր բակում մեծ հարսանիք կա,\nԶուռնան կանչում է բոլորին,\nԱհա հարսը, փեսան ահա,\nՁայնը հասնում է մեր ձորին։\n\n[Chorus]\nԵկե՛ք, բոլորս պարե՛նք,\nՁեռք-ձեռքի տված երգե՛նք,\nՀարսը ծաղիկ է,\nԾափ տա՛նք ու գինի խմե՛նք։\n\n[Verse 2]\nՓեսան կանգնած է կաղնու պես,\nՀարսը՝ լուսնի պես լուսավոր,\nԱչքերը փայլում են, տե՛ս, տե՛ս,\nԹող լինեն հավետ բախտավոր։\n\n[Chorus]\nԵկե՛ք, բոլորս պարե՛նք,\nՁեռք-ձեռքի տված երգե՛նք,\nՀարսը ծաղիկ է,\nԾափ տա՛նք ու գինի խմե՛նք։\n"
+    },
+    {
+      "task": "ru-dog",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nПотерялся пёс лохматый\nПод осенним злым дождём,\nБродит улицей горбатой,\nИщет свой забытый дом.\nФонари глядят сурово,\nВетер гонит палый лист,\nНо сквозь шум он слышит снова\nТот знакомый тихий свист.\n\n[Chorus]\nВетер и дождь — не беда,\nСветит в окошке звезда,\nЯ возвращаюсь домой\nЧерез мосты, по прямой.\n\n[Verse 2]\nВот знакомая калитка,\nВот крыльцо и старый клён,\nЕле-еле, как улитка,\nПёс доходит. Он спасён!\nДверь открылась, и хозяйка\nПлачет, обнимая пса:\n«Мой ты милый, мой ты зайка!»\nВот такие чудеса!\n\n[Chorus]\nВетер и дождь — не беда,\nСветит в окошке звезда,\nЯ возвращаюсь домой\nЧерез мосты, по прямой.\n"
+    },
+    {
+      "task": "ru-grid-call",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nВ три часа ночи ты в трубку дышишь,\nЯ повторяю: «Алло, ты слышишь?»\nГород за окнами крепко спит,\nТолько на кухне лампа горит.\nТы не звонила бы без причины,\nГод мы молчали — две половины.\nЧто же сломалось в тебе сейчас?\nСлышу, как плачешь ты в первый раз.\n\n[Verse 2]\nЯ выбегаю, хлопнувши дверью,\nЯ до сих пор в нас с тобою верю.\nМчусь по проспекту на красный свет —\nКроме тебя, ничего и нет.\nПусть это глупо, пусть это поздно,\nЭто не шутка, это серьёзно.\nТри часа ночи — и я с тобой.\nСлышишь? Я рядом. Я твой. Я твой.\n"
+    },
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, горящий свет\nВ чаще, где просвета нет,\nЧья рука, чья зеница\nУжас твой сложить решится?\n\n[Verse 2]\nВ дальних безднах, в небесах\nЖёг огонь в твоих глазах?\nНа каких крылах взлетел,\nКто схватить огонь посмел?\n"
+    },
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 14,
+      "line_pass_rate": 0.875,
+      "song_ok": false,
+      "errors": {
+        "meter": 2
+      },
+      "text": "[Verse 1]\nТы лети, удалая, дорогою,\nКолокольчик звенит под дугой,\nПод луною холодной и строгою\nЯ лечу, дорогая, с тобой.\nПролетают деревни уснувшие,\nИ мерцают огни вдалеке,\nВспоминаются годы минувшие,\nИ твоя рукавица в руке.\n\n[Verse 2]\nНо растает зима белоснежная,\nИ умолкнет бубенчик в ночи,\nИ останется память безбрежная,\nКак дрожащее пламя свечи.\nВспоминай эту ночь легкокрылую,\nИ сугробы, и звёзды, и лёд,\nИ согрей ею душу остылую —\nПусть уносит нас тройка вперёд!\n"
+    }
+  ]
+}

@@ -203,3 +203,34 @@ def test_line_final_particle_in_meter():
 def test_poetic_plural_of_year_scans_and_rhymes():
     text = "Проходят года и года\nНо я прихожу как всегда\n"
     assert scan(text, from_dict({"meter": "amphibrach3", "rhyme": "AA"}), lang="ru").ok
+
+
+@pytest.mark.parametrize(
+    "text,lang,count",
+    [
+        ("Ճիվ-ճիվ-ճիվ-ճիվ ճռվողում", "hy", 7),
+        ("Բուրդ ունեն փափուկ-փափուկ", "hy", 7),
+        ("Тихо-тихо падает снег", "ru", 8),
+    ],
+)
+def test_reduplications_are_separate_words(text, lang, count):
+    rep = scan(text, from_dict({"syllables": count}), lang=lang)
+    assert rep.lines[0].fit.count == count
+    assert len(rep.lines[0].line.words) > len(text.split())
+
+
+def test_hyphenated_compounds_stay_one_word():
+    rep = scan("Кто-то из-за угла", from_dict({}), lang="ru")
+    assert [w.norm for w in rep.lines[0].line.words] == ["кто-то", "из-за", "угла"]
+
+
+def test_reduplication_stress_fits_a_trochee():
+    rep = scan("Բուրդ ունեն փափուկ-փափուկ", from_dict({"meter": "trochee4"}), lang="hy")
+    assert rep.ok
+
+
+def test_a_pronoun_may_sit_on_a_weak_beat():
+    spec = from_dict({"meter": "anapest3"})
+    assert scan("Вспоминай эту ночь легкокрылую", spec, lang="ru").ok
+    assert scan("И согрей ею душу остылую", spec, lang="ru").ok
+    assert not scan("Вспоминай дорогу легкокрылую", spec, lang="ru").ok

@@ -202,3 +202,14 @@ def test_no_locative_without_the_preposition(line, word):
 
     (w,) = [x for x in analyze("ru", tokenize(line), {}) if x.norm == word]
     assert 0 in w.stress_options()
+
+
+@pytest.mark.parametrize("word", ["эту", "этот", "ею", "тебя", "меня", "его", "моя", "свою"])
+def test_pronouns_are_metrically_weak(word):
+    assert ru.analyze_word(word).weak
+
+
+@pytest.mark.parametrize("word", ["ночь", "дорога", "лёгкий", "вспоминай"])
+def test_content_words_are_not_weak(word):
+    w = ru.analyze_word(word)
+    assert not w.weak or w.size == 1

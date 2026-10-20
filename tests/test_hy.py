@@ -100,3 +100,45 @@ def test_final_schwa_links_onto_next_vowel():
     assert words[0].drop == 1
     words = lang.analyze("hy", ["կյանքն", "կա"], {})
     assert words[0].drop is None
+
+
+@pytest.mark.parametrize(
+    "word,sung",
+    [
+        ("բոլորս", "բո-լո-րըս"),
+        ("սերս", "սե-րըս"),
+        ("յարս", "յա-րըս"),
+        ("տունս", "տու-նըս"),
+        ("անունս", "ա-նու-նըս"),
+        ("անշտապ", "ան-շը-տապ"),
+        ("անսպասելի", "ան-սը-պա-սե-լի"),
+        ("անզգույշ", "ան-զը-գույշ"),
+    ],
+)
+def test_possessive_after_sonorants_and_the_negative_prefix(word, sung):
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
+
+
+@pytest.mark.parametrize(
+    "word,sung",
+    [
+        ("չորս", "չորս"),
+        ("ներս", "ներս"),
+        ("դուրս", "դուրս"),
+        ("ձկնորս", "ձըկ-նորս"),
+        ("Կարս", "Կարս"),
+        ("լույս", "լույս"),
+        ("հույս", "հույս"),
+        ("մարդ", "մարդ"),
+        ("վարդ", "վարդ"),
+        ("ռոմանս", "ռո-մանս"),
+        ("վալս", "վալս"),
+        ("լեգենդ", "լե-գենդ"),
+        ("ծնունդ", "ծը-նունդ"),
+        ("սերունդ", "սե-րունդ"),
+        ("խոստանալ", "խոս-տա-նալ"),
+        ("հանգստանալ", "հան-գըս-տա-նալ"),
+    ],
+)
+def test_words_that_end_or_cluster_like_that_without_a_schwa(word, sung):
+    assert "-".join(s.text for s in hy.analyze_word(word).syllables) == sung
