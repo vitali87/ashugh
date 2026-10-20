@@ -46,7 +46,7 @@ RULE_KEYS = {
     "min_rhyme",
     "forbid_final",
 }
-TOP_KEYS = RULE_KEYS | {"language", "section", "lexicon"}
+TOP_KEYS = RULE_KEYS | {"language", "section", "stanza", "lexicon"}
 ENDING_CODES = {"m": 0, "f": 1, "d": 2, "h": 3}
 
 
@@ -103,13 +103,17 @@ class Spec:
     base: Rule = field(default_factory=Rule)
     sections: dict[str, Rule] = field(default_factory=dict)
     lexicon: dict[str, str] = field(default_factory=dict)
+    stanzas: dict[int, Rule] = field(default_factory=dict)  # 1-based stanza number
 
-    def rule_for(self, key: str) -> Rule:
+    def rule_for(self, key: str, unit: int | None = None) -> Rule:
+        """The rule of a stanza: its own [stanza.N] table, else its section's, else the top."""
+        if unit is not None and unit + 1 in self.stanzas:
+            return self.stanzas[unit + 1]
         return self.sections.get(key, self.base)
 
     @property
     def empty(self) -> bool:
-        return self.base.empty and not self.sections
+        return self.base.empty and not self.sections and not self.stanzas
 
 
 def _mixed_case(s: str) -> bool:
@@ -201,11 +205,19 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
         if not isinstance(table, dict):
             raise SpecError(f"{where}: section.{name} must be a table")
         sections[name.lower()] = apply(table, base, f"{where} [section.{name}]")
+    stanzas = {}
+    raw_stanzas = data.get("stanza", {})
+    if not isinstance(raw_stanzas, dict):
+        raise SpecError(f"{where}: [stanza.<number>] tables expected")
+    for name, table in raw_stanzas.items():
+        if not str(name).isdigit() or int(name) < 1 or not isinstance(table, dict):
+            raise SpecError(f"{where}: stanza.{name} must be a table numbered from 1")
+        stanzas[int(name)] = apply(table, base, f"{where} [stanza.{name}]")
     lexicon = data.get("lexicon", {})
     if not isinstance(lexicon, dict) or not all(isinstance(v, str) for v in lexicon.values()):
         raise SpecError(f"{where}: [lexicon] maps words to strings")
     lexicon = {k.lower(): v for k, v in lexicon.items()}
-    return Spec(path, language, base, sections, lexicon)
+    return Spec(path, language, base, sections, lexicon, stanzas)
 
 
 def load(path: str | Path) -> Spec:
@@ -215,6 +227,42 @@ def load(path: str | Path) -> Spec:
     except tomllib.TOMLDecodeError as e:
         raise SpecError(f"{path}: {e}") from None
     return from_dict(data, str(path))
+
+
+def loads(text: str, path: str | None = None) -> Spec:
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        raise SpecError(f"{path or 'spec'}: {e}") from None
+    return from_dict(data, path)
+
+
+def _toml_value(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_toml_value(v) for v in value) + "]"
+    raise TypeError(f"cannot write {value!r} to a spec")
+
+
+def dumps(data: dict) -> str:
+    """A spec dict (as from_dict takes it) written as TOML."""
+    out = [f"{k} = {_toml_value(v)}" for k, v in data.items() if not isinstance(v, dict)]
+    for table in ("section", "stanza", "lexicon"):
+        entries = data.get(table) or {}
+        if table == "lexicon" and entries:
+            out += ["", "[lexicon]"] + [
+                f"{_toml_value(k)} = {_toml_value(v)}" for k, v in entries.items()
+            ]
+            continue
+        for name, rules in entries.items():
+            out += ["", f"[{table}.{name}]"] + [f"{k} = {_toml_value(v)}" for k, v in rules.items()]
+    return "\n".join(out) + "\n"
 
 
 TEMPLATE = """\

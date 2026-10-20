@@ -1,4 +1,4 @@
-"""Command line: ashugh scan | fit | pick | syl | rhyme | spec."""
+"""Command line: ashugh scan | fit | pick | translate | syl | rhyme | spec."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from . import lang as languages
 from .fit import FitResult, fit_song
 from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candidates, make_proposer
 from .scan import analyze_lines, scan
-from .spec import Spec, SpecError, apply, load, template
+from .spec import Spec, SpecError, apply, dumps, load, template
+from .translate import derive_spec, parse_keep, translate_song
 
 
 def _read(path: str) -> str:
@@ -129,8 +130,30 @@ def cmd_rhyme(args: argparse.Namespace) -> int:
 
 
 def cmd_spec(args: argparse.Namespace) -> int:
-    print(template(args.lang or "hy"), end="")
+    if not args.source:
+        print(template(args.lang or "hy"), end="")
+        return 0
+    data = derive_spec(scan(_read(args.source), lang=args.source_lang), parse_keep(args.keep))
+    if args.lang:
+        data = {"language": args.lang, **data}
+    print(dumps(data), end="")
     return 0
+
+
+def cmd_translate(args: argparse.Namespace) -> int:
+    proposer = make_proposer(args.proposer, args.model, args.effort)
+    result = translate_song(
+        _read(args.file),
+        args.to,
+        proposer,
+        keep=parse_keep(args.keep),
+        rounds=args.rounds,
+        n=args.n,
+        solver=args.solver,
+        source_lang=args.source_lang,
+        tolerance=args.tolerance or 0,
+    )
+    return _emit_fit(result, args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -149,14 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     f = sub.add_parser("fit", help="repair failing lines with candidates from an LLM")
     _song_args(f)
-    f.add_argument(
-        "--proposer",
-        help="claude (default), cmd:<command reading JSON requests>, or file:<candidates.json>",
-    )
-    f.add_argument("--model", help=f"Claude model (default {DEFAULT_MODEL})")
-    f.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
-    f.add_argument("--rounds", type=int, default=3, help="proposal rounds (default 3)")
-    f.add_argument("-n", type=int, default=6, help="candidates per line per round (default 6)")
+    _proposer_args(f)
     _fit_args(f)
     f.set_defaults(func=cmd_fit)
 
@@ -192,6 +208,17 @@ def _song_args(s: argparse.ArgumentParser) -> None:
     )
 
 
+def _proposer_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--proposer",
+        help="claude (default), cmd:<command reading JSON requests>, or file:<candidates.json>",
+    )
+    p.add_argument("--model", help=f"Claude model (default {DEFAULT_MODEL})")
+    p.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
+    p.add_argument("--rounds", type=int, default=3, help="proposal rounds (default 3)")
+    p.add_argument("-n", type=int, default=6, help="candidates per line per round (default 6)")
+
+
 def _fit_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("-o", "--output", help="write the repaired lyrics here (default: stdout)")
     p.add_argument("--solver", choices=["auto", "exact", "cpsat"], default="auto")
@@ -211,9 +238,25 @@ def _more_commands(sub) -> None:
     r.add_argument("--lang", choices=sorted(languages.ANALYZERS))
     r.set_defaults(func=cmd_rhyme)
 
-    t = sub.add_parser("spec", help="print a starter spec")
-    t.add_argument("--lang", choices=sorted(languages.ANALYZERS))
+    t = sub.add_parser("spec", help="print a starter spec, or the form of an existing song")
+    t.add_argument("--lang", choices=sorted(languages.ANALYZERS), help="language of the spec")
+    t.add_argument("--from", dest="source", help="derive the spec from this song's form")
+    t.add_argument(
+        "--keep", help="with --from: syllables,meter,rhyme,endings (default syllables,rhyme)"
+    )
+    t.add_argument("--source-lang", choices=sorted(languages.ANALYZERS))
     t.set_defaults(func=cmd_spec)
+
+    tr = sub.add_parser("translate", help="translate a song into the same syllable grid and rhymes")
+    tr.add_argument("file", help="source lyrics, or - for stdin")
+    tr.add_argument("--to", required=True, choices=sorted(languages.ANALYZERS))
+    tr.add_argument("--keep", help="syllables,meter,rhyme,endings (default syllables,rhyme)")
+    tr.add_argument("--source-lang", choices=sorted(languages.ANALYZERS))
+    tr.add_argument("--tolerance", type=int, help="allowed miss in syllables")
+    tr.add_argument("--json", action="store_true", help="machine-readable output")
+    _proposer_args(tr)
+    _fit_args(tr)
+    tr.set_defaults(func=cmd_translate)
 
 
 def main(argv: list[str] | None = None) -> int:

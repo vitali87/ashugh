@@ -139,24 +139,9 @@ def fit_song(
         raise ValueError("fit needs a proposer for the lines that fail")
 
     lines_by_number = {lr.line.number: lr for lr in report.lines}
-    pending = set(variables)
-    used = asked = 0
-    for _ in range(rounds):
-        if not pending:
-            break
-        requests = [
-            _request(variables[k], variables, groups, lines_by_number, n, extra)
-            for k in sorted(pending)
-        ]
-        answers = proposer.propose(requests)
-        used += 1
-        asked += len(requests)
-        for req in requests:
-            var = variables[req.line]
-            for raw in answers.get(req.id, []) or []:
-                _consider(var, raw, spec, lang, weigh)
-        pending = _settle(variables, groups, lines_by_number, solver)
-
+    used, asked = run(
+        variables, groups, lines_by_number, spec, proposer, rounds, n, solver, lang, weigh, extra
+    )
     changes, unresolved = [], []
     for k in sorted(variables):
         var = variables[k]
@@ -174,7 +159,42 @@ def fit_song(
     return FitResult(new_text, final, changes, unresolved, used, asked)
 
 
-def _variables(report: Report, keep_original: bool):
+def run(
+    variables: dict[int, _Var],
+    groups: dict[str, list[int]],
+    lines: dict[int, LineReport],
+    spec: Spec,
+    proposer: Proposer,
+    rounds: int,
+    n: int,
+    solver: str,
+    lang: str | None,
+    weigh: Weigh,
+    extra=None,
+    partners_from_lines: bool = True,
+) -> tuple[int, int]:
+    """The propose, check and solve loop; returns (rounds used, requests sent)."""
+    pending = set(variables)
+    used = asked = 0
+    for _ in range(rounds):
+        if not pending:
+            break
+        requests = [
+            _request(variables[k], variables, groups, lines, n, extra, partners_from_lines)
+            for k in sorted(pending)
+        ]
+        answers = proposer.propose(requests)
+        used += 1
+        asked += len(requests)
+        for req in requests:
+            var = variables[req.line]
+            for raw in answers.get(req.id, []) or []:
+                _consider(var, raw, spec, lang, weigh)
+        pending = _settle(variables, groups, lines, solver)
+    return used, asked
+
+
+def _variables(report: Report, keep_original: bool, everything: bool = False):
     variables: dict[int, _Var] = {}
     groups: dict[str, list[int]] = {}
     for u_id, unit in enumerate(report.units):
@@ -191,7 +211,7 @@ def _variables(report: Report, keep_original: bool):
         group_of = {lr.line.number: g for g, lrs in members.items() for lr in lrs}
         for lr in unit.lines:
             g = group_of.get(lr.line.number)
-            if line_errors(lr) or g in broken:
+            if everything or line_errors(lr) or g in broken:
                 variables[lr.line.number] = _Var(lr, unit, group=g)
         for g, lrs in members.items():
             if any(lr.line.number in variables for lr in lrs) and len(lrs) > 1:
@@ -309,6 +329,7 @@ def _request(
     lines: dict[int, LineReport],
     n: int,
     extra,
+    partners_from_lines: bool = True,
 ) -> Request:
     lr, rule = var.lr, var.unit.rule
     ln = lr.line
@@ -330,7 +351,8 @@ def _request(
         for k in groups[var.group]:
             if k == ln.number:
                 continue
-            t = _current(variables.get(k), lines[k]).tail
+            current = _current(variables.get(k), lines[k] if partners_from_lines else None)
+            t = current.tail if current else None
             if t is not None:
                 rhyme_with.append(t.word)
                 sound = sound or t.sound
@@ -370,7 +392,7 @@ def _request(
     return req
 
 
-def _current(var: _Var | None, original: LineReport) -> LineReport:
+def _current(var: _Var | None, original: LineReport | None) -> LineReport | None:
     """The partner line as it stands: its chosen or best candidate, else its text."""
     if var is None:
         return original

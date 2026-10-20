@@ -175,6 +175,11 @@ consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ
 sound like these words' (by sound, not spelling).
 - rejected: earlier candidates that failed, with the reason. Do not repeat them.
 
+A request with a "source" line is a translation: original is empty, and each \
+candidate is a singable translation of source (from source_lang) into lang \
+that fits the constraints. Sense and imagery matter more than word-for-word \
+accuracy; faithfulness is then measured against the source line.
+
 For each request return n candidates, the most faithful first, each with a \
 faithfulness score from 0 to 1 for how much of the original meaning it keeps.\
 """

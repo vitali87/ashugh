@@ -84,6 +84,7 @@ class Report:
     path: str
     spec: Spec
     units: list[UnitReport]
+    text: str = ""  # the lyrics as scanned
 
     @property
     def lines(self) -> list[LineReport]:
@@ -130,7 +131,7 @@ def scan(text: str, spec: Spec | None = None, path: str = "-", lang: str | None 
     units: dict[int, list[Line]] = {}
     for ln in lines:
         units.setdefault(ln.unit, []).append(ln)
-    report = Report(path, spec, [])
+    report = Report(path, spec, [], text)
     for unit_lines in units.values():
         report.units.append(_scan_unit(unit_lines, spec))
     return report
@@ -138,7 +139,7 @@ def scan(text: str, spec: Spec | None = None, path: str = "-", lang: str | None 
 
 def _scan_unit(lines: list[Line], spec: Spec) -> UnitReport:
     first = lines[0]
-    rule = spec.rule_for(first.key)
+    rule = spec.rule_for(first.key, first.unit)
     if rule.meter:
         meter_name, source = rule.meter, "spec"
     else:
