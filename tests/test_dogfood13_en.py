@@ -217,3 +217,12 @@ def test_th_with_an_apostrophe_runs_into_the_next_vowel():
 def test_words_sung_shorter_or_longer_count_both_ways(word, counts):
     w = en.analyze_word(word)
     assert {w.size, w.size - 1 if w.drop is not None else w.size} == counts
+
+
+@pytest.mark.parametrize("partner", ["are", "far", "star"])
+def test_our_sung_as_are_rhymes_with_it(partner):
+    from ashugh import meter, rhyme
+
+    lines = analyze_lines(f"our\n{partner}", Spec(language="en"))
+    tails = [rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines]
+    assert rhyme.match(*tails)[0] >= rhyme.THRESHOLD["near"]

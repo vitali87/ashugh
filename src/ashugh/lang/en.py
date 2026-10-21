@@ -848,7 +848,10 @@ def analyze_word(
     if longest == 0:
         return _guessed(word, token, norm)
     full = [p for p in parsed if len(p[1]) == longest]
-    for _, stresses, bare in parsed:
+    for phones, stresses, bare in parsed:
+        if len(stresses) == longest - 1 and 1 in stresses:  # our as are, for the rhyme
+            short_reading = Reading(stresses.index(1), phones, norm, "lexicon")
+            word.short_readings = (*word.short_readings, short_reading)
         if len(stresses) == longest - 1 and word.drop is None:
             word.drop = _drop_index(full[0][2], bare, merge=True)
         for f in full if len(stresses) == longest - 1 else ():

@@ -103,6 +103,11 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
                 t = _tail(word, form, stress, words[w + 1 :])
                 if t is not None and t not in out:
                     out.append(t)
+    if word.drop is not None and (free or w in fit.elided):
+        for r in word.short_readings:  # our sung as are rhymes with far
+            t = _tail(word, r, r.stress, words[w + 1 :])
+            if t is not None and t not in out:
+                out.append(t)
     last = words[-1]
     leaning = w == len(words) - 3 and words[-2].norm in PREPOSITIONS
     if (w == len(words) - 2 or leaning) and last.lang == "en" and last.enclitic:
