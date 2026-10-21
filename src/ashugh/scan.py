@@ -173,7 +173,7 @@ def _check_spec_tables(report: Report) -> None:
     if not report.lines:
         return
     first = report.lines[0]
-    keys = {lr.line.key for lr in report.lines}
+    keys = {lr.line.key for lr in report.lines} | lyrics.section_keys(report.text)  # [Intro] (о-о)
     found = [
         (f"[section.{name}] matches no section of the song", ", ".join(sorted(keys - {""})))
         for name in sorted(report.spec.sections)

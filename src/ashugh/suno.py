@@ -394,6 +394,12 @@ def _russian(
                 new = "".join(chars)
                 notes.append(Note(n, "yo", token, new, "ё restored"))
     hint = w.ambiguous or w.guessed or marked_by_writer
+    if (
+        not marked_by_writer
+        and "-" in w.norm
+        and all(ru.vowel_count(p) <= 1 for p in w.norm.split("-"))
+    ):
+        hint = False  # жил-был, раз-два-три: every part takes its own stress
     if stress != "none" and w.size > 1 and chosen is not None and hint:
         marked = _mark_vowel(new, chosen, stress)
         if marked != new:

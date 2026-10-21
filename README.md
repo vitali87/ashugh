@@ -119,7 +119,7 @@ feet = [4, 4, 4, 3]        # trochee: 7 syllables in four feet, masculine; 5 in 
 endings = "m"
 rhyme = "AABB"
 
-[stanza.3]                 # one stanza of the file, counted from 1
+[stanza.3]                 # one stanza with sung lines, counted from 1
 syllables = [9, 8, 9, 8]
 
 [lexicon]                  # how a word is really sung, when ashugh gets it wrong

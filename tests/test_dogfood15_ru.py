@@ -161,3 +161,34 @@ def test_polchasa_couplet_passes():
     text = "Прошло всего лишь полчаса,\nА я забыл твои глаза.\n"
     report = scan(text, from_dict({"language": "ru", "meter": "iamb", "feet": 4, "rhyme": "AA"}))
     assert report.ok, report.issues
+
+
+def test_a_section_of_backing_vocals_only_is_still_a_section():
+    text = "[Intro]\n(О-о-о)\n\n[Verse]\nМы выходили в ночь\n"
+    report = scan(text, from_dict({"language": "ru", "section": {"intro": {"meter": "free"}}}))
+    assert not any("matches no section" in i.message for i in report.issues)
+
+
+def test_a_section_the_song_lacks_is_still_warned():
+    text = "[Verse]\nМы выходили в ночь\n"
+    report = scan(text, from_dict({"language": "ru", "section": {"intro": {"meter": "free"}}}))
+    assert any("matches no section" in i.message for i in report.issues)
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("объятья", "объ-я-тья"), ("подъезд", "подъ-езд"), ("счастье", "счас-тье"),
+        ("семья", "се-мья"), ("вьюга", "вью-га"), ("съесть", "съесть"), ("разъезд", "разъ-езд"),
+    ],
+)  # fmt: skip
+def test_no_syllable_starts_with_a_hard_or_soft_sign(word, split):
+    from ashugh.lang import ru
+
+    assert "-".join(ru.split_syllables(word)) == split
+
+
+@pytest.mark.parametrize("line", ["Жил-был у бабушки серенький козлик", "Раз-два-три, замри"])
+def test_suno_marks_no_stress_in_a_chain_of_short_words(line):
+    out = sung(line + "\n")
+    assert out.strip() == line

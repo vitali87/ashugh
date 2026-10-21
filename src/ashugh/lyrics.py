@@ -358,6 +358,16 @@ def has_digits(text: str) -> bool:
     return bool(DIGIT_RE.search(REPEAT_END_RE.sub(" ", sub_asides(text, lambda _: " "))))
 
 
+def section_keys(text: str) -> set[str]:
+    """The section keys the song's tags name, sung lines under them or not."""
+    keys = set()
+    for raw in split_lines(text):
+        tag = section_tag(raw) if is_tag(raw) else None
+        if tag is not None:
+            keys.add(section_key(tag))
+    return keys
+
+
 def parse(text: str) -> list[Line]:
     lines: list[Line] = []
     section, key = "", "default"

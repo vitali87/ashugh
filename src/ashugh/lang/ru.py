@@ -571,6 +571,10 @@ def split_syllables(word: str) -> list[str]:
             k = 0  # се-стра, ви-хри, до-бро
         else:
             k = 1  # чест-ных, шут-ку, луч-ше
+        if "ъ" in gap:
+            k = gap.index("ъ") + 1  # подъ-езд, объ-я-тья: ъ ends its syllable
+        elif gap[k : k + 1] == "ь" and k > 0:
+            k -= 1  # счас-тье: ь stays with its consonant, never starts a syllable
         cuts.append(a + 1 + k)
     pieces = []
     start = 0
