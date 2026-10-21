@@ -130,3 +130,24 @@ def test_a_ternary_slot_far_too_short_is_still_impossible():
     spec = {"language": "en", "meter": "anapest4", "syllables": 8, "endings": "f"}
     rep = scan("The master of method\n", from_dict(spec))
     assert [i for i in rep.issues if "no line can pass" in i.detail]
+
+
+@pytest.mark.parametrize(
+    "line, word, stress",
+    [
+        ("put my record on the radio", "record", 0),
+        ("I record the radio", "record", 1),
+        ("baby you look perfect tonight", "perfect", 0),
+        ("I want to perfect my art", "perfect", 1),
+        ("the subject of my song", "subject", 0),
+        ("I will present the case", "present", 1),
+        ("a present for you", "present", 0),
+        ("we protest all night", "protest", 1),
+        ("it was an insult to me", "insult", 0),
+        ("don't insult me", "insult", 1),
+    ],
+)
+def test_a_noun_verb_pair_is_read_by_the_word_before_it(line, word, stress):
+    ws = words(line + "\n")
+    w = next(w for w in ws if w.norm == word)
+    assert w.readings[0].stress == stress and w.readings[0].penalty == 0

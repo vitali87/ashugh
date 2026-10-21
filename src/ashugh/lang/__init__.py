@@ -142,6 +142,8 @@ def analyze(
         ru.after_prepositions(words)
         ru.second_locatives(words)
         ru.preposition_shift(words)
+    if any(w.lang == "en" for w in words):
+        en.heteronyms(words)
     end = words[-1] if words else None
     if end is not None and end.lang == "en" and end.clitic and end.norm not in ("a", "an", "the"):
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in

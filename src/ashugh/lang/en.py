@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from dataclasses import replace
 
 from ..model import Reading, Syllable, Word
 from ..phon import is_vowel
@@ -636,6 +637,25 @@ REPLACED = {
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
 }
+# Words stressed on the first syllable as a noun or adjective and on the second
+# as a verb (a récord, to recórd). The word before tells them apart; the
+# dictionary lists the verb first for these, though the noun is the usual one.
+NOUN_FIRST = set(
+    "discount escort import impact increase insert insult perfect permit record "
+    "subject survey suspect transfer transport update upgrade".split()
+)
+HETERONYMS = NOUN_FIRST | set(
+    "address combat conduct conflict contest contract contrast convert convict desert "
+    "extract object present progress project protest rebel torment recall".split()
+)
+VERBAL = set(
+    "to i you we they he she will would can could should must might may shall 'll "
+    "don't didn't won't can't cannot never gonna wanna let's please".split()
+)
+NOMINAL = set(
+    "a an the my your his her our their its this that these those every no some any "
+    "each another of in on for with at by from about".split()
+)
 SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
 # Abbreviations said as the words they stand for, shown in those words' syllables.
 SAID_AS = {"etc": ("et", "cet", "er", "a")}
@@ -940,3 +960,28 @@ def _guessed(word: Word, token: str, norm: str) -> Word:
     word.weak = word.weak or word.clitic or n == 1
     word.notes.append("not in the dictionary")
     return word
+
+
+def heteronyms(words: list[Word]) -> None:
+    """A noun-verb pair read by the word before it: to recórd, I protést, but my
+    récord, a présent; with no such word, the noun or adjective (you look
+    pérfect). The other reading stays, at the meter's usual cost."""
+    for k, w in enumerate(words):
+        if w.lang != CODE or w.norm not in HETERONYMS or len(w.readings) < 2:
+            continue
+        before = words[k - 1].norm if k else ""
+        if before in VERBAL:
+            want = 1
+        elif before in NOMINAL or w.norm in NOUN_FIRST:
+            want = 0
+        else:
+            continue
+        if not any(r.stress == want for r in w.readings):
+            continue
+        first = [replace(r, penalty=0.0) for r in w.readings if r.stress == want]
+        rest = [
+            replace(r, penalty=max(r.penalty, ALTERNATIVE_COST))
+            for r in w.readings
+            if r.stress != want
+        ]
+        w.readings = tuple(first + rest)
