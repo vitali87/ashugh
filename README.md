@@ -369,7 +369,9 @@ auxiliary of I (սիրում եմ ես) or its clause has a verb of I (հիմա 
 քեզ ես սիրեցի), and the auxiliary [es] otherwise (ինչու ես լռում, գեղեցիկ
 ես ամեն անգամ). A voiced stop after ր is said aspirated (երգ [jɛɾkʰ] rhymes
 with բերք). An abbreviation in capitals is said letter by letter (Ա-Մե-Նե,
-Հա-Հա). In an Armenian song, a line in Latin letters whose words are mostly
+Հա-Հա), even in a line in capitals when it has no vowel letter, and a case
+ending after a hyphen follows the letters and takes the stress (ԱՄՆ-ից
+Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́). In an Armenian song, a line in Latin letters whose words are mostly
 not English is Armenian typed in Latin (Mtnem aygin, kyanq), read in
 Armenian letters: mət-nem, ay-gin. A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other

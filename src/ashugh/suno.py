@@ -300,7 +300,12 @@ def _render(
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy" and w.spelled:  # ԱՄՆ as Ա-Մե-Նե, A-Me-Ne
         if mode == "latin":
-            new = "-".join(_latin(s.phones, False, schwa).capitalize() for s in w.syllables)
+            new = "-".join(  # the letters' names capitalized, an ending not: A-Me-Ne-its
+                _latin(s.phones, False, schwa).capitalize()
+                if s.text[:1].isupper()
+                else _latin(s.phones, False, schwa)
+                for s in w.syllables
+            )
         else:
             new = "-".join(s.text for s in w.syllables)
         notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))

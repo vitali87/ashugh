@@ -678,35 +678,54 @@ LETTER_VOWELS = {
 }
 
 
-def _letter_name(ch: str) -> tuple[str, tuple[str, ...]]:
+def _letter_name(ch: str) -> list[Seg]:
     low = ch.lower()
     if low in LETTER_VOWELS:
-        return ch, LETTER_VOWELS[low]
+        *glide, vowel = LETTER_VOWELS[low]
+        return [Seg(g, "", False) for g in glide] + [Seg(vowel, ch, True)]
     vowel = "ա" if low in "հկ" else "ե"
-    return ch + vowel, (LETTERS[low], "a" if vowel == "ա" else "e")
+    return [Seg(LETTERS[low], ch, False), Seg("a" if vowel == "ա" else "e", vowel, True)]
+
+
+def _case_ending(ending: str, after: str) -> list[Seg]:
+    """The segments of a case ending after a letter's name: ից, ի, ն, ում, with the
+    յ said between ա or օ and a vowel (ՀՀ-ի, Հա-Հա-յի)."""
+    segs = segments("ա" + ending)[1:]  # not word-initial: ով is [ov], not [vov]
+    if segs and segs[0].vowel and after in ("a", "o"):
+        segs.insert(0, Seg("j", "յ", False))
+    return segs
 
 
 def abbreviation(token: str, capitals: bool = False) -> Word | None:
     """An abbreviation in capitals with no vowel letter, or one in at most three
     letters, sung letter by letter and stressed on the last (ՀՀ, ԵՊՀ, ԱՄՆ); ՀԱՊԿ and
-    ՆԱՏՕ are words. Not in a line written all in capitals."""
-    if capitals or not 2 <= len(token) <= 5 or not token.isupper():
+    ՆԱՏՕ are words. In a line written all in capitals only one with no vowel letter
+    is spelt. A case ending after a hyphen is said after the letters and takes the
+    stress (ԱՄՆ-ից, Ա-Մե-Նե-ից; ՀՀ-ի, Հա-Հա-յի)."""
+    head, hyphen, ending = token.partition("-")
+    if not 2 <= len(head) <= 5 or not head.isupper():
         return None
-    low = token.lower()
+    if hyphen and not (
+        1 <= len(ending) <= 4 and ending.islower() and all(is_armenian(ch) for ch in ending)
+    ):
+        return None
+    low = head.lower()
     if not all(ch in LETTERS or ch in LETTER_VOWELS for ch in low):
         return None
     vowels = sum(ch in LETTER_VOWELS for ch in low)
-    if not (vowels == 0 or (vowels == 1 and len(low) <= 3)):
+    if vowels and (capitals or vowels > 1 or len(low) > 3):
         return None
-    names = [_letter_name(ch) for ch in token]
-    phones = tuple(ph for _, p in names for ph in p)
-    last = len(names) - 1
+    segs = [seg for ch in head for seg in _letter_name(ch)]
+    if ending:
+        segs += _case_ending(ending, segs[-1].ph)
+    syllables = syllabify(segs, possessive=False)
+    stress = _stress(syllables)
     return Word(
         text=token,
-        norm=low,
+        norm=token.lower(),
         lang=CODE,
-        syllables=tuple(Syllable(text, phones=p) for text, p in names),
-        readings=(Reading(last, phones, low, "lexicon"),),
+        syllables=tuple(_display(syllables, token)),
+        readings=(Reading(stress, tuple(s.ph for s in segs), token.lower(), "lexicon"),),
         spelled=True,
     )
 
