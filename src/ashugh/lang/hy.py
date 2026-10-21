@@ -307,28 +307,37 @@ def _onsets(cs: list[Seg]) -> list[int]:
     return options
 
 
-def _schwa_runs(
+def _schwa_run(
     cs: list[Seg], closed_last: bool, possessive: bool = True
-) -> list[list[tuple[list[Seg], list[Seg]]]]:
-    """Every way to cut cs into schwa syllables (onset, coda)."""
-    if not cs:
-        return [[]]
-    runs = []
-    for coda_len in range(0, MAX_CODA + 1):
-        if 1 + coda_len > len(cs):
-            break
-        rest = len(cs) - 1 - coda_len
-        onset = cs[rest : rest + 1]
-        coda = cs[rest + 1 :]
-        if closed_last and not coda:
-            continue
-        if not _valid_coda(coda, final=closed_last, possessive=possessive):
-            continue
-        if len(coda) == 2 and not is_stop(coda[1].ph):
-            continue  # զը-րըն-գալ, բը-ժըշ-կել, but մը-կըրտ-չյան, հընդ-կաս-տան
-        for head in _schwa_runs(cs[:rest], closed_last=False):
-            runs.append(head + [(onset, coda)])
-    return runs
+) -> list[tuple[list[Seg], list[Seg]]] | None:
+    """The best way to cut cs into schwa syllables (onset, coda), or None: the
+    fewest syllables, then the fewest that open on յ, then, right to left, the
+    longer coda (մը-կըր-տիչ, not մըկ-րը-տիչ). The best cut of each prefix is
+    found once, so a long cluster costs time in its length, not in its cuts."""
+    n = len(cs)
+    if not n:
+        return []
+    best: list[tuple | None] = [(0, 0, (), [])] + [None] * n  # by prefix length
+    for i in range(1, n + 1):
+        last = i == n  # only the cluster's last syllable may close a word
+        closed = closed_last and last
+        found = None
+        for coda_len in range(0, min(MAX_CODA, i - 1) + 1):
+            rest = i - 1 - coda_len
+            onset, coda = cs[rest : rest + 1], cs[rest + 1 : i]
+            head = best[rest]
+            if head is None or (closed and not coda):
+                continue
+            if not _valid_coda(coda, final=closed, possessive=possessive if last else True):
+                continue
+            if len(coda) == 2 and not is_stop(coda[1].ph):
+                continue  # զը-րըն-գալ, բը-ժըշ-կել, but մը-կըրտ-չյան, հընդ-կաս-տան
+            key = (head[0] + 1, head[1] + (onset[0].ph == "j"), (-len(coda),) + head[2])
+            if found is None or key < found[:3]:
+                found = (*key, head[3] + [(onset, coda)])
+        best[i] = found
+    done = best[n]
+    return done[3] if done else None
 
 
 def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bool = True):
@@ -346,14 +355,15 @@ def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bo
             before = after[0].ph if after else None
             if has_prev and not _valid_coda(coda, final, possessive, before):
                 continue
-            middle = inner[coda_len:]
-            for run in _schwa_runs(middle, not has_next, possessive=possessive):
-                yod = sum(1 for o, _ in run if o[0].ph == "j")
-                # Right to left, the longer coda wins: մը-կըր-տիչ, not մըկ-րը-տիչ.
-                codas = tuple(-len(c) for _, c in reversed(run)) + (-coda_len,)
-                score = (len(run), yod, -onset_len, codas)
-                if best is None or score < best[0]:
-                    best = (score, coda, run, onset)
+            run = _schwa_run(inner[coda_len:], not has_next, possessive=possessive)
+            if run is None:
+                continue
+            yod = sum(1 for o, _ in run if o[0].ph == "j")
+            # Right to left, the longer coda wins: մը-կըր-տիչ, not մըկ-րը-տիչ.
+            codas = tuple(-len(c) for _, c in reversed(run)) + (-coda_len,)
+            score = (len(run), yod, -onset_len, codas)
+            if best is None or score < best[0]:
+                best = (score, coda, run, onset)
     if best is None:
         return None
     return best[1], best[2], best[3]

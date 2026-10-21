@@ -379,3 +379,16 @@ def test_a_meter_of_absurd_length_is_refused(name):
 
     with pytest.raises(SpecError, match="at most 50 feet"):
         from_dict({"meter": name})
+
+
+def test_a_long_armenian_cluster_is_cut_in_time_linear_in_its_length():
+    import time
+
+    from ashugh.lang import hy
+
+    start = time.perf_counter()
+    w = hy.analyze_word("բժշկ" * 30 + "ել")
+    assert time.perf_counter() - start < 2  # every cut tried was 2^n: a minute at 30 letters
+    assert w.size == 46
+    short = hy.analyze_word("բժշկ" * 6 + "ել")
+    assert "-".join(s.text for s in short.syllables).startswith("բըժ-շըկբ-ժըշկ")
