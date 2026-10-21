@@ -53,11 +53,46 @@ NOT_FORMS = {
 FORM_RE = re.compile(r"[а-яё'\-]+")
 # Rare words whose forms are spelt like a common word's and stressed otherwise: the
 # sthene (сте́не) is no reading of стене́, the wall's.
-OBSOLETE = {"стен"}
+OBSOLETE = {"стен", "вод"}  # во́да of вод (waters) is no reading of вода́
+# The dump's rows come in rough order of frequency, but nouns.csv ends with a block
+# of second stresses added later (TAIL_NOUNS), most of them variants no one says
+# (ужи́н, ко́са) and a few a correction of their word's main row, which is wrong
+# (во́лна for волна́); verbs.csv and adjectives.csv have such blocks too, mostly
+# real second words (засыпа́ть beside засы́пать), ranked by their late rows. By the
+# row's accented headword: "drop" leaves it out, "late" ranks it after every row in
+# frequency order, and "first" ranks it before.
+TAIL_NOUNS = range(26421, 26517)
+# Where verbs.csv and adjectives.csv stop listing words by frequency: from these
+# rows on, a block of second stresses and then rare words, ranked as BLOCK.
+UNRANKED = {"verbs.csv": 14533, "adjectives.csv": 11755}
+BLOCK = 50000
+ROWS = {
+    **dict.fromkeys(
+        "вафля' ко'са прави'ло проволо'ка по'мочь ска'ла ужи'н компле'кс ле'карство "
+        "свойство' транспо'рт горе'чь добро'та ста'рина рапо'рт тамбу'р компа'с "
+        "недвижи'мость отсве'т соко'л колле'дж апарта'мент коле'сико пи'кник ре'чушка "
+        "ло'скут ва'хтер приста'в че'та тягота' раку'рс худо'ба киса' по'лоть па'рилка "
+        "ка'шица старши'нство ту'ника беду'ин ба'сма "  # the variants no one says
+        "ужина'ть пу'стынный "
+        "ту'пик запо'ведник плаги'ат па'рник а'рийка".split(),  # main rows that are wrong
+        "drop",
+    ),
+    **dict.fromkeys(
+        "а'га ве'нец ви'дение во'лна сведе'ние мошка' спе'шить хара'ктерный пахну'ть".split(),
+        "late",
+    ),
+    **dict.fromkeys(
+        "ага' вене'ц виде'ние волна' све'дение тупи'к запове'дник мо'шка плагиа'т парни'к "
+        "ари'йка спеши'ть характе'рный па'хнуть".split(),
+        "first",
+    ),
+}
+LATE = 10**6  # the frequency rank of a row after every ranked one
 OUT = Path(__file__).resolve().parent.parent / "src" / "ashugh" / "data" / "ru_stress.tsv"
 YO_OUT = OUT.with_name("ru_yo.tsv")
 DERIVED_OUT = OUT.with_name("ru_derived.tsv")
 SHORT_OUT = OUT.with_name("ru_short.tsv")
+TWINS_OUT = OUT.with_name("ru_twins.tsv")
 # Rows of the dump that are abbreviations, sung letter by letter: США, ЦРУ.
 ABBREVIATIONS = {"сша", "цру", "пво", "нпо", "цска"}
 
@@ -265,14 +300,23 @@ def ranked(source: Path) -> dict[str, list[tuple[int, str]]]:
     (полю́, I weed, beside по́лю of по́ле: no reading after a preposition), and "p"
     where only a nominative or accusative plural has it (о́кна beside окна́: no
     reading after a preposition of the genitive)."""
+    return ranked_with_rows(source)[0]
+
+
+def ranked_with_rows(
+    source: Path,
+) -> tuple[dict[str, list[tuple[int, str]]], dict[str, int]]:
+    """ranked's table, and each form's frequency rank: its commonest word's row."""
     csv.field_size_limit(sys.maxsize)
-    rank: dict[str, dict[int, int]] = defaultdict(dict)
+    # each stress's best (column rank, frequency rank of the word that has it)
+    rank: dict[str, dict[int, tuple[int, int]]] = defaultdict(dict)
     nominal: dict[str, set[int]] = defaultdict(set)  # stresses some non-verb form has
     other: dict[str, set[int]] = defaultdict(set)  # stresses a form not of PLURALS has
+    freq = 0  # the frequency rank of the row being read
 
     def add(bare: str, positions: set[int], r: int, verb: bool, column: str = "") -> None:
         for p in positions:
-            rank[bare][p] = min(rank[bare].get(p, r), r)
+            rank[bare][p] = min(rank[bare].get(p, (r, freq)), (r, freq))
             if not verb:
                 nominal[bare].add(p)
             if column not in PLURALS:
@@ -286,9 +330,16 @@ def ranked(source: Path) -> dict[str, list[tuple[int, str]]]:
             columns = [i for i, h in enumerate(header) if h not in NOT_FORMS]
             past = header.index("past_m") if "past_m" in header else None
             accented = header.index("accented") if "accented" in header else None
-            for row in rows:
+            for line, row in enumerate(rows, 2):
                 if row and row[0].strip().lower() in OBSOLETE:
                     continue
+                role = ROWS.get(row[accented].strip()) if accented is not None and row else None
+                if role == "drop":
+                    continue
+                tail = name == "nouns.csv" and line in TAIL_NOUNS
+                freq = 0 if role == "first" else LATE if role == "late" or tail else line
+                if role is None and line >= UNRANKED.get(name, line + 1):
+                    freq = BLOCK  # its frequency is not known
                 forms = [
                     (v, header[i])
                     for i in columns
@@ -324,10 +375,60 @@ def ranked(source: Path) -> dict[str, list[tuple[int, str]]]:
     def mark(form: str, p: int) -> str:
         return "v" if p not in nominal[form] else "p" if p not in other[form] else ""
 
-    return {
-        form: [(p, mark(form, p)) for p in sorted(ranks, key=lambda p: (ranks[p], p))]
-        for form, ranks in rank.items()
-    }
+    table = {form: [(p, mark(form, p)) for p in _usual(ranks)] for form, ranks in rank.items()}
+    rows = {form: min(f for _, f in ranks.values()) for form, ranks in rank.items()}
+    return table, rows
+
+
+def _decade(row: int) -> int:
+    """The order of magnitude of a frequency rank: the dump's order is rough, so
+    only a word ten times as frequent counts as more so (пушка and пушок do not)."""
+    return len(str(row)) if row else 0
+
+
+def _usual(ranks: dict[int, tuple[int, int]]) -> list[int]:
+    """A form's stresses, the usual first: by the column that gives it and how
+    frequent the word is (писа́ть before пи́сать, пора́ before по́ра, гото́в before
+    го́тов), then the earlier vowel."""
+    commonest = min(_decade(f) for _, f in ranks.values())
+
+    def key(p: int) -> tuple[int, int, int]:
+        column, decade = ranks[p][0], _decade(ranks[p][1])
+        # past one order of magnitude, each rarer one costs a column: го́тов, of гот,
+        # is an accusative, but ready's гото́в a word a thousand times as common
+        return column + max(0, decade - commonest - 1), decade, p
+
+    return sorted(ranks, key=key)
+
+
+# ё twins of a polysyllable that are rare words, so no reading of their е spelling,
+# which is a common one: нёбо (the palate) of небо, лёта of лета, лёсами of лесами.
+RARE_YO = set(
+    "нёбо нёба нёбу нёбом нёбе лёта лёте лёту лётом лётам лётами лётах лёсам лёсами "
+    "лёсах падёж".split()
+)
+# Pairs where the dump's order of frequency is wrong: запрет, the noun, is common.
+NOT_YO_FIRST = {"запрет", "запрете"}
+
+
+def yo_twins(rows: dict[str, int]) -> dict[tuple[str, str], str]:
+    """Pairs of a form written with е and its ё twin, both words, where one is the
+    much commoner: "+" where the ё word is (моём, not мо́ем of мыть; полёт, not по́лет
+    of полоть), read first though the е is written; "-" where it is RARE_YO (небо,
+    not нёбо), so the ё twin is no reading of what is written."""
+    out = {}
+    for yo, row in rows.items():
+        if "ё" not in yo or sum(ch in VOWELS for ch in yo) < 2:
+            continue  # a one-vowel twin is ru.YO_TWINS'
+        e = yo.replace("ё", "е")
+        if e not in rows:
+            continue
+        if yo in RARE_YO:
+            out[(e, yo)] = "-"
+        elif BLOCK not in (row, rows[e]) and e not in NOT_YO_FIRST:
+            if _decade(rows[e]) - _decade(row) >= 1:  # крёстная: a row in no order, no telling
+                out[(e, yo)] = "+"
+    return out
 
 
 def encode(entry: list[tuple[int, str]]) -> str:
@@ -402,8 +503,12 @@ def derived(source: Path) -> dict[str, list[int]]:
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(__doc__)
-    marked = ranked(Path(sys.argv[1]))
+    marked, rows = ranked_with_rows(Path(sys.argv[1]))
     table = {form: [p for p, _ in entry] for form, entry in marked.items()}
+    twins = yo_twins(rows)
+    lines = sorted(f"{e}\t{yo}\t{mode}\n" for (e, yo), mode in twins.items())
+    TWINS_OUT.write_text("".join(lines), encoding="utf-8", newline="\n")
+    print(f"{len(lines)} е/ё twins with a commoner word -> {TWINS_OUT}")
     made = extra(Path(sys.argv[1]), table)
     derived_rows = {f: [(p, "") for p in ps] for f, ps in made.items()}
     for path, rows in ((OUT, marked), (DERIVED_OUT, derived_rows)):

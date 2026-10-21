@@ -122,7 +122,7 @@ def test_an_ed_ending_is_no_second_word(word, sung):
 
 
 def test_a_guessed_word_is_warned_about_once_per_line():
-    rep = scan("Кто создан из камня, кто создан из глины\n", from_dict({"language": "ru"}))
+    rep = scan("Кто тырдан из камня, кто тырдан из глины\n", from_dict({"language": "ru"}))
     assert len([i for i in rep.issues if i.code == "stress"]) == 1
 
 

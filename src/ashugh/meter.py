@@ -754,15 +754,24 @@ def free_fit(
 MAX_SUNG_LINE = 64  # syllables; past this no meter is looked for (the fit grows quadratically)
 
 
+def _reading_cost(ln: Line, f: Fit) -> float:
+    """What the readings a fit chose cost for not being their words' usual ones."""
+    return sum(ln.words[i].reading(st).penalty for i, st in f.stresses.items() if st is not None)
+
+
 def detect(lines: list[Line]) -> str:
     """The meter that fits a stanza best, or "free" if none fits well."""
     usable = [ln for ln in lines if ln.words]
     if not usable or any(sum(w.size for w in ln.words) > MAX_SUNG_LINE for ln in usable):
         return "free"
-    totals = {}
+    totals, lexical = {}, {}
     for m in METERS:
-        totals[m] = sum(fit(ln.words, m).cost for ln in usable)
-    best = min(METERS, key=lambda m: (totals[m], METERS.index(m)))
+        fits = [(ln, fit(ln.words, m)) for ln in usable]
+        totals[m] = round(sum(f.cost for _, f in fits), 6)
+        lexical[m] = sum(_reading_cost(ln, f) for ln, f in fits)
+    # two meters that fit as well: the one that reads each word as it is usually
+    # said (Мне в душе́ так светло, an anapest, not the iamb ду́ше would make)
+    best = min(METERS, key=lambda m: (totals[m], lexical[m], METERS.index(m)))
     if totals[best] / len(usable) > 1.0:
         return "free"
     return best

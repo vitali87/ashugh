@@ -56,14 +56,53 @@ def test_build_fills_missing_past_forms(tmp_path):
 
 def test_a_headwords_own_stress_comes_first(tmp_path):
     header = ["bare", "accented", "sg_nom", "sg_gen"]
-    rows = [["вод", "вод", "вод", "во'да"], ["вода", "вода'", "вода'", "воды'"]]
+    rows = [["водь", "водь", "водь", "во'да"], ["вода", "вода'", "вода'", "воды'"]]
     (tmp_path / "nouns.csv").write_text(
         "\n".join("\t".join(r) for r in [header, *rows]) + "\n", encoding="utf-8"
     )
     for name in ("verbs.csv", "adjectives.csv", "others.csv"):
         (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
     table = ru_build.build(tmp_path)
-    assert table["вода"] == [2, 1]  # вода́, the noun, before во́да of вод
+    assert table["вода"] == [2, 1]  # вода́, the noun, before во́да of a genitive
+
+
+def _two_files(tmp_path, nouns=(), verbs=(), header=("bare", "accented", "sg_nom", "sg_gen")):
+    (tmp_path / "nouns.csv").write_text(
+        "\n".join("\t".join(r) for r in [header, *nouns]) + "\n", encoding="utf-8"
+    )
+    (tmp_path / "verbs.csv").write_text(
+        "\n".join("\t".join(r) for r in [("bare", "accented"), *verbs]) + "\n", encoding="utf-8"
+    )
+    for name in ("adjectives.csv", "others.csv"):
+        (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
+
+
+def test_the_word_far_more_frequent_comes_first(tmp_path):
+    # the dump lists words in order of frequency: писа́ть is row 2, пи́сать row 200
+    filler = [[f"слово{k}", f"сло'во{k}"] for k in range(197)]
+    _two_files(tmp_path, verbs=[["писать", "писа'ть"], *filler, ["писать", "пи'сать"]])
+    assert ru_build.build(tmp_path)["писать"] == [2, 1]
+
+
+def test_a_close_call_of_frequency_keeps_the_vowel_order(tmp_path):
+    filler = [[f"слово{k}", f"сло'во{k}"] for k in range(5)]
+    _two_files(tmp_path, verbs=[["писать", "писа'ть"], *filler, ["писать", "пи'сать"]])
+    assert ru_build.build(tmp_path)["писать"] == [1, 2]
+
+
+def test_an_obsolete_or_dropped_row_gives_no_reading(tmp_path):
+    rows = [["вода", "вода'", "вода'", "воды'"], ["вод", "вод", "вод", "во'да"]]
+    rows.append(["ужин", "ужи'н", "ужи'н", "ужи'на"])
+    rows.append(["ужин", "у'жин", "у'жин", "у'жина"])
+    _two_files(tmp_path, nouns=rows)
+    table = ru_build.build(tmp_path)
+    assert table["вода"] == [2] and table["ужин"] == [1]
+
+
+def test_a_commoner_yo_twin_is_read_first_and_a_rare_one_not_at_all():
+    rows = {"моем": 1336, "моём": 8, "небо": 95, "нёбо": 10**6, "черта": 185, "чёрта": 449}
+    twins = ru_build.yo_twins(rows)
+    assert twins == {("моем", "моём"): "+", ("небо", "нёбо"): "-"}
 
 
 def test_a_prefixed_verb_ends_its_feminine_past_like_its_base(tmp_path):

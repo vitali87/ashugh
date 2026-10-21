@@ -406,15 +406,21 @@ one the meter may use, the last part carrying the main stress and the rhyme
    (позвала́ like звала́; the dump's позва́ла stays second, for verse); a
    form's readings come in the order of how usual their source is, the
    headword first, then nominatives and verb forms, then the other cases
-   (глаза́ before гла́за, долги́ before до́лги);
+   (глаза́ before гла́за, долги́ before до́лги), and between two words by
+   how frequent each is, where one is ten times as frequent by the dump's
+   order (писа́ть before пи́сать, душе́ before ду́ше, гото́в before го́тов);
+   a variant no one says (ужи́н, ко́са, во́да) is left out, and a form
+   written without its ё reads as the much commoner ё word first (моём,
+   полёт) and never as a rare one (небо is no нёбо);
 4. 398,547 regular forms the dump leaves out, derived from its lemmas and
    read only where it lists no form with that spelling (ё read as е):
    comparatives with their по- (нежне́е, кре́пче, подо́льше), past
    participles (бро́шен, решённый, сби́ты, обма́нутых, ста́вший), and, for
    a lemma whose row is empty, its declension (пре́жнему, вселе́нной,
    людски́х) or, for -овать and -ывать verbs, its present (припарку́ет);
-   verbs whose participles move their stress their own way (о́тдан,
-   отдана́; про́лит) are left to the steps below;
+   verbs whose participles move their stress their own way are read by
+   their class where the dump has the verb: со́здан, создана́, со́здано
+   (дать, -нять, -чать, брать, звать, взять), спасён, спасена́ (-сти, -зти);
 5. the dictionary twin of a poetic or derived form: мгновенье, мглою,
    сильней, -ся, не-, folk -ся after a vowel (ложи́ся), and a prefixed verb
    the dump lacks (отжила́ like жила́);
@@ -587,8 +593,8 @@ the number is spelt out, and is left out of its rhyme group.
   usual reading (уже́, е́ду), so where both fit, the rarer one may be picked
   against the grammar (твои́ руки́ for ру́ки): mark the stress (ру́ки or рУки)
   where it matters. Russian forms the dictionary lacks are derived by rule
-  (scripts/ru_forms.py), and verbs whose participles move their stress their
-  own way are left to the guess.
+  (scripts/ru_forms.py), and a participle of another class with mobile stress
+  (про́лит, пролита́) is left to the guess.
 - Armenian typed in Latin letters is turned back into Armenian letters, but
   Latin spelling cannot tell ч from ճ or ց from ծ, nor mark aspiration;
   syllables and stress come out right, rhymes only approximately.

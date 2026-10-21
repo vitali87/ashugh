@@ -122,6 +122,7 @@ WEAK |= set(
     свой своя своё свое свою свои своей своих своим своего своему своими
     наша наше наши нашу нашей наших нашим нашего нашему ваша ваше ваши вашу вашей
     ваших вашим вашего вашему нашем вашем нашими вашими сама само сами
+    моём моем твоём твоем своём своем
     """.split()
 )
 # Pronoun forms and function words the table lacks: spelling, stressed vowels.
@@ -255,6 +256,8 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     **{f: (f, (1,)) for f in "саней саням санями санях".split()},
     "бледна": ("бледна", (1, 0)),
     "тонки": ("тонки", (1, 0)),
+    # given: дана́, дано́, даны́, not the dump's да́на (Dan's, the judo grade)
+    **{f: (f, (1,)) for f in "дана дано даны".split()},
     **{f: (f, (0, 1)) for f in "значимость значимости значимостью".split()},
     "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
     "баюшки": ("баюшки", (0,)),
@@ -872,6 +875,47 @@ def _plural_oblique(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     return []
 
 
+# The short participles whose feminine moves its stress onto the ending (со́здан,
+# создана́, со́здано; при́нят, принята́, при́нято), by the end of the masculine, with
+# the infinitive that end comes from: дать, -нять, -чать, -клясть, брать, звать, взять.
+MOBILE_PARTICIPLES = {
+    "дан": "дать", "нят": "нять", "чат": "чать", "клят": "клясть", "бран": "брать",
+    "зван": "звать", "взят": "взять",
+}  # fmt: skip
+
+
+def _short_participle(norm: str) -> list[tuple[str, tuple[int, ...]]]:
+    """The short form of a past passive participle the table lacks, stressed as its
+    class is: создана́ and со́здано, спасён and спасена́ (every form of a -сти or -зти
+    verb's -ён participle on its end). Only where the table has the verb (создать,
+    спасти, привести), so a name in -дан is no participle; a вы- verb's prefix keeps
+    the stress (вы́дана)."""
+    if "-" in norm:
+        return []
+    ending = norm[-1] if norm[-1:] in ("а", "о", "ы") else ""
+    base = norm[: len(norm) - len(ending)]
+    n = vowel_count(base)
+    if n >= 2 and base.endswith("ен") and base[-3:-2] in ("с", "з", "д", "т"):
+        stem = base[:-2]
+        infinitive = stem + "ти" if stem[-1] in "сз" else stem[:-1] + "сти"
+        if TABLE.get(infinitive) is None:
+            return []
+        if not ending:  # спасен is спасён
+            return [(stem + "ён", (n - 1,))]
+        return [(norm, (n,))]
+    root = next((r for r in MOBILE_PARTICIPLES if base.endswith(r)), None)
+    if root is None or vowel_count(norm) < 2:
+        return []
+    if base != root and TABLE.get(base[: -len(root)] + MOBILE_PARTICIPLES[root]) is None:
+        return []  # Судан, Иордан: no verb (взять, of one vowel, is not listed)
+    if norm.startswith("вы"):
+        return [(norm, (0,))]  # вы́дана, вы́брано
+    if ending == "а":
+        return [(norm, (n,))]  # взята́, создана́
+    prefix = 0 if base.startswith("пере") else max(0, n - 2)  # пе́редано, разо́брано
+    return [(norm, (prefix,))]
+
+
 def _lexicon_readings(norm: str) -> list[Reading]:
     options: list[tuple[str, tuple[int, ...], str]] = []
     if norm in CORE:
@@ -879,6 +923,7 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     else:
         for spelling, stress in TABLE.variants(norm):
             options.append((spelling, stress, "lexicon"))
+        options = _common_twin_first(norm, options)  # моём for моем, небо not нёбо
     if not options and "-" in norm.strip("-"):
         return _hyphenated(norm)
     if not options:
@@ -886,6 +931,9 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             options.append((spelling, stress, "lexicon"))
     if not options:
         for spelling, stress in _plural_oblique(norm):
+            options.append((spelling, stress, "lexicon"))
+    if not options:  # создана́, спасена́: short participles the table lacks
+        for spelling, stress in _short_participle(norm):
             options.append((spelling, stress, "lexicon"))
     if not options:  # дедлайн, фле́ксить: words newer than the table
         for spelling, stress in ru_slang.readings(norm):
@@ -913,8 +961,11 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             secondary = tuple(p for p in stress if p != main)
             readings.append(Reading(main, transcribe(spelling, main), spelling, source, secondary))
             continue
+        rare = source == "rare"  # мо́ем, a word the ё spelling's is far commoner than
+        source = "lexicon" if rare else source
         for p in stress:
             cost = ALTERNATIVE_COST if readings else 0.0  # the usual reading wins a tie
+            cost = RARE_TWIN_COST if rare else cost
             readings.append(Reading(p, transcribe(spelling, p), spelling, source, penalty=cost))
     return readings
 
@@ -945,6 +996,13 @@ def _past_numeral(spelling: str, stress: tuple[int, ...]) -> tuple[int, ...]:
 # meter leaves open in favour of the usual reading (уже́ before у́же, е́ду before
 # еду́), too little to outweigh a beat.
 ALTERNATIVE_COST = 0.1
+# The cost of the е word behind a far commoner ё twin (мо́ем behind моём): enough
+# that a weak word off the beat, or a looser meter, is the likelier reading.
+RARE_TWIN_COST = 0.5
+
+
+# Forms like слезы whose genitive, not their ё plural, is the usual reading: жду весны́.
+GENITIVE_USUAL = frozenset({"весны"})
 
 
 def _yo_plural_first(
@@ -962,6 +1020,8 @@ def _yo_plural_first(
         and "ё" in yo_form[0]
         and yo_form[0].endswith(("а", "ы", "и"))
         and set(e_form[1]) == {last}
+        and set(yo_form[1]) <= TABLE.plural_only(yo_form[0])  # not чёрта, the devil's
+        and e_form[0] not in GENITIVE_USUAL
     ):
         return [yo_form, e_form, *options[2:]]
     return options
@@ -1134,6 +1194,30 @@ def _user_readings(value: str) -> list[Reading]:
 # Latin letters that look like Cyrillic ones, as a Latin keyboard types them into
 # a Russian word: зáмок with a Latin á, мoре with a Latin o.
 LOOK_ALIKE = str.maketrans("aeopcyxAEOPCYXBKMHT", "аеорсухАЕОРСУХВКМНТ")
+
+
+@cache
+def yo_twins() -> dict[tuple[str, str], str]:
+    """(е spelling, ё twin) -> "+" where the ё word is much the commoner (моём, not
+    мо́ем), "-" where it is a rare word, no reading of the е spelling (нёбо)."""
+    text = resources.files("ashugh").joinpath("data/ru_twins.tsv").read_text(encoding="utf-8")
+    rows = (line.split("\t") for line in text.splitlines() if line)
+    return {(e, yo): mode for e, yo, mode in rows}
+
+
+def _common_twin_first(norm: str, options: list) -> list:
+    """options with a rare ё twin of norm left out and a commoner one put first,
+    the е word it displaces marked "rare" (мо́ем of мыть behind моём)."""
+    twins = yo_twins()
+    kept = [o for o in options if twins.get((norm, o[0])) != "-"]
+    first = [o for o in kept if twins.get((norm, o[0])) == "+"]
+    if not first:
+        return kept
+    return first + [
+        (sp, st, "rare" if sp == norm else src)
+        for sp, st, src in kept
+        if (sp, st, src) not in first
+    ]
 
 
 @cache
