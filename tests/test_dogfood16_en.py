@@ -380,3 +380,104 @@ def test_suno_splits_le_endings_and_possessives_where_they_are_sung(line, out):
 
     got = suno.format_song(line + "\n", Spec(language="en"), split="all", tags=False).text
     assert got.strip() == out
+
+
+@pytest.mark.parametrize(
+    "word", ["willow", "pillow", "studio", "video", "radio", "scenario", "shadow", "window"]
+)
+def test_a_final_o_rhymes_the_same_whatever_cmudict_marks(word):
+    assert en_rhyme(word, "go") >= rhyme.THRESHOLD["perfect"]
+
+
+def test_a_final_reduced_vowel_is_still_no_rhyme():
+    assert en_rhyme("sofa", "day") < rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize(
+    "line,numeral",
+    [
+        ("My grandpa fought in World War II", "II"),
+        ("Henry VIII was king", "VIII"),
+        ("Louis XIV danced", "XIV"),
+    ],
+)
+def test_a_roman_numeral_in_english_is_warned(line, numeral):
+    (issue,) = [i for i in scan(line + "\n").issues if "Roman numeral" in i.message]
+    assert issue.detail.startswith(numeral)
+
+
+@pytest.mark.parametrize("line", ["I saw a CD", "I mix it up", "I am here", "Mix it, DJ"])
+def test_a_word_or_pronoun_is_no_roman_numeral(line):
+    assert not any("Roman numeral" in i.message for i in scan(line + "\n").issues)
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Oh please don't tear\nThe ones I hold so dear\n", "Please lead\nThe way to bed\n"],
+)
+def test_a_verb_heteronym_rhymes_by_its_verb_vowel(text):
+    assert any(i.code == "rhyme" for i in check(text, rhyme="AA").issues)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I shed a tear\nFor you my dear\n",
+        "Don't tear\nMy coat, I swear\n",
+        "I wound the clock\nAnd turned the lock\n",
+        "Please lead\nThe way, indeed\n",
+    ],
+)
+def test_the_vowel_the_context_allows_still_rhymes(text):
+    assert not any(i.code == "rhyme" for i in check(text, rhyme="AA").issues)
+
+
+def test_leant_is_one_syllable():
+    report = check("I leant upon a coppice gate\n", meter="iamb", feet=4)
+    assert report.lines[0].fit.count == 8 and report.lines[0].ok
+
+
+def test_a_tag_after_a_blank_line_opens_its_own_section():
+    text = (
+        "[Verse 1]\nI walked along the empty street\n\n[Instrumental]\n\n"
+        "[Spoken Word]\nAnd then she said, I'll never come back here again\n"
+    )
+    spec = from_dict(
+        {"language": "en", "syllables": 8, "section": {"spoken word": {"syllables": 12}}}
+    )
+    report = scan(text, spec)
+    assert report.lines[1].line.section == "Spoken Word" and all(lr.ok for lr in report.lines)
+
+
+def test_a_style_tag_right_under_a_section_still_belongs_to_it():
+    report = scan("[Chorus]\n[Female Vocal]\nOh take me home tonight\n")
+    assert report.lines[0].line.section == "Chorus"
+
+
+@pytest.mark.parametrize("word", ["blesséd", "wingéd", "blessèd", "wingèd"])
+def test_an_accented_ed_is_sung(word):
+    assert sizes(word) == {2}
+
+
+@pytest.mark.parametrize(
+    "text,count", [("Go\n", "**1 syllable**"), ("Go home\n", "**2 syllables**")]
+)
+def test_the_hover_counts_in_the_singular_for_one(tmp_path, text, count):
+    from ashugh.lsp import Server
+
+    uri = (tmp_path / "s.txt").as_uri()
+    server = Server()
+    doc = {"textDocument": {"uri": uri, "languageId": "lyrics", "version": 1, "text": text}}
+    server.handle({"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": doc})
+    hover = {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 0}}
+    reply = server.handle(
+        {"jsonrpc": "2.0", "id": 1, "method": "textDocument/hover", "params": hover}
+    )
+    assert reply["result"]["contents"]["value"].startswith(count + " ·")
+
+
+def test_suno_leaves_a_malformed_tag_unsplit():
+    from ashugh import suno
+
+    out = suno.format_song("[[Chorus]]\nOh take me home tonight\n", split="all", tags=False)
+    assert "[[Chorus]]" in out.text and "to-night" in out.text

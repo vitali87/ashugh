@@ -991,6 +991,7 @@ EXTRA = {
 REPLACED = {
     "prob'ly": ["P R AA1 B L IY0"],  # probably, two letters left out
     "wi'": ["W IH1"],  # Scots with: wi' bickering brattle
+    "leant": ["L EH1 N T"],  # leaned, as British verse writes it: I leant upon a coppice gate
     "our": ["AW1 R", "AA1 R"],  # one syllable in song, though CMUdict lists ou-er first
     "ours": ["AW1 R Z", "AA1 R Z"],
     "spring": ["S P R IH1 NG"],
@@ -1114,7 +1115,7 @@ SMOOTHED = {"AY", "AW"}
 # A diphthong after the main stress keeps its full vowel, which takes a beat or
 # a rhyme like a secondary stress whether or not the dictionary marks it:
 # ém-pìre / fire, bírd-hòuse / mouse.
-UNREDUCED = {"AY", "AW", "OY"}
+UNREDUCED = {"AY", "AW", "OY", "OW"}
 # Vowels CMUdict may mark 0 before the stress though they are said in full: antique,
 # Chinese, bamboo, hotel.
 PRETONIC_FULL = {"AE", "AY", "AA", "AO", "OW", "EY", "AW", "OY"}
@@ -1347,7 +1348,7 @@ def analyze_word(
         variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
     if user:
         variants = [user] if any(ch.isdigit() for ch in user) else variants
-    elif variants and token.lower().endswith("èd"):  # blessèd, wingèd: the -ed is sung
+    elif variants and token.lower().endswith(("èd", "éd")):  # blessèd, wingéd: -ed sung
         variants = list(dict.fromkeys(_sung_ed(v) for v in variants))
     elif variants and token.lower().endswith("é"):  # résumé: the reading that sings its é
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
@@ -1679,7 +1680,14 @@ VOWEL_PAIRS = {
     "wind": ("aɪ", "ɪ"),
     "winds": ("aɪ", "ɪ"),
     "close": ("z", "s"),
+    "tear": ("ɛ", "ɪ"),  # don't tear / dear is no rhyme; a tear, of an eye or a shirt
+    "tears": ("ɛ", "ɪ"),
+    "lead": ("i", "ɛ"),  # please lead / bed is none; the lead, a role or the metal
+    "wound": ("aʊ", "u"),  # I wound the clock; the wound
+    "dove": ("oʊ", "ʌ"),  # she dove in; a dove
 }
+# Nouns of either sound, so a determiner chooses neither: a tear, the lead.
+EITHER_NOUN = {"tear", "tears", "lead"}
 NEAR = set(
     "so too very real more as up stay be is are was were get keep come draw hold held".split()
 )
@@ -1732,7 +1740,7 @@ def _vowel_pairs(words: list[Word]) -> None:
         elif before in VERBAL or _auxiliary(words, k - 1):
             want, sure = verb, True
         elif before in NOMINAL and w.norm != "close":
-            want, sure = other, True
+            want, sure = other, w.norm not in EITHER_NOUN
         elif w.norm.startswith("wind"):
             want, sure = other, False  # a song's wind blows more than it winds
         else:

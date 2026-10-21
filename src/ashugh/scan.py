@@ -418,6 +418,14 @@ ABBREVIATION_DOT_RE = re.compile(
     r"(?![а-яёА-ЯЁ])"
 )
 ROMAN_RE = re.compile(r"(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})")
+
+
+def _numeral(text: str, lang: str) -> bool:
+    """Whether a Roman numeral is one to warn of: any outside English; in English
+    II, IV, VIII or a long one like MCMLXXXIV, not I, CD or MIX."""
+    return lang != "en" or len(text) >= 2 and set(text) <= set("IVX") or len(text) >= 5
+
+
 RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
 RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
 RHYME_REACH = 8  # lines either side a rhyme partner may be, in a stanza that never ends
@@ -587,8 +595,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     if dotted:  # и т.д., ул. Мира: sung in full, so counted as written they are short
         detail = f"{', '.join(dotted)}: write it as it is sung (и так далее, улица)"
         add(Issue(ln.number, "script", "warning", "an abbreviation is sung in full", detail))
-    roman = [w.text for w in ln.words if ln.lang != "en" and ROMAN_RE.fullmatch(w.text)]
-    if roman:  # XXI դար, Пётр I: sung as letters, not as the number
+    roman = [w.text for w in ln.words if ROMAN_RE.fullmatch(w.text) and _numeral(w.text, ln.lang)]
+    if roman:  # XXI դար, Пётр I, World War II: sung as letters, not as the number
         detail = f"{', '.join(roman)}: spell the number out"
         add(Issue(ln.number, "script", "warning", "a Roman numeral is sung as letters", detail))
     outside = lyrics.sub_asides(ln.text, lambda _: " ")

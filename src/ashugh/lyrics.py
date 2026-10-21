@@ -434,7 +434,9 @@ def parse(text: str) -> list[Line]:
         if not stripped:
             if open_unit:
                 unit += 1
-            open_unit, index = False, 0
+            # a tag after a blank line opens its own section: [Instrumental], then
+            # [Spoken Word] with words under it, is no style kept on the instrumental
+            open_unit, index, tagged = False, 0, False
             continue
         if not tokenize(stripped) and not has_digits(stripped):
             continue  # only a backing vocal or punctuation; digits are a line to flag

@@ -155,9 +155,14 @@ def format_song(
         body, ending = _split_ending(line_raw)
         spans = lyrics.token_spans(body)
         elided = _elided(lr, lr.target is not None or lr.line.number in by_meter)
+        bracketed = [m.span() for m in lyrics.BRACKET_RE.finditer(body)]
         pieces, last = [], 0
         for i, ((a, b, token), word) in enumerate(zip(spans, lr.line.words)):
             pieces.append(body[last:a])
+            if any(x <= a and b <= y for x, y in bracketed):  # [[Chorus]]: a tag gone wrong,
+                pieces.append(token)  # which the scan warns of, left as written
+                last = b
+                continue
             hold = split == "all" or (split == "last" and i == len(spans) - 1)
             mode = words_policy.get(word.norm, default_mode)
             how = ru_words.get(word.norm, stress)

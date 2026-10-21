@@ -240,7 +240,8 @@ class Server:
             value = "**no words** · " + (DIGITS if digits else "nothing to sing")
             return {"contents": {"kind": "markdown", "value": value}}
         rhyme = f" · rhyme {lr.letter}" if lr.letter and lr.letter != "-" else ""
-        value = f"**{lr.fit.count} syllables** · `{lr.fit.grid}` · {lr.ending}{rhyme}\n\n{lr.sung}"
+        count = f"{lr.fit.count} syllable{'' if lr.fit.count == 1 else 's'}"
+        value = f"**{count}** · `{lr.fit.grid}` · {lr.ending}{rhyme}\n\n{lr.sung}"
         return {"contents": {"kind": "markdown", "value": value}}
 
 
