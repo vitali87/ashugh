@@ -583,7 +583,9 @@ def _inflected_override(norm: str, overrides: dict[str, str]) -> list[list[Seg]]
 
 
 # Words that open a clause, so a ես after them is the pronoun: ու ես, որ ես.
-CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե երբ եթե քանի մինչ ապա հետո էլ".split())
+# Not էլ (դու էլ ես: you too are) nor երբ (ե՞րբ ես գալու): a verb of I in the
+# clause tells the pronoun after them (հետո էլ ես գնացի, երբ ես եկա).
+CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե եթե քանի մինչ ապա հետո".split())
 FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
 # 1st person aorists that do not end in -ցի: տեսա, եկա (I saw, I came).
 FIRST_AORISTS = set(
@@ -596,20 +598,27 @@ NOT_VERBS = {"անգամ", "դեմ", "կամ", "համ"}
 def _verb_of_i(norm: str) -> bool:
     if norm in NOT_VERBS:
         return False
-    return norm in FIRST_PERSON or norm in FIRST_AORISTS or norm.endswith(("եմ", "ամ", "ցի"))
+    if norm in FIRST_PERSON or norm in FIRST_AORISTS or norm.endswith(("եմ", "ամ", "ցի")):
+        return True
+    # չեկա, չեղա; and the conditional or past of I behind կ- or չ-: կգայի, կսիրեի
+    return norm[:1] in "կչ" and (norm[1:] in FIRST_AORISTS or norm.endswith(("այի", "եի")))
 
 
 def auxiliary_es(norms: list[str], i: int, clause_end: list[bool]) -> bool:
     """Whether the ես at i is the auxiliary (you are, [es]) leaning on the word
     before it, not the pronoun I ([jes]). The pronoun opens its clause (Ես եմ,
     ու ես, ..., ես), follows an auxiliary of I (սիրում եմ ես, ով եմ ես) or comes
-    with a verb of I (հիմա ես գիտեմ, քեզ ես սիրեցի, երեկ ես տեսա); the auxiliary
+    with a verb of I before or after it in its clause (հիմա ես գիտեմ, քեզ ես
+    սիրեցի, երեկ ես տեսա, կերգեմ ես, մի օր ես կգայի); the auxiliary
     follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես, գեղեցիկ ես ամեն անգամ),
     and ends its clause after one (ուր ես, ես կգամ)."""
     if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS:
         return False
-    if norms[i - 1] in FIRST_PERSON:
-        return False  # two auxiliaries never meet: the second is the pronoun
+    for k in range(i - 1, -1, -1):  # կերգեմ ես, սիրում եմ քեզ ես: a verb of I before
+        if _verb_of_i(norms[k]):
+            return False
+        if k == 0 or clause_end[k - 1] or norms[k] in CLAUSE_OPENERS:
+            break
     if clause_end[i]:
         return True  # ուր ես, ...: a verb of I in a later clause is another's
     for k in range(i + 1, len(norms)):
