@@ -1109,6 +1109,16 @@ REPLACED = {
     "urania": ["Y UH0 R EY1 N IY0 AH0"],
     "iphigenia": ["IH2 F AH0 JH AH0 N AY1 AH0"],
     "circe": ["S ER1 S IY0"],
+    # names of spirituals, hymns and Longfellow the dictionary lacks or says as a
+    # company: Gil-e-ad (balm in Gilead), Geth-sem-a-ne, Git-che Gu-mee
+    "gilead": ["G IH1 L IY0 AH0 D"],
+    "gethsemane": ["G EH0 TH S EH1 M AH0 N IY0"],
+    "gitche": ["G IH1 CH IY0"],
+    "gumee": ["G UW1 M IY0"],
+    # e'ry (every), cap'n (captain), there'll in one: the words verse sings short
+    "e'ry": ["EH1 V R IY0"],
+    "cap'n": ["K AE1 P AH0 N"],
+    "there'll": ["DH EH1 R L", "DH EH1 R AH0 L"],
     "our": ["AW1 R", "AA1 R"],  # one syllable in song, though CMUdict lists ou-er first
     "ours": ["AW1 R Z", "AA1 R Z"],
     "spring": ["S P R IH1 NG"],

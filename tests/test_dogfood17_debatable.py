@@ -220,3 +220,21 @@ def test_a_later_round_shows_a_neighbours_chosen_rewrite():
     assert len(proposer.calls) == 2
     second = {r.line: r for r in proposer.calls[1]}
     assert second[2].before == ["I walked along the road"]
+
+
+@pytest.mark.parametrize(
+    "word,n",
+    [("Gilead", 3), ("Gethsemane", 4), ("Gitche", 2), ("Gumee", 2), ("e'ry", 2), ("cap'n", 2)],
+)
+def test_hymn_and_verse_words_count_as_sung(word, n):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert w.size == n and not w.guessed
+
+
+def test_therell_may_be_one_syllable():
+    from ashugh.lang import en
+
+    w = en.analyze_word("there'll")
+    assert w.drop is not None or w.size == 1
