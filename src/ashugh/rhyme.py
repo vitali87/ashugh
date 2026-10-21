@@ -95,8 +95,9 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
         # Sung short (real in one syllable rhymes with feel), and as written (fire
         # in one syllable still rhymes with empire).
         sung = _as_sung(word, reading, w in fit.elided)
+        short = _as_sung(word, reading, True)  # poem as pome rhymes with home
         for stress in [reading.stress, *later]:
-            for form in dict.fromkeys([sung, reading]):
+            for form in dict.fromkeys([sung, reading, short]):
                 t = _tail(word, form, stress, words[w + 1 :])
                 if t is not None and t not in out:
                     out.append(t)

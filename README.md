@@ -447,7 +447,18 @@ counted from their spelling and stressed by the ending prior, and named in a
 warning, a one-syllable one too (zorb), since English spelling does not count
 syllables. A preposition that ends a line takes the stress (ships gone by /
 sky). A word sung a syllable short rhymes as sung (real in one syllable /
-feel), and as written.
+feel), and as written; a last word that may be sung short (fire, hour, poem)
+takes the ending a spec asks of it and rhymes either way (poem / home). An
+object pronoun after a form of be is the predicate and takes the beat (all I
+want is yóu). A hyphenated word is read part by part, the last part's stress
+the main one, even where the dictionary lists the whole (twenty-óne / sun).
+A dictionary reading that moves the stress costs the meter a little, and one
+that moves it onto a full vowel where the usual reading has a reduced one is
+a surname's and left out (begún, not Bé-gun). An abbreviation with no vowel
+letter is always spelt (MC, DJ), one of four letters or more that alternates
+consonant and vowel is a word (FOMO, NASA), and Dr. is doctor. Song slang
+the dictionary lacks or gets wrong is listed: yeet, highkey, lowkey, rizz,
+bae, email, spring.
 
 **Meter** (`meter.py`). Each syllable position is a strong or a weak beat.
 Fitting a line picks a reading for every ambiguous word and prices the
@@ -487,7 +498,7 @@ the largest set that does stands, and the lines outside it are flagged
 Words are compared by sound, not spelling: a homograph stressed apart is no
 rhyme (за́мок / замо́к, désert / desért), and English keeps apart the vowels it
 contrasts (still / feel, far / war) but not the ones it merges before r
-(here / year, tour / poor). A line that rhymes only on the word an earlier
+(here / year, tour / poor), and an English r is no l (care / bell is slant). A line that rhymes only on the word an earlier
 line ends with, or on another form of it (сердце / сердца, սիրտս / սիրտը), is
 warned about as a refrain, not a rhyme.
 

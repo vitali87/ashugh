@@ -51,6 +51,7 @@ BASE: dict[str, tuple[str, str, bool]] = {
     "w": ("glide", "lab", True),
 }
 
+RHOTICS = {"ɹ"}  # English r colours its vowel; Russian р and л rhyme: город / холод
 SONORITY = {"stop": 1, "affr": 1, "fric": 2, "nas": 3, "liq": 4, "glide": 5}
 
 
@@ -120,6 +121,8 @@ def consonant_distance(a: str, b: str) -> float:
     fa, fb = features(a), features(b)
     if fa.base == fb.base:
         return 0.15
+    if "l" in (fa.base, fb.base) and {fa.base, fb.base} & RHOTICS:
+        return 0.7  # an r colours the vowel before it, an l does not: care / bell
     if fa.manner == fb.manner and fa.place == fb.place:
         return 0.25  # voicing alone: night / ride is near, not perfect
     if {fa.base, fb.base} == {"k", "x"}:

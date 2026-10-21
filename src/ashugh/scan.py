@@ -294,6 +294,20 @@ def check_line(
     target = rule.syllables_at(ln.index)
     feet = rule.feet_at(ln.index)
     f = meter.fit(ln.words, meter_name, target, rule.tolerance, force, feet, promote)
+    want = rule.ending_at(ln.index)
+    last = ln.words[-1] if ln.words else None
+    if (
+        target is None
+        and want is not None
+        and f.ending == want + 1
+        and last is not None
+        and last.drop == last.size - 1
+        and len(ln.words) - 1 not in f.elided
+    ):
+        # fire, hour, poem: a last word sung a syllable short gives the asked ending
+        short = meter.fit(ln.words, meter_name, f.count - 1, 0, force, feet, promote)
+        if short.ending == want and short.count == f.count - 1:
+            f = short
     lr = LineReport(ln, f, rhyme.tails(ln, f), target=target, min_rhyme=rule.min_rhyme)
     _check_line(lr, rule, meter_name, source)
     return lr
@@ -402,10 +416,14 @@ def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
     return new
 
 
-def _elision_notes(ln: Line, f, add) -> None:
-    """Notes on the syllables the line's fit leaves out, so none goes unsaid."""
+def _elision_notes(ln: Line, f, add, source: str = "spec") -> None:
+    """Notes on the syllables the line's fit leaves out, so none goes unsaid; for
+    English only where a spec holds the line, and not for a word whose short form
+    is its usual one (real)."""
     for i in sorted(f.elided):
         w = ln.words[i]
+        if w.lang == "en" and (source != "spec" or w.drop_cost < 0):
+            continue
         if w.lang == "hy" and w.drop == w.optional:
             what = "drops its ը"
             detail = w.optional_why
@@ -524,9 +542,9 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 )
             )
         else:
-            _elision_notes(ln, f, add)
+            _elision_notes(ln, f, add)  # the spec's count asks for it
     elif f.elided:
-        _elision_notes(ln, f, add)  # the meter dropped it: Eve-ry heartbeat
+        _elision_notes(ln, f, add, source)  # the meter dropped it: Eve-ry heartbeat
 
     if source == "spec" and meter_name != "free" and (f.off_beat or f.ending_off):
         names = [_quote(ln.words[i].sung(f.stresses.get(i), mark=True)) for i in f.off_beat]

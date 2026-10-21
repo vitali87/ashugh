@@ -104,6 +104,8 @@ PREPOSITIONS = set(
     "to with for at on in by from of about over after like without beside behind "
     "around into onto upon near toward towards".split()
 )
+# Forms of be: an object pronoun after one is the predicate, stressed (it was yóu).
+COPULAS = {"is", "was", "were", "are", "am", "be", "been", "being", "'s", "'re", "'m"}
 WEAK = {
     "into",
     "onto",
@@ -206,13 +208,17 @@ def known(token: str) -> bool:
 
 
 def lookup(norm: str) -> list[str] | None:
+    if norm in REPLACED:
+        return list(REPLACED[norm])
     if norm.endswith("in'") and len(norm) > 4:
         # goin', blowin', cryin': the -ing word with its last sound sung [ɪn], the
-        # same for all of them whatever the dictionary lists for each
+        # same for all of them whatever the dictionary lists for each; vibin' as
+        # vibing, which only its stem gives
         raw = TABLE.get(norm[:-1] + "g") or TABLE.get(norm)
-        if raw:
-            return [_dropped_g(v) for v in raw.split("|")]
-    candidates = [norm]
+        found = raw.split("|") if raw else _derived(norm[:-1] + "g")
+        if found:
+            return [_dropped_g(v) for v in found]
+    candidates = [norm, norm + "'"]  # ol', the dictionary's own
     if norm.endswith("in'"):
         candidates.append(norm[:-1] + "g")  # lovin' -> loving
     elif norm.endswith("in"):
@@ -377,6 +383,8 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
     low = "".join(unicodedata.normalize("NFD", ch)[0] for ch in token.lower())  # èd: ed
     if n >= 2 and low.endswith(("n't", "n’t")) and len(_counted_groups(low[:-3])) < n:
         return split_spelling(token[:-3], n - 1) + [token[-3:]]
+    if n >= 2 and low.endswith(("'ve", "’ve")):
+        return split_spelling(token[:-3], n - 1) + [token[-3:]]  # should-n't-'ve
     if low.startswith("mc") and n >= 2 and len(_counted_groups(low)) < n:
         rest = frozenset(k - 1 for k in short if k > 0)
         return [token[:2], *split_spelling(token[2:], n - 1, rest)]  # Mc-Don-ald's
@@ -398,7 +406,7 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
             (
                 (k, a + m.end())
                 for k, (a, b) in enumerate(groups)
-                if (m := re.search(r"[aeiou]y(?=[aeiou])", low[a:b]))
+                if (m := re.search(r"[aou]y(?=[aeiou])", low[a:b]))
             ),
             None,
         )
@@ -427,6 +435,12 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
             onset = 2  # lit-tle, can-dle, ta-ble
         elif gap == "gh" or (not gap and low[end - 1 : end] == "y"):
             onset = 0  # laugh-ing, weigh-ing; play-ing (but Lam-bor-ghi-ni)
+        elif gap == "w" and low[end - 1 : end] in ("o", "e") and low[start : start + 1] == "e":
+            onset = 0  # tow-er, flow-er, how-ev-er (but a-wake, to-ward)
+        elif gap == "n" and low[end - 3 : end] in ("tio", "sio", "cio"):
+            onset = 0  # pro-mo-tion-al, na-tion-al
+        elif gap[-1:] in ("t", "s", "c") and low[start : start + 3] == "ion":
+            onset = 1  # na-tion, pas-sion: the suffix keeps its consonant
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
             closed = re.search(r"[^aeiouy]", low[begin:end])  # some-thin': a silent e closes it
@@ -441,7 +455,7 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         c - 1
         if token[c - 1 : c] in APOSTROPHES and token[c:].lower() in CONTRACTIONS
         else c + 1
-        if token[c + 1 : c + 2] in APOSTROPHES
+        if token[c + 1 : c + 2] in APOSTROPHES and low[c : c + 1] not in LETTER_VOWELS
         else c
         for c in cuts
     ]
@@ -495,9 +509,31 @@ def abbreviation(token: str, capitals: bool = False) -> tuple[str, bool] | None:
     if m is None:
         return None
     core = m.group(1)
-    if TABLE.get(core.lower()) and (capitals or core not in SPELLED_OUT):
+    if capitals:
+        return None
+    if not re.search("[AEIOU]", core):
+        return core.lower(), bool(m.group(2))  # MC, DJ, TV: no word to read
+    if len(core) >= 4 and re.fullmatch(r"(?:[^AEIOU][AEIOU])+|(?:[AEIOU][^AEIOU])+", core):
+        return None  # FOMO, YOLO, NASA: said as a word
+    if TABLE.get(core.lower()) and core not in SPELLED_OUT:
         return None
     return core.lower(), bool(m.group(2))
+
+
+def _name_reading(first: str, other: str) -> bool:
+    """A later dictionary reading that moves the stress earlier onto a full [eɪ] or
+    [iː] where the first has a reduced vowel: a surname's or a rare form (Bé-gun,
+    é-lev-en), not a noun beside its verb (ádd-ress, ad-dréss)."""
+    a, b = first.split(), other.split()
+    va = [ph for ph in a if ph[-1:].isdigit()]
+    vb = [ph for ph in b if ph[-1:].isdigit()]
+    if len(va) != len(vb):
+        return False
+    sa = next((k for k, v in enumerate(va) if v.endswith("1")), None)
+    sb = next((k for k, v in enumerate(vb) if v.endswith("1")), None)
+    if sa is None or sb is None or sb >= sa:
+        return False
+    return vb[sb][:-1] in ("EY", "IY") and va[sb][-1] == "0"
 
 
 def _letter_spelling(norm: str, variant: str) -> bool:
@@ -537,10 +573,39 @@ MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
 # Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
 EXTRA = {"yeah": ["Y EH1 R"], "real": ["R IY1 AH0 L"], "poem": ["P OW1 M"], "woah": ["W OW1"]}
+# Words the dictionary lacks or gets wrong for songs: its spring has a second
+# reading in two syllables, its bae is a surname, its email stresses -mail, its Dr.
+# reads drive.
+REPLACED = {
+    "spring": ["S P R IH1 NG"],
+    "springs": ["S P R IH1 NG Z"],
+    "bae": ["B EY1"],
+    "email": ["IY1 M EY2 L"],
+    "emails": ["IY1 M EY2 L Z"],
+    "emailed": ["IY1 M EY2 L D"],
+    "dr": ["D AA1 K T ER0"],
+    "dr.": ["D AA1 K T ER0"],
+    "mr": ["M IH1 S T ER0"],
+    "mr.": ["M IH1 S T ER0"],
+    "mrs": ["M IH1 S IH0 Z"],
+    "mrs.": ["M IH1 S IH0 Z"],
+    "yeet": ["Y IY1 T"],
+    "highkey": ["HH AY1 K IY2"],
+    "lowkey": ["L OW1 K IY2"],
+    "rizz": ["R IH1 Z"],
+    "lambo": ["L AE1 M B OW0"],
+    "bussin": ["B AH1 S IH0 N"],
+    "simp": ["S IH1 M P"],
+    "sus": ["S AH1 S"],
+    "tiktok": ["T IH1 K T AA2 K"],
+    "vibe": ["V AY1 B"],
+    "vibes": ["V AY1 B Z"],
+}
 SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
 SHORT_PREFERENCE = -0.05
 ARCHAIC = re.compile(r"[aeiouy]e(?:st|th)$")  # go-est, see-est, fly-eth
 SYNCOPE_COST = 0.5
+ALTERNATIVE_COST = 0.1  # meter cost of a dictionary reading that moves the first's stress
 # An unstressed [ɚ] straight after [aɪ] or [aʊ] may merge with it, as fire and
 # hour do in the dictionary's second reading: de-sire, pow'r, flow'rs.
 SMOOTHED = {"AY", "AW"}
@@ -654,6 +719,8 @@ def analyze_word(
         return _spelled_out(Word(token, norm, CODE, (), ()), *spelled)
     if variants and len(variants) > 1 and token.islower() and _letter_spelling(norm, variants[0]):
         variants = variants[1:]  # ba, the vocable, not B.A.
+    if variants and len(variants) > 1 and not token[:1].isupper():
+        variants = [variants[0]] + [v for v in variants[1:] if not _name_reading(variants[0], v)]
     if norm in EXTRA and not user:
         variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
     if user:
@@ -664,7 +731,11 @@ def analyze_word(
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
         variants = voiced + [v for v in variants if v not in voiced]
     word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
-    if not variants and "-" in norm.strip("-"):
+    parts = norm.strip("-").split("-")
+    whole_words = len(parts) > 1 and all(len(p) > 1 and p.isalpha() for p in parts)
+    if (not variants or (whole_words and not user)) and "-" in norm.strip("-"):
+        # twenty-one, ice-cold: each part as it is said, the last carrying the main
+        # stress, even where the dictionary lists the whole (its twenty-one has twen)
         return _hyphenated(word, token, overrides)
     if not variants:
         return _guessed(word, token, norm)
@@ -704,7 +775,12 @@ def analyze_word(
         secondary = tuple(sorted({i for i in marked if i != stress} | set(full_vowels)))
         if readings and not marked:
             continue  # a reduced form (been as /bən/) is no reading of its own
-        reading = Reading(stress, phones, norm, source, secondary)
+        # a later reading that moves the stress (a surname's bé-gun, é-lev-en) costs
+        # the meter a little, so the usual one wins a tie
+        moved = bool(readings) and stress != readings[0].stress
+        reading = Reading(
+            stress, phones, norm, source, secondary, penalty=ALTERNATIVE_COST if moved else 0.0
+        )
         if all((r.stress, r.phones) != (stress, phones) for r in readings):
             readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/
     # A compound may move its stress onto its second part in verse (sometíme), but no

@@ -147,8 +147,10 @@ def analyze(
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in
     before = words[-2] if len(words) > 1 else None
     if end is not None and before is not None and end.lang == before.lang == "en":
-        if end.norm in en.OBJECTS and not (before.clitic or before.norm in en.WEAK):
-            end.enclitic = end.free_end = True  # need it, hold me, missing yóu on a beat
+        host = not (before.clitic or before.norm in en.WEAK or before.norm in en.COPULAS)
+        if end.norm in en.OBJECTS and host:
+            # need it, hold me, missing yóu on a beat; but all I want is yóu
+            end.enclitic = end.free_end = True
         content = words[-3] if len(words) > 2 else None
         if (
             end.norm in en.OBJECTS
