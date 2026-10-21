@@ -468,7 +468,7 @@ def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
     return syllables
 
 
-def _display(syllables: list[list[Seg]], original: str) -> list[Syllable]:
+def _display(syllables: list[list[Seg]], original: str, caps: bool = True) -> list[Syllable]:
     out = []
     for syl in syllables:
         parts = []
@@ -479,6 +479,8 @@ def _display(syllables: list[list[Seg]], original: str) -> list[Syllable]:
             parts.append("և" if whole else s.src)
         phones = tuple(s.ph for s in syl)
         out.append(Syllable("".join(parts), any(s.epenthetic for s in syl), phones))
+    if caps and len(original) > 1 and original.isupper():
+        return [replace(s, text=s.text.upper()) for s in out]  # ՍՊԱՍՈՒՄ: its schwas too
     if out and original[:1].isupper() and syllables[0][0].epenthetic:
         first = out[0].text
         fixed = "Ը" + first[1:2].lower() + first[2:]
@@ -830,7 +832,7 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
         text=token,
         norm=token.lower(),
         lang=CODE,
-        syllables=tuple(_display(syllables, token)),
+        syllables=tuple(_display(syllables, token, caps=False)),  # Հա-Հա: letter names
         readings=(Reading(stress, tuple(s.ph for s in segs), token.lower(), "lexicon"),),
         spelled=True,
     )
@@ -878,7 +880,9 @@ def analyze_word(
         if article is not None and optional is None:
             syllables, optional, prefer_short = article, len(article) - 1, True
     shown = _display(syllables, token)
-    if source == "user" and token[:1].isupper() and shown:  # Կայսրություն as written
+    if source == "user" and len(token) > 1 and token.isupper():  # ԿԱՅՍԸՐՈՒԹՅՈՒՆ
+        shown = [replace(s, text=s.text.upper()) for s in shown]
+    elif source == "user" and token[:1].isupper() and shown:  # Կայսրություն as written
         shown[0] = replace(shown[0], text=shown[0].text[:1].upper() + shown[0].text[1:])
     phones = _after_r(tuple(s.ph for syl in syllables for s in syl))
     clitic = norm in CLITICS

@@ -183,6 +183,8 @@ def format_song(
     out = "".join(raw)
     if tags:
         out = _retag(out, report, notes)
+    for note in notes:  # a mark still waiting for its sentence's end is no part of a note
+        note.new = note.new.translate(UNPENDING)
     return SunoResult(out, notes)
 
 
@@ -197,7 +199,8 @@ def _armenian_asides(
     Latin letters the Armenian full stop and pause as . and ,."""
 
     def aside(inner: str) -> str:
-        spans = lyrics.word_spans(inner)
+        # its words as a line's, a reduplication one word per part (Վա՜յ-վա՜յ)
+        spans = [(a + 1, b + 1, t) for a, b, t in lyrics.token_spans(inner[1:-1])]
         words = languages.analyze("hy", [t for _, _, t in spans], lexicon, inner[1:-1])
         if len(words) != len(spans):  # a token the analysis split or joined: word by word
             words = [languages.analyze_word_as(t, lexicon) for _, _, t in spans]
@@ -303,9 +306,11 @@ def _render(
         new = _russian(w, token, st, stress, n, notes, prefer)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy" and languages.LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում
+        name, ending = token.split("-", 1)
+        if mode == "schwa" and w.syllables[-1].text == "ը" + ending:
+            return f"{name}-ը{ending}"  # iPhone-ըս, as it is sung
         if mode != "latin":
             return token
-        name, ending = token.split("-", 1)
         phones = tuple(s.ph for s in hy.segments("ա" + ending)[1:])
         if w.syllables[-1].text == "ը" + ending:  # iPhone-ս, iPhone-əs
             phones = ("ə", *phones)
@@ -497,6 +502,7 @@ def _armenian(
 LATIN_MARKS = {"\u055e": "?", "\u055c": "!"}
 SENTENCE_MARKS = {"\u055e": "\x01", "\u055c": "\x02"}
 PENDING = {"\x01": "?", "\x02": "!"}
+UNPENDING = str.maketrans(dict.fromkeys(PENDING))
 ARMENIAN_VOWEL_LETTERS = set("աեէըիոօևԱԵԷԸԻՈՕ")
 
 

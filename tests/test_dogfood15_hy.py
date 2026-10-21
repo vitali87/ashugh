@@ -86,3 +86,40 @@ def test_the_armenian_middle_dot_ends_a_phrase():
 def test_dzayn_with_article_may_sing_its_schwa():
     w = words("ձայնն")[0]
     assert w.size == 2 or w.optional is not None
+
+
+@pytest.mark.parametrize("line", ["Ո՞ւր ես, իմ սեր", "Վա՜յ, իմ սեր"])
+def test_suno_notes_carry_no_control_characters(line):
+    from ashugh import suno
+
+    out = suno.format_song(line + "\n", armenian="latin", tags=False)
+    for note in out.notes:
+        assert not any(ord(ch) < 32 for ch in note.new + note.word), note
+
+
+def test_a_reduplication_in_a_backing_vocal_keeps_both_marks():
+    from ashugh import suno
+
+    out = suno.format_song("Իմ յար (Վա՜յ-վա՜յ)\n", armenian="latin", tags=False).text
+    inner = out[out.index("(") + 1 : out.index(")")]
+    assert inner.count("́") == 2 or inner.lower().count("!") == 2, inner
+
+
+def test_schwa_mode_writes_the_sung_schwa_of_a_latin_name():
+    from ashugh import suno
+
+    out = suno.format_song("Իմ iPhone-ս\n", armenian="schwa", tags=False).text
+    assert "iPhone-ըս" in out
+
+
+@pytest.mark.parametrize("token,shown", [("ՍՊԱՍՈՒՄ", "ԸՍ-ՊԱ-ՍՈՒՄ"), ("ՄԿՐՏԻՉ", "ՄԸ-ԿԸՐ-ՏԻՉ")])
+def test_a_word_in_capitals_keeps_them_with_its_schwas(token, shown):
+    w = words(f"ՈՒ {token}")[-1]
+    assert "-".join(s.text for s in w.syllables) == shown
+
+
+def test_a_lexicon_word_in_capitals_keeps_them():
+    from ashugh.lang import hy
+
+    w = hy.analyze_word("ԿԱՅՍՐՈՒԹՅՈՒՆ", {"կայսրություն": "կայսըրություն"})
+    assert "".join(s.text for s in w.syllables) == "ԿԱՅՍԸՐՈՒԹՅՈՒՆ"
