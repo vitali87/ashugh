@@ -55,6 +55,7 @@ class Request:
     avoid_final: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
     rejected: list[str] = field(default_factory=list)  # earlier candidates and why they failed
+    copies: list[int] = field(default_factory=list)  # the same line again: one repair for all
     source: str | None = None  # translate: the line being translated
     source_lang: str | None = None
     n: int = 6

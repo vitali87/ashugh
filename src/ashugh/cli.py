@@ -146,6 +146,8 @@ def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | 
         print(f"L{c.line}  {c.old}\n   → {shown}", file=log)
     for u in result.unresolved:
         print(f"L{u.line}  unresolved: {'; '.join(u.reasons)}", file=log)
+        for r in u.rejected[-3:]:
+            print(f"   ✗ {r['text']} — {r['why']}", file=log)
     rep = result.report
     passing = sum(1 for lr in rep.lines if lr.ok)
     print(

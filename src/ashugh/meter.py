@@ -293,13 +293,22 @@ def fit_classical(
     off: list[int] = []
     ending_off = False
     last_pos = count - 1
+    end = ss[-1] if ss else None
+    # waits for mé: a free pronoun on the last beat ends the line, not the verb before
+    free_last = (
+        anchor is not None
+        and end is not None
+        and end.free_end
+        and strong(end.start)
+        and ss[anchor] is not end
+    )
     for k, s in enumerate(ss):
         best = None
         for st in s.options:
             cost, is_off = _slot_cost(s, st, strong, period)
             pos = s.start + (st or 0)
             end_off = False
-            if k == anchor and st is not None and not strong(pos):
+            if k == anchor and st is not None and not strong(pos) and not free_last:
                 cost += CLAUSULA
                 end_off = True
             key = (cost, st is None)
@@ -320,8 +329,7 @@ def fit_classical(
         s = ss[anchor]  # a secondary stress on a beat after the main one ends the line: bútterflỳ
         later = [s.start + k for k in s.secondary if k > main and strong(s.start + k)]
         last_pos = max([last_pos, *later])
-    end = ss[-1] if ss else None
-    if anchor is not None and end is not None and end.free_end and strong(end.start):
+    if free_last and end is not None:
         last_pos = max(last_pos, end.start)  # back to mé: the pronoun takes the last beat
     promoted = False
     if promote and anchor == len(ss) - 1 and not ending_off:
@@ -433,6 +441,14 @@ def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> 
     st = choice[a.word]
     last = a.start + (st or 0)
     best = _loose_beats(kind, count, last, period, phase, feet)
+    end = ss[-1]
+    if end.free_end and end is not a:
+        # waits for mé: the pronoun may take the last beat instead
+        on_end = list(kind)
+        on_end[end.start] = "m"
+        alt = _loose_beats(on_end, count, end.start, period, phase, feet)
+        if alt is not None and (best is None or _loose_key(alt, feet) < _loose_key(best, feet)):
+            best, last, kind = alt, end.start, on_end
     promoted = False
     final = a.size - 1
     if (

@@ -62,6 +62,7 @@ class Change:
 class Unresolved:
     line: int
     reasons: list[str]
+    rejected: list[dict] = field(default_factory=list)  # {"text", "why"} per candidate
 
 
 @dataclass
@@ -166,7 +167,8 @@ def fit_song(
             reasons = (
                 var.blocked or [e.message for e in line_errors(var.lr)] or ["no candidate fit"]
             )
-            unresolved.append(Unresolved(k, reasons))
+            rejected = [{"text": t, "why": why} for t, why in var.rejected]
+            unresolved.append(Unresolved(k, reasons, rejected))
         elif not var.chosen.original:
             changes.append(
                 Change(k, var.lr.line.text, var.chosen.text, round(var.chosen.weight, 3))
@@ -184,7 +186,12 @@ def requests_for(
     report = scan(text, spec, lang=lang)
     variables, groups = _variables(report, keep_original=True)
     lines = {lr.line.number: lr for lr in report.lines}
-    return [_request(variables[k], variables, groups, lines, n, None) for k in sorted(variables)]
+    later = _later_copies(variables)
+    return [
+        _request(variables[k], variables, groups, lines, n, None)
+        for k in sorted(variables)
+        if k not in later
+    ]
 
 
 def run(
@@ -203,13 +210,14 @@ def run(
 ) -> tuple[int, int]:
     """The propose, check and solve loop; returns (rounds used, requests sent)."""
     pending = set(variables)
+    later = _later_copies(variables)
     used = asked = 0
     for _ in range(rounds):
-        if not pending:
+        if not pending - set(later):
             break
         requests = [
             _request(variables[k], variables, groups, lines, n, extra, partners_from_lines)
-            for k in sorted(pending)
+            for k in sorted(pending - set(later))
         ]
         answers = proposer.propose(requests)
         used += 1
@@ -220,7 +228,43 @@ def run(
                 var.offered += 1
                 _consider(var, raw, spec, lang, weigh)
         pending = _settle(variables, groups, lines, solver)
+        pending -= _same_repair_for_copies(variables, later, spec, lang, weigh)
     return used, asked
+
+
+def _later_copies(variables: dict[int, _Var]) -> dict[int, int]:
+    """Lines written again (a chorus's second time), each to its first copy's number."""
+    first: dict[str, int] = {}
+    later: dict[int, int] = {}
+    for k in sorted(variables):
+        text = _norm(variables[k].lr.line.text)
+        if text in first:
+            later[k] = first[text]
+        else:
+            first[text] = k
+    return later
+
+
+def _same_repair_for_copies(
+    variables: dict[int, _Var], later: dict[int, int], spec: Spec, lang, weigh: Weigh
+) -> set[int]:
+    """A line written twice (a chorus) gets its first copy's repair wherever that
+    repair passes the copy's own checks, so a song never sings two versions;
+    returns the copies so settled."""
+    settled = set()
+    for k, src in later.items():
+        var, source = variables[k], variables[src]
+        if source.chosen is None:
+            continue
+        if var.chosen is None or _norm(var.chosen.text) != _norm(source.chosen.text):
+            var.seen.discard(_norm(source.chosen.text))
+            _consider(var, source.chosen.text, spec, lang, weigh)
+            same = [c for c in var.pool if _norm(c.text) == _norm(source.chosen.text)]
+            if same:
+                var.chosen, var.blocked = same[0], []
+        if var.chosen is not None:
+            settled.add(k)
+    return settled
 
 
 def _variables(report: Report, keep_original: bool, everything: bool = False):
@@ -338,14 +382,24 @@ def _settle(
         problem = _problem(pools)
         choice = solve(problem, method) if all(pools) else None
         if choice is None:
+            empty = [k for k in var_numbers if not variables[k].pool]
             for k in var_numbers:
-                variables[k].chosen = None
+                var = variables[k]
+                passing = [c for c in var.pool if c.original and not line_errors(c.report)]
+                if passing and empty:
+                    var.chosen, var.blocked = passing[0], []  # it fits; its partner does not
+                    continue
+                var.chosen = None
                 pending.add(k)
-                variables[k].blocked = (
-                    [_why_empty(variables[k])]
-                    if not variables[k].pool
-                    else ["no combination of candidates kept the rhyme"]
-                )
+                if not var.pool:
+                    var.blocked = [_why_empty(var)]
+                elif empty:
+                    partners = ", ".join(f"L{j}" for j in empty)
+                    var.blocked = [f"its rhyme partner {partners} has no usable candidate"]
+                elif not var.offered:
+                    var.blocked = ["no candidates given, and the line as written breaks the rhyme"]
+                else:
+                    var.blocked = ["no combination of candidates kept the rhyme"]
             continue
         for k, c in zip(numbers, choice):
             if k in variables:
@@ -516,6 +570,7 @@ def _request(
         avoid_final=list(rule.forbid_final),
         problems=problems,
         rejected=[f"{text} — {why}" for text, why in (var.rejected + _near_misses(var))[-8:]],
+        copies=[k for k, src in _later_copies(variables).items() if src == ln.number],
         n=n,
     )
     if extra is not None:
