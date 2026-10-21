@@ -183,3 +183,40 @@ def test_a_drop_note_is_given_once_for_a_word_said_twice():
     report = scan("Էս գիշեր մերն ա, էս գիշեր մերն ա\n", from_dict({"language": "hy"}))
     notes = [i.message for i in report.lines[0].issues if "drops its" in i.message]
     assert len(notes) == len(set(notes))
+
+
+def test_a_request_shows_no_line_of_another_section():
+    from ashugh import fit
+
+    text = (
+        "[Chorus]\nStay with me tonight\nHold me tight\n\n"
+        "[Verse]\nI walked along the road for many miles\nAnd home\n"
+    )
+    reqs = fit.requests_for(text, from_dict({"language": "en", "syllables": 6}))
+    verse = next(r for r in reqs if r.original.startswith("I walked"))
+    assert verse.before == []
+    assert verse.after == ["And home"]
+
+
+class Scripted:
+    name = "scripted"
+
+    def __init__(self, rounds):
+        self.rounds = list(rounds)
+        self.calls = []
+
+    def propose(self, requests):
+        self.calls.append(list(requests))
+        answers = self.rounds.pop(0) if self.rounds else {}
+        return {r.id: answers.get(r.line, []) for r in requests}
+
+
+def test_a_later_round_shows_a_neighbours_chosen_rewrite():
+    from ashugh import fit
+
+    text = "I walked along the road for many miles\nThe night was very cold and long and dark\n"
+    proposer = Scripted([{1: ["I walked along the road"]}, {2: ["The night was very cold"]}])
+    fit.fit_song(text, from_dict({"language": "en", "syllables": 6}), proposer, rounds=2)
+    assert len(proposer.calls) == 2
+    second = {r.line: r for r in proposer.calls[1]}
+    assert second[2].before == ["I walked along the road"]

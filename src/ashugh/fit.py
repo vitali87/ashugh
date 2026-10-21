@@ -727,10 +727,19 @@ def _request(
     if moving and not sound:
         names = ", ".join(f"L{k}" for k in moving)
         problems.append(f"{names} must change as well: any rhyme you can share will do")
-    numbers = sorted(lines)
+    # the stanza around the line as it now stands: a neighbour's chosen rewrite, not
+    # its first draft (a translation's neighbours stay its source lines)
+    numbers = [k for k in sorted(lines) if lines[k].line.unit == ln.unit]
     at = numbers.index(ln.number)
-    before = [lines[k].line.text for k in numbers[max(0, at - 2) : at]]
-    after = [lines[k].line.text for k in numbers[at + 1 : at + 3]]
+
+    def standing(k: int) -> str:
+        chosen = variables[k].chosen if k in variables else None
+        if partners_from_lines and chosen is not None and not chosen.original:
+            return chosen.text
+        return lines[k].line.text
+
+    before = [standing(k) for k in numbers[max(0, at - 2) : at]]
+    after = [standing(k) for k in numbers[at + 1 : at + 3]]
     req = Request(
         id=f"L{ln.number}",
         line=ln.number,
