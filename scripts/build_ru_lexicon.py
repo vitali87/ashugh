@@ -9,8 +9,9 @@ inflected form written with an apostrophe after the stressed vowel.
 writes src/ashugh/data/ru_stress.tsv: one form per line, sorted by UTF-8 bytes,
 followed by a tab and the 1-based positions of its stressed vowels ("21" means
 the form is stressed on the second vowel in one reading and the first in
-another), a headword's own stress first: вода is вода́ the noun before во́да of
-вод, so where a line leaves the stress open it takes the common one. Forms
+another), the usual reading first (see build), each followed by v where only
+a verb form has that stress and the form has another ("2v1" for полю: полю́,
+I weed, and по́лю), so a reading after a preposition can leave it out. Forms
 with one vowel are left out unless they contain ё, because their stress
 carries no information but their ё does.
 
@@ -215,13 +216,42 @@ def yo_only(forms: set[str]) -> list[str]:
     )
 
 
+def column_rank(column: str) -> int:
+    """How usual a form of this column is, lower first: a nominative or a verb form
+    (руки́ of рука́ is a genitive, ру́ки the plural; е́ду a verb, еду́ of еда́ an
+    accusative), then accusatives, comparatives and adjective forms, then the
+    other cases and short forms (до́лги beside долги́ of долг)."""
+    if column.endswith("_nom") or column.startswith(("presfut", "past", "imperative")):
+        return 1
+    if column.endswith("_acc") or column == "comparative" or column.startswith("decl_"):
+        return 2
+    return 3
+
+
+VERB_COLUMNS = ("presfut", "past", "imperative")
+
+
 def build(source: Path) -> dict[str, list[int]]:
-    """Each form's stressed vowels, a headword's own stress first: вода lists вода́
-    (the noun) before во́да (of вод, waters), so a reading the line leaves open
-    is the common one."""
+    """Each form's stressed vowels, the usual reading first: a headword's own
+    stress (вода́, the noun, before во́да of вод), then by column_rank (глаза́ the
+    plural before гла́за the genitive), so a reading the line leaves open is the
+    common one."""
+    return {form: [p for p, _ in entry] for form, entry in ranked(source).items()}
+
+
+def ranked(source: Path) -> dict[str, list[tuple[int, bool]]]:
+    """build's table with each stress marked True where only a verb form has it
+    (полю́, I weed, beside по́лю of по́ле): no reading after a preposition."""
     csv.field_size_limit(sys.maxsize)
-    table: dict[str, set[int]] = defaultdict(set)
-    headword: dict[str, set[int]] = defaultdict(set)  # listed first: the common reading
+    rank: dict[str, dict[int, int]] = defaultdict(dict)
+    nominal: dict[str, set[int]] = defaultdict(set)  # stresses some non-verb form has
+
+    def add(bare: str, positions: set[int], r: int, verb: bool) -> None:
+        for p in positions:
+            rank[bare][p] = min(rank[bare].get(p, r), r)
+            if not verb:
+                nominal[bare].add(p)
+
     bases = end_feminines(source)
     for name in FILES:
         with open(source / name, encoding="utf-8", newline="") as fh:
@@ -233,34 +263,48 @@ def build(source: Path) -> dict[str, list[int]]:
             for row in rows:
                 if row and row[0].strip().lower() in OBSOLETE:
                     continue
-                forms = [v for i in columns if i < len(row) for v in re.split(r"[,;/]", row[i])]
+                forms = [
+                    (v, header[i])
+                    for i in columns
+                    if i < len(row)
+                    for v in re.split(r"[,;/]", row[i])
+                ]
+                verb_row = past is not None
                 if accented is not None and accented < len(row):
                     head = row[accented].strip().lower().replace("\u0301", "'")
                     if FORM_RE.fullmatch(head):
-                        bare, positions, _ = stress_positions(head)
-                        headword[bare] |= positions
+                        bare, positions, count = stress_positions(head)
+                        if positions and (count >= 2 or "ё" in bare):
+                            add(bare, positions, 0, verb_row)
                 listed_past = "".join(row[past : past + 1]).strip() if past is not None else "?"
                 if accented is not None and not listed_past:
-                    forms += past_forms(row[accented].strip().lower())
+                    forms += [(f, "past") for f in past_forms(row[accented].strip().lower())]
                 infinitive = row[0].strip().lower() if past is not None and row else ""
                 first = _first_person(header, row) if infinitive else ""
-                for variant in forms:
+                for variant, column in forms:
                     form = variant.strip().lower().replace("\u0301", "'").replace("*", "")
+                    verb = column.startswith(VERB_COLUMNS)
                     norm = infinitive and feminine_like_base(infinitive, form, bases, first)
                     if norm:  # позвала́ before позва́ла
                         bare, positions, _ = stress_positions(norm)
-                        table[bare] |= positions
-                        headword[bare] |= positions
+                        add(bare, positions, 0, verb)
                     if not FORM_RE.fullmatch(form):
                         continue
                     bare, positions, count = stress_positions(form)
                     if not positions or (count < 2 and "ё" not in bare):
                         continue
-                    table[bare] |= positions
+                    add(bare, positions, column_rank(column), verb)
     return {
-        form: sorted(positions & headword[form]) + sorted(positions - headword[form])
-        for form, positions in table.items()
+        form: [(p, p not in nominal[form]) for p in sorted(ranks, key=lambda p: (ranks[p], p))]
+        for form, ranks in rank.items()
     }
+
+
+def encode(entry: list[tuple[int, bool]]) -> str:
+    """Stresses in order, each followed by v where only a verb form has it and the
+    form has another stress too: полю is "1v2" read as 2, then 1 (verb only)."""
+    several = len(entry) > 1
+    return "".join(f"{p}{'v' if verb and several else ''}" for p, verb in entry)
 
 
 def extra(source: Path, table: dict[str, list[int]]) -> dict[str, list[int]]:
@@ -327,12 +371,15 @@ def derived(source: Path) -> dict[str, list[int]]:
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(__doc__)
-    table = build(Path(sys.argv[1]))
-    for path, rows in ((OUT, table), (DERIVED_OUT, extra(Path(sys.argv[1]), table))):
+    marked = ranked(Path(sys.argv[1]))
+    table = {form: [p for p, _ in entry] for form, entry in marked.items()}
+    made = extra(Path(sys.argv[1]), table)
+    derived_rows = {f: [(p, False) for p in ps] for f, ps in made.items()}
+    for path, rows in ((OUT, marked), (DERIVED_OUT, derived_rows)):
         keys = sorted(rows, key=lambda k: k.encode())
         with open(path, "w", encoding="utf-8", newline="\n") as out:
             for key in keys:
-                out.write(f"{key}\t{''.join(str(p) for p in rows[key])}\n")
+                out.write(f"{key}\t{encode(rows[key])}\n")
         print(f"{len(keys)} forms -> {path}")
     yo = yo_only(all_forms(Path(sys.argv[1])))
     YO_OUT.write_text("".join(f + "\n" for f in yo), encoding="utf-8", newline="\n")

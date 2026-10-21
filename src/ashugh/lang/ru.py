@@ -18,6 +18,7 @@ assimilates obstruents, and drops the silent consonants of сердце, сол�
 from __future__ import annotations
 
 import unicodedata
+from dataclasses import replace
 from functools import cache
 from importlib import resources
 
@@ -175,6 +176,17 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "светает": ("светает", (1,)),
     "вослед": ("вослед", (1,)),
     "впотьмах": ("впотьмах", (1,)),
+    # Numerals in their oblique cases, which the dump lists bare: пяти́, четырьмя́.
+    **{
+        f: (f, (sum(ch in "аеёиоуыэюя" for ch in f) - 1,))
+        for f in (
+            "пяти шести семи восьми девяти десяти двадцати тридцати пятью шестью семью "
+            "девятью десятью восьмью восемью двадцатью тридцатью двумя тремя четырьмя "
+            "двоих троих двоим троим пятерых шестерых семерых четверых пятерым"
+        ).split()
+    },
+    # The plural of год is лета́ in the dump; года́м and годо́в are what is said.
+    **{f: (f, (1,)) for f in "годам годами годах годов".split()},
     # не грусти́ before гру́сти of грусть, which a preposition usually announces
     "грусти": ("грусти", (1, 0)),
     # Slang and loanwords of songs the dictionary lacks.
@@ -283,9 +295,10 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "из-под": ("из-под", (1,)),
 }
 PARTICLES = {"то", "либо", "нибудь", "ка", "таки"}
-YO_NAMES = {"петр": "пётр"}  # one-syllable names the table lacks
-# One-syllable words whose е spelling is slang of its own: сек (a second), not сёк.
-NOT_YO = {"сек"}
+YO_NAMES = {"петр": "пётр", "трех": "трёх"}  # one-syllable forms the table lacks
+# One-syllable words whose е spelling is a word of its own: чем (than, with what),
+# not чём; сек (a second), not сёк.
+NOT_YO = {"сек", "чем"}
 # Nouns whose locative after в, во or на is stressed on the ending: в саду́, на ветру́,
 # в крови́. After these prepositions the stem-stressed dative or genitive cannot be meant.
 # Some take it after one preposition only: в полку́ but на по́лку, на виду́ but в ви́ду.
@@ -548,6 +561,13 @@ def transcribe(spelling: str, stress: int | None) -> tuple[str, ...]:
                 out[i] = DEVOICE[base] + tail
         elif base in VOICE and nxt_base in DEVOICE and nxt_base != "v":
             out[i] = VOICE[base] + tail
+    # A double consonant at the end or before another consonant is said single:
+    # класс [klas], грипп, искусство [iskustvə].
+    vowels = set(PLAIN.values()) | set(IOTATED.values()) | {"ə", "ɐ", "ɪ", "ʊ", "ɨ"}
+    for i in range(len(out) - 1, 0, -1):
+        after = out[i + 1] if i + 1 < len(out) else None
+        if out[i] == out[i - 1] and out[i] not in vowels and (after is None or after not in vowels):
+            del out[i]
     return tuple(out)
 
 
@@ -586,12 +606,13 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     # Folk and old verse write -ся in full after a vowel where speech has -сь
     # (улыба́лася, не ложи́ся, бою́ся): its twin is the -сь form, not the bare stem
     # (ло́жи, theatre boxes).
-    if norm.endswith("ся") and norm[-3:-2] in VOWELS and not found:
+    if norm.endswith("ся") and norm[-3:-2] in VOWELS and not found and norm[:-2] not in CLITICS:
         twin(norm[:-2] + "сь", lambda p: p)
     # стараясь is стара́юсь's gerund, not ста́рая with сь: a gerund asks its verb first.
     gerund = norm.endswith(("ясь", "ась")) and not norm.endswith("лась")
     for suffix in ("ся", "сь"):
-        if norm.endswith(suffix) and not found and not gerund:
+        # неся is несу́'s gerund, not не with -ся
+        if norm.endswith(suffix) and not found and not gerund and norm[:-2] not in CLITICS:
             twin(norm[:-2], lambda p: p)
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
@@ -667,6 +688,8 @@ def verb_twins(norm: str) -> list[str]:
         stem = base[:-1]
         if base.endswith("я"):
             out.append(stem + "ю" + sg_tail)
+            if stem[-1:] in "дтсзб":
+                out.append(stem + "у" + sg_tail)  # идя́ as иду́, неся́ as несу́
             if stem[-1:] in LABIALS:
                 out.append(stem + "лю" + sg_tail)
             for old, new in ALTERNATIONS:
@@ -735,6 +758,7 @@ def _lexicon_readings(norm: str) -> list[Reading]:
         # spelling is another word: миле́й (милее), not only ми́лей (of miles)
         for _, stress in TABLE.variants(norm[:-2] + "ее"):
             options.append((norm, stress, "lexicon"))
+    options = _yo_plural_first(options)
     readings = []
     for spelling, stress, source in options:
         stress = _with_last_part(spelling, stress)
@@ -745,8 +769,35 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             readings.append(Reading(main, transcribe(spelling, main), spelling, source, secondary))
             continue
         for p in stress:
-            readings.append(Reading(p, transcribe(spelling, p), spelling, source))
+            cost = ALTERNATIVE_COST if readings else 0.0  # the usual reading wins a tie
+            readings.append(Reading(p, transcribe(spelling, p), spelling, source, penalty=cost))
     return readings
+
+
+# Meter cost of a dictionary reading after the first: enough to settle a tie the
+# meter leaves open in favour of the usual reading (уже́ before у́же, е́ду before
+# еду́), too little to outweigh a beat.
+ALTERNATIVE_COST = 0.1
+
+
+def _yo_plural_first(
+    options: list[tuple[str, tuple[int, ...], str]],
+) -> list[tuple[str, tuple[int, ...], str]]:
+    """слёзы, the plural, before слезы́, a genitive: where the text's е is ё in a form
+    ending in -а, -ы or -и and the е spelling is stressed only on its last vowel
+    (звёзды and звезды́, сёстры and сестры́, вёсла and весла́)."""
+    if len(options) < 2:
+        return options
+    e_form, yo_form = options[0], options[1]
+    last = vowel_count(e_form[0]) - 1
+    if (
+        "ё" not in e_form[0]
+        and "ё" in yo_form[0]
+        and yo_form[0].endswith(("а", "ы", "и"))
+        and set(e_form[1]) == {last}
+    ):
+        return [yo_form, e_form, *options[2:]]
+    return options
 
 
 def _with_last_part(spelling: str, stress: tuple[int, ...]) -> tuple[int, ...]:
@@ -782,6 +833,10 @@ LETTER_NAMES = dict(
 )
 
 
+# Abbreviations said with their own letter names by custom: США is сэ-шэ-а́.
+SPOKEN_ABBREVIATIONS = {"сша": "сэшэа"}
+
+
 def abbreviation(token: str, capitals: bool = False) -> Word | None:
     """An abbreviation in capitals sung letter by letter, stressed on the last: СПб,
     МСК, США. One with no vowel letter is always spelt; one with a vowel only when it
@@ -795,7 +850,7 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
     vowels = vowel_count(low)
     if vowels and not (low[-1] in VOWELS and vowels < len(low) - vowels):
         return None
-    spelling = "".join(LETTER_NAMES[ch] for ch in low)
+    spelling = SPOKEN_ABBREVIATIONS.get(low) or "".join(LETTER_NAMES[ch] for ch in low)
     last = len(low) - 1
     return Word(
         text=token,
@@ -926,6 +981,25 @@ def analyze_word(
         word.notes.append("stress unknown")
     word.readings = tuple(readings)
     return word
+
+
+PREPOSITIONS = frozenset(
+    """в во на по с со к ко у о об обо от ото из изо до за под подо над надо для без при про
+    через перед передо между меж сквозь вдоль возле около после вокруг среди из-за
+    из-под""".split()
+)
+
+
+def after_prepositions(words: list[Word]) -> None:
+    """No verb right after a preposition: по по́лю, not полю́ (I weed); на до́лги."""
+    for prev, w in zip(words, words[1:]):
+        if w.lang != CODE or prev.norm not in PREPOSITIONS or len(w.readings) < 2:
+            continue
+        if any(r.source in ("mark", "user") for r in w.readings):
+            continue
+        kept = [r for r in w.readings if r.stress not in TABLE.verb_only(r.spelling)]
+        if kept and len(kept) < len(w.readings):
+            w.readings = tuple(replace(r, penalty=0.0) if k == 0 else r for k, r in enumerate(kept))
 
 
 def prefer_names(words: list[Word], starts: list[bool]) -> None:

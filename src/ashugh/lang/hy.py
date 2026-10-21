@@ -592,9 +592,10 @@ FUTURE_ENDINGS = (
 )
 
 
-# A voiced stop or affricate after ր is said voiceless and aspirated: երգ [jɛɾkʰ],
-# մարդ [mɑɾtʰ], so երգ rhymes with բերք.
-AFTER_R = {"b": "pʰ", "g": "kʰ", "d": "tʰ", "dz": "tsʰ", "dʒ": "tʃʰ"}
+# A voiced stop after ր is said voiceless and aspirated: երգ [jɛɾkʰ], մարդ [mɑɾtʰ],
+# so երգ rhymes with բերք. The affricates keep their letter's sound here, as
+# verse rhymes them (մեջ / վերջ).
+AFTER_R = {"b": "pʰ", "g": "kʰ", "d": "tʰ"}
 
 
 def _after_r(phones: tuple[str, ...]) -> tuple[str, ...]:

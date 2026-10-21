@@ -139,6 +139,7 @@ def analyze(
     if any(w.lang == "ru" for w in words):
         ru.prefer_names(words, _sentence_starts(tokens, text))
         ru.vocables(words)
+        ru.after_prepositions(words)
         ru.second_locatives(words)
         ru.preposition_shift(words)
     end = words[-1] if words else None

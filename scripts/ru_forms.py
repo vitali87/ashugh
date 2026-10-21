@@ -197,6 +197,8 @@ def past_passive(infinitive: str, past_m: str, sg1: str, sg2: str) -> list[str]:
     inf, at = stress(_first(infinitive))
     if not inf or inf.endswith(("ся", "сь")) or _mobile(inf):
         return []
+    if inf.endswith("жечь"):
+        return _burnt(inf[:-4])
     if at is None:
         at = 1 if count(inf) == 1 else stress(_first(past_m))[1]
     if at is None:
@@ -236,6 +238,17 @@ def past_passive(infinitive: str, past_m: str, sg1: str, sg2: str) -> list[str]:
         place = at - 1 if inf.endswith("уть") and at == size and size > 1 else at
         return adjective(render(stem + "тый", place)) + _short(stem + "т", place)
     return []
+
+
+def _burnt(prefix: str) -> list[str]:
+    """The participle of жечь and its compounds: зажжённый, зажжён, зажжена́;
+    сожжённый and подожжённый (a consonant prefix takes о); вы́жженный."""
+    if prefix == "вы":
+        return adjective("вы'жженный") + _short("выжжен", 1)
+    if prefix and prefix[-1] not in VOWELS:
+        prefix += "о"
+    stem = prefix + "жж"
+    return adjective(render(stem + "ённый", count(stem) + 1)) + _short(stem, 0, end_stressed=True)
 
 
 def past_active(past_m: str, infinitive: str = "") -> list[str]:

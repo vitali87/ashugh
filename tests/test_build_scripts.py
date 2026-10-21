@@ -204,3 +204,22 @@ def test_a_derived_yo_form_does_not_shadow_a_listed_e_form(tmp_path):
 )
 def test_a_compound_yo_beside_a_marked_stress_is_not_a_reading(form, positions):
     assert ru_build.stress_positions(form)[1] == positions
+
+
+def test_stresses_are_ranked_by_how_usual_their_form_is(tmp_path):
+    nouns = (
+        ["bare", "accented", "sg_nom", "sg_gen", "sg_dat", "pl_nom"],
+        [
+            ["глаз", "глаз", "глаз", "гла'за", "", "глаза'"],
+            ["поле", "по'ле", "по'ле", "по'ля", "по'лю", "поля'"],
+        ],
+    )
+    verbs = (
+        ["bare", "accented", "past_m", "presfut_sg1"],
+        [["полоть", "поло'ть", "поло'л", "полю'"]],
+    )
+    _dump(tmp_path, nouns=nouns, verbs=verbs)
+    marked = ru_build.ranked(tmp_path)
+    assert [p for p, _ in marked["глаза"]] == [2, 1], "the plural before the genitive"
+    assert ru_build.encode(marked["полю"]) == "2v1", "the verb's stress is marked"
+    assert ru_build.encode(marked["глаза"]) == "21"

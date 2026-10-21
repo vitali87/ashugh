@@ -250,3 +250,18 @@ def test_present_of_regular_suffixed_verbs(infinitive, form):
 @pytest.mark.parametrize("infinitive", ["кова'ть", "сосна'ть", "писа'ть", "сиде'ть", "плева'ть"])
 def test_no_present_where_the_suffix_is_the_root(infinitive):
     assert ru_forms.present(infinitive) == []
+
+
+@pytest.mark.parametrize(
+    "infinitive,forms",
+    [
+        ("заже'чь", ["зажжённый", "зажжённые", "зажжён", "зажжена'"]),
+        ("сже'чь", ["сожжённый", "сожжён"]),
+        ("подже'чь", ["подожжённый"]),
+        ("вы'жечь", ["вы'жженный", "вы'жжен"]),
+    ],
+)
+def test_burnt_participles(infinitive, forms):
+    made = ru_forms.past_passive(infinitive, "", "", "")
+    for form in forms:
+        assert form in made

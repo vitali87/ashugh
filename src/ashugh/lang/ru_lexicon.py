@@ -27,7 +27,12 @@ class StressTable(SortedTable):
         raw = self.get(form)
         if raw is None and self.derived is not None:
             raw = self.derived.get(form)
-        return None if raw is None else tuple(int(d) - 1 for d in raw)
+        return None if raw is None else tuple(int(d) - 1 for d in raw if d.isdigit())
+
+    def verb_only(self, form: str) -> frozenset[int]:
+        """0-based stresses of form that only a verb form has (полю́ beside по́лю)."""
+        raw = self.get(form) or ""
+        return frozenset(int(d) - 1 for d, m in zip(raw, raw[1:] + " ") if d.isdigit() and m == "v")
 
     def variants(self, form: str) -> list[tuple[str, tuple[int, ...]]]:
         """Listed spellings of form with ё restored in any of its е's, form included."""

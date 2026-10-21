@@ -6,10 +6,12 @@ capitalized word inside a sentence is far more often a name, so the line's
 analysis puts these readings first there (ru.prefer_names).
 
 Each entry is a lemma with an apostrophe after its stressed vowel (ё needs
-none). The forms follow from the ending: -а/-я decline as feminines (Маша,
-Машу; Коля, Колю), a consonant, -й and -ь as masculines (Иван, Ивана; Игорь,
-Игоря), with ":f" as feminines in -ь (Казань, Казани); ":0" does not decline
-(Сочи); "=" lists the oblique forms of a name that drops a vowel (Па́вел, Па́вла).
+none). A first name in -а or -я also gives its possessive (Та́нин) and its
+diminutives (Та́нечка, Ни́ночка, Ма́шенька). The forms follow from the ending:
+-а/-я decline as feminines (Маша, Машу; Коля, Колю), a consonant, -й and -ь as
+masculines (Иван, Ивана; Игорь, Игоря), with ":f" as feminines in -ь (Казань,
+Казани); ":0" does not decline (Сочи); "=" lists the oblique forms of a name
+that drops a vowel (Па́вел, Па́вла).
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ NAMES = """
 ко'стя леони'д лё'ня макси'м матве'й михаи'л ми'ша ники'та никола'й ко'ля оле'г па'ша
 пе'тя рома'н ро'ма русла'н семё'н сё'ма серге'й серё'жа станисла'в степа'н стё'па
 тимофе'й тиму'р фё'дор фе'дя фили'пп эдуа'рд ю'рий ю'ра я'ков яросла'в кузьма' фома'
-лё'ва
+лё'ва лука'
 па'вел=па'вла па'влу па'влом па'вле
 пётр=петра' петру' петро'м петре'
 москва' пи'тер петербу'рг новосиби'рск екатеринбу'рг каза'нь:f сама'ра росто'в уфа'
@@ -43,7 +45,7 @@ NAMES = """
 со'чи:0 толья'тти:0 тбили'си:0 баку':0 я'лта ки'ев оде'сса ерева'н пари'ж ло'ндон
 берли'н ве'на пра'га варша'ва ри'га та'ллин ви'льнюс кавка'з ура'л росси'я аме'рика
 евро'па арме'ния гру'зия украи'на ита'лия фра'нция герма'ния испа'ния во'лга нева'
-ока' енисе'й
+ока' енисе'й ту'ла кострома' во'логда чита'
 """
 
 
@@ -98,6 +100,22 @@ def _declined(lemma: str, at: int, kind: str) -> list[tuple[str, int]]:
     return [(lemma, at)] + [(lemma + e, at) for e in ("а", "у", ins, "е")]
 
 
+POSSESSIVE = "ин ина ино ины иной иного иному ину иным иных ином иными".split()
+DIMINUTIVES = ("ечка", "очка", "енька")
+
+
+def _kin(lemma: str, at: int) -> list[tuple[str, int]]:
+    """A first name's possessive and diminutives, stressed where it is: Та́ня, Та́нин,
+    Та́нины, Та́нечка, Та́нечкой; Ни́на, Ни́ночка; Ма́ша, Ма́шенька."""
+    if lemma[-1] not in "ая" or lemma.endswith("ия") or at >= _count(lemma) - 1:
+        return []
+    stem = lemma[:-1]
+    out = [(stem + e, at) for e in POSSESSIVE]
+    for suffix in DIMINUTIVES:
+        out += _declined(stem + suffix, at, "")
+    return out
+
+
 @cache
 def forms() -> dict[str, list[tuple[str, tuple[int, ...]]]]:
     """Every form, keyed by its spelling with ё written е: [(spelling, stresses)]."""
@@ -119,7 +137,7 @@ def forms() -> dict[str, list[tuple[str, tuple[int, ...]]]]:
             lemma, at = _stress(head)
             if _count(lemma) < 2:
                 continue
-            for form, stress in _declined(lemma, at, kind):
+            for form, stress in _declined(lemma, at, kind) + _kin(lemma, at):
                 add(form, stress)
     return out
 

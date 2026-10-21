@@ -178,3 +178,8 @@ def test_latin_armenian_lines_are_recognised(line):
 )
 def test_english_lines_in_an_armenian_song_are_not(line):
     assert all(w.lang == "en" for w in words(line))
+
+
+def test_mej_still_rhymes_with_verj():
+    rep = scan("Սիրտս քո մեջ\nՍերն անվերջ\n", from_dict({"language": "hy", "rhyme": "AA"}))
+    assert not [i for i in rep.issues if i.code == "rhyme"]

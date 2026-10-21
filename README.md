@@ -367,11 +367,14 @@ one the meter may use, the last part carrying the main stress and the rhyme
 
 1. a mark in the text;
 2. the spec's `[lexicon]`;
-3. 559,393 stressed forms from OpenRussian, with ё restored (еще becomes
+3. 559,413 stressed forms from OpenRussian, with ё restored (еще becomes
    ещё), the past tenses the dump leaves out derived from the infinitive,
    and a prefixed verb's feminine past ending-stressed where its base's is
-   (позвала́ like звала́; the dump's позва́ла stays second, for verse);
-4. 398,359 regular forms the dump leaves out, derived from its lemmas and
+   (позвала́ like звала́; the dump's позва́ла stays second, for verse); a
+   form's readings come in the order of how usual their source is, the
+   headword first, then nominatives and verb forms, then the other cases
+   (глаза́ before гла́за, долги́ before до́лги);
+4. 398,547 regular forms the dump leaves out, derived from its lemmas and
    read only where it lists no form with that spelling (ё read as е):
    comparatives with their по- (нежне́е, кре́пче, подо́льше), past
    participles (бро́шен, решённый, сби́ты, обма́нутых, ста́вший), and, for
@@ -391,15 +394,21 @@ A capitalized word inside a sentence that spells one of about 230 first
 names, diminutives and places is that name (Ма́шу, Ко́лю, Со́чи, Росто́ва,
 not машу́, колю́, сочи́); one that opens a sentence keeps the dictionary's
 reading first and gains the name's. A name written without its ё gets it
-(Лёха, Алёна). An abbreviation in capitals with no vowel letter (СПб, МСК),
-or one that ends on a vowel and has more consonants (США, МГУ), is sung
-letter by letter and stressed on the last (эс-пэ-бэ́, which `suno` writes
-out for the singer); ЗАГС and НАТО stay words, and a line in capitals is
-never spelt out. A preposition or conjunction said twice in a row is a
-vocable, not a clitic (на-на-на, да-да-да), and тя leans on its verb like
-бы. A hyphenated word the dictionary stresses only before its last part
-takes the last part's stress too (чёрно-бе́лый), and a compound's earlier ё
-is no reading of its own (трёхэта́жный).
+(Лёха, Алёна), and a first name gives its possessive and diminutives
+(Та́нин, Та́нечка, Ни́ночка). An abbreviation in capitals with no vowel
+letter (СПб, МСК), or one that ends on a vowel and has more consonants (США,
+МГУ), is sung letter by letter and stressed on the last (эс-пэ-бэ́, which
+`suno` writes out for the singer); ЗАГС and НАТО stay words, and a line in
+capitals is never spelt out. A preposition or conjunction said twice in a
+row is a vocable, not a clitic (на-на-на, да-да-да), and тя leans on its
+verb like бы. A hyphenated word the dictionary stresses only before its last
+part takes the last part's stress too (чёрно-бе́лый), and a compound's
+earlier ё is no reading of its own (трёхэта́жный).
+
+A dictionary reading after the first costs the meter a little, so where the
+meter leaves the choice open the usual reading wins (уже́, not у́же; е́ду,
+not еду́), and right after a preposition a stress only a verb form has is
+dropped (по по́лю, not полю́, I weed).
 
 After в, во and на, about a hundred nouns take the stressed second locative
 (на берегу́, в саду́, в крови́). In about a hundred set pairs the stress may
@@ -407,8 +416,9 @@ move onto the preposition (по́ лесу, на́ ночь, за́ руку); t
 whichever reading fits, and a shifted line end rhymes from the preposition.
 At the end of a line, the rhyme partner picks between readings the meter
 allows equally: облака́ / издалека́. A phonetic transcription reduces
-unstressed vowels, devoices and assimilates obstruents, and drops silent
-consonants (сердце, солнце, честный).
+unstressed vowels, devoices and assimilates obstruents, drops silent
+consonants (сердце, солнце, честный) and says a double consonant single
+before a consonant or at the end (класс rhymes with вас).
 
 
 **English** (`lang/en.py`). Pronunciations come from CMUdict (126k words),
