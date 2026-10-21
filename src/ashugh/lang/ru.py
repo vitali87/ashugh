@@ -880,6 +880,10 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     readings = []
     for spelling, stress, source in options:
         stress = _past_numeral(spelling, _with_last_part(spelling, stress))
+        if spelling.startswith("вы") and len(stress) > 1 and stress[0] == 0:
+            # выхожу́ (I go out) before вы́хожу (I'll nurse back), which the table
+            # ranks first for some 170 вы- forms: the imperfective is the usual one
+            stress = (*(p for p in stress if p != 0), 0)
         if "-" in spelling and len(stress) > 1 and len({_part_of(spelling, p) for p in stress}) > 1:
             # давны́м-давно́ is stressed in both parts, not in one or the other
             main = max(stress)

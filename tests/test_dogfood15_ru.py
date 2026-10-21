@@ -66,3 +66,20 @@ def test_pushkin_otkhodya_scans():
         "Не отходя ни шагу прочь!\n", from_dict({"language": "ru", "meter": "iamb", "feet": 4})
     )
     assert report.lines[0].ok, report.lines[0].issues
+
+
+@pytest.mark.parametrize(
+    "word,stress",
+    [("выхожу", 2), ("выношу", 2), ("выходили", 2), ("выводи", 2)],
+)
+def test_a_vy_verb_reads_as_the_usual_imperfective_first(word, stress):
+    assert line_words(word)[0].readings[0].stress == stress
+
+
+@pytest.mark.parametrize("word", ["выйти", "выход", "выбрать"])
+def test_a_vy_word_with_one_reading_keeps_it(word):
+    assert line_words(word)[0].readings[0].stress == 0
+
+
+def test_suno_leaves_lermontov_alone():
+    assert sung("Выхожу один я на дорогу\n").startswith("ВыхожУ")  # not ВЫхожу
