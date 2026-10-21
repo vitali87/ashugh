@@ -168,3 +168,23 @@ def test_suno_hints_the_usual_reading_in_a_line_that_fails_its_meter():
     spec = from_dict({"language": "ru", "meter": "iamb"})
     out = suno.format_song("Небо синее над рекой\n", tags=False, spec=spec).text
     assert "синЕе" not in out
+
+
+ROMANCE = (
+    "Не уходи, мой свет вечерний,\nЕщё не время расставаться,\n"
+    "Пусть будет путь наш самый верный\nХранимым кругом нежных рук.\n"
+)
+
+
+def test_the_partner_that_fails_its_own_slot_is_the_one_blamed():
+    rep = scan(ROMANCE, from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"}))
+    broken = [i.line for i in rep.issues if i.code == "rhyme"]
+    assert broken == [2]
+
+
+def test_requests_ask_the_failing_partner_to_rhyme_with_the_good_one():
+    from ashugh.fit import requests_for
+
+    reqs = requests_for(ROMANCE, from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"}))
+    by_line = {r.line: r for r in reqs}
+    assert by_line[2].rhyme_with == ["рук"]

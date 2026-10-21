@@ -851,8 +851,15 @@ def rhyming_set(members: list[LineReport]):
         if s >= need[j]:
             root[_find(root, j)] = _find(root, i)
     sizes = Counter(_find(root, k) for k in range(n))
-    main = max(sizes, key=lambda r: (sizes[r], r == _find(root, 0)))
+    # on a tie, the set whose lines pass their own slots stands: a partner that
+    # also misses its ending is the one to blame (расставаться, not рук)
+    sound = Counter(_find(root, k) for k in range(n) if not _own_errors(members[k]))
+    main = max(sizes, key=lambda r: (sizes[r], sound[r], r == _find(root, 0)))
     return {k for k in range(n) if _find(root, k) == main}, pair
+
+
+def _own_errors(lr: LineReport) -> bool:
+    return any(i.severity == "error" and i.code not in ("rhyme", "scheme") for i in lr.issues)
 
 
 def _find(root: list[int], k: int) -> int:
