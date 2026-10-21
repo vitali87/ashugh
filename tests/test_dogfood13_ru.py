@@ -188,3 +188,26 @@ def test_requests_ask_the_failing_partner_to_rhyme_with_the_good_one():
     reqs = requests_for(ROMANCE, from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"}))
     by_line = {r.line: r for r in reqs}
     assert by_line[2].rhyme_with == ["рук"]
+
+
+REFRAIN = (
+    "Я помню ночи над рекою,\nСвечу и тени на стене,\n"
+    "Как ты, склонившись над рекою,\nШептала что-то в тишине.\n"
+)
+
+
+def test_a_request_for_a_refrain_line_says_why():
+    from ashugh.fit import requests_for
+
+    reqs = requests_for(REFRAIN, from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"}))
+    assert any("refrain" in p for r in reqs for p in r.problems)
+
+
+def test_pick_takes_a_candidate_that_ends_a_refrain():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    proposer = StaticProposer({3: ["Как ты, прильнув ко мне щекою,"]})
+    spec = from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"})
+    res = fit_song(REFRAIN, spec, proposer, rounds=1)
+    assert res.text.splitlines()[2] == "Как ты, прильнув ко мне щекою,"

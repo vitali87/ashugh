@@ -24,6 +24,7 @@ from . import lyrics, meter, rhyme
 from .proposers import Proposer, ProposerError, Request
 from .scan import (
     ENDING_NAMES,
+    REFRAIN,
     LineReport,
     Report,
     UnitReport,
@@ -43,6 +44,7 @@ ASIDE_PUNCT = ",.;:!?…։՝"
 TO_ARMENIAN = str.maketrans({".": "։"})
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
+REFRAIN_WEIGHT = 0.25  # under any rewrite (0.3 at least): a candidate that ends a refrain wins
 
 
 @dataclass
@@ -364,7 +366,11 @@ def _variables(report: Report, keep_original: bool, everything: bool = False):
         var.seen.add(_norm(var.lr.line.text))
         var.written = keep_original
         if keep_original and not line_errors(var.lr):
-            var.pool.append(Candidate(var.lr.line.text, var.lr, 1.0, original=True))
+            # a refrain is fine if meant, but a candidate offered for it is meant to
+            # end it: the line as written then weighs less than any rewrite
+            refrain = any(i.detail == REFRAIN for i in var.lr.issues)
+            weight = REFRAIN_WEIGHT if refrain else 1.0
+            var.pool.append(Candidate(var.lr.line.text, var.lr, weight, original=True))
         if var.group not in groups:
             var.group = None
     return variables, groups
@@ -655,7 +661,7 @@ def _request(
     problems = [
         f"{i.message}" + (f" ({i.detail})" if i.detail else "")
         for i in lr.issues
-        if i.severity == "error"
+        if i.severity == "error" or i.detail == REFRAIN
     ]
     problems.extend(b for b in var.blocked if b not in problems)
     if moving and not sound:

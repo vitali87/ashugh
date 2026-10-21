@@ -764,6 +764,9 @@ def _any_reading(lr: LineReport) -> list[rhyme.Tail]:
     return rhyme.tails(lr.line, meter.free_fit(lr.line.words))
 
 
+REFRAIN = "the same word is a refrain, not a rhyme; fine if meant"
+
+
 def _same_word(members: list[LineReport], k: int, pair) -> None:
     """A line rhyming only on the word an earlier one ends with, or on another form
     of it (сердце / сердца): a refrain, which may be meant, but no rhyme. A line
@@ -795,7 +798,7 @@ def _same_word(members: list[LineReport], k: int, pair) -> None:
             "rhyme",
             "warning",
             message,
-            "the same word is a refrain, not a rhyme; fine if meant",
+            REFRAIN,
             {"word": word.word},
         )
     )
