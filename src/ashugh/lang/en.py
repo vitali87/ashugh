@@ -415,13 +415,19 @@ UNREDUCED = {"AY", "AW", "OY"}
 HIATUS = ("ia", "io", "iu", "ie", "ua", "ue", "ui", "uo", "eo", "oe", "ea")
 
 
+def _short_part_ok(low: str, k: int) -> bool:
+    """A second part shorter than MIN_COMPOUND_PART after a silent e (glove-box), but
+    not an inflection's ending that happens to spell a word: darke-ned, withe-red."""
+    return low[:k].endswith("e") and not low.endswith(("ed", "es"))
+
+
 def _compound_parts(low: str) -> tuple[str, str] | None:
     """A word the dictionary lacks as two words it has, the most even split."""
     if not low.isalpha() or len(low) < 2 * MIN_COMPOUND_PART:
         return None
     best = None
     for k in range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1):
-        if len(low) - k < MIN_COMPOUND_PART and not low[:k].endswith("e"):
+        if len(low) - k < MIN_COMPOUND_PART and not _short_part_ok(low, k):
             continue
         if TABLE.get(low[:k]) and TABLE.get(low[k:]):
             even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))  # love-struck
@@ -435,7 +441,7 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
     how many the first has; the most even such split."""
     best = None
     for k in range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1):
-        if len(low) - k < MIN_COMPOUND_PART and not low[:k].endswith("e"):
+        if len(low) - k < MIN_COMPOUND_PART and not _short_part_ok(low, k):
             continue
         left, right = TABLE.get(low[:k]), TABLE.get(low[k:])
         if not left or not right or not low[:k].isalpha() or not low[k:].isalpha():

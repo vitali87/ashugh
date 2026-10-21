@@ -110,3 +110,17 @@ def test_without_its_edge_the_genitive_is_stressed_on_the_stem():
     assert lr.fit.stresses[len(lr.line.words) - 1] == 0 and not rep.ok
     rep = scan("Я стою на самом краю\n", from_dict({"language": "ru"}))
     assert 1 in rep.lines[0].line.words[-1].stress_options()
+
+
+@pytest.mark.parametrize(
+    "word, sung",
+    [("darkened", "dar-kened"), ("withered", "with-ered"), ("battered", "bat-tered"),
+     ("widened", "wi-dened"), ("glovebox", "glove-box")],
+)  # fmt: skip
+def test_an_ed_ending_is_no_second_word(word, sung):
+    assert en.analyze_word(word).sung() == sung
+
+
+def test_a_guessed_word_is_warned_about_once_per_line():
+    rep = scan("Кто создан из камня, кто создан из глины\n", from_dict({"language": "ru"}))
+    assert len([i for i in rep.issues if i.code == "stress"]) == 1

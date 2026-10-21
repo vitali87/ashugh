@@ -449,10 +449,14 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         )
     if lyrics.has_digits(ln.text):
         add(Issue(ln.number, "script", "warning", "digits are not counted", "spell numbers out"))
+    warned: set[str] = set()  # a word guessed twice in a line is named once
     for i, w in enumerate(ln.words):
         if w.lang == "xx":
             continue
         if w.guessed and w.size > 1:
+            if w.norm in warned:
+                continue
+            warned.add(w.norm)
             st = f.stresses.get(i)
             add(
                 Issue(
