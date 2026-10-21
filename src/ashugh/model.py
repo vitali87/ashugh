@@ -88,8 +88,7 @@ class Word:
         if not self.syllables:
             return self.text
         parts = []
-        for i, syl in enumerate(self.syllables):
-            text = syl.text
+        for i, text in enumerate(self._with_yo(stress)):
             if mark and i == stress and self.size > 1:
                 text = mark_stress(text)
             parts.append(text)
@@ -101,6 +100,23 @@ class Word:
                 at = d - 1 if d > 0 else 0
                 parts[at : at + 2] = ["".join(parts[at : at + 2])]
         return "-".join(parts)
+
+    def _with_yo(self, stress: int | None) -> list[str]:
+        """The syllables with the ё their reading has where the text writes е: мо-ё."""
+        texts = [s.text for s in self.syllables]
+        spelling = self.reading(stress).spelling if self.readings else ""
+        flat = "".join(texts)
+        if "ё" not in spelling or flat.lower().replace("ё", "е") != spelling.replace("ё", "е"):
+            return texts
+        letters = [
+            ("Ё" if ch == "Е" else "ё") if ch in "еЕ" and spelling[k] == "ё" else ch
+            for k, ch in enumerate(flat)
+        ]
+        out, at = [], 0
+        for t in texts:
+            out.append("".join(letters[at : at + len(t)]))
+            at += len(t)
+        return out
 
 
 VOWEL_LETTERS = set("аеёиоуыэюяaeiouyաեէըիոօև")

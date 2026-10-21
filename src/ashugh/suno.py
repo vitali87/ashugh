@@ -406,7 +406,7 @@ def _armenian(
 LATIN_MARKS = {"\u055e": "?", "\u055c": "!"}
 SENTENCE_MARKS = {"\u055e": "\x01", "\u055c": "\x02"}
 PENDING = {"\x01": "?", "\x02": "!"}
-ARMENIAN_VOWEL_LETTERS = set("աեէըիոօԱԵԷԸԻՈՕ")
+ARMENIAN_VOWEL_LETTERS = set("աեէըիոօևԱԵԷԸԻՈՕ")
 
 
 def _put_mark(syllable: str, mark: str, mode: str) -> str:
@@ -433,9 +433,12 @@ def _place_marks(text: str) -> str:
             continue
         out.append(ch)
     line = "".join(out)
-    if pending:
+    if pending:  # at the line's end: in place of a comma, inside a closing quote
         body = line.rstrip()
-        line = body + pending + line[len(body) :]
+        end = line[len(body) :]
+        quote = body[len(body.rstrip("»”\"’'")) :]
+        body = body[: len(body) - len(quote)].rstrip().rstrip(",;:").rstrip()
+        line = body + pending + quote + end
     return line
 
 
@@ -456,7 +459,7 @@ def _latin(phones: tuple[str, ...], dropped: bool, schwa: str) -> str:
 
 
 def _merge_vowelless(parts: list[str], mode: str) -> list[str]:
-    vowels = "aeiouəy" if mode == "latin" else "աեէըիոօւ"
+    vowels = "aeiouəy" if mode == "latin" else "աեէըիոօւև"
     merged: list[str] = []
     for p in parts:
         has_vowel = any(ch.lower() in vowels for ch in p)

@@ -417,9 +417,16 @@ def _elision_notes(ln: Line, f, add) -> None:
         add(Issue(ln.number, "syllables", "info", f"fits if {_quote(w.text)} {what}", detail))
 
 
-def _hidden_vowels(ln: Line) -> str:
-    shown = [w for w in ln.words if any(s.epenthetic for s in w.syllables)]
-    return ", ".join(f"{_quote(w.text)} sings as {w.sung()}" for w in shown[:3])
+def _hidden_vowels(ln: Line, elided: frozenset[int]) -> str:
+    """The words whose unwritten ը the count includes: not one the line already drops."""
+    shown = [
+        f"{_quote(w.text)} sings as {w.sung(dropped=i in elided)}"
+        for i, w in enumerate(ln.words)
+        if any(
+            s.epenthetic and not (i in elided and k == w.drop) for k, s in enumerate(w.syllables)
+        )
+    ]
+    return ", ".join(shown[:3])
 
 
 def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> None:
@@ -477,7 +484,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     if lr.target is not None:
         miss = f.count - lr.target
         if abs(miss) > rule.tolerance:
-            detail = _hidden_vowels(ln) if miss > 0 else ""
+            detail = _hidden_vowels(ln, f.elided) if miss > 0 else ""
             add(
                 Issue(
                     ln.number,

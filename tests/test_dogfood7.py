@@ -211,3 +211,42 @@ def test_a_section_that_names_its_feet_still_checks_them():
     spec = loads('meter = "iamb4"\n[section.chorus]\nmeter = "dactyl"\nfeet = [4]\n')
     rep = scan(SONG, spec)
     assert {i.code for i in rep.issues if i.severity == "error"} == {"feet"}
+
+
+@pytest.mark.parametrize(
+    "line, want",
+    [
+        ("Ո՞ւր ես, ո՞ւր, իմ ընկեր,", "Úr es, úr, im ənker?"),
+        ("Արի՜, արի՜ մի գիշեր,", "Arí, arí mi gisher!"),
+        ("Ինչո՞ւ ես լռում — ասա;", "Inchú es lərrum — asa?"),
+        ("Ինչո՞ւ ես լռում (ասա),", "Inchú es lərrum (asa)?"),
+        ("Ինչո՞ւ ես լռում, ասա»", "Inchú es lərrum, asa?»"),
+        ("Ինչո՞ւ ես լռում, ասա…", "Inchú es lərrum, asa…?"),
+    ],
+)
+def test_a_carried_question_mark_takes_the_place_of_a_comma(line, want):
+    from unicodedata import normalize
+
+    got = suno_text(line + "\n", armenian="latin", tags=False)
+    assert normalize("NFC", got) == want + "\n"
+
+
+def test_yev_is_a_vowel_to_suno():
+    split = suno_text("Ու ես նայում եմ արև,\n", split="last", tags=False)
+    assert "ա-րև" in split
+    marked = suno_text("Արև՜, արև՜, մի՛ գնա,\n", armenian="schwa", tags=False)
+    assert marked.count("՜") == 2
+
+
+def test_the_too_long_hint_names_only_schwas_still_sung():
+    from ashugh.scan import scan
+
+    rep = scan("Սերն է իմ կյանքը\n", from_dict({"language": "hy", "syllables": 4}))
+    (issue,) = [i for i in rep.issues if i.code == "syllables" and i.severity == "error"]
+    assert "Սերն" not in issue.detail  # its ը is already left out of the 5
+
+
+def test_the_sung_form_writes_the_unwritten_yo(capsys):
+    assert main(["syl", "--lang", "ru", "мое твое лед еще идет Ее"]) == 0
+    out = capsys.readouterr().out
+    assert "мо-ё тво-ё лёд е-щё и-дёт Е-ё" in out
