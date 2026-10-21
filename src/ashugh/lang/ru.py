@@ -122,6 +122,12 @@ WEAK |= set(
 CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # The plural ветра́ of songs and verse, which the table lacks.
     "ветра": ("ветра", (0, 1)),
+    # духи́ (perfume) beside ду́хи (spirits): твоих духо́в
+    **{f: (f, (0, 1)) for f in "духов духам духами духах".split()},
+    # plural-only nouns whose stress moves to the ending, and the numerals the table lacks
+    **{f: (f, (1, 0)) for f in "кудрей кудрям кудрями кудрях".split()},
+    **{f: (f, (1,)) for f in "обоих обоим обоими обеих обеим обеими полутора".split()},
+    "полторы": ("полторы", (2,)),
     **{f: (f, (1,)) for f in "ветров ветрам ветрами ветрах".split()},
     # начался́, началось́: the table also lists the colloquial на́чался.
     "начался": ("начался", (2,)),
@@ -748,6 +754,36 @@ def _carry_yo(norm: str, twin: str) -> str:
     return "".join(chars)
 
 
+PLURAL_ENDINGS = ("ами", "ями", "ах", "ях", "ам", "ям")
+# Nouns used only in the plural, whose oblique forms the table may lack.
+PLURALIA = frozenset(
+    """сумерки качели ножницы брюки джинсы шорты трусы очки весы ворота сани сутки
+    дрожжи деньги именины каникулы обои перила поминки похороны сливки ясли грабли
+    вилы клещи тиски шахматы шашки хлопоты консервы мемуары джунгли дебри потёмки
+    задворки заморозки сени штаны""".split()
+)
+
+
+def _plural_oblique(norm: str) -> list[tuple[str, tuple[int, ...]]]:
+    """An oblique plural the table lacks, from its nominative plural stressed on
+    the stem: a noun used only in the plural keeps that stress (су́мерках,
+    каче́лях, но́жницах)."""
+    for ending in PLURAL_ENDINGS:
+        stem = norm[: -len(ending)]
+        if not norm.endswith(ending) or vowel_count(stem) < 1:
+            continue
+        for nominative in (stem + "и", stem + "ы"):
+            if nominative not in PLURALIA and nominative.replace("е", "ё") not in PLURALIA:
+                continue  # помысл-и is a verb: only a noun used in the plural alone
+            found = TABLE.variants(nominative)
+            if len(found) != 1 or len(found[0][1]) != 1:
+                continue  # по́мыслы and помы́слы: no telling which the form keeps
+            spelling, (p,) = found[0]
+            if p < vowel_count(spelling) - 1:  # the stem's: су́мерки, but not духи́
+                return [(spelling[: len(stem)] + ending, (p,))]
+    return []
+
+
 def _lexicon_readings(norm: str) -> list[Reading]:
     options: list[tuple[str, tuple[int, ...], str]] = []
     if norm in CORE:
@@ -759,6 +795,9 @@ def _lexicon_readings(norm: str) -> list[Reading]:
         return _hyphenated(norm)
     if not options:
         for spelling, stress in _shift_lookup(norm):
+            options.append((spelling, stress, "lexicon"))
+    if not options:
+        for spelling, stress in _plural_oblique(norm):
             options.append((spelling, stress, "lexicon"))
     if not options:  # Ростова, Алёна: a name the table lacks
         for spelling, stress in ru_names.readings(norm):

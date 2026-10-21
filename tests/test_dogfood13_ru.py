@@ -92,3 +92,28 @@ def test_ne_stressed_rhymes(a, b):
 def test_a_word_in_capitals_marks_no_stress():
     (ln,) = analyze_lines("ПЛАТА ЗА ЛЕЧЕНЬЕ", Spec(language="ru"))
     assert ln.words[-1].readings[0].stress == 1
+
+
+@pytest.mark.parametrize(
+    "word, stress",
+    [
+        ("сумерках", 0),
+        ("качелях", 1),
+        ("ножницах", 0),
+        ("джинсах", 0),
+        ("кудрями", 1),
+        ("обоих", 1),
+        ("обеих", 1),
+        ("обоими", 1),
+        ("полторы", 2),
+        ("полутора", 1),
+    ],
+)
+def test_forms_the_dictionary_lacks(word, stress):
+    w = ru.analyze_word(word)
+    assert w.readings[0].stress == stress and not w.guessed
+
+
+def test_perfume_and_spirits_are_both_readings_of_duhov():
+    assert {r.stress for r in ru.analyze_word("духов").readings} == {0, 1}
+    assert rhymes("твоих духов", "моих стихов") >= rhyme.THRESHOLD["near"]
