@@ -133,6 +133,21 @@ def _glued_to_ampersand(tokens: list[str], text: str | None) -> set[int]:
     return out
 
 
+DOTTED_RE = re.compile(r"(?<![^\W\d_])(?:[A-Za-z]\.){2,}")  # U.S.A., L.A., a.k.a.
+
+
+def _dotted_letters(tokens: list[str], text: str | None) -> set[int]:
+    """Letters of a dotted abbreviation, each said by its name: U-S-Á, not the a of
+    the article."""
+    if not text or "." not in text:
+        return set()
+    spans = lyrics.token_spans(text)
+    if [t for _, _, t in spans] != tokens:
+        return set()
+    dotted = [m.span() for m in DOTTED_RE.finditer(text)]
+    return {k for k, (a, b, _) in enumerate(spans) if any(x <= a and b <= y for x, y in dotted)}
+
+
 def analyze(
     lang: str, tokens: list[str], lexicon: dict[str, str], text: str | None = None
 ) -> list[Word]:
@@ -144,10 +159,10 @@ def analyze(
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
     in_latin = lang == hy.CODE and latin_armenian(tokens)
     armenian = latin_words_in_armenian(tokens, in_latin) if lang == hy.CODE else []
-    glued = _glued_to_ampersand(tokens, text)
+    glued = _glued_to_ampersand(tokens, text) | _dotted_letters(tokens, text)
     seen: dict[str, Word] = {}
     for k, token in enumerate(tokens):
-        if k in glued:  # AT&T, R&B: letters, whatever word they spell
+        if k in glued:  # AT&T, R&B, U.S.A.: letters, whatever word they spell
             words.append(en.analyze_word(token, lexicon, capitals, letters=True))
             continue
         if LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում, in any line: its ending is Armenian
@@ -214,9 +229,12 @@ def analyze(
         elif (
             end.norm in en.OBJECTS
             and before.norm in en.PREPOSITIONS
-            and content is not None
-            and content.lang == "en"
-            and not (content.clitic or content.norm in en.WEAK)
+            and (
+                before.size > 1  # with-óut you, a-bóut you, even with nothing before
+                or content is not None
+                and content.lang == "en"
+                and not (content.clitic or content.norm in en.WEAK)
+            )
         ):
             end.enclitic = end.free_end = True  # cáll to me; or back to mé on a beat
     ends = [False] * len(words)

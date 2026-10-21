@@ -18,7 +18,7 @@ from functools import lru_cache
 from .lang import ru
 from .lang.en import OBJECTS, PREPOSITIONS
 from .meter import Fit, _anchor, slots
-from .model import Line, nuclei
+from .model import Line, Reading, Word, nuclei
 from .phon import ENGLISH_AS_LANG, adapt_english, align_cost, distance, is_vowel, vowel_distance
 
 LEVELS = (("perfect", 0.9), ("near", 0.7), ("slant", 0.45), ("assonance", 0.25), ("none", 0.0))
@@ -64,6 +64,25 @@ def anchor_word(line: Line, fit: Fit) -> int | None:
     return ss[k].word if k is not None else None
 
 
+def later_stresses(word: Word, reading: Reading, fit: Fit, elided: bool) -> list[int]:
+    """Syllables after a reading's stress an English rhyme may fall on too: a
+    secondary stress (sunshine / mine), or a last syllable the meter promotes or an
+    -y two or more after the stress (memory / free)."""
+    later = [k for k in reading.secondary if reading.stress is not None and k > reading.stress]
+    last = word.size - (2 if elided and word.drop == word.size - 1 else 1)
+    nuclei_at = [i for i, ph in enumerate(reading.phones) if is_vowel(ph)]
+    final_y = (
+        word.lang == "en"
+        and reading.stress is not None
+        and last - reading.stress >= 2
+        and len(nuclei_at) > last
+        and reading.phones[nuclei_at[last]] == "i"
+    )
+    if fit.promoted or final_y:  # the last syllable carries the rhyme: memory / free
+        later.append(last)
+    return later
+
+
 def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
     """Rhyme tails of a line: one per reading of its last stressed word that the fit allows.
 
@@ -95,20 +114,7 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
             continue
         if reading.source == "clash" and reading.stress != chosen:
             continue  # no stressed word follows the rhyme to clash with
-        # English also rhymes on a secondary stress after the main one (sunshine / mine).
-        later = [k for k in reading.secondary if k > reading.stress]
-        dropped_last = w in fit.elided and word.drop == word.size - 1
-        last = word.size - (2 if dropped_last else 1)
-        nuclei_at = [i for i, ph in enumerate(reading.phones) if is_vowel(ph)]
-        final_y = (
-            word.lang == "en"
-            and reading.stress is not None
-            and last - reading.stress >= 2
-            and len(nuclei_at) > last
-            and reading.phones[nuclei_at[last]] == "i"
-        )
-        if fit.promoted or final_y:  # the last syllable carries the rhyme: memory / free
-            later.append(last)
+        later = later_stresses(word, reading, fit, w in fit.elided)
         # Sung short (real in one syllable rhymes with feel), and as written (fire
         # in one syllable still rhymes with empire).
         sung = _as_sung(word, reading, w in fit.elided)

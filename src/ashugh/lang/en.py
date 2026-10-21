@@ -647,6 +647,9 @@ def _hiatuses(low: str, groups: list[tuple[int, int]]) -> int:
     return sum(any(h in low[a:b] for h in HIATUS) for a, b in groups)
 
 
+LE_GAP_RE = re.compile(r"[^lr]l$")  # the consonant opening a -le syllable: star-tled, hur-dles
+
+
 def split_spelling(
     token: str,
     n: int,
@@ -673,9 +676,14 @@ def split_spelling(
         counts = [len(_counted_groups(_plain(p))) for p in parts]
         if sum(counts) == n:  # T-shirt, a-goin', Linked-In: the writer's own parts
             return [piece for p, c in zip(parts, counts) for piece in split_spelling(p, c)]
-    if low.endswith(("'s", "’s")) and n >= 2 and len(_counted_groups(low[:-2])) == n:
-        out = split_spelling(token[:-2], n, short, parted, ly)
-        return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
+    if low.endswith(("'s", "’s")) and n >= 2:
+        own = TABLE.get(low[:-2])
+        before = _vowels(own.split("|")[0]) if own else len(_counted_groups(low[:-2]))
+        if before == n:
+            out = split_spelling(token[:-2], n, short, parted, ly)
+            return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
+        if before == n - 1:  # James-'s, Charles-'s: the 's sung as a syllable of its own
+            return [*split_spelling(token[:-2], n - 1, short, parted, ly), token[-2:]]
     elided = re.search(r"e['’][ae][rn]$", low)  # what-e'er, how-e'er: e'er is one syllable
     if elided and n >= 2 and elided.start() > 0:
         return split_spelling(token[: elided.start()], n - 1) + [token[elided.start() :]]
@@ -703,12 +711,13 @@ def split_spelling(
             revive = len(groups) + _hiatuses(low, groups) < n
         if revive:
             groups = _vowel_groups(low) or groups
+    stem = TABLE.get(low[:-2]) or TABLE.get(low[:-1]) if low.endswith("ed") else None
     sung_ed = (
-        low.endswith("ed")
+        stem is not None
         and len(groups) > 1
         and groups[-1] == (len(low) - 2, len(low) - 1)
-        and bool(TABLE.get(low[:-2]) or TABLE.get(low[:-1]))  # learn-ed, not hundr-ed
-    )
+        and _vowels(stem.split("|")[0]) < n  # learn-ed, but star-tled: startle's own two
+    )  # and not hundr-ed, no stem at all
     silent, hiatus = _silent_e(low, groups), _hiatus_cut(low, groups)
     if len(groups) == n and silent is not None and hiatus is not None and hiatus[0] > silent:
         # lone-li-er: the silent e is no syllable, the ie of -ier is two
@@ -773,6 +782,8 @@ def split_spelling(
             onset = 1  # up-hill, hot-house, dog-house
         elif start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
+        elif start == len(low) - 2 and low.endswith(("led", "les")) and LE_GAP_RE.search(gap):
+            onset = 2  # star-tled, daz-zled, can-dles (but snarled, one syllable)
         elif gap == "gh" or (not gap and low[end - 1 : end] == "y"):
             onset = 0  # laugh-ing, weigh-ing; play-ing (but Lam-bor-ghi-ni)
         elif gap == "w" and low[end - 1 : end] in ("o", "e") and low[start : start + 1] == "e":

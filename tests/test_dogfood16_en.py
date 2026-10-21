@@ -323,3 +323,60 @@ def test_an_anapest_spec_is_derived_from_monosyllabic_anapests():
     text = "Don't let go, don't let go of the night\nDon't you know, don't you know it's alright\n"
     data = derive_spec(scan(text), {"syllables", "meter"})["stanza"]["1"]
     assert data["meter"] == "anapest" and data["feet"] == [3, 3]
+
+
+@pytest.mark.parametrize("a", ["L.A.", "U.S.A.", "a.k.a."])
+def test_a_dotted_abbreviation_ends_on_its_letter(a):
+    assert en_rhyme(a, "day") >= rhyme.THRESHOLD["perfect"]
+
+
+def test_born_in_the_usa_rhymes_with_today():
+    text = "I was born down in the U.S.A.\nAnd I'm living here today\n"
+    assert all(lr.ok for lr in check(text, rhyme="AA").lines)
+
+
+def test_a_lone_a_is_still_the_article():
+    (a,) = [w for w in words("I want a song") if w.norm == "a"]
+    assert a.clitic
+
+
+def test_a_rhyme_on_a_promoted_last_syllable_ends_masculine():
+    from ashugh.translate import derive_spec
+
+    text = "Every night I am chasing a melody\nAnd the music is setting me free\n"
+    data = derive_spec(scan(text), {"rhyme", "endings"})
+    assert data["stanza"]["1"]["endings"] == "mm"
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [("without you", "about you"), ("under me", "thunder me"), ("before you", "adore you")],
+)
+def test_a_pronoun_leans_on_a_long_preposition_in_a_short_query(a, b):
+    assert en_rhyme(a, b) >= rhyme.THRESHOLD["perfect"]
+
+
+def test_a_pronoun_after_a_short_preposition_alone_is_stressed():
+    assert en_rhyme("to me", "free") >= rhyme.THRESHOLD["perfect"]
+
+
+def test_over_and_lover_are_still_no_rhyme():
+    assert en_rhyme("over you", "lover, you") < rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize(
+    "line,out",
+    [
+        ("She startled and tangled", "She star-tled and tan-gled"),
+        ("He whistled and dazzled", "He whis-tled and daz-zled"),
+        ("The candles and the bottles", "The can-dles and the bot-tles"),
+        ("At James's and Charles's", "At James-'s and Charles-'s"),
+        ("The hurricane's eye", "The hur-ri-cane's eye"),
+        ("He learnèd much", "He learn-èd much"),
+    ],
+)
+def test_suno_splits_le_endings_and_possessives_where_they_are_sung(line, out):
+    from ashugh import suno
+
+    got = suno.format_song(line + "\n", Spec(language="en"), split="all", tags=False).text
+    assert got.strip() == out

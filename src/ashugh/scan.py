@@ -390,9 +390,9 @@ LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
 
 
 def later_endings(ln: Line, f: meter.Fit) -> set[int]:
-    """The endings an English line's rhyme word also has from a secondary stress
-    after its main one, where the rhyme may fall: midnight / light, sunshine /
-    mine, yesterday / cabaret end masculine on it."""
+    """The endings an English line's rhyme word also has from a later syllable the
+    rhyme may fall on: midnight / light, sunshine / mine, yesterday / cabaret and
+    melody / free end masculine on it."""
     k = rhyme.anchor_word(ln, f)
     if k is None or ln.words[k].lang != "en":
         return set()
@@ -400,9 +400,8 @@ def later_endings(ln: Line, f: meter.Fit) -> set[int]:
     reading = next((r for r in w.readings if r.stress == chosen), None)
     if reading is None or chosen is None:
         return set()
-    return {
-        f.ending - (s - chosen) for s in reading.secondary if chosen < s and f.ending >= s - chosen
-    }
+    later = rhyme.later_stresses(w, reading, f, k in f.elided)
+    return {f.ending - (s - chosen) for s in later if chosen < s and f.ending >= s - chosen}
 
 
 def ends_in_number(text: str) -> bool:
