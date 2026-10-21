@@ -569,18 +569,54 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
     if anchor is None:
         return None
     a = ss[anchor]
-    last = a.start + (choice[a.word] or 0)
+    ends = [0] * count  # where the word of each syllable ends
+    for s in ss:
+        for k in range(s.start, s.start + s.size):
+            ends[k] = s.start + s.size
+    best = _dolnik_beats(kind, ends, count, a.start + (choice[a.word] or 0), feet)
+    end = ss[-1]
+    if end.free_end and end is not a:
+        # what become of mé: the pronoun may take the last beat instead
+        on_end = list(kind)
+        on_end[end.start] = "m"
+        alt = _dolnik_beats(on_end, ends, count, end.start, feet)
+        if alt is not None and (best is None or _loose_key(alt, feet) < _loose_key(best, feet)):
+            best = alt
+    if best is None:
+        return None
+    cost, n, beats = best
+    first = beats.index(True)
+    off_words = [
+        s.word
+        for s in ss
+        if s.size > 1
+        and choice[s.word] is not None
+        and not beats[s.start + choice[s.word]]
+        and not (s.weak or s.clitic)
+        and s.start + s.size > first
+    ]
+    return Fit(
+        meter="dolnik",
+        cost=round(cost + DOLNIK_PENALTY + sum(s.penalty(choice[s.word]) for s in ss), 3),
+        feet=n,
+        count=count,
+        elided=elided,
+        stresses=_own(choice, words, elided, ss),
+        beats=tuple(beats),
+        stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
+        off_beat=off_words,
+    )
+
+
+def _dolnik_beats(kind, ends, count, last, feet) -> tuple[float, int, list[bool]] | None:
+    """The cheapest dolnik beats ending on last, one or two off-beats apart: (cost
+    with the syllables after last, number of beats, beat per syllable)."""
 
     def on(i: int) -> float:
         return {"u": DOLNIK_SKIP, "c": CLITIC_ON_BEAT}.get(kind[i], 0.0)
 
     def off(i: int) -> float:
         return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind[i], 0.0)
-
-    ends = [0] * count  # where the word of each syllable ends
-    for s in ss:
-        for k in range(s.start, s.start + s.size):
-            ends[k] = s.start + s.size
 
     def lead_in(i: int) -> float:
         """The syllables before a first beat on i: a word wholly among them may keep
@@ -600,11 +636,10 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
                 c = c0 + on(i) + sum(off(t) for t in range(j + 1, i))
                 if n + 1 not in dp[i] or c < dp[i][n + 1][0]:
                     dp[i][n + 1] = (c, j)
-    ends = dp[last]
-    if not ends:
+    found = dp[last]
+    if not found:
         return None
-    n = feet if feet is not None and feet in ends else min(ends, key=lambda k: ends[k][0])
-    cost = ends[n][0]
+    n = feet if feet is not None and feet in found else min(found, key=lambda k: found[k][0])
     beats = [False] * count
     i, ictuses = last, n
     while i >= 0:
@@ -612,27 +647,7 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
         i = dp[i][ictuses][1]
         ictuses -= 1
     tail = sum(off(t) for t in range(last + 1, count))
-    first = beats.index(True)
-    off_words = [
-        s.word
-        for s in ss
-        if s.size > 1
-        and choice[s.word] is not None
-        and not beats[s.start + choice[s.word]]
-        and not (s.weak or s.clitic)
-        and s.start + s.size > first
-    ]
-    return Fit(
-        meter="dolnik",
-        cost=round(cost + tail + DOLNIK_PENALTY + sum(s.penalty(choice[s.word]) for s in ss), 3),
-        feet=n,
-        count=count,
-        elided=elided,
-        stresses=_own(choice, words, elided, ss),
-        beats=tuple(beats),
-        stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
-        off_beat=off_words,
-    )
+    return found[n][0] + tail, n, beats
 
 
 def _own(

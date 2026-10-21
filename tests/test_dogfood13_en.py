@@ -151,3 +151,20 @@ def test_a_noun_verb_pair_is_read_by_the_word_before_it(line, word, stress):
     ws = words(line + "\n")
     w = next(w for w in ws if w.norm == word)
     assert w.readings[0].stress == stress and w.readings[0].penalty == 0
+
+
+BRIDGE = (
+    "[Bridge]\nI'm fixin' to pack my bags and go\nDown to Tennessee\n"
+    "Ain't nobody gonna know\nWhat become of me\n"
+)
+
+
+def test_a_derived_ending_follows_the_rhyme_the_line_makes():
+    from ashugh.spec import dumps, loads
+    from ashugh.translate import derive_spec
+
+    src = scan(BRIDGE, from_dict({"language": "en"}))
+    data = derive_spec(src, {"syllables", "meter", "rhyme", "endings"})
+    assert data["stanza"]["1"]["endings"][3] == "m"  # rhymes on me, with Tennessee
+    rep = scan(BRIDGE, loads(dumps({"language": "en", **data})))
+    assert not [i for i in rep.issues if i.severity == "error"]
