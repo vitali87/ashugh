@@ -92,6 +92,8 @@ SECTION_NAMES = {
     "гитарное соло": "Guitar Solo",
     "guitar solo": "Guitar Solo",
     "rap": "Rap",
+    "middle": "Bridge",  # Middle 8, as British writers call it
+    "middle eight": "Bridge",
     "рэп": "Rap",
     "речитатив": "Rap",
     "финал": "Outro",
@@ -185,6 +187,17 @@ def section_key(tag: str) -> str:
     name = re.sub(r"\s+", " ", name).strip() or "default"
     known = SECTION_NAMES.get(name)
     return known.lower() if known else name
+
+
+def section_head(key: str) -> str | None:
+    """The known section a compound name is a kind of, by its last known word:
+    double chorus and outro chorus are a chorus, rap verse a verse, middle a bridge
+    (a British Middle 8); None for a name with none."""
+    words = key.split()
+    if len(words) < 2 and key not in SECTION_NAMES:
+        return None
+    known = next((SECTION_NAMES[w] for w in reversed(words) if w in SECTION_NAMES), None)
+    return known.lower() if known else None
 
 
 def _note(text: str) -> str:

@@ -126,7 +126,11 @@ class Spec:
         [stanza.N] table over it and the command line's rules over that."""
         # a spoken section is said, not sung to the song's line: it keeps only its own
         # [section."spoken word"] table, never the song's syllables and meter
-        section = self.sections.get(key, Rule() if key in SPOKEN else self.base)
+        spoken = key in SPOKEN or any(w in SPOKEN for w in key.split())  # Spoken Bridge
+        head = lyrics.section_head(key) if key not in self.sections else None
+        if not spoken and head in self.sections:  # [Double Chorus]: the chorus's
+            key = head
+        section = self.sections.get(key, Rule() if spoken else self.base)
         if unit is None or unit + 1 not in self.stanzas:
             return section
         table = self.stanza_tables.get(unit + 1)

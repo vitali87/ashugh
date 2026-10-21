@@ -188,6 +188,7 @@ def _check_spec_tables(report: Report) -> None:
         return
     first = report.lines[0]
     keys = {lr.line.key for lr in report.lines} | lyrics.section_keys(report.text)  # [Intro] (о-о)
+    keys |= {h for k in keys if (h := lyrics.section_head(k))}  # [Double Chorus]: a chorus
     found = [
         (f"[section.{name}] matches no section of the song", ", ".join(sorted(keys - {""})))
         for name in sorted(report.spec.sections)
