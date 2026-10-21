@@ -481,3 +481,21 @@ def test_suno_leaves_a_malformed_tag_unsplit():
 
     out = suno.format_song("[[Chorus]]\nOh take me home tonight\n", split="all", tags=False)
     assert "[[Chorus]]" in out.text and "to-night" in out.text
+
+
+@pytest.mark.parametrize("line,icons", [("I love you so 💔", "💔"), ("Hold me ❤️ tight", "❤️")])
+def test_an_emoji_is_warned(line, icons):
+    (issue,) = [i for i in scan(line + "\n").issues if i.message == "an emoji is not sung"]
+    assert issue.detail.startswith(icons)
+
+
+def test_suno_takes_an_emoji_out():
+    from ashugh import suno
+
+    out = suno.format_song("Hold me ❤️ tight 🔥\n", tags=False)
+    assert out.text == "Hold me tight\n" and any(n.kind == "emoji" for n in out.notes)
+
+
+@pytest.mark.parametrize("line", ["I love you so", "Rock & roll, baby", "Ах, звезда!"])
+def test_a_line_with_no_emoji_is_not_warned(line):
+    assert not any(i.message == "an emoji is not sung" for i in scan(line + "\n").issues)

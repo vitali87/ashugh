@@ -591,6 +591,10 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         )
     if lyrics.has_digits(ln.text):
         add(Issue(ln.number, "script", "warning", DIGITS, "spell numbers out"))
+    icons = lyrics.emoji(ln.text)
+    if icons:  # I love you so 💔: no syllable, and Suno may say its name
+        detail = f"{' '.join(icons)}: no syllable is counted; take it out for Suno"
+        add(Issue(ln.number, "script", "warning", "an emoji is not sung", detail))
     dotted = [m.group(0) for m in ABBREVIATION_DOT_RE.finditer(ln.text)]
     if dotted:  # и т.д., ул. Мира: sung in full, so counted as written they are short
         detail = f"{', '.join(dotted)}: write it as it is sung (и так далее, улица)"

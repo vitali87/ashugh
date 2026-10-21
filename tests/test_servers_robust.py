@@ -149,7 +149,9 @@ def test_lsp_ranges_count_utf16_units():
             "params": {"textDocument": {"uri": "u", "text": line}},
         }
     )
-    (diag,) = pub["params"]["diagnostics"]
+    diags = pub["params"]["diagnostics"]
+    (diag,) = [d for d in diags if "digits" in d["message"]]
+    assert any("emoji" in d["message"] for d in diags)
     assert diag["range"]["start"]["character"] == 2
     assert diag["range"]["end"]["character"] == len(line.encode("utf-16-le")) // 2
 

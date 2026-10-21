@@ -497,3 +497,14 @@ def same_words(text: str) -> str:
     mark a stress (Արի՛, замо́к) or spell вернется for вернётся."""
     plain = text.lower().replace("ё", "е").translate(MARKS)
     return " ".join(re.sub(r"[^\w\s]", " ", plain).split())
+
+
+# Emoji, with the joiners and selectors that build one: 💔, 🔥, ❤️, 👩‍❤️‍👨. Nothing to sing.
+EMOJI_RE = re.compile(
+    "[\U0001f000-\U0001faff\u2600-\u27bf\u2b00-\u2bff]"
+    "(?:[\ufe0f\U0001f3fb-\U0001f3ff]|\u200d[\U0001f000-\U0001faff\u2600-\u27bf])*"
+)
+
+
+def emoji(text: str) -> list[str]:
+    return EMOJI_RE.findall(text)

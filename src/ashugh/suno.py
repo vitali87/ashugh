@@ -75,7 +75,7 @@ LATIN = {
 @dataclass
 class Note:
     line: int
-    kind: str  # yo | stress | armenian | split | tag | spelled
+    kind: str  # yo | stress | armenian | split | tag | spelled | emoji
     word: str
     new: str
     why: str = ""
@@ -178,6 +178,10 @@ def format_song(
             line_out = _place_marks(line_out)
             line_out = _initials_and_numerals(line_out, default_mode, schwa)
         line_out = _russian_asides(line_out, lr.line.number, notes)
+        icons = lyrics.emoji(line_out)
+        if icons:  # 💔: Suno may read it out as broken heart
+            line_out = " ".join(lyrics.EMOJI_RE.sub(" ", line_out).split())
+            notes.append(Note(lr.line.number, "emoji", " ".join(icons), "", "no emoji is sung"))
         raw[lr.line.number - 1] = line_out + ending
     sung = {lr.line.number for lr in report.lines}
     for k, line_raw in enumerate(raw):  # a line that is only a backing vocal: (օ՜, օ՜)
