@@ -282,8 +282,12 @@ def token_spans(text: str) -> list[tuple[int, int, str]]:
     return spans
 
 
+# A repeat mark that ends a line (Я жду тебя х2!, I go 2x) is no number to sing.
+REPEAT_END_RE = re.compile(r"(?<!\w)(?:[xх×]\s*\d+|\d+\s*[xх×])(?!\w)[\s.!?,…]*$", re.I)
+
+
 def has_digits(text: str) -> bool:
-    return bool(DIGIT_RE.search(sub_asides(text, lambda _: " ")))
+    return bool(DIGIT_RE.search(REPEAT_END_RE.sub(" ", sub_asides(text, lambda _: " "))))
 
 
 def parse(text: str) -> list[Line]:

@@ -454,3 +454,53 @@ def test_a_replaced_line_keeps_a_nested_backing_vocal():
 def test_suno_reads_a_nested_backing_vocal_as_one():
     out = suno.format_song("Я жду тебя (моё (моё) моё)\n", tags=False).text
     assert out.endswith("(моё (моё) моё)\n")
+
+
+@pytest.mark.parametrize(
+    "line", ["I love you so x2", "I love you so ×2", "Я жду тебя х2!", "I go 2x"]
+)
+def test_a_repeat_mark_ending_a_line_is_no_digit(line):
+    assert not lyrics.has_digits(line)
+
+
+def test_digits_inside_a_line_are_still_flagged():
+    assert lyrics.has_digits("I got 2 hearts x2")
+
+
+@pytest.mark.parametrize("encoding", ["utf-16", "utf-16-le", "utf-16-be"])
+def test_the_cli_reads_a_utf16_file_with_its_byte_order_mark(tmp_path, encoding, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    bom = {"utf-16-le": b"\xff\xfe", "utf-16-be": b"\xfe\xff"}.get(encoding, b"")
+    song.write_bytes(bom + "I walk the way\n".encode(encoding))
+    assert main(["scan", str(song), "--syllables", "4"]) == 0
+    assert "4 syllables" not in capsys.readouterr().err
+
+
+def test_the_cli_names_a_file_that_is_not_text(tmp_path, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    song.write_bytes(b"I walk \xff\xfe\x00 the way\n")
+    assert main(["scan", str(song)]) == 2
+    err = capsys.readouterr().err
+    assert "song.txt" in err and "UTF-8" in err
+
+
+def test_requests_warn_of_a_slot_no_line_can_fill(tmp_path, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    song.write_text("I walk the way\nand talk all day\n", encoding="utf-8")
+    args = ["requests", str(song), "--syllables", "8", "--meter", "iamb4", "--endings", "f"]
+    assert main(args) == 0
+    assert "no line can pass this slot" in capsys.readouterr().err
+
+
+def test_mcp_requests_carry_the_spec_warnings():
+    from test_servers_robust import tool
+
+    spec = 'syllables = 8\nmeter = "iamb4"\nendings = "f"\n'
+    failed, data = tool("requests", lyrics="I walk the way\nand talk all day\n", spec=spec)
+    assert not failed and any("no line can pass" in w for w in data["warnings"])

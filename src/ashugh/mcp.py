@@ -130,8 +130,9 @@ def t_requests(args: dict) -> dict:
     n = args.get("n", 6)
     if not isinstance(n, int) or n < 1:
         raise ToolError("n must be a whole number of 1 or more")
-    reqs = requests_for(_str(args, "lyrics"), _spec(args), n, _lang(args))
-    return {"requests": [r.as_dict() for r in reqs]}
+    warnings: list[str] = []
+    reqs = requests_for(_str(args, "lyrics"), _spec(args), n, _lang(args), warnings)
+    return {"requests": [r.as_dict() for r in reqs], "warnings": warnings}
 
 
 class _Recorder:

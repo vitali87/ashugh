@@ -192,11 +192,23 @@ def fit_song(
 
 
 def requests_for(
-    text: str, spec: Spec | None = None, n: int = 6, lang: str | None = None
+    text: str,
+    spec: Spec | None = None,
+    n: int = 6,
+    lang: str | None = None,
+    warnings: list[str] | None = None,
 ) -> list[Request]:
-    """The first round of requests fit would send, for a proposer outside ashugh."""
+    """The first round of requests fit would send, for a proposer outside ashugh;
+    warnings, when given, gets what the spec itself gets wrong (a slot no line
+    can fill, a table that matches no section)."""
     spec = spec or Spec()
     report = scan(text, spec, lang=lang)
+    if warnings is not None:
+        warnings += [
+            f"{i.message}: {i.detail}" if i.detail else i.message
+            for i in report.issues
+            if i.code == "spec"
+        ]
     variables, groups = _variables(report, keep_original=True)
     lines = {lr.line.number: lr for lr in report.lines}
     later = _later_copies(variables)

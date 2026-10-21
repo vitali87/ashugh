@@ -27,12 +27,24 @@ def _positive(value: str) -> int:
 
 
 def _read(path: str) -> str:
-    """The file as saved: its line endings kept, a BOM dropped."""
+    """The file as saved: its line endings kept, a BOM dropped; UTF-8, or UTF-16
+    where a BOM says so (Notepad's Unicode)."""
     if path == "-":
-        raw = getattr(sys.stdin, "buffer", None)
-        return raw.read().decode("utf-8-sig") if raw else sys.stdin.read()
-    with open(path, encoding="utf-8-sig", newline="") as fh:
-        return fh.read()
+        stream = getattr(sys.stdin, "buffer", None)
+        if stream is None:
+            return sys.stdin.read()
+        raw, name = stream.read(), "stdin"
+    else:
+        with open(path, "rb") as fh:
+            raw, name = fh.read(), path
+    if raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return raw.decode("utf-16")
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError as e:
+        raise ValueError(
+            f"{name}: not UTF-8 text (byte {raw[e.start]:#04x} at {e.start}); save it as UTF-8"
+        ) from None
 
 
 def _print_text(text: str) -> None:
@@ -96,7 +108,10 @@ def cmd_requests(args: argparse.Namespace) -> int:
     from .fit import requests_for
     from .proposers import SCHEMA, SYSTEM
 
-    reqs = requests_for(_read(args.file), _spec(args), n=args.n, lang=args.lang)
+    warnings: list[str] = []
+    reqs = requests_for(_read(args.file), _spec(args), args.n, args.lang, warnings)
+    for why in warnings:  # a slot no line can fill: 8 syllables of iamb4, feminine
+        print(f"warning: {why}", file=sys.stderr)
     data = {
         "system": SYSTEM,
         "answer_format": SCHEMA,

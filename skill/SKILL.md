@@ -58,7 +58,9 @@ Python 3.14 runs the same script directly.
      word's own stress may fall), `rhyme_with` (the words of the partners
      that stay) and `rhyme_sound` (the rime to match; when `rhyme_with` is
      empty it is the line's own rhyme, to keep), `ending`, `avoid_final`,
-     and the `problems` found, including partners that must change too.
+     and the `problems` found, including partners that must change too. A
+     warning on stderr that no line can pass a slot means the spec contradicts
+     itself (8 syllables of iamb4 with a feminine ending): fix the spec first.
    - For each request write 4–6 alternatives that keep the meaning and the
      voice of the song. Put them in a JSON file keyed by line number:
      `{"3": ["...", "..."], "11": ["..."]}`. Including the original line is
