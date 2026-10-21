@@ -55,6 +55,9 @@ class SpecError(ValueError):
     pass
 
 
+SPOKEN = {"spoken", "spoken word", "narration", "narrator", "speech", "monologue", "skit"}
+
+
 @dataclass(frozen=True)
 class Rule:
     syllables: tuple[int, ...] = ()
@@ -114,7 +117,9 @@ class Spec:
     def rule_for(self, key: str, unit: int | None = None) -> Rule:
         """The rule of a stanza: its section's (else the top level's), with its own
         [stanza.N] table over it and the command line's rules over that."""
-        section = self.sections.get(key, self.base)
+        # a spoken section is said, not sung to the song's line: it keeps only its own
+        # [section."spoken word"] table, never the song's syllables and meter
+        section = self.sections.get(key, Rule() if key in SPOKEN else self.base)
         if unit is None or unit + 1 not in self.stanzas:
             return section
         table = self.stanza_tables.get(unit + 1)

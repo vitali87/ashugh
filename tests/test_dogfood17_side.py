@@ -30,3 +30,35 @@ def test_contrasts_english_keeps(a, b):
 
 def test_a_last_unstressed_vowel_still_counts():
     assert en_rhyme("happy", "grappa") < rhyme.THRESHOLD["perfect"]
+
+
+SPOKEN = (
+    "[Verse 1]\nI walked along the empty street\n\n"
+    "[Spoken Word]\nAnd then she said, I'll never come back here again\n"
+)
+
+
+def test_a_spoken_section_is_not_held_to_the_songs_line():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    report = scan(SPOKEN, from_dict({"language": "en", "syllables": 8, "meter": "iamb"}))
+    assert all(lr.ok for lr in report.lines)
+
+
+def test_a_spoken_section_keeps_its_own_table():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    spec = {"language": "en", "syllables": 8, "section": {"spoken word": {"syllables": 10}}}
+    report = scan(SPOKEN, from_dict(spec))
+    assert not report.lines[1].ok
+
+
+def test_a_sung_section_still_is():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    text = SPOKEN.replace("[Spoken Word]", "[Bridge]")
+    report = scan(text, from_dict({"language": "en", "syllables": 8}))
+    assert not report.lines[1].ok

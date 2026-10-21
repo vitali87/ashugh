@@ -145,7 +145,9 @@ chorus stanza's table changes only what it sets, except that a table's
 not the `iamb4` above's four). Command-line flags (`--syllables`, `--meter`, `--feet`,
 `--rhyme`, `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
-`.A.A`.
+`.A.A`. A spoken section (`[Spoken]`, `[Spoken Word]`, `[Narration]`) is said,
+not sung to the song's line, so only its own `[section."spoken word"]` table
+applies to it.
 
 A rhyme scheme applies to each stanza on its own: `ABAB` over two stanzas
 asks for two separate pairs of rhymes. Spaces split a scheme into stanzas
