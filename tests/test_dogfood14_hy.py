@@ -223,3 +223,26 @@ def test_more_armenian_tags(tag, out):
     from ashugh import lyrics
 
     assert lyrics.retag(tag) == out
+
+
+def test_a_held_note_stays_long_in_latin():
+    out = suno.format_song("Օօօ, քնիր\n", tags=False, armenian="latin").text
+    assert out.startswith("Ooo,")
+
+
+@pytest.mark.parametrize("line, lang", [("XXI դարում ենք", "hy"), ("Тигран II и Пётр I", "ru")])
+def test_a_roman_numeral_is_warned_about(line, lang):
+    from ashugh.scan import scan
+    from ashugh.spec import Spec as S
+
+    rep = scan(line + "\n", S(language=lang))
+    assert any("Roman numeral" in i.message for i in rep.issues)
+
+
+@pytest.mark.parametrize("line", ["I love you", "We MIX it up"])
+def test_english_capitals_are_no_roman_numerals(line):
+    from ashugh.scan import scan
+    from ashugh.spec import Spec as S
+
+    rep = scan(line + "\n", S(language="en"))
+    assert not any("Roman numeral" in i.message for i in rep.issues)

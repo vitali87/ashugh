@@ -425,6 +425,10 @@ def _armenian(
     drop = w.drop if dropped else None
     if mode == "script" and token[:1].isascii():  # Mtnem qo: Armenian typed in Latin
         return _latin_typed(w, token, hold, n, notes)
+    if mode == "latin" and lyrics.held_note(w.norm, "աեէըիոօ"):  # Օօօ: Ooo, held
+        new = _case_like(token, _latin(w.syllables[0].phones, False, schwa) * len(w.norm))
+        notes.append(Note(n, "armenian", token, new, mode))
+        return new
     if mode == "latin":
         parts = [_latin(s.phones, k == drop, schwa) for k, s in enumerate(w.syllables)]
         if after_link and parts and parts[0].startswith("y"):
