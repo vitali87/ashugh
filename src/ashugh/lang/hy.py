@@ -507,7 +507,11 @@ def override_error(word: str, value: str) -> str | None:
         return f"{value!r} needs a hyphen between its sung syllables, {example}"
     if any(n != 1 for n in vowels):
         return f"{value!r} needs one vowel per syllable, ը included, {example}"
-    if normalize(value).replace("-", "").replace("ը", "") != normalize(word).replace("ը", ""):
+
+    def bare(text: str) -> str:  # և as the ե and վ it is drawn for: Ե-րե-վան is Երևան
+        return normalize(text).replace("-", "").replace("ը", "").replace("և", "եվ")
+
+    if bare(value) != bare(word):
         return f"{value!r} spells a different word"
     return None
 

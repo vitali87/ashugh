@@ -199,3 +199,27 @@ def test_schwa_mode_writes_a_latin_typed_line_as_latin_mode_does():
     schwa = suno.format_song(LATIN_LINE, tags=False, armenian="schwa", lang="hy").text
     latin = suno.format_song(LATIN_LINE, tags=False, armenian="latin", lang="hy").text
     assert schwa == latin
+
+
+def test_the_armenian_hyphen_is_a_hyphen():
+    (w,) = words("ԱՄՆ֊ից")
+    assert w.spelled and w.size == 4
+
+
+def test_presentation_ligatures_are_their_letters():
+    plain = sum(w.size for w in words("ուրեմն մեր միակ"))
+    assert sum(w.size for w in words("ուրեﬓ ﬔր ﬕակ")) == plain
+
+
+@pytest.mark.parametrize("word, value", [("Երևան", "Ե-րե-վան"), ("արևմուտք", "ա-րեվ-մուտք")])
+def test_the_lexicon_takes_the_tools_own_split_of_ev(word, value):
+    from ashugh.lang import hy
+
+    assert hy.override_error(word, value) is None
+
+
+@pytest.mark.parametrize("tag, out", [("[Նվագ]", "[Instrumental]"), ("[Մեներգ]", "[Solo]")])
+def test_more_armenian_tags(tag, out):
+    from ashugh import lyrics
+
+    assert lyrics.retag(tag) == out

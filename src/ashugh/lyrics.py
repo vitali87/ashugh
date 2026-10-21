@@ -32,7 +32,7 @@ DIGIT_RE = re.compile(r"\d")
 INVISIBLE_RE = re.compile("[\u00ad\u200b-\u200d\u2060\ufeff]")
 LETTER = r"[^\W\d_]"
 APOSTROPHE_RE = re.compile(rf"(?<={LETTER})[´`‘′ʼ](?={LETTER})")
-HYPHEN_RE = re.compile(rf"(?<={LETTER})[\u2010\u2011](?={LETTER})")
+HYPHEN_RE = re.compile(rf"(?<={LETTER})[\u2010\u2011\u058a](?={LETTER})")  # and Armenian \u058a
 
 
 # Section names Suno knows, from their English, Russian and Armenian names.
@@ -104,6 +104,8 @@ SECTION_NAMES = {
     "ռեփ": "Rap",
     "ռեպ": "Rap",
     "սոլո": "Solo",
+    "մեներգ": "Solo",
+    "նվագ": "Instrumental",
 }
 
 
@@ -263,7 +265,9 @@ def _twins(m: re.Match) -> str:
 
 # A grave on a Cyrillic vowel, which dictionaries put on a secondary stress and
 # writers on any (мѝлый, за̀мок): a stress mark like the acute. е and и with it
-# compose into letters of their own (ѐ, ѝ), which are taken apart first.
+# compose into letters of their own (ѐ, ѝ), which are taken apart first. And the
+# Armenian presentation ligatures of old fonts and PDFs, as the letters they draw.
+ARMENIAN_LIGATURES = str.maketrans({"ﬓ": "մն", "ﬔ": "մե", "ﬕ": "մի", "ﬖ": "վն", "ﬗ": "մխ"})
 GRAVE_LETTERS = str.maketrans({"ѐ": "е\u0301", "ѝ": "и\u0301", "Ѐ": "Е\u0301", "Ѝ": "И\u0301"})
 GRAVE_RE = re.compile("([аеёиоуыэюяАЕЁИОУЫЭЮЯ])\u0300")
 
@@ -277,7 +281,8 @@ def clean(text: str) -> str:
     if text.isascii() and "`" not in text:
         return text
     text = INVISIBLE_RE.sub("", unicodedata.normalize("NFC", text))
-    text = GRAVE_RE.sub("\\1\u0301", text.translate(GRAVE_LETTERS))
+    text = text.translate(GRAVE_LETTERS).translate(ARMENIAN_LIGATURES)
+    text = GRAVE_RE.sub("\\1\u0301", text)
     text = LETTERS_RE.sub(_twins, text)
     return HYPHEN_RE.sub("-", APOSTROPHE_RE.sub("'", text))
 
