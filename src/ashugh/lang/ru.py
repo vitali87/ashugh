@@ -196,6 +196,14 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     **{f: (f, (1,)) for f in "годам годами годах годов".split()},
     # не грусти́ before гру́сти of грусть, which a preposition usually announces
     "грусти": ("грусти", (1, 0)),
+    # The far more frequent word first, where the table ranks a rarer verb above it:
+    # мою́ (my) before мо́ю (I wash), стоя́т (stand) before сто́ят (cost), выходи́ (come
+    # out) before вы́ходи (nurse), жила́ (lived) before жи́ла (vein).
+    "мою": ("мою", (1, 0)),
+    "стоим": ("стоим", (1, 0)),
+    "стоят": ("стоят", (1, 0)),
+    "выходи": ("выходи", (2, 0)),
+    "жила": ("жила", (1, 0)),
     # Slang and loanwords of songs the dictionary lacks.
     **{
         f: (f, (k,))
@@ -1213,7 +1221,9 @@ def second_locatives(words: list[Word]) -> None:
         if w.lang != CODE or w.norm not in SECOND_LOCATIVE or w.size < 2:
             continue
         j = k - 1
-        while j >= 0 and k - j <= 2 and words[j].norm.endswith(LOCATIVE_ADJECTIVE):
+        # в моей груди́, в ночной тиши́: a feminine noun's adjective ends -ой or -ей
+        endings = FEMININE_LOCATIVE_ADJECTIVE if w.norm.endswith("и") else LOCATIVE_ADJECTIVE
+        while j >= 0 and k - j <= 2 and words[j].norm.endswith(endings):
             j -= 1
         if j == k - 1 or j < 0 or words[j].norm not in LOCATIVE_PREPOSITIONS:
             continue  # nothing between (done above), or no в or на before them
@@ -1263,6 +1273,7 @@ def after_genitive(words: list[Word]) -> None:
 
 # The locative singular of an adjective or pronoun before a noun: э́том, на́шем, моём.
 LOCATIVE_ADJECTIVE = ("ом", "ем", "ём")
+FEMININE_LOCATIVE_ADJECTIVE = ("ой", "ей")
 
 
 def marked_leans(words: list[Word]) -> None:
@@ -1302,22 +1313,6 @@ def ne_with_pronoun(words: list[Word]) -> None:
             pronoun.readings = (
                 Reading(None, transcribe(base.spelling, None), base.spelling, "clitic"),
             )
-
-
-# Prepositions in -о said before мной like над and перед, without a stress of their
-# own: надо мной, передо мною; надо elsewhere is the stressed на́до (one must).
-O_PREPOSITIONS = frozenset({"надо", "передо", "подо"})
-
-
-def prepositions_in_o(words: list[Word]) -> None:
-    """надо мной, передо мною: the preposition leans on the pronoun."""
-    for prev, w in zip(words, words[1:]):
-        if prev.lang != CODE or prev.norm not in O_PREPOSITIONS or w.norm not in ("мной", "мною"):
-            continue
-        if prev.readings and prev.readings[0].source in ("mark", "user"):
-            continue
-        prev.clitic = prev.weak = True
-        prev.readings = (Reading(None, transcribe(prev.norm, None), prev.norm, "clitic"),)
 
 
 def preposition_shift(words: list[Word]) -> None:

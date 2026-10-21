@@ -384,17 +384,12 @@ def test_other_g_is_left_alone():
     assert "g" in "".join(ru.analyze_word("книга").readings[0].phones)
 
 
-@pytest.mark.parametrize(
-    "line", ["Надо мною небо", "Передо мной дорога", "Подо мною лёд", "Надо мной гроза"]
-)
-def test_a_preposition_in_o_before_me_is_unstressed(line):
+@pytest.mark.parametrize("line", ["Светит небо надо мной", "Надо мною тяготеет"])
+def test_nado_before_me_keeps_its_stress_as_verse_marks_it(line):
+    # RIFMA's hand-marked verse stresses на́до мной every time
     (ln,) = analyze_lines(line, Spec(language="ru"))
-    assert [r.stress for r in ln.words[0].readings] == [None]
-
-
-def test_nado_meaning_need_keeps_its_stress():
-    (ln,) = analyze_lines("Мне надо идти", Spec(language="ru"))
-    assert ln.words[1].readings[0].stress == 0
+    w = next(w for w in ln.words if w.norm == "надо")
+    assert w.readings[0].stress == 0
 
 
 @pytest.mark.parametrize(

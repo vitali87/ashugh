@@ -14,7 +14,7 @@ holdout's in [runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/).
 | | |
 |---|---|
 | stress of polysyllabic words (60,854) | 97.4% |
-| each word's first reading, without meter or rhyme | 93.3% |
+| each word's first reading, without meter or rhyme | 93.4% |
 | words the dictionary lists (52,714) | 98.2% |
 | ambiguous words resolved by meter and rhyme (3,669) | 95.3% |
 | unknown words guessed from the ending, meter and rhyme (4,346) | 88.6% |

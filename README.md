@@ -457,9 +457,7 @@ unstressed vowels, devoices and assimilates obstruents, drops silent
 consonants (сердце, солнце, честный), says г before к or ч as х (лёгкий,
 мягче) and a double consonant single before a consonant or at the end (класс
 rhymes with вас); a word after the line's last stress is said with its vowels
-reduced (он же rhymes with тоже, ты ли with пыли). надо, передо and подо
-before мной lean on it like над (надо мно́ю), and are stressed elsewhere
-(мне на́до).
+reduced (он же rhymes with тоже, ты ли with пыли).
 
 
 **English** (`lang/en.py`). Pronunciations come from CMUdict (126k words),

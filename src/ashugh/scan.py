@@ -396,7 +396,8 @@ def _rhyme_stress(
             current = best(rhyme.tails(lr.line, lr.fit, chosen_only=True))
             for force, promote in tries:
                 alt = check_line(lr.line, rule, meter_name, source, force, promote)
-                if not _affordable(alt, lr):
+                # a scheme the spec declares outranks a meter it never asked for
+                if not _affordable(alt, lr, source == "detected" and bool(rule.rhyme)):
                     continue
                 score = best(rhyme.tails(alt.line, alt.fit, chosen_only=True))
                 if score >= floor and score > current + RHYME_STRESS_GAIN:
@@ -424,11 +425,12 @@ def _rhyme_tries(lr: LineReport) -> list[tuple[dict[int, int | None] | None, boo
     return tries
 
 
-def _affordable(alt: LineReport, lr: LineReport) -> bool:
-    """Whether a rhyme may choose alt over lr: little more meter cost, the same
-    length, and no error a rhyme cannot buy (feet, ending)."""
+def _affordable(alt: LineReport, lr: LineReport, any_cost: bool = False) -> bool:
+    """Whether a rhyme may choose alt over lr: little more meter cost (any, for a
+    rhyme the spec declares under a meter only detected: холодные во́ды / годы),
+    the same length, and no error a rhyme cannot buy (feet, ending)."""
     return (
-        alt.fit.cost - lr.fit.cost <= RHYME_STRESS_MARGIN
+        (any_cost or alt.fit.cost - lr.fit.cost <= RHYME_STRESS_MARGIN)
         and alt.fit.count == lr.fit.count
         and _errors(alt) <= _errors(lr)
     )
