@@ -471,7 +471,11 @@ def _derived(norm: str) -> list[str] | None:
             if stem == norm[: len(stem)] and len(stem) == len(norm) - len(ending) - 1:
                 if stem[-1] != norm[len(stem)]:
                     continue  # stopped: stop and a doubled p, not stopp
-            return [v + _ending_phones(v, ending) for v in raw.split("|")]
+            out = [v + _ending_phones(v, ending) for v in raw.split("|")]
+            if ending == "ing" and stem.endswith("le") and SYLLABIC_LING_RE.search(norm):
+                # jin-gling beside jin-gl-ing: the -le's schwa unsung, as with twinkling
+                out += [re.sub(r" AH0 L IH0 NG$", " L IH0 NG", v) for v in out if "AH0 L IH0" in v]
+            return list(dict.fromkeys(out))
     return None
 
 
@@ -1217,6 +1221,8 @@ SHORT_ENDINGS = ("ire", "ires", "ired", "yre", "yres", "hour", "hours")
 # Abbreviations said as the words they stand for, shown in those words' syllables.
 SAID_AS = {"etc": ("et", "cet", "er", "a")}
 SHORT_PREFERENCE = -0.05
+# -ling after a consonant, its l sung as a syllable or not: twin-kling, jin-gling.
+SYLLABIC_LING_RE = re.compile(r"[bcdfgkptvz]lings?$")
 ARCHAIC = re.compile(r"[aeiouy]e(?:st|th)$")  # go-est, see-est, fly-eth
 SYNCOPE_COST = 0.5
 ALTERNATIVE_COST = 0.1  # meter cost of a dictionary reading that moves the first's stress
@@ -1520,6 +1526,7 @@ def analyze_word(
     if word.drop is None:
         word.drop = _smoothed(*full[0])
     short = norm in SHORT_FIRST or short_listed or norm.endswith(SHORT_ENDINGS)
+    short = short or bool(SYLLABIC_LING_RE.search(norm))  # twin-kling, as speech says it
     if short and word.drop is not None:
         word.drop_cost = SHORT_PREFERENCE
 

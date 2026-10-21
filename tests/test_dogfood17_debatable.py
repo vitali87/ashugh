@@ -44,3 +44,22 @@ def test_a_spoken_bridge_stays_spoken():
 @pytest.mark.parametrize("name", ["Golden Hour", "Sunrise"])
 def test_a_name_with_no_known_word_has_no_head(name):
     assert lyrics.section_head(lyrics.section_key(name)) is None
+
+
+def _ru_words(line: str):
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    (ln,) = analyze_lines(line, Spec(language="ru"))
+    return ln.words
+
+
+@pytest.mark.parametrize("line", ["Всё о'кей, всё будет хорошо", "О'кей, мы едем домой"])
+def test_okey_is_no_stress_mark(line):
+    w = next(w for w in _ru_words(line) if "кей" in w.norm)
+    assert w.readings[0].stress == 1 and not w.guessed
+
+
+def test_an_apostrophe_after_an_inner_vowel_is_still_a_stress_mark():
+    w = _ru_words("Замо'к стоит на горе")[0]
+    assert w.readings[0].stress == 1 and w.readings[0].source == "mark"

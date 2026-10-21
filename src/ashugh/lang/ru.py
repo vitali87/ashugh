@@ -527,8 +527,9 @@ def _yo_only_mark(token: str) -> bool:
 
 
 # An apostrophe after a vowel of a Cyrillic word, the stress mark of OpenRussian
-# and of plain keyboards: замо'к, за'мок.
-APOSTROPHE_MARK = re.compile("([аеёиоуыэюяАЕЁИОУЫЭЮЯ])'(?=[а-яё]|$)")
+# and of plain keyboards: замо'к, за'мок; but not after a vowel that opens the word,
+# which is spelling: О'кей, О'Нил.
+APOSTROPHE_MARK = re.compile("(?<=[а-яёА-ЯЁ])([аеёиоуыэюяАЕЁИОУЫЭЮЯ])'(?=[а-яё]|$)")
 
 
 # One-syllable ё words that are as usual as their е twin, so either reading may
@@ -1413,6 +1414,8 @@ def analyze_word(
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
     elif not readings:
         readings = _lexicon_readings(norm)
+        if not readings and "'" in norm.strip("'"):  # О'кей, Д'Артаньян: the word unspelt
+            readings = _lexicon_readings(norm.replace("'", ""))
     if not readings and clitic:  # обо, ото, безо: a preposition, unstressed, no guess
         readings = [Reading(0, transcribe(norm, 0), norm, "clitic")]
     if not readings and token.isupper() and not capitals and len(token) <= 6:

@@ -205,9 +205,10 @@ def test_suno_never_writes_a_piece_without_a_vowel(line, piece):
 
 
 def test_the_scan_shows_a_short_syllabic_l_word_as_sung():
-    out = check("Every day I'm struggling\n", syllables=6, meter="trochee")
-    note = next(i for i in out.lines[0].issues if "struggling" in i.message)
-    assert "strug-gling" in note.detail or "strug-gling" in note.message
+    from ashugh import report
+
+    out = report.text(check("Every day I'm struggling\n", syllables=6, meter="trochee"), True)
+    assert "strug-gling" in out
 
 
 def test_blessed_may_be_sung_in_two_syllables():
@@ -354,3 +355,19 @@ def test_the_meter_error_quotes_the_slots_template():
 @pytest.mark.parametrize("a,b", [("Graceland", "hand"), ("Neverland", "understand")])
 def test_land_compounds_rhyme_on_land(a, b):
     assert en_rhyme(a, b) >= rhyme.THRESHOLD["perfect"]
+
+
+@pytest.mark.parametrize("word", ["twinkling", "jingling", "trembling"])
+def test_a_syllabic_l_word_is_two_syllables_in_free_verse(word):
+    report = check(f"The {word} of the bells\n")
+    assert report.lines[0].fit.count == 6
+
+
+def test_poes_bells_count_as_spoken():
+    report = check("From the jingling and the tinkling of the bells\n")
+    assert report.lines[0].fit.count == 11
+
+
+def test_a_syllabic_l_word_still_takes_three_where_the_meter_asks():
+    report = check("The stars are twinkling bright tonight\n", syllables=9)
+    assert report.ok
