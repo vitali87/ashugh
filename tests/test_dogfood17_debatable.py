@@ -110,3 +110,19 @@ def test_each_reading_of_a_lexicon_entry_is_checked():
 
     with pytest.raises(SpecError, match="not ARPABET"):
         from_dict({"language": "en", "lexicon": {"zorblax": "Z AO1 R B|Q Q"}})
+
+
+@pytest.mark.parametrize("a,b", [("heaven", "given"), ("river", "forever")])
+def test_consonance_on_a_weak_syllable_reaches_assonance(a, b):
+    from ashugh import rhyme
+
+    text = f"I found my {a}\nand all that you {b}\n"
+    assert scan(text, from_dict({"language": "en", "rhyme": "AA", "min_rhyme": "assonance"})).ok
+    assert not scan(text, from_dict({"language": "en", "rhyme": "AA"})).ok
+    assert rhyme.THRESHOLD["assonance"] <= 0.3 < rhyme.THRESHOLD["slant"]
+
+
+@pytest.mark.parametrize("text", ["the cat\nthe kit\n", "the table\nthe people\n"])
+def test_unlike_consonants_or_a_bare_coda_are_still_no_rhyme(text):
+    spec = from_dict({"language": "en", "rhyme": "AA", "min_rhyme": "assonance"})
+    assert not scan(text, spec).ok

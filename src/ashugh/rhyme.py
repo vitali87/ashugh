@@ -232,6 +232,11 @@ def score(a: Tail | None, b: Tail | None) -> float:
             # Gén-er-al / mín-er-al: two syllables and more alike after the stress
             # hold a slant rhyme though the stressed vowels differ
             return CONSONANT_TAIL
+        if vd > 0.3 and a.post == b.post == 1 and _plain(a) == _plain(b) and a.lang == "en":
+            # heav-en / giv-en, riv-er / for-ev-er: a weak syllable alike after
+            # differing stressed vowels is consonance, which a song may take as a
+            # loose rhyme (--min-rhyme assonance)
+            return CONSONANCE
         return 0.1
     s = 1.0 - vd
     if a.post != b.post:
@@ -256,6 +261,7 @@ def score(a: Tail | None, b: Tail | None) -> float:
 
 
 CONSONANT_TAIL = 0.5  # slant: a long tail alike after differing stressed vowels
+CONSONANCE = 0.3  # assonance's level: one weak syllable alike after them
 
 
 def _plain(t: Tail) -> tuple[str, ...]:
