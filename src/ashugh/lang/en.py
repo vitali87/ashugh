@@ -243,11 +243,19 @@ def lookup(norm: str) -> list[str] | None:
         base = lookup(norm[:-3])
         if base:
             return [v + " AH0 V" for v in base]
-    for clitic, phones in (("'d", " D"), ("'ll", " L")):  # y'all'd, y'all'll
+    if norm.endswith("'d") and len(norm) > 3:
+        past = TABLE.get(norm[:-2] + "ed")  # lov'd, hop'd, believ'd: the -ed form, e unsung
+        if past:
+            return [min(past.split("|"), key=lambda v: sum(ch.isdigit() for ch in v))]
+    if norm.endswith("'st") and len(norm) > 4:  # ow'st, grow'st: -est with its e unsung
+        base = TABLE.get(norm[:-3] + "e") or TABLE.get(norm[:-3])
+        if base:
+            return [v + " S T" for v in base.split("|")]
+    for clitic, phones in (("'d", " D"), ("'ll", " L")):  # y'all'd, time'll
         if norm.endswith(clitic) and len(norm) > len(clitic) + 1:
             base = lookup(norm[: -len(clitic)])
             if base:
-                return [v + phones for v in base]
+                return [v + _clitic_after(v, phones) for v in base]
     if norm.endswith("s") and not norm.endswith(("ss", "'s")) and len(norm) > 3:
         # lances, besieges, rhapsodies: a plural the dictionary lacks, its singular's
         for stem in (norm[:-1], norm[:-2], norm[:-3] + "y" if norm.endswith("ies") else ""):
@@ -320,6 +328,18 @@ def american(norm: str) -> list[str]:
             word = changed
             out.append(word)
     return out[-1:] if out else []
+
+
+def _clitic_after(variant: str, phones: str) -> str:
+    """'d or 'll as said after a word: a schwa before 'd after t or d (Kate'd, it'd)
+    and before 'll after any consonant (time'll, girl'll); none after a vowel or
+    for 'd after another consonant (y'all'd)."""
+    last = variant.split()[-1]
+    if last[-1:].isdigit():
+        return phones
+    if phones == " D" and last not in ("T", "D"):
+        return phones
+    return " AH0" + phones
 
 
 def _elided(norm: str) -> list[str] | None:

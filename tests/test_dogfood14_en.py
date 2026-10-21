@@ -172,7 +172,7 @@ def test_loveliness_fits_an_iamb_of_eight():
     assert rep.ok, [i.message for i in rep.issues]
 
 
-@pytest.mark.parametrize("token, size", [("y'all'd've", 2), ("y'all'd", 1), ("y'all'll", 1)])
+@pytest.mark.parametrize("token, size", [("y'all'd've", 2), ("y'all'd", 1), ("y'all'll", 2)])
 def test_stacked_contractions_on_yall(token, size):
     w = en_word(token)
     assert w.size == size and not w.guessed

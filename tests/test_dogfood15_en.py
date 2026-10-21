@@ -79,3 +79,54 @@ def test_a_secondary_stress_rhyme_takes_its_ending_from_that_stress(text):
 def test_a_primary_ending_still_counts():
     report = scan("We danced until the midnight\n", from_dict({"language": "en", "endings": "f"}))
     assert report.ok, report.issues
+
+
+@pytest.mark.parametrize(
+    "token,size",
+    [
+        ("time'll", 2),
+        ("love'll", 2),
+        ("road'll", 2),
+        ("girl'll", 2),
+        ("Kate'd", 2),
+        ("he'll", 1),
+        ("she'd", 1),
+        ("y'all'll", 2),
+    ],
+)
+def test_a_clitic_after_a_consonant_adds_a_vowel(token, size):
+    assert words(token)[0].size == size
+
+
+@pytest.mark.parametrize(
+    "token,size",
+    [
+        ("lov'd", 1), ("believ'd", 2), ("reliev'd", 2), ("hop'd", 1), ("lin'd", 1), ("clos'd", 1),
+        ("chang'd", 1), ("dimm'd", 1), ("stopp'd", 1), ("pierc'd", 1),
+    ],
+)  # fmt: skip
+def test_an_elided_past_is_the_ed_form_with_its_e_unsung(token, size):
+    w = words(token)[0]
+    assert w.size == size and not w.guessed
+
+
+def test_belovd_is_beloved_in_two():
+    w = words("belov'd")[0]
+    assert w.size == 2 and w.readings[0].stress == 1
+
+
+@pytest.mark.parametrize("token", ["ow'st", "grow'st", "know'st"])
+def test_an_elided_second_person_is_one_syllable(token):
+    w = words(token)[0]
+    assert w.size == 1 and not w.guessed
+
+
+def test_amazing_grace_rhymes_in_its_old_spelling():
+    assert rhymes("And grace my fears reliev'd;", "The hour I first believ'd!") >= 0.9
+    assert (
+        rhymes(
+            "Nor lose possession of that fair thou ow'st;",
+            "When in eternal lines to time thou grow'st:",
+        )
+        >= 0.9
+    )
