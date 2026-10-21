@@ -409,3 +409,16 @@ def test_a_line_in_a_script_not_read_is_left_out_of_the_rhyme_check():
     assert not [i for i in rep.issues if i.severity == "error"]
     assert [lr.letter for lr in rep.lines] == ["-", "A", "-", "A"]
     assert all("rhyme unknown" in i.detail for i in rep.issues if i.code == "script")
+
+
+def test_suno_marks_an_ambiguous_stress_in_capitals_with_an_acute():
+    res = suno.format_song("Я ВИЖУ ЗАМОК\n", tags=False)
+    lower = suno.format_song("Я вижу замок\n", tags=False)
+    assert "́" in res.text and any(n.kind == "stress" for n in res.notes)
+    marked = lower.text.split()[-1]  # замОк or зАмок: the same vowel takes the acute
+    at = next(k for k, ch in enumerate(marked) if ch.isupper())
+    assert res.text.split()[-1][at + 1] == "́"
+
+
+def test_suno_leaves_a_writers_capital_mark_as_it_is():
+    assert "́" not in suno.format_song("Я вижу замОк\n", tags=False).text
