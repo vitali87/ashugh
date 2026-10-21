@@ -1488,6 +1488,21 @@ def _echo(token: str, norm: str, before: Word) -> Word:
     return Word(token, norm, CODE, (Syllable(token),), (reading,), weak=True, clitic=True)
 
 
+def _listed_compound(norm: str) -> int | None:
+    """The syllable a hyphenated word takes its main stress on where the dictionary
+    lists it as one word (pussycat, sweetheart), or hyphenated in three parts or
+    more (mother-in-law, merry-go-round): a lexical compound, a noun as a rule. Not
+    a two-part one it lists hyphenated (brand-new, well-known), said in the phrase
+    with the stress on its last part."""
+    raw = TABLE.get(norm.replace("-", "")) or (TABLE.get(norm) if norm.count("-") >= 2 else None)
+    if not raw:
+        return None
+    first = raw.split("|")[0].split()
+    stresses = [p[-1] for p in first if p[-1].isdigit()]
+    # one main stress, or none to go by: rock-and-roll lists three
+    return stresses.index("1") if stresses.count("1") == 1 else None
+
+
 def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Word:
     """A hyphenated word the dictionary lacks, read part by part: the last
     stressed part carries the stress and the rhyme, the parts before keep theirs
@@ -1534,6 +1549,15 @@ def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Wor
         )
         phones = readings[0].phones if readings else ()
         readings.append(Reading(stress, phones, word.norm, "shift", secondary, STRESS_SHIFT))
+    listed = _listed_compound(word.norm)
+    if listed is not None and any(r.stress == listed for r in readings):
+        # a compound the dictionary lists whole, a noun stressed where it says:
+        # pússy-cat (pussycat), móther-in-law, mérry-go-round, swéet-heart
+        lead = [replace(r, source="lexicon", penalty=0.0) for r in readings if r.stress == listed]
+        rest = [
+            replace(r, penalty=max(r.penalty, STRESS_SHIFT)) for r in readings if r.stress != listed
+        ]
+        readings = lead + rest
     if parts[0].spelled and parts[0].size == 1 and len(readings) > 1:
         # a letter compound says its letter loudest: Á-list, K-pop, X-factor
         lead = [replace(r, source="rule", penalty=0.0) for r in readings if r.stress == 0]

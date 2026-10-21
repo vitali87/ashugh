@@ -96,3 +96,23 @@ def test_a_line_may_still_sing_fire_in_two():
     from ashugh.spec import from_dict
 
     assert scan("Come on baby light my fire\n", from_dict({"syllables": 8})).lines[0].ok
+
+
+@pytest.mark.parametrize(
+    "word,stress",
+    [
+        ("pussy-cat", 0), ("sweet-heart", 0), ("heart-break", 0), ("mother-in-law", 0),
+        ("merry-go-round", 0), ("twenty-one", 2), ("ice-cold", 1), ("well-known", 1),
+        ("rock-and-roll", 2), ("good-bye", 1),
+    ],
+)  # fmt: skip
+def test_a_hyphenated_compound_takes_the_stress_the_dictionary_gives_it_whole(word, stress):
+    (ln,) = analyze_lines(word, Spec(language="en"))
+    assert ln.words[0].readings[0].stress == stress
+
+
+def test_the_owl_and_the_pussycat_scans():
+    from ashugh.scan import scan
+
+    report = scan("The owl and the pussy-cat went to sea\n")
+    assert report.lines[0].fit.stresses[3] == 0  # PUS-sy-cat
