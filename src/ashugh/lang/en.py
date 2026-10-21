@@ -100,6 +100,7 @@ CLITICS = {
     "if",
     "than",
     "o'er",
+    "o'",
 }
 # Prepositions an object pronoun may lean past onto a content word: cáll to me.
 PREPOSITIONS = set(
@@ -169,6 +170,8 @@ def normalize(token: str) -> str:
     norm = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     if norm.endswith("in'"):
         return norm.lstrip("'")  # goin': CMUdict lists it, and lookup tries going
+    if norm == "o'":
+        return norm  # of, not the interjection O
     return norm.strip("'")
 
 
@@ -841,6 +844,7 @@ REPLACED = {
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
     "o'er": ["AO1 R"],  # said as or, ore: rhymes with more
+    "o'": ["AH0"],  # of, as a cup o' tea and will-o'-the-wisp say it
     "e'en": ["IY1 N"],
     "e'er": ["EH1 R"],
     "shoulda": ["SH UH1 D AH0"],
@@ -978,15 +982,21 @@ def _guess_phones(norm: str) -> tuple[str, ...]:
 
 
 def analyze_word(
-    token: str, overrides: dict[str, str] | None = None, capitals: bool = False
+    token: str,
+    overrides: dict[str, str] | None = None,
+    capitals: bool = False,
+    letters: bool = False,
 ) -> Word:
-    """One English word; capitals says its line is all in capitals (I AM is am)."""
+    """One English word; capitals says its line is all in capitals (I AM is am),
+    letters that it is spelt out whatever it spells (AT in AT&T)."""
     norm = normalize(token)
     if norm == "th" and token[1:] == "h":  # th' eternal: the, run into the next vowel
         return Word(token, norm, CODE, (), (), clitic=True, weak=True)
     variants = ["W IH1 DH"] if token == "w" else lookup(norm)  # me w/ you: with
     user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
     spelled = None if user else abbreviation(token, capitals)
+    if letters and not user and token.isalpha():
+        spelled = (norm, False)
     if token == "W" and not user:
         spelled = ("w", False)  # a W: the letter, dou-ble-u
     if spelled is None and not user and variants and token.isupper() and len(norm) > 1:
@@ -1200,6 +1210,23 @@ def _guessed(word: Word, token: str, norm: str) -> Word:
     return word
 
 
+BE = set("is are was were am be been being isn't aren't wasn't weren't ain't".split())
+
+
+def _auxiliary(words: list[Word], k: int) -> bool:
+    """Whether words[k] puts a verb after it: I'll, they'd, shouldn't, do not (but
+    not is not, isn't: an adjective follows those as readily)."""
+    if k < 0:
+        return False
+    norm = words[k].norm.replace("’", "'")
+    if norm.endswith(("'ll", "'d", "n't")):
+        return norm not in BE
+    if norm == "not" and k > 0:
+        before = words[k - 1].norm.replace("’", "'")
+        return before not in BE and not before.endswith(("'s", "'re", "'m"))
+    return False
+
+
 def heteronyms(words: list[Word]) -> None:
     """A noun-verb pair read by the word before it: to recórd, I protést, but my
     récord, a présent; with no such word, the noun or adjective (you look
@@ -1208,7 +1235,7 @@ def heteronyms(words: list[Word]) -> None:
         if w.lang != CODE or w.norm not in HETERONYMS or len(w.readings) < 2:
             continue
         before = words[k - 1].norm if k else ""
-        if before in VERBAL:
+        if before in VERBAL or _auxiliary(words, k - 1):
             want = 1
         elif before in NOMINAL or w.norm in NOUN_FIRST:
             want = 0

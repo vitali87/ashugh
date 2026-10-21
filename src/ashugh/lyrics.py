@@ -21,7 +21,8 @@ NOTE_RE = re.compile(r":|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Verse 2 -
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
     r"(?<![^\W_])(?<!\d[-'’])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
-    r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?)(?!\d)"  # a dropped g: goin', lovin'
+    r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?"  # a dropped g: goin', lovin'
+    r"(?:(?<=(?<![^\W\d_])(?<!['’])[oO])['’](?![^\W\d_]))?)(?!\d)"  # of: a cup o' tea
     r"|&"  # sung as and, и, և
 )  # letters glued to digits ('80s, 4ever, mp3, 2000-х, 80's) are no word: the digits warn
 DIGIT_RE = re.compile(r"\d")

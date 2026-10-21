@@ -108,6 +108,24 @@ def _sentence_starts(tokens: list[str], text: str | None) -> list[bool]:
     return starts
 
 
+def _glued_to_ampersand(tokens: list[str], text: str | None) -> set[int]:
+    """Tokens in Latin capitals written against an & with no space: AT&T, R&B."""
+    if not text or "&" not in text:
+        return set()
+    spans = lyrics.token_spans(text)
+    if [t for _, _, t in spans] != tokens:
+        return set()
+    out = set()
+    for k, (a, b, t) in enumerate(spans):
+        if t == "&":
+            for j in (k - 1, k + 1):
+                if 0 <= j < len(spans) and spans[j][2] != "&":
+                    x, y, word = spans[j]
+                    if (y == a or x == b) and word.isascii() and word.isupper() and len(word) <= 5:
+                        out.add(j)
+    return out
+
+
 def analyze(
     lang: str, tokens: list[str], lexicon: dict[str, str], text: str | None = None
 ) -> list[Word]:
@@ -119,7 +137,11 @@ def analyze(
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
     in_latin = lang == hy.CODE and latin_armenian(tokens)
     armenian = latin_words_in_armenian(tokens, in_latin) if lang == hy.CODE else []
+    glued = _glued_to_ampersand(tokens, text)
     for k, token in enumerate(tokens):
+        if k in glued:  # AT&T, R&B: letters, whatever word they spell
+            words.append(en.analyze_word(token, lexicon, capitals, letters=True))
+            continue
         if LATIN_WITH_ENDING.fullmatch(token) and (lang == hy.CODE or in_latin):
             words.append(_latin_with_ending(token, lexicon))
             continue

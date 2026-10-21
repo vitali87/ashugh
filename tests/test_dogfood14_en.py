@@ -361,3 +361,53 @@ def test_a_sung_ed_after_a_vowel_pair_is_its_own_piece(word, n, split):
     from ashugh.lang import en
 
     assert "-".join(en.split_spelling(word, n)) == split
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "do not desert",
+        "I'll record",
+        "they'll object",
+        "shouldn't object",
+        "we'd protest",
+        "you won't rebel",
+    ],
+)
+def test_a_heteronym_after_an_auxiliary_is_the_verb(line):
+    (ln,) = analyze_lines(line, Spec(language="en"))
+    assert ln.words[-1].readings[0].stress == 1
+
+
+@pytest.mark.parametrize("line", ["it is not perfect", "it isn't present", "that's not content"])
+def test_a_heteronym_after_be_not_stays_the_adjective(line):
+    (ln,) = analyze_lines(line, Spec(language="en"))
+    assert ln.words[-1].readings[0].stress == 0
+
+
+def test_o_apostrophe_is_of_unstressed():
+    from ashugh import lyrics
+
+    assert lyrics.tokenize("a cup o' tea") == ["a", "cup", "o'", "tea"]
+    (ln,) = analyze_lines("a cup o' tea", Spec(language="en"))
+    o = ln.words[2]
+    assert o.clitic and o.text == "o'"
+    report = scan(
+        "I'll have a cup o' tea\n", from_dict({"language": "en", "meter": "iamb", "feet": 3})
+    )
+    assert report.lines[0].ok, report.lines[0].issues
+
+
+def test_o_apostrophe_does_not_swallow_other_quotes():
+    from ashugh import lyrics
+
+    assert lyrics.tokenize("the radio' plays") == ["the", "radio", "plays"]
+    assert lyrics.tokenize("'O' is a letter") == ["O", "is", "a", "letter"]
+
+
+@pytest.mark.parametrize(
+    "line,size", [("AT&T", 4), ("R&B", 3), ("P&G", 3), ("rock & roll", 3), ("AT & T", 3)]
+)
+def test_capitals_glued_to_an_ampersand_are_letters(line, size):
+    (ln,) = analyze_lines(line, Spec(language="en"))
+    assert sum(w.size for w in ln.words) == size
