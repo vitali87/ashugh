@@ -89,7 +89,11 @@ composed, soft hyphens and zero-width characters are dropped, a stray Latin
 letter in a Cyrillic word or the other way round (oкон, hеllo) is read as its
 look-alike, and the look-alikes of the apostrophe (´ ` ‘ ′ ʼ) and of the
 hyphen inside a word count as ' and -. Parentheses may nest inside a backing
-vocal, and a line of tags with notes (`[Chorus] (softly)`) is a tag line.
+vocal, and a line of tags with notes (`[Chorus] (softly)`) is a tag line. A
+vowel written three times or more is one held note (Ooooh, Ооо, Օօօ); written
+with hyphens it is a note each (О-о-о). A note that names a section is given
+Suno's name (`[Куплет 2 - Рэп]` becomes `[Verse 2 - Rap]`); a free note stays
+as written.
 
 ### The spec
 
