@@ -80,7 +80,11 @@ examples/song.ru.txt · Russian · spec examples/song.ru.toml
 `scan -a` shows every line with its count, stress grid (`/` stressed, `x`
 not), rhyme letter and sung spelling. Lyrics follow the Suno conventions:
 `[Verse 1]`, `[Chorus]` and other tags open sections, a blank line ends a
-stanza, and text in parentheses is a backing vocal left out of the count.
+stanza, and text in parentheses is a backing vocal left out of the count. A
+tag line may carry more tags or a note (`[Verse 1] [Male Vocal]`,
+`[Chorus] (softly)`, `[Verse 2 - Rap]`); the tag Suno knows as a section names
+it, and a style tag on a line of its own right after a section tag keeps that
+section.
 
 ### The spec
 

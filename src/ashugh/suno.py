@@ -169,7 +169,7 @@ def format_song(
         raw[lr.line.number - 1] = line_out + ending
     sung = {lr.line.number for lr in report.lines}
     for k, line_raw in enumerate(raw):  # a line that is only a backing vocal: (օ՜, օ՜)
-        if k + 1 in sung or lyrics.TAG_RE.match(line_raw) or "(" not in line_raw:
+        if k + 1 in sung or lyrics.is_tag(line_raw) or "(" not in line_raw:
             continue
         body, ending = _split_ending(line_raw)
         if default_mode != "script" and any(hy.is_armenian(ch) for ch in body):
@@ -518,7 +518,7 @@ def _retag(text: str, report: Report, notes: list[Note]) -> str:
     raw = lyrics.split_lines(text, keepends=True)
     tagged = False
     for k, line in enumerate(raw):
-        if not lyrics.TAG_RE.match(line.rstrip("\r\n")):
+        if not lyrics.is_tag(line):
             continue
         tagged = True
         new = lyrics.retag(line)  # Suno's names and repeat mark: [Chorus x2]

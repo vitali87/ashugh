@@ -220,7 +220,7 @@ def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):
     rules = [spec.rule_for(u[0].key, u[0].unit) for u in stanzas]
     scopes: list[str | None] = [None] * len(stanzas)
     short: list[tuple[int, int, tuple[str, ...]]] = []
-    tags = [n for n, raw in enumerate(lyrics.split_lines(text), 1) if lyrics.TAG_RE.match(raw)]
+    tags = [n for n, raw in enumerate(lyrics.split_lines(text), 1) if lyrics.is_tag(raw)]
 
     def joined(a: list[Line], b: list[Line]) -> bool:
         return not any(a[-1].number < n < b[0].number for n in tags)

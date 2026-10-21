@@ -11,7 +11,11 @@ import re
 
 from .model import Line
 
-TAG_RE = re.compile(r"^\ufeff?\s*\[([^\]]*)\]\s*$")  # a BOM may open the file
+# A tag line: [Verse 1], with more tags or asides beside it if the writer likes
+# ([Verse 1] [Male Vocal], [Chorus] (softly)); a BOM may open the file.
+TAG_RE = re.compile(r"^\ufeff?\s*(?:\([^)]*\)\s*)*\[[^\]]*\](?:\s*(?:\[[^\]]*\]|\([^)]*\)))*\s*$")
+BRACKET_RE = re.compile(r"\[([^\]]*)\]")
+NOTE_RE = re.compile(r":|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Verse 2 - Rap]
 PAREN_RE = re.compile(r"\([^)]*\)")
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
@@ -35,6 +39,8 @@ SECTION_NAMES = {
     "pre-chorus": "Pre-Chorus",
     "prechorus": "Pre-Chorus",
     "pre chorus": "Pre-Chorus",
+    "post chorus": "Post-Chorus",
+    "postchorus": "Post-Chorus",
     "предприпев": "Pre-Chorus",
     "bridge": "Bridge",
     "бридж": "Bridge",
@@ -84,12 +90,14 @@ SECTION_NAMES = {
 
 
 # Ordinals in section tags, in English, Russian and Armenian: a number (Второй куплет
-# is Verse 2) or the last section (Финальный припев, Վերջին կրկներգ: Final Chorus).
+# and Verse Two are Verse 2, Chorus II is Chorus 2) or the last section
+# (Финальный припев, Վերջին կրկներգ: Final Chorus).
 ORDINALS = (
-    (r"first|перв\w*|առաջին", "1"),
-    (r"second|втор\w*|երկրորդ", "2"),
-    (r"third|трет\w*|երրորդ", "3"),
-    (r"fourth|четв[её]рт\w*|չորրորդ", "4"),
+    (r"first|one|i|перв\w*|один|առաջին|մեկ", "1"),
+    (r"second|two|ii|втор\w*|два|երկրորդ|երկու", "2"),
+    (r"third|three|iii|трет\w*|три|երրորդ|երեք", "3"),
+    (r"fourth|four|iv|четв[её]рт\w*|четыре|չորրորդ|չորս", "4"),
+    (r"fifth|five|v|пят(?:ый|ая|ое)|пять|հինգերորդ|հինգ", "5"),
     (r"last|final|последн\w*|финальн\w*|заключительн\w*|վերջին|վերջնական|եզրափակիչ", "Final"),
 )
 ORDINAL_RE = re.compile(
@@ -108,9 +116,16 @@ def _repeat(m: re.Match) -> str:
     return re.sub("[хХ×]", "x", re.sub(r"\s+", "", m.group(0)))  # as written: x2 or 2x
 
 
+def _split_note(tag: str) -> tuple[str, str]:
+    """A tag's name and the note after it: Verse 2 - Rap is (Verse 2, " - Rap")."""
+    masked = re.sub(r"\([^)]*\)", lambda m: " " * len(m.group(0)), tag)
+    m = NOTE_RE.search(masked)
+    return (tag[: m.start()], tag[m.start() :]) if m else (tag, "")
+
+
 def section_key(tag: str) -> str:
     """[Verse 2] -> verse, [Pre-Chorus] -> pre-chorus, [Припев x2: тише] -> chorus."""
-    name = re.sub(r"\([^)]*\)", " ", tag.split(":")[0].lower())  # (Female), (x2)
+    name = re.sub(r"\([^)]*\)", " ", _split_note(tag)[0].lower())  # (Female), (x2)
     name = ORDINAL_RE.sub(" ", name)
     name = re.sub(r"(?<!\w)[xх×]\s*\d+\b|\b\d+\s*[xх×](?!\w)|\d+", " ", name)
     name = re.sub(r"[^\w\s-]", " ", name)
@@ -123,7 +138,7 @@ def suno_tag(tag: str) -> str | None:
     """A tag's text as Suno names the section: Финальный припев -> Final Chorus,
     Куплет 1 (тихо) -> Verse 1 (тихо), Կրկներգ (x2) -> Chorus x2; None for a
     section Suno has no name for."""
-    head, colon, rest = tag.partition(":")
+    head, rest = _split_note(tag)
     notes: list[str] = []
     repeat = ""
 
@@ -150,18 +165,39 @@ def suno_tag(tag: str) -> str | None:
         return None
     parts = ["Final"] if "Final" in ordinals else []
     parts += [known, *numbers[:1], *([repeat] if repeat else []), *notes]
-    return " ".join(parts) + colon + rest.rstrip()
+    return " ".join(parts) + rest.rstrip()
+
+
+def is_tag(line: str) -> bool:
+    """Whether a line holds tags alone: [Chorus], [Verse 1] [Male Vocal], [Chorus] (softly)."""
+    return bool(TAG_RE.match(line.rstrip("\r\n")))
+
+
+def section_tag(line: str, keep: bool = False) -> str | None:
+    """The tag that names a tag line's section: the first Suno knows a name for
+    ([Female Vocal] [Chorus] is a chorus), else the first; with keep, a line
+    whose tags name no section gives None, so the section it follows goes on
+    ([Chorus], then [Female Vocal] on a line of its own). None for a lyric line."""
+    if not is_tag(line):
+        return None
+    names = BRACKET_RE.findall(line)
+    known = [n for n in names if suno_tag(n) is not None]
+    if known:
+        return known[0]
+    return None if keep else names[0]
 
 
 def retag(line: str) -> str:
-    """A tag line with its section named as Suno names it; any other line as it is."""
+    """A tag line with its sections named as Suno names them; any other line as it is."""
     body = line.rstrip("\r\n")
-    m = TAG_RE.match(body)
-    named = suno_tag(m.group(1)) if m else None
-    if named is None:
+    if not is_tag(body):
         return line
-    lead = body[: len(body) - len(body.lstrip())]
-    return f"{lead}[{named}]" + line[len(body) :]
+
+    def named(m: re.Match) -> str:
+        name = suno_tag(m.group(1))
+        return m.group(0) if name is None else f"[{name}]"
+
+    return BRACKET_RE.sub(named, body) + line[len(body) :]
 
 
 def split_lines(text: str, keepends: bool = False) -> list[str]:
@@ -208,15 +244,16 @@ def parse(text: str) -> list[Line]:
     lines: list[Line] = []
     section, key = "", "default"
     unit, index = 0, 0
-    open_unit = False
+    open_unit = tagged = False  # tagged: a tag line with no lyric line after it yet
     for number, raw in enumerate(split_lines(text), 1):
         stripped = raw.strip()
-        tag = TAG_RE.match(raw)
-        if tag:
-            section, key = tag.group(1).strip(), section_key(tag.group(1))
+        if is_tag(raw):
+            tag = section_tag(raw, keep=tagged)
+            if tag is not None:
+                section, key = tag.strip(), section_key(tag)
             if open_unit:
                 unit += 1
-            open_unit, index = False, 0
+            open_unit, index, tagged = False, 0, True
             continue
         if not stripped:
             if open_unit:
@@ -226,6 +263,6 @@ def parse(text: str) -> list[Line]:
         if not tokenize(stripped) and not has_digits(stripped):
             continue  # only a backing vocal or punctuation; digits are a line to flag
         lines.append(Line(number, stripped, section, key, unit, index))
-        open_unit = True
+        open_unit, tagged = True, False
         index += 1
     return lines
