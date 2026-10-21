@@ -1442,10 +1442,54 @@ PREPOSITIONS = frozenset(
 )
 
 
+# Words that may stand between a preposition and its noun: по чи́стому по́лю, до са́мой
+# зимы́, на мои́ ру́ки, с той стороны́.
+MODIFIER_ENDINGS = (
+    "ого", "его", "ому", "ему", "ыми", "ими", "ой", "ей", "ым", "им", "ую", "юю", "ие", "ые",
+    "их", "ых", "ая", "яя", "ое", "ее", "ий", "ый",
+)  # fmt: skip
+
+
+def _adjective(w: Word) -> bool:
+    """Whether a word is an adjective or pronoun form: one of MODIFIERS, or a form
+    whose stem makes an adjective the table lists (чи́стому of чи́стый, вече́рней of
+    вече́рний; not водой or светом)."""
+    if w.norm in MODIFIERS:
+        return True
+    ending = next((e for e in MODIFIER_ENDINGS if w.norm.endswith(e)), None)
+    if ending is None or w.size < 2:
+        return False
+    stem = w.norm[: -len(ending)]
+    return any(TABLE.stresses(stem + e) for e in ("ый", "ий", "ой"))
+
+
+MODIFIERS = frozenset(
+    [p + e for p in ("мо", "тво", "сво") for e in "й я ё е и ю ей его ему им их ими".split()]
+    + [p + e for p in ("наш", "ваш") for e in "е а и у ей его ему им их ими".split()]
+    + "этот эта это эти эту этой этого этому этим этих этими тот та то те ту той того тому "
+    "тем тех теми весь вся всё все всю всей всего всему всем всех всеми его её ее их "
+    "один одна одно одни одну одной одного одному одним одних".split()
+)
+
+
+def _governor(words: list[Word], k: int, prepositions) -> Word | None:
+    """The preposition that governs words[k], right before it or before up to two
+    adjectives and pronouns that agree with it; None if there is none."""
+    j = k - 1
+    while j >= 0 and k - j <= 2 and words[j].lang == CODE and words[j].norm not in prepositions:
+        if not _adjective(words[j]):
+            return None
+        j -= 1
+    return words[j] if j >= 0 and words[j].norm in prepositions else None
+
+
 def after_prepositions(words: list[Word]) -> None:
-    """No verb right after a preposition: по по́лю, not полю́ (I weed); на до́лги."""
-    for prev, w in zip(words, words[1:]):
-        if w.lang != CODE or prev.norm not in PREPOSITIONS or len(w.readings) < 2:
+    """No verb right after a preposition: по по́лю, not полю́ (I weed); на до́лги; and
+    past an adjective: по чи́стому по́лю."""
+    for k, w in enumerate(words):
+        if k == 0 or w.lang != CODE or len(w.readings) < 2:
+            continue
+        if _governor(words, k, PREPOSITIONS) is None:
             continue
         if any(r.source in ("mark", "user") for r in w.readings):
             continue
@@ -1484,6 +1528,34 @@ def prefer_names(words: list[Word], starts: list[bool]) -> None:
 # Nouns with a count form after два, три, четыре and оба, stressed on its end where
 # the genitive is not: два шага́, три часа́ (but до ча́са), четыре ряда́, оба шара́.
 COUNT_FORMS = frozenset("шага часа ряда шара следа".split())
+# Count forms stressed on the stem, though the genitive is not: две ру́ки, две но́ги.
+STEM_COUNT_FORMS = frozenset("руки ноги".split())
+
+
+def _count_form(w: Word) -> None:
+    """A noun after два, три, четыре, оба in its count form, the genitive singular:
+    три сло́ва, два гла́за, два бе́рега, три окна́, две звезды́, три сестры́; not the
+    plural spelt like it (слова́, глаза́, о́кна, звёзды) nor a verb (полю́)."""
+    if w.readings[0].source in ("mark", "user"):
+        return
+    last = w.size - 1
+    norm = w.norm.replace("ё", "е")
+    if norm in PLURAL_IN_A or norm in STEM_COUNT_FORMS:
+        kept = [r for r in w.readings if r.stress != last]
+    elif norm in GENITIVE_IN_END:
+        kept = [r for r in w.readings if r.stress == last]
+    else:
+        kept = [
+            r
+            for r in w.readings
+            if r.stress not in TABLE.plural_only(r.spelling) | TABLE.verb_only(r.spelling)
+        ]
+    if kept and len(kept) < len(w.readings):
+        w.readings = tuple(
+            replace(r, penalty=0.0 if k == 0 else ALTERNATIVE_COST) for k, r in enumerate(kept)
+        )
+
+
 SMALL_NUMBERS = frozenset("два две три четыре оба обе полтора".split())
 
 
@@ -1495,6 +1567,11 @@ VSYO_ADVERBS = frozenset(
     "тихо давно наконец здесь тут там когда-то".split()
 )
 PLURAL_PRONOUNS = frozenset("мы вы они нас вас их нам вам".split())
+# A third-person singular verb after все, which makes it всё: пройдёт, будет, горит.
+SINGULAR_VERB_ENDINGS = ("ет", "ёт", "ит", "ется", "ётся", "ится")
+# Words before a line-final все that make it всё: вот и всё, ну и всё, это всё.
+# (это все may be these are all: left as it is).
+BEFORE_FINAL_VSYO = (("вот", "и"), ("ну", "и"), ("вот",))
 
 
 def _vsyo_context(words: list[Word], k: int) -> bool:
@@ -1509,6 +1586,11 @@ def _vsyo_context(words: list[Word], k: int) -> bool:
         return False
     if w.norm in BEFORE_VSYO:
         return True
+    after = words[k + 2].norm if k + 2 < len(words) else ""
+    if w.norm == "что" or (w.norm, after) in (("в", "порядке"), ("на", "свете")):
+        return True  # это всё, что есть; всё в порядке; всё на свете
+    if w.norm.endswith(SINGULAR_VERB_ENDINGS) and vowel_count(w.norm) > 1:
+        return True  # всё пройдёт, всё будет хорошо, всё течёт
     if w.norm in VSYO_ADVERBS:  # всё уже прошло, but все уже спят
         after = words[k + 2] if k + 2 < len(words) else None
         return after is not None and after.norm.endswith(("ло", "лось"))
@@ -1523,6 +1605,14 @@ def second_locatives(words: list[Word]) -> None:
     """End-stress the second locative after в, во, на: на берегу́, в крови́; and not
     after a preposition that asks another case: без кра́ю. And the count form after
     a small number: три часа́, четыре шага́."""
+    norms = [w.norm for w in words]
+    if (
+        norms
+        and norms[-1] == "все"
+        and any(tuple(norms[-1 - len(b) : -1]) == b for b in BEFORE_FINAL_VSYO)
+    ):  # вот и всё, это всё: the line's last word
+        yo = tuple(r for r in words[-1].readings if r.spelling == "всё")
+        words[-1].readings = yo or words[-1].readings
     for k, (prev, w) in enumerate(zip(words, words[1:])):
         if _vsyo_context(words, k):  # всё равно: its ё restored
             yo = tuple(r for r in prev.readings if r.spelling == "всё")
@@ -1531,6 +1621,9 @@ def second_locatives(words: list[Word]) -> None:
             if w.readings and w.readings[0].source not in ("mark", "user"):
                 last = w.size - 1
                 w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+            continue
+        if w.lang == CODE and prev.norm in SMALL_NUMBERS and len(w.readings) > 1:
+            _count_form(w)
             continue
         if w.lang == CODE and prev.norm in CASE_PREPOSITIONS and w.norm in SECOND_LOCATIVE:
             stem = tuple(r for r in w.readings if r.stress != w.size - 1)
@@ -1609,9 +1702,13 @@ GENITIVE_PREPOSITIONS = frozenset(
 def after_genitive(words: list[Word]) -> None:
     """у до́ма, из ле́са, у реки́, из воды́, из окна́, из села́: no nominative or
     accusative plural after a preposition of the genitive, where a genitive
-    singular is spelt like it."""
-    for prev, w in zip(words, words[1:]):
-        if w.readings and w.readings[0].source in ("mark", "user") or w.lang != CODE:
+    singular is spelt like it; and past an adjective: до са́мой зимы́, на мои́ ру́ки."""
+    either = GENITIVE_PREPOSITIONS | NOT_GENITIVE_PREPOSITIONS
+    for k, w in enumerate(words):
+        if k == 0 or w.readings and w.readings[0].source in ("mark", "user") or w.lang != CODE:
+            continue
+        prev = _governor(words, k, either)
+        if prev is None:
             continue
         last = w.size - 1
         if prev.norm in NOT_GENITIVE_PREPOSITIONS and w.norm.replace("ё", "е") in GENITIVE_IN_END:
@@ -1661,6 +1758,47 @@ def marked_leans(words: list[Word]) -> None:
 
 # Words that may stand between мы and its verb: мы не поём, мы снова поём.
 BEFORE_WE_VERB = frozenset("не ни вместе снова опять тоже также всегда все всё ещё уже".split())
+
+
+# Particles that lean on the word before them even at the end of a line: знаешь ли,
+# скажи же, пришёл бы, дай-ка.
+TRUE_ENCLITICS = frozenset("ли ль же ж бы б ка тя мол де".split())
+
+
+def stranded(words: list[Word]) -> None:
+    """A clitic that ends the line is said with a stress of its own: да, то, без, не
+    (Скажи мне тихо: да; И всё не то); not ли, же, бы, nor the pronoun of не́ с кем."""
+    w = words[-1]
+    if w.norm in TRUE_ENCLITICS or not w.readings:
+        return
+    if len(words) > 2 and words[-3].norm == "не" and words[-2].norm in PREPOSITIONS:
+        return
+    w.clitic = w.enclitic = False
+    w.readings = tuple(
+        replace(r, stress=0 if r.stress is None else r.stress, source="rule")
+        if r.source == "clitic"
+        else r
+        for r in w.readings
+    )
+
+
+# Prepositions of the prepositional case, after which нем, чем, всем are нём, чём, всём.
+PREPOSITIONAL = frozenset("в во на о об обо при".split())
+PREPOSITIONAL_YO = {"нем": "нём", "чем": "чём", "всем": "всём"}
+
+
+def yo_after_prepositions(words: list[Word]) -> None:
+    """о нём, о чём, во всём, при чём: after a preposition of the prepositional case
+    these are the pronoun's prepositional, its ё restored."""
+    for k, (prev, w) in enumerate(zip(words, words[1:])):
+        yo = PREPOSITIONAL_YO.get(w.norm)
+        if yo is None or w.lang != CODE or prev.norm not in PREPOSITIONAL:
+            continue
+        if k and words[k - 1].norm == "не":  # не́ о чем: no ё, the pronoun leans on не
+            continue
+        if w.readings and w.readings[0].source in ("mark", "user"):
+            continue
+        w.readings = (Reading(0, transcribe(yo, 0), yo, "rule"),)
 
 
 def we_sing(words: list[Word]) -> None:

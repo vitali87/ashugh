@@ -245,12 +245,15 @@ def analyze(
         ru.marked_leans(words)
         ru.ne_with_pronoun(words)
         ru.we_sing(words)
+        ru.yo_after_prepositions(words)
         ru.preposition_shift(words)
     if any(w.lang == "en" for w in words):
         en.heteronyms(words)
     end = words[-1] if words else None
     if end is not None and end.lang == "en" and end.clitic and end.norm not in ("a", "an", "the"):
         end.clitic = False  # a stranded preposition is stressed: gone by, roll in
+    if end is not None and end.lang == ru.CODE and (end.clitic or end.enclitic):
+        ru.stranded(words)  # Скажи мне: да; всё не то; ни с тобой, ни без
     before = words[-2] if len(words) > 1 else None
     if end is not None and before is not None and end.lang == before.lang == "en":
         host = not (before.clitic or before.norm in en.WEAK or before.norm in en.COPULAS)

@@ -180,6 +180,11 @@ VERB_PREFIXES = sorted(
 )
 
 
+# Verbs with куплю́ / ку́пишь stress whose participle may also take the ending's stress:
+# погру́женный and погружённый, вскормлённый, заря́женный and заряжённый (the rest have
+# the stem's alone: ку́пленный, вло́женный, восстано́вленный).
+BOTH_PARTICIPLES = {"грузить", "вскормить", "зарядить", "разрядить"}
+
 # Roots of -сти, -зти and -чь verbs with no object, so no passive: врасти, вползти, вытечь;
 # not брести or лечь, which обрести and облечь would match.
 INTRANSITIVE_ROOTS = {"расти", "ползти", "цвести", "лезти", "течь", "мочь"}
@@ -225,7 +230,8 @@ def past_passive(infinitive: str, past_m: str, sg1: str, sg2: str) -> list[str]:
         if inf.endswith("еть"):
             stems.append(inf[:-3])  # уви́деть, уви́денный
         out: list[str] = []
-        moving = stress(_first(sg1))[1] == count(first)  # куплю́ but ку́пишь
+        # куплю́ but ку́пишь: ку́пленный alone, but for the few that have both
+        moving = stress(_first(sg1))[1] == count(first) and _mobile(inf, BOTH_PARTICIPLES)
         for stem in stems:
             on_end = adjective(render(stem + "ённый", count(stem) + 1))
             on_end += _short(stem, 0, end_stressed=True)
