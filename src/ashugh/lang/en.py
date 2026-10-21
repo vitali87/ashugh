@@ -351,7 +351,7 @@ def _counted_groups(w: str) -> list[tuple[int, int]]:
 ONSETS = {
     "bl", "br", "ch", "cl", "cr", "dr", "dw", "fl", "fr", "gl", "gr", "kn", "ph", "pl", "pr",
     "qu", "sc", "sh", "sk", "sl", "sm", "sn", "sp", "st", "sw", "th", "tr", "tw", "wh", "wr",
-    "scr", "shr", "spl", "spr", "squ", "str", "thr",
+    "scr", "shr", "spl", "spr", "squ", "str", "thr", "gh",
 }  # fmt: skip
 
 
@@ -372,6 +372,9 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
     low = "".join(unicodedata.normalize("NFD", ch)[0] for ch in token.lower())  # èd: ed
     if n >= 2 and low.endswith(("n't", "n’t")) and len(_counted_groups(low[:-3])) < n:
         return split_spelling(token[:-3], n - 1) + [token[-3:]]
+    if low.startswith("mc") and n >= 2 and len(_counted_groups(low)) < n:
+        rest = frozenset(k - 1 for k in short if k > 0)
+        return [token[:2], *split_spelling(token[2:], n - 1, rest)]  # Mc-Don-ald's
     seam = _compound_seam(low, n)
     if seam is not None:
         k, left = seam
@@ -380,7 +383,9 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
     if len(groups) < n:  # a silent-looking vowel is sung after all: fi-re
         groups = _vowel_groups(low) or groups
     while len(groups) > n:
-        k = _silent_e(low, groups) or len(groups) - 1
+        # a silent e (love-ly), else the vowel after the first, which speech drops
+        # (choco-late, came-ra), else the last
+        k = _silent_e(low, groups) or (1 if len(groups) > 2 else len(groups) - 1)
         a, b = groups[k - 1], groups.pop(k)
         groups[k - 1] = (a[0], b[1])
     while len(groups) < n:  # one vowel run is two syllables: a hiatus first (Lou-i-si-a-na)
@@ -415,12 +420,14 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         gap = low[end:start]
         if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
-        elif gap.endswith("gh") or (not gap and low[end - 1 : end] == "y"):
-            onset = 0  # laugh-ing, weigh-ing; play-ing
+        elif gap == "gh" or (not gap and low[end - 1 : end] == "y"):
+            onset = 0  # laugh-ing, weigh-ing; play-ing (but Lam-bor-ghi-ni)
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
             closed = re.search(r"[^aeiouy]", low[begin:end])  # some-thin': a silent e closes it
-            if k in short and gap and not closed:  # the short vowel keeps a consonant, or a digraph
+            if (
+                k in short and gap and gap != "h" and not closed
+            ):  # a short vowel keeps one: fish-ing
                 onset = 0 if len(gap) == 1 or gap in DIGRAPHS else min(onset, len(gap) - 1)
         cuts.append(start - min(onset, len(gap)))
     # A contraction keeps its apostrophe (would-'ve, not would'-ve), and a consonant
@@ -540,9 +547,16 @@ HIATUS = ("ia", "io", "iu", "ie", "ua", "ue", "ui", "uo", "eo", "oe", "ea")
 
 
 def _short_part_ok(low: str, k: int) -> bool:
-    """A second part shorter than MIN_COMPOUND_PART after a silent e (glove-box), but
-    not an inflection's ending that happens to spell a word: darke-ned, withe-red."""
-    return low[:k].endswith("e") and not low.endswith(("ed", "es"))
+    """A second part shorter than MIN_COMPOUND_PART after a silent e (glove-box), or
+    a consonant-initial one after a consonant (Broad-way, high-way), but not an
+    inflection's ending that happens to spell a word: darke-ned, withe-red."""
+    if low[:k].endswith("e"):
+        return not low.endswith(("ed", "es"))
+    return (
+        len(low) - k == SHORT_PART
+        and low[k - 1] not in LETTER_VOWELS
+        and low[k] not in LETTER_VOWELS
+    )
 
 
 def _compound_parts(low: str) -> tuple[str, str] | None:
@@ -572,11 +586,29 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
             continue
         a = sum(ch.isdigit() for ch in left.split("|")[0])
         b = sum(ch.isdigit() for ch in right.split("|")[0])
-        if a and b and a + b == n:
+        if a and b and a + b == n and _sounds_like_parts(low, left, right):
             even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))
             if best is None or even < best[0]:
                 best = (even, k, a)
     return (best[1], best[2]) if best else None
+
+
+def _sounds_like_parts(low: str, left: str, right: str) -> bool:
+    """Whether the word, where the dictionary has it, sounds like its two parts in a
+    row (Broad-way), not merely spells them (chil-dren is no child and Ren)."""
+    whole = TABLE.get(low)
+    if not whole:
+        return True
+
+    def bare(variant: str) -> str:
+        return re.sub(r"\d", "", variant)
+
+    return any(
+        bare(w) == f"{bare(x)} {bare(y)}"
+        for w in whole.split("|")
+        for x in left.split("|")
+        for y in right.split("|")
+    )
 
 
 def _guess_phones(norm: str) -> tuple[str, ...]:
