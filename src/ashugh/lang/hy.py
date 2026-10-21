@@ -504,6 +504,38 @@ def _from_override(spec: str) -> list[list[Seg]]:
     return syllables
 
 
+# A noun's endings: its article, possessives, cases and plurals, which a [lexicon]
+# entry for the noun carries over to (կայսրություն, կայսրությունը, -ում, -ները).
+NOUN_ENDINGS = tuple(
+    sorted(
+        {
+            *(
+                stem + case
+                for stem in ("", "ներ", "եր")
+                for case in "ը ն ս դ ի ից ով ում ին".split()
+            ),
+            "ներ",
+            "եր",
+        },
+        key=len,
+        reverse=True,
+    )
+)
+
+
+def _inflected_override(norm: str, overrides: dict[str, str]) -> list[list[Seg]] | None:
+    """The syllables of a form of a [lexicon] word: the entry's, then the ending's
+    (կայ-սը-րու-թյուն, կայ-սը-րու-թյու-նը)."""
+    for ending in NOUN_ENDINGS:
+        stem = norm[: -len(ending)]
+        if not norm.endswith(ending) or stem not in overrides:
+            continue
+        segs = [seg for syl in _from_override(overrides[stem]) for seg in syl]
+        segs += segments("ա" + ending)[1:]  # not word-initial: ով is [ov]
+        return syllabify(segs, not stem_final(norm))
+    return None
+
+
 # Words that open a clause, so a ես after them is the pronoun: ու ես, որ ես.
 CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե երբ եթե քանի մինչ ապա հետո էլ".split())
 FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
@@ -753,9 +785,10 @@ def analyze_word(
         word.syllables = tuple(replace(s, text=token) for s in word.syllables)
         return word
     override = (overrides or {}).get(norm)
+    inflected = None if override else _inflected_override(norm, overrides or {})
     optional, prefer_short = None, False
-    if override:
-        syllables = _from_override(override)
+    if override or inflected:
+        syllables = _from_override(override) if override else inflected or []
         source = "user"
     else:
         segs = segments(token)

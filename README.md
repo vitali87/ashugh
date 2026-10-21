@@ -544,7 +544,8 @@ warned about as a refrain, not a rhyme.
   a compound keeps the schwa of its second root (աստղագնաց is
   աստ-ղա-գը-նաց, կայսրություն is կայ-սը-րու-թյուն). The listed compounds
   and roots cover most; for the rest (0.8% of dictionary words), write the word into
-  `[lexicon]` once and every song uses it.
+  `[lexicon]` once and every song uses it, in its forms with an article,
+  possessive, case or plural too (կայսրությունը, կայսրությունում).
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.

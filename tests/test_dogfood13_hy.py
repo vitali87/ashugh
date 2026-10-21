@@ -169,3 +169,28 @@ def test_suno_keeps_the_writers_hyphens_and_capitals(line, mode, out):
 def test_split_all_still_hyphenates_every_syllable():
     out = suno.format_song("Սայաթ-Նովեն\n", tags=False, armenian="latin", split="all").text
     assert "Sa-yat-No-ven" in out
+
+
+LEXICON = Spec(language="hy", lexicon={"կայսրություն": "կայ-սը-րու-թյուն"})
+
+
+@pytest.mark.parametrize(
+    "word, pieces",
+    [
+        ("կայսրություն", "կայ-սը-րու-թյուն"),
+        ("կայսրությունը", "կայ-սը-րու-թյու-նը"),
+        ("կայսրությունում", "կայ-սը-րու-թյու-նում"),
+        ("կայսրությունից", "կայ-սը-րու-թյու-նից"),
+        ("կայսրությունս", "կայ-սը-րու-թյու-նըս"),
+        ("կայսրությունները", "կայ-սը-րու-թյուն-նե-րը"),
+    ],
+)
+def test_a_lexicon_entry_holds_for_the_words_forms(word, pieces):
+    (ln,) = analyze_lines(word, LEXICON)
+    (w,) = ln.words
+    assert shown(w) == pieces and w.readings[0].source == "user"
+
+
+def test_a_lexicon_entry_does_not_reach_another_word_it_begins():
+    (ln,) = analyze_lines("կայսրությունական", LEXICON)
+    assert ln.words[0].readings[0].source != "user"
