@@ -67,6 +67,15 @@ SECTION_NAMES = {
     "end": "End",
     "конец": "End",
     "վերջ": "End",
+    # Armenian loan and native names
+    "կուպլետ": "Verse",
+    "ռեֆրեն": "Chorus",
+    "նախակրկներգ": "Pre-Chorus",
+    "բրիջ": "Bridge",
+    "ինտրո": "Intro",
+    "նախերգանք": "Intro",
+    "աութրո": "Outro",
+    "վերջերգ": "Outro",
 }
 
 

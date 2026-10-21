@@ -96,7 +96,8 @@ NO_YOD = {"եմ", "ենք", "եք", "են"}
 NO_VO = {"ով", "ովքեր"}
 
 # The auxiliary "to be": no stress of its own, leans on the word before it.
-AUXILIARIES = {"եմ", "ես", "է", "ենք", "եք", "են", "էի", "էիր", "էր", "էինք", "էիք", "էին"}
+AUXILIARIES = {"եմ", "ես", "է", "ենք", "եք", "են", "էի", "էիր", "էր", "էինք", "էիք", "էին", "ա"}
+# ա is speech's է (լավ ա, սիրում ա), sung in rap, rabiz and pop alike.
 CLITICS = AUXILIARIES | {"ու", "և", "եւ", "եվ", "էլ", "թե", "որ", "մի", "ի"}  # Եվ opens a sentence
 
 PROTHESIS_FIRST = {"s", "z", "ʃ"}
@@ -284,7 +285,10 @@ def stem_final(norm: str) -> bool:
     if norm in POSSESSIVE_FORMS:
         return False
     if norm.endswith("քս") and norm[-3:-2] in "աեէըիոօու":
-        return True  # ռեմիքս, ինդեքս: after a vowel, քս is a loanword's stem
+        # ինդեքս, պարադոքս, միքս, ֆաքս, ռեմիքս: a loanword's stem; but a longer
+        # word in -աք or -իք takes the possessive (քաղա-քըս, հայրենի-քըս)
+        vowels = sum(seg.vowel for seg in segments(norm))
+        return norm[-3:-2] in "եէոօ" or vowels == 1 or norm.endswith("միքս")
     words = lexical_endings()
     if norm in words or any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
         return True
@@ -588,8 +592,71 @@ FUTURE_ENDINGS = (
 )
 
 
-def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
+# A voiced stop or affricate after ր is said voiceless and aspirated: երգ [jɛɾkʰ],
+# մարդ [mɑɾtʰ], so երգ rhymes with բերք.
+AFTER_R = {"b": "pʰ", "g": "kʰ", "d": "tʰ", "dz": "tsʰ", "dʒ": "tʃʰ"}
+
+
+def _after_r(phones: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(
+        AFTER_R.get(ph, ph) if k and phones[k - 1] == "ɾ" else ph for k, ph in enumerate(phones)
+    )
+
+
+# Abbreviations are said letter by letter: a vowel as itself, Հ and Կ with ա,
+# any other consonant with ե: ԱՄՆ Ա-Մե-Նե, ԵՊՀ Ե-Պե-Հա, ՀՀ Հա-Հա.
+LETTER_VOWELS = {
+    "ա": ("a",),
+    "ե": ("j", "e"),
+    "է": ("e",),
+    "ը": ("ə",),
+    "ի": ("i",),
+    "ո": ("v", "o"),
+    "օ": ("o",),
+}
+
+
+def _letter_name(ch: str) -> tuple[str, tuple[str, ...]]:
+    low = ch.lower()
+    if low in LETTER_VOWELS:
+        return ch, LETTER_VOWELS[low]
+    vowel = "ա" if low in "հկ" else "ե"
+    return ch + vowel, (LETTERS[low], "a" if vowel == "ա" else "e")
+
+
+def abbreviation(token: str, capitals: bool = False) -> Word | None:
+    """An abbreviation in capitals with no vowel letter, or one in at most three
+    letters, sung letter by letter and stressed on the last (ՀՀ, ԵՊՀ, ԱՄՆ); ՀԱՊԿ and
+    ՆԱՏՕ are words. Not in a line written all in capitals."""
+    if capitals or not 2 <= len(token) <= 5 or not token.isupper():
+        return None
+    low = token.lower()
+    if not all(ch in LETTERS or ch in LETTER_VOWELS for ch in low):
+        return None
+    vowels = sum(ch in LETTER_VOWELS for ch in low)
+    if not (vowels == 0 or (vowels == 1 and len(low) <= 3)):
+        return None
+    names = [_letter_name(ch) for ch in token]
+    phones = tuple(ph for _, p in names for ph in p)
+    last = len(names) - 1
+    return Word(
+        text=token,
+        norm=low,
+        lang=CODE,
+        syllables=tuple(Syllable(text, phones=p) for text, p in names),
+        readings=(Reading(last, phones, low, "lexicon"),),
+        spelled=True,
+    )
+
+
+def analyze_word(
+    token: str, overrides: dict[str, str] | None = None, capitals: bool = False
+) -> Word:
     norm = normalize(token)
+    if not (overrides or {}).get(norm):
+        spelled = abbreviation(token, capitals)
+        if spelled is not None:
+            return spelled
     override = (overrides or {}).get(norm)
     optional, prefer_short = None, False
     if override:
@@ -613,7 +680,7 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         if article is not None and optional is None:
             syllables, optional, prefer_short = article, len(article) - 1, True
     shown = _display(syllables, token)
-    phones = tuple(s.ph for syl in syllables for s in syl)
+    phones = _after_r(tuple(s.ph for syl in syllables for s in syl))
     clitic = norm in CLITICS
     stress = None if clitic and len(syllables) > 1 else _stress(syllables)
     if any(s.stressed for syl in syllables for s in syl):

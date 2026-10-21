@@ -290,6 +290,13 @@ def _render(
             return new
         new = _russian(w, token, chosen.get(i), stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
+    if w.lang == "hy" and w.spelled:  # ԱՄՆ as Ա-Մե-Նե, A-Me-Ne
+        if mode == "latin":
+            new = "-".join(_latin(s.phones, False, schwa).capitalize() for s in w.syllables)
+        else:
+            new = "-".join(s.text for s in w.syllables)
+        notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))
+        return new
     if w.lang == "hy":
         prev = lr.line.words[i - 1] if i > 0 else None
         linked = prev is not None and prev.lang == "hy" and prev.drop == prev.size - 1

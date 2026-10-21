@@ -123,6 +123,8 @@ def analyze(
             words.append(en.analyze_word(token, lexicon, capitals))
         elif script == ru.CODE:
             words.append(ru.analyze_word(token, lexicon, capitals))
+        elif script == hy.CODE:
+            words.append(hy.analyze_word(token, lexicon, capitals))
         elif script in ANALYZERS:
             words.append(ANALYZERS[script].analyze_word(token, lexicon))
         else:
