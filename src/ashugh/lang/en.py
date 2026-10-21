@@ -231,6 +231,10 @@ def lookup(norm: str) -> list[str] | None:
         raw = TABLE.get(c)
         if raw:
             return raw.split("|")
+    for c in american(norm):  # colourful, organised, litre: as the American spelling
+        found = lookup(c)
+        if found:
+            return found
     if norm.endswith("'ve"):  # shouldn't've, we'd've: the word, then [əv]
         base = lookup(norm[:-3])
         if base:
@@ -258,6 +262,60 @@ def lookup(norm: str) -> list[str] | None:
         if found:
             return [v + _s_ending(v) for v in found]
     return _elided(norm)
+
+
+# British spellings CMUdict lacks, as the American ones it lists: the whole word,
+# then by its ending.
+BRITISH_WORDS = {
+    "jewellery": "jewelry",
+    "programme": "program",
+    "programmes": "programs",
+    "tyre": "tire",
+    "tyres": "tires",
+    "plough": "plow",
+    "ploughed": "plowed",
+    "cheque": "check",
+    "cheques": "checks",
+    "pyjamas": "pajamas",
+    "aluminium": "aluminum",
+    "mould": "mold",
+    "mouldy": "moldy",
+    "smoulder": "smolder",
+    "smouldering": "smoldering",
+    "grey": "gray",
+    "storey": "story",
+    "kerb": "curb",
+    "manoeuvre": "maneuver",
+    "manoeuvres": "maneuvers",
+}
+BRITISH_ENDINGS = (
+    (re.compile(r"(?<=[a-z]{2})is(e|ed|es|ing|ation|ations|er|ers)$"), r"iz\1"),
+    (re.compile(r"(?<=[a-z])ys(e|ed|es|ing)$"), r"yz\1"),
+    (
+        re.compile(r"(?<=[a-z])our(?=(s|ed|ing|ful|fully|ite|ites|able|ably|less|er|ers|hood)?$)"),
+        "or",
+    ),
+    (re.compile(r"(?<=[a-z][bcdfghklmnpstvz])re(s|d)?$"), r"er\1"),
+    (re.compile(r"(?<=[aeiou])ll(ed|ing|er|ers|or|ors)$"), r"l\1"),
+    (re.compile(r"(?<=[a-z])ogue(s)?$"), r"og\1"),
+    (re.compile(r"(?<=[a-z])(fen|ten|cen)ce(s)?$"), r"\1se\2"),
+    (re.compile(r"(?<=[a-z])(ae|oe)(?=[a-z])(?!(st|th|s|d|r|rs|y)$)"), "e"),  # not go-est
+)
+
+
+def american(norm: str) -> list[str]:
+    """American spellings to try for a British one: colourful as colorful,
+    organised as organized, litre as liter; [] for a word with no British ending."""
+    if norm in BRITISH_WORDS:
+        return [BRITISH_WORDS[norm]]
+    out = []
+    word = norm
+    for pattern, repl in BRITISH_ENDINGS:
+        changed = pattern.sub(repl, word)
+        if changed != word:
+            word = changed
+            out.append(word)
+    return out[-1:] if out else []
 
 
 def _elided(norm: str) -> list[str] | None:

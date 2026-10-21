@@ -204,3 +204,59 @@ def test_the_late_stress_stays_at_the_end_of_a_line(line):
 def test_a_reduced_pretonic_vowel_never_takes_the_clash(word):
     (ln,) = analyze_lines(word, Spec(language="en"))
     assert all(r.source != "clash" for r in ln.words[0].readings)
+
+
+@pytest.mark.parametrize(
+    "british,american",
+    [
+        ("organised", "organized"),
+        ("memorised", "memorized"),
+        ("criticised", "criticized"),
+        ("harmonised", "harmonized"),
+        ("analyse", "analyze"),
+        ("colourful", "colorful"),
+        ("favourite", "favorite"),
+        ("neighbours", "neighbors"),
+        ("litre", "liter"),
+        ("sombre", "somber"),
+        ("calibre", "caliber"),
+        ("theatre", "theater"),
+        ("centred", "centered"),
+        ("manoeuvre", "maneuver"),
+        ("jewellery", "jewelry"),
+        ("travelled", "traveled"),
+        ("travelling", "traveling"),
+        ("catalogue", "catalog"),
+        ("defence", "defense"),
+        ("anaemia", "anemia"),
+    ],
+)
+def test_a_british_spelling_reads_as_the_american(british, american):
+    b, a = en_word(british), en_word(american)
+    assert not b.guessed
+    assert b.size == a.size
+    assert b.readings[0].stress == a.readings[0].stress
+    assert b.readings[0].phones == a.readings[0].phones
+
+
+def test_british_spellings_rhyme_as_the_american():
+    assert rhymes("harmonised", "surprised") >= 0.9
+    assert rhymes("litre", "sweeter") >= 0.9
+
+
+def test_a_line_with_british_spellings_counts_right():
+    (ln,) = analyze_lines("A litre of sombre wine", Spec(language="en"))
+    assert sum(w.size for w in ln.words) == 7
+
+
+@pytest.mark.parametrize("word", ["four", "your", "acre", "promise", "otherwise", "tour"])
+def test_listed_words_are_not_respelled(word):
+    w = en_word(word)
+    assert not w.guessed and all(r.source != "guess" for r in w.readings)
+
+
+@pytest.mark.parametrize("word", ["goest", "doeth", "goers", "shoed"])
+def test_an_archaic_or_inflected_oe_is_not_british(word):
+    from ashugh.lang import en
+
+    assert en.american(word) == []
