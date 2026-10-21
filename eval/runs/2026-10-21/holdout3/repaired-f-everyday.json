@@ -1,0 +1,144 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe harbor lights still burn at night\nAbove a sea of empty blue,\nThe gulls still wheel in morning light,\nBut not a sail has come in view.\n\n[Verse 2]\nMy father mended nets by hand\nAnd sang the songs his father knew,\nNow rope lies rotting on the sand\nAnd salt has eaten through and through.\n\n[Chorus]\nOh, ring the bell for ships at sea\nThat sailed away and never came,\nThe harbor waits for you and me\nAnd calls the sailors all by name.\n\n[Verse 3]\nThe chapel bell is cracked and still,\nThe tavern sign hangs in the rain,\nThe young have gone beyond the hill\nAnd no one walks the pier again.\n\n[Chorus]\nOh, ring the bell for ships at sea\nThat sailed away and never came,\nThe harbor waits for you and me\nAnd calls the sailors all by name.\n"
+    },
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nBarefoot on the boardwalk sand,\nSparklers fading in your hand,\nRadio is playing low,\nNeither of us wants to go.\n\n[Chorus]\nHold me till the morning light,\nThis is summer's final night,\nLet the stars burn out above,\nDancing like we're made of love.\n\n[Verse 2]\nAugust air is warm and sweet,\nPainted toes and dusty feet,\nSchool and work are far away,\nAll we want is one more day.\n\n[Chorus]\nHold me till the morning light,\nThis is summer's final night,\nLet the stars burn out above,\nDancing like we're made of love.\n\n[Bridge]\nWhen the leaves begin to fall,\nWill you still remember all,\nSalt and kisses, wave on wave,\nAll the songs and vows we gave?\n\n[Chorus]\nHold me till the morning light,\nThis is summer's final night,\nLet the stars burn out above,\nDancing like we're made of love.\n"
+    },
+    {
+      "task": "hy-iamb",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՀեռու ձորում մի տուն կար հին,\nՄի ծիրանի ծառ՝ մեր բակում,\nՈւ մայրս էր նայում ճամփին,\nԱմեն գարուն ծառն էր ծաղկում։\n\n[Chorus]\nԻմ հին ու լուսավոր իմ տուն,\nԻմ մանկության հուշ, իմ անուշ,\nԱմեն գիշեր, երբ չի գա քուն,\nՀիշում եմ քեզ մինչև շատ ուշ։\n\n[Verse 2]\nՀիմա կանգնած է տունը լուռ,\nՈչ մի ձայն ու ոչ մի ծիծաղ,\nՔամին բացում-փակում է դուռ,\nՈչ էլ բակում մանուկ, ոչ խաղ։\n\n[Verse 3]\nԲայց իմ հոգում օջախն է վառ,\nՈւ մոր ձայնն է ինձ դեռ կանչում,\nԱյնտեղ գարուն է միշտ պայծառ,\nԵրբեք այդ լույսը չի հանգչում։\n\n[Chorus]\nԻմ հին ու լուսավոր իմ տուն,\nԻմ մանկության հուշ, իմ անուշ,\nԱմեն գիշեր, երբ չի գա քուն,\nՀիշում եմ քեզ մինչև շատ ուշ։\n"
+    },
+    {
+      "task": "hy-lullaby",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԼուսինն է նայում մեզ\nԱրծաթե իր լույսով,\nԱմբողջ գյուղն է հանգիստ,\nՈւ մենք ենք մեր երգով։\n\n[Chorus]\nՕրոր, օրոր, բալես,\nԹող գա քեզ անուշ քուն,\nՄայրիկդ է քո կողքին,\nԽաղաղ է մեր հին տուն։\n\n[Verse 2]\nՔամին է հանդարտվել,\nԾառերն են օրորվում,\nԱստղերն են վառվել վեր,\nԱչիկներդ են փակվում։\n\n[Chorus]\nՕրոր, օրոր, բալես,\nԹող գա քեզ անուշ քուն,\nՄայրիկդ է քո կողքին,\nԽաղաղ է մեր հին տուն։\n"
+    },
+    {
+      "task": "hy-mother",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՀեռու ես դու, իմ մայրիկ ջան,\nԿարոտում եմ ամեն վայրկյան,\nՀիշում եմ քո աչքերը վառ,\nՈր փայլում էին ինձ համար։\n\n[Chorus]\nՄայրիկ ջան, իմ անուշ մայրիկ,\nԵս քո հեռու, կարոտ բալիկ,\nՔամին թող քեզ բերի բարև,\nՈւ իմ սերը՝ ինչպես արև։\n\n[Verse 2]\nՄեր տան բակում ծաղկած վարդեր,\nՈւ քո երգերը գիշերներ,\nԱչքերս փակ՝ քեզ եմ տեսնում,\nԵրազում քեզ մոտ եմ լինում։\n\n[Chorus]\nՄայրիկ ջան, իմ անուշ մայրիկ,\nԵս քո հեռու, կարոտ բալիկ,\nՔամին թող քեզ բերի բարև,\nՈւ իմ սերը՝ ինչպես արև։\n"
+    },
+    {
+      "task": "hy-mountains",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրագածը վեհ է կանգնած,\nՃերմակ ձյունը ուսերին,\nԳյուղերն են փեշերին շարված\nՈրդիների պես՝ կողքին։\n\n[Verse 2]\nԱրշալույսն է լեռը վառում,\nՈսկե շողեր գագաթին,\nՈւ հովիվն է երգում սարում,\nՁայնն է իջնում ցած՝ հովտին։\n\n[Chorus]\nԱրագած, մեր վեհափառ սար,\nՉորս գագաթներդ՝ ամպերին,\nԴարեր անցան, դու կաս պայծառ,\nՄեր հույսն ես ամեն ժամին։\n\n[Verse 3]\nԳյուղում վառվում են օջախներ,\nԲուրում է հացը թոնրից,\nՈւ պապերն են պատմում դարեր,\nՔամին է գալիս սարից։\n\n[Chorus]\nԱրագած, մեր վեհափառ սար,\nՉորս գագաթներդ՝ ամպերին,\nԴարեր անցան, դու կաս պայծառ,\nՄեր հույսն ես ամեն ժամին։\n"
+    },
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԵրևանում լույսեր են վառ,\nԿասկադի մոտ եմ ես մենակ,\nԾաղիկ եմ բերել քեզ համար,\nՈւ շատ դանդաղ է ժամանակ։\n\n[Chorus]\nԱրի, արի, իմ սեր, արի,\nԼուսինն է նայում Մասիսին,\nԹող լինի գիշերը բարի,\nՈւ մենք երկուսով՝ միասին։\n"
+    },
+    {
+      "task": "hy-spring",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրևն այսօր տաք է շատ,\nՁյունն է հալվել սարերին,\nԾիտերն են երգում ազատ,\nԾաղիկներ կան ծառերին։\n\n[Chorus]\nԳարուն է, գարուն է, սեր,\nՕդում ծաղկի բույր ու լույս,\nՄեզ համար են այս երգեր,\nԴու իմ գարունն ես ու հույս։\n\n[Verse 2]\nԵս քեզ տեսա այգու մեջ,\nԴու նայեցիր ինձ անուշ,\nՀոգիս երգում է անվերջ,\nՔո աչքերում՝ գարնան հուշ։\n\n[Chorus]\nԳարուն է, գարուն է, սեր,\nՕդում ծաղկի բույր ու լույս,\nՄեզ համար են այս երգեր,\nԴու իմ գարունն ես ու հույս։\n"
+    },
+    {
+      "task": "ru-city",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nГород не спит — и мне не уснуть,\nОкна горят до самой зари,\nФары машин рисуют мой путь,\nВетер мне шепчет: «Смотри, смотри».\n\n[Chorus]\nНе уснуть, мы горим, как неон\nВ этом городе тысяч огней,\nВместо снов — сигареты, балкон,\nИ чем дольше, тем ночи темней.\n\n[Verse 2]\nКофе остыл на краю стола,\nТени ползут по белой стене,\nТы в эту ночь от меня ушла,\nИ в тишине звенят ступени.\n\n[Chorus]\nНе уснуть, мы горим, как неон\nВ этом городе тысяч огней,\nВместо снов — сигареты, балкон,\nИ чем дольше, тем ночи темней.\n\n[Bridge]\nТри часа, и пустые дворы,\nТолько эхо шагов за углом,\nМы сгорим, как сухие костры,\nИ проснёмся когда-то потом.\n\n[Chorus]\nНе уснуть, мы горим, как неон\nВ этом городе тысяч огней,\nВместо снов — сигареты, балкон,\nИ чем дольше, тем ночи темней.\n"
+    },
+    {
+      "task": "ru-road",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nСолнце встало над дорогой,\nМы с тобой на юг летим,\nСтарый друг, ещё немного —\nСквозь туман и сизый дым.\n\n[Verse 2]\nНам по двадцать — что бояться?\nМчались к морю без гроша,\nМы не знали, где остаться,\nПела ночью вся душа.\n\n[Chorus]\nЕдем, едем к югу, к свету,\nВетер бьёт в стекло, друзья,\nПусть дорога катит к лету,\nСтарый друг — моя семья.\n\n[Verse 3]\nТермос, хлеб и сигареты,\nКарта старая в ногах,\nМы допели все куплеты,\nСолнце пляшет в облаках.\n\n[Chorus]\nЕдем, едем к югу, к свету,\nВетер бьёт в стекло, друзья,\nПусть дорога катит к лету,\nСтарый друг — моя семья.\n"
+    },
+    {
+      "task": "ru-sea",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nМаяк над водою не спит,\nИ море о скалы шумит,\nА там, на песке у причала,\nНевеста стоит, как стояла.\n\n[Verse 2]\nУплыл он весною далёко,\nА ей без него одиноко,\nИ каждую ночь у воды\nГлядит на чужие следы.\n\n[Chorus]\nСвети же, маяк мой, свети,\nЕго сохрани на пути,\nПусть волны его не погубят,\nПусть помнит, что ждут здесь и любят.\n\n[Verse 3]\nВетра разметали туман,\nИ парус возник, как обман,\nОна по сырому песку\nБежит, позабыв про тоску.\n\n[Chorus]\nСвети же, маяк мой, свети,\nЕго сохрани на пути,\nПусть волны его не погубят,\nПусть помнит, что ждут здесь и любят.\n"
+    },
+    {
+      "task": "ru-winter",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nМетель кружит над спящим садом,\nФонарь мерцает у ворот,\nЯ жду письма за снегопадом,\nА почтальон всё не идёт.\n\n[Verse 2]\nНа подоконнике остыла\nСвеча, и в чашке — горький чай,\nЯ дверь ни разу не закрыла,\nЖдала хоть слово, хоть «прощай».\n\n[Chorus]\nЛетят снежинки, будто вести,\nНо нет ни строчки от тебя,\nА я всё жду на том же месте,\nОдна, по-прежнему любя.\n\n[Verse 3]\nУже светает над рекою,\nИ стихла вьюга за окном,\nА я не знаю, что со мною,\nИ снова думаю о нём.\n\n[Chorus]\nЛетят снежинки, будто вести,\nНо нет ни строчки от тебя,\nА я всё жду на том же месте,\nОдна, по-прежнему любя.\n"
+    }
+  ]
+}

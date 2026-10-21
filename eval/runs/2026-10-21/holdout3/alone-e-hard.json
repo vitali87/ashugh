@@ -1,0 +1,148 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 0.9896,
+      "songs_ok": 0.8333,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-night-train",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nWheels are singing on the rail,\nPrairie silver, cold and pale,\nAll the windows hold a star,\nNo one knows us where we are.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dust and the dark of the plain,\nAnd the engine is humming a song\nLike a lullaby sung by the rain.\n\n[Verse 2]\nTowns go by without a name,\nLonely stations look the same,\nSomewhere far a lantern glows,\nWhere it's going, no one knows.\n\n[Chorus]\nOh, the night train is rolling along\nThrough the dust and the dark of the plain,\nAnd the engine is humming a song\nLike a lullaby sung by the rain.\n"
+    },
+    {
+      "task": "en-shanty",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe captain went below one night\nAnd left us to the sea,\nWe found his coat upon the chair,\nHis bible and his key.\nYet still the sails went up at dawn\nWith no one at the wheel,\nAnd still she cut the grey-green waves\nUpon an even keel.\n\n[Verse 2]\nSo haul away, my bonny boys,\nShe knows the way alone,\nShe steers by stars we cannot see\nTo waters none have known.\nThe bosun swears he heard him laugh\nWithin the creaking hold,\nThe cook has seen his lantern burn\nWhen all the night is cold.\n\n[Verse 3]\nAnd if you meet her on the main\nWith canvas white as bone,\nThen raise your cap and hold your tongue\nAnd leave her to her own.\nFor somewhere past the edge of maps\nHer captain waits ashore,\nAnd all the sailors lost at sea\nWill sing for evermore.\n"
+    },
+    {
+      "task": "en-translate-pushkin",
+      "language": "en",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nI still remember our first meeting,\nWhen you appeared before my eyes\nJust like a vision, brief and fleeting,\nLike beauty's spirit from the skies.\n\n[Verse 2]\nIn anguish of despair and sorrow,\nAmid the noisy world's unrest,\nYour tender voice would ring till morrow,\nAnd lovely features filled my rest.\n"
+    },
+    {
+      "task": "en-waltz",
+      "language": "en",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nDust on the floorboards and lamps that are fading,\nChairs on the tables and nobody here,\nOnce there were lovers in velvet parading,\nTurning and turning for year after year.\nHere was the orchestra, brass and piano,\nHere was the corner where first we had met,\nHere was the singer who sang in soprano\nSongs that the city has learned to forget.\n\n[Verse 2]\nMonday the builders will come with their hammers,\nPulling the curtains and boarding the door,\nTaking the mirrors, the lamps and the banners,\nNobody waltzes here anymore.\nGive me your hand for the last of the dances,\nOne, two and three, as the music grows slow,\nLost in the glimmer of fading romances,\nHold me and never, oh never let go.\n"
+    },
+    {
+      "task": "hy-grid-ballad",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱյստեղ սարերն է ծածկել ձյունը,\nՍահմանին ցուրտ է ու գիշեր,\nԲայց ես հիշում եմ մեր տաք տունը,\nՔո ձեռքերն ու քո անուշ սեր։\nԳիշերով ինձ պահում է հույսը\nՈւ քո աղոթքը՝ ինձ համար,\nԵվ քո աչքերի մեղմիկ լույսը\nԻնձ ուղեկցում է սար առ սար։\n\n[Verse 2]\nՇուտով կգա, մայրիկ, գարունը,\nԿծաղկեն դաշտերը կրկին,\nԵս կգամ նորից մեր հին տունը,\nՈւ կնստենք մենք միասին։\nՄի լացիր, թե ուշ գա նամակը,\nԵս ողջ եմ, քաջ եմ ու ուժեղ,\nԻմ սրտում վառ է քո կրակը,\nՈւ քեզ եմ ես պահում այստեղ։\n"
+    },
+    {
+      "task": "hy-translate-dickinson",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄահվան համար չկանգնեցի,\nԿանչեց իմ անունը,\nԿառքում մենք էինք միայնակ\nՈւ Անմահությունը։\n\n[Verse 2]\nԳնացինք դանդաղ, անշտապ,\nԹողի գործ ու դադար,\nԵս ամեն ինչ մի կողմ դրի\nԻր բարության համար։\n"
+    },
+    {
+      "task": "hy-trochee",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄեկ՝ կատուն է արևում,\nՄլավում է ու ձգվում,\nԻսկ երկու շուն կան սիրուն,\nՈւ պահում են մեր հին տուն։\n\n[Verse 2]\nՈւ երեք հավ՝ ճուտերով,\nԿտկտում են զիլ ձայնով,\nՉորս այծիկ՝ ճարպիկ, ճերմակ,\nՈւ ցատկում են դաշտ ու բակ։\n\n[Chorus]\nԴե հաշվիր, ով կա բակում,\nՈւ խաղում են, ու ցատկում,\nԲակն է լիքը, աղմկոտ,\nՈւ ամենքը ծիծաղկոտ։\n\n[Verse 3]\nՀինգ բադիկ կան մեր առվում,\nՈւ լողում են, օրորվում,\nՎեց ոչխար կան, մեկ էլ գառ,\nԽոտ ուտում են ողջ ամառ։\n\n[Verse 4]\nՅոթ մեղու կան մեր այգում,\nՈւ բզզում են ու երգում,\nՀաշվեցինք մենք միասին,\nԵրգեցինք նրանց մասին։\n\n[Chorus]\nԴե հաշվիր, ով կա բակում,\nՈւ խաղում են, ու ցատկում,\nԲակն է լիքը, աղմկոտ,\nՈւ ամենքը ծիծաղկոտ։\n"
+    },
+    {
+      "task": "hy-wedding",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԶուռնան կանչում է բոլորին,\nԴհոլն է թնդում բակում մեր,\nՈւրախություն է սարերին,\nՈւ հարս ու փեսան՝ անուշ սեր։\n\n[Chorus]\nՊարե՛նք, պարե՛նք, ջան, ջան, ջան,\nԾաղկել է ողջ Հայաստան,\nՀարսնիք է, հարսնիք,\nԹող ապրեն հարս ու փեսան։\n\n[Verse 2]\nՍեղանին կա հաց ու գինի,\nԿենացներ են հնչում հազար,\nԹող միշտ այսպես ուրախ լինի,\nՊարում են մեծ ու փոքր, յար։\n\n[Chorus]\nՊարե՛նք, պարե՛նք, ջան, ջան, ջան,\nԾաղկել է ողջ Հայաստան,\nՀարսնիք է, հարսնիք,\nԹող ապրեն հարս ու փեսան։\n"
+    },
+    {
+      "task": "ru-dog",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 23,
+      "line_pass_rate": 0.9583,
+      "song_ok": false,
+      "errors": {
+        "rhyme": 1
+      },
+      "text": "[Verse 1]\nПёс бежит в лучах заката\nЧерез город, через мост,\nИщет двор, где жил когда-то,\nОпустив усталый хвост.\nНочь темна, и ветер свищет,\nДождь бежит по проводам,\nПёс упрямо дом свой ищет\nПо знакомым он следам.\n\n[Chorus]\nГде-то за дальней рекой\nМальчик и дом твой родной,\nМчись ты сквозь свет фонарей\nПрямо к порогу дверей!\n\n[Verse 2]\nВот знакомое крылечко,\nВот и светится окно,\nБьётся радостно сердечко,\nКак когда-то, так давно.\nМальчик выбежал навстречу,\nОбнял друга своего,\nИ в тот тёплый тихий вечер\nНет счастливее его.\n\n[Chorus]\nГде-то за дальней рекой\nМальчик и дом твой родной,\nМчись ты сквозь свет фонарей\nПрямо к порогу дверей!\n"
+    },
+    {
+      "task": "ru-grid-call",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nНочью в три часа звонит мобильный,\nГолос в трубке тихий и бессильный,\nТы говоришь, что не можешь спать\nИ что хочешь всё вернуть опять.\nЯ сижу в темноте у окошка\nИ молчу в ответ ещё немножко,\nНад спящими домами луна,\nИ я, как ты, сегодня без сна.\n\n[Verse 2]\nПомнишь, мы гуляли до рассвета,\nЦеловались в середине лета,\nА потом — три года тишины,\nКак будто мы уже не нужны.\nА сегодня, в три часа, ты плачешь\nИ опять свои ошибки прячешь,\nИ я трубку не кладу, молчу,\nВедь я и сам того же хочу.\n"
+    },
+    {
+      "task": "ru-translate-blake",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nТигр, о тигр, огонь ночной\nВ чаще леса, в тьме густой,\nЧья рука и чей же взгляд\nТвой соразмерный страх творят?\n\n[Verse 2]\nВ безднах ли иль в небесах\nЖёг огонь в твоих глазах?\nНа каких крылах взлетел,\nКто огонь схватить посмел?\n"
+    },
+    {
+      "task": "ru-troika",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 15,
+      "line_pass_rate": 0.9375,
+      "song_ok": false,
+      "errors": {
+        "meter": 1
+      },
+      "text": "[Verse 1]\nПод луною дорога искристая,\nИ летят вороные в ночи,\nНочь морозная, звёздная, чистая,\nТы прижмись ко мне крепче, молчи.\nБубенцы заливаются звонкие,\nИз-под быстрых копыт снег летит,\nВдоль дороги берёзоньки тонкие,\nИ метель нам вослед ворожит.\n\n[Verse 2]\nПролетели года, как метелица,\nНе вернуть ни саней, ни коней,\nА во сне вся дорога мне стелется\nПод луною, в сиянье огней.\nТы была в полушубке, румяная,\nУлыбалась, держась за меня,\nИ звезда над дугою медвяная\nНас вела до последнего дня.\n"
+    }
+  ]
+}

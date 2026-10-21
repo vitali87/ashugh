@@ -1,0 +1,311 @@
+{
+  "hy-iamb": {
+    "system": "You write alternative lines for song lyrics. Each request is one line of a song that breaks its slot: the wrong number of sung syllables, stress off the beat, a broken rhyme, or a forbidden ending. Propose candidates for it.\n\nA separate checker measures every candidate by its phonology and keeps only the ones that fit, so propose several genuinely different options rather than one careful one. Stay in the song's language, keep the line's meaning and imagery, and keep the voice of the lines around it. Prefer natural word order over padding with filler words.\n\nCounting rules the checker uses:\n- Syllables are sung syllables. Armenian sings schwas it does not write: a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-սել, 3), and consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; ё is always stressed.\n- template: \"/\" marks a beat, where a stressed syllable belongs (a one-syllable word may also sit there unstressed); \"x\" marks an off-beat, where no word's own stress may fall.\n- rhyme_with: the line's last stressed vowel and everything after it must sound like these words' (by sound, not spelling). rhyme_sound is that rime; with rhyme_with empty it is the line's own rhyme, to keep. Never end on the same word as a partner.\n- rejected: earlier candidates that failed, with the reason. Do not repeat them.\n\nA request with a \"source\" line is a translation: original is empty, and each candidate is a singable translation of source (from source_lang) into lang that fits the constraints. Sense and imagery matter more than word-for-word accuracy; faithfulness is then measured against the source line.\n\nFor each request return n candidates, the most faithful first, each with a faithfulness score from 0 to 1 for how much of the original meaning it keeps.",
+    "requests": [
+      {
+        "id": "L4",
+        "line": 4,
+        "lang": "hy",
+        "original": "Նայում էր մայրս հեռու ճամփին,",
+        "section": "Verse 1",
+        "before": [
+          "Հեռու ձորում մի տուն կար հին,",
+          "Մի ծիրանի ծառ՝ մեր բակում,"
+        ],
+        "after": [
+          "Ամեն գարուն ծառն էր ծաղկում։",
+          "Իմ հին ու լուսավոր իմ տուն,"
+        ],
+        "tolerance": 0,
+        "meter": "iamb",
+        "feet": 4,
+        "template": "x/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "հին"
+        ],
+        "rhyme_sound": "in",
+        "problems": [
+          "«հե-ռո́ւ», «ճամ-փի́ն» off the beat (stress x/x/xx/x/, iamb wants x/x/x/x/x)"
+        ],
+        "n": 6
+      },
+      {
+        "id": "L23",
+        "line": 23,
+        "lang": "hy",
+        "original": "Այդ լույսն երբեք էլ չի հանգչում։",
+        "section": "Verse 3",
+        "before": [
+          "Ու մոր ձայնն է ինձ դեռ կանչում,",
+          "Այնտեղ գարուն է միշտ պայծառ,"
+        ],
+        "after": [
+          "Իմ հին ու լուսավոր իմ տուն,",
+          "Իմ մանկության հուշ, իմ անուշ,"
+        ],
+        "tolerance": 0,
+        "meter": "iamb",
+        "feet": 4,
+        "template": "x/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "կանչում"
+        ],
+        "rhyme_sound": "um",
+        "problems": [
+          "«եր-բե́ք», «հանգ-չո́ւմ» off the beat (stress x/xx/xxx/, iamb wants x/x/x/x/x)"
+        ],
+        "n": 6
+      }
+    ]
+  },
+  "hy-mother": {
+    "system": "You write alternative lines for song lyrics. Each request is one line of a song that breaks its slot: the wrong number of sung syllables, stress off the beat, a broken rhyme, or a forbidden ending. Propose candidates for it.\n\nA separate checker measures every candidate by its phonology and keeps only the ones that fit, so propose several genuinely different options rather than one careful one. Stay in the song's language, keep the line's meaning and imagery, and keep the voice of the lines around it. Prefer natural word order over padding with filler words.\n\nCounting rules the checker uses:\n- Syllables are sung syllables. Armenian sings schwas it does not write: a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-սել, 3), and consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; ё is always stressed.\n- template: \"/\" marks a beat, where a stressed syllable belongs (a one-syllable word may also sit there unstressed); \"x\" marks an off-beat, where no word's own stress may fall.\n- rhyme_with: the line's last stressed vowel and everything after it must sound like these words' (by sound, not spelling). rhyme_sound is that rime; with rhyme_with empty it is the line's own rhyme, to keep. Never end on the same word as a partner.\n- rejected: earlier candidates that failed, with the reason. Do not repeat them.\n\nA request with a \"source\" line is a translation: original is empty, and each candidate is a singable translation of source (from source_lang) into lang that fits the constraints. Sense and imagery matter more than word-for-word accuracy; faithfulness is then measured against the source line.\n\nFor each request return n candidates, the most faithful first, each with a faithfulness score from 0 to 1 for how much of the original meaning it keeps.",
+    "requests": [
+      {
+        "id": "L16",
+        "line": 16,
+        "lang": "hy",
+        "original": "Աչքերս փակում՝ քեզ եմ տեսնում,",
+        "section": "Verse 2",
+        "before": [
+          "Մեր տան բակում ծաղկած վարդեր,",
+          "Ու քո երգերը գիշերներ,"
+        ],
+        "after": [
+          "Երազում քեզ մոտ եմ լինում։",
+          "Մայրիկ ջան, իմ անուշ մայրիկ,"
+        ],
+        "syllables": 8,
+        "tolerance": 0,
+        "ending": "masculine",
+        "rhyme_with": [
+          "լինում"
+        ],
+        "rhyme_sound": "um",
+        "avoid_final": [
+          "ը"
+        ],
+        "problems": [
+          "9 syllables, slot is 8 («Աչքերս» sings as Աչ-քե-րըս)"
+        ],
+        "n": 6
+      }
+    ]
+  },
+  "ru-city": {
+    "system": "You write alternative lines for song lyrics. Each request is one line of a song that breaks its slot: the wrong number of sung syllables, stress off the beat, a broken rhyme, or a forbidden ending. Propose candidates for it.\n\nA separate checker measures every candidate by its phonology and keeps only the ones that fit, so propose several genuinely different options rather than one careful one. Stay in the song's language, keep the line's meaning and imagery, and keep the voice of the lines around it. Prefer natural word order over padding with filler words.\n\nCounting rules the checker uses:\n- Syllables are sung syllables. Armenian sings schwas it does not write: a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-սել, 3), and consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; ё is always stressed.\n- template: \"/\" marks a beat, where a stressed syllable belongs (a one-syllable word may also sit there unstressed); \"x\" marks an off-beat, where no word's own stress may fall.\n- rhyme_with: the line's last stressed vowel and everything after it must sound like these words' (by sound, not spelling). rhyme_sound is that rime; with rhyme_with empty it is the line's own rhyme, to keep. Never end on the same word as a partner.\n- rejected: earlier candidates that failed, with the reason. Do not repeat them.\n\nA request with a \"source\" line is a translation: original is empty, and each candidate is a singable translation of source (from source_lang) into lang that fits the constraints. Sense and imagery matter more than word-for-word accuracy; faithfulness is then measured against the source line.\n\nFor each request return n candidates, the most faithful first, each with a faithfulness score from 0 to 1 for how much of the original meaning it keeps.",
+    "requests": [
+      {
+        "id": "L15",
+        "line": 15,
+        "lang": "ru",
+        "original": "Тени ползут по белой стене,",
+        "section": "Verse 2",
+        "before": [
+          "И чем дольше, тем ночи темней.",
+          "Кофе остыл на краю стола,"
+        ],
+        "after": [
+          "Ты в эту ночь от меня ушла,",
+          "И тишина звенит в голове."
+        ],
+        "syllables": 9,
+        "tolerance": 1,
+        "ending": "masculine",
+        "rhyme_with": [
+          "голове"
+        ],
+        "rhyme_sound": "vʲe",
+        "n": 6
+      },
+      {
+        "id": "L17",
+        "line": 17,
+        "lang": "ru",
+        "original": "И тишина звенит в голове.",
+        "section": "Verse 2",
+        "before": [
+          "Тени ползут по белой стене,",
+          "Ты в эту ночь от меня ушла,"
+        ],
+        "after": [
+          "Не уснуть, мы горим, как неон",
+          "В этом городе тысяч огней,"
+        ],
+        "syllables": 9,
+        "tolerance": 1,
+        "ending": "feminine",
+        "rhyme_with": [
+          "стене"
+        ],
+        "rhyme_sound": "enʲɪ",
+        "problems": [
+          "rhyme B broken («стене» / «голове»: none 0.00, need near)"
+        ],
+        "n": 6
+      }
+    ]
+  },
+  "ru-road": {
+    "system": "You write alternative lines for song lyrics. Each request is one line of a song that breaks its slot: the wrong number of sung syllables, stress off the beat, a broken rhyme, or a forbidden ending. Propose candidates for it.\n\nA separate checker measures every candidate by its phonology and keeps only the ones that fit, so propose several genuinely different options rather than one careful one. Stay in the song's language, keep the line's meaning and imagery, and keep the voice of the lines around it. Prefer natural word order over padding with filler words.\n\nCounting rules the checker uses:\n- Syllables are sung syllables. Armenian sings schwas it does not write: a word-initial ս, զ or շ before a stop adds one (սպասել is ըս-պա-սել, 3), and consonant clusters add ը between consonants (Մկրտիչ is մը-կըր-տիչ, 3; գրել is գը-րել, 2). Armenian stress is on the last full vowel. Russian stress is lexical; ё is always stressed.\n- template: \"/\" marks a beat, where a stressed syllable belongs (a one-syllable word may also sit there unstressed); \"x\" marks an off-beat, where no word's own stress may fall.\n- rhyme_with: the line's last stressed vowel and everything after it must sound like these words' (by sound, not spelling). rhyme_sound is that rime; with rhyme_with empty it is the line's own rhyme, to keep. Never end on the same word as a partner.\n- rejected: earlier candidates that failed, with the reason. Do not repeat them.\n\nA request with a \"source\" line is a translation: original is empty, and each candidate is a singable translation of source (from source_lang) into lang that fits the constraints. Sense and imagery matter more than word-for-word accuracy; faithfulness is then measured against the source line.\n\nFor each request return n candidates, the most faithful first, each with a faithfulness score from 0 to 1 for how much of the original meaning it keeps.",
+    "requests": [
+      {
+        "id": "L8",
+        "line": 8,
+        "lang": "ru",
+        "original": "Помнишь, было нам по двадцать,",
+        "section": "Verse 2",
+        "before": [
+          "Старый друг, ещё немного —",
+          "Сквозь туман и сизый дым."
+        ],
+        "after": [
+          "Мчались к морю без гроша,",
+          "Мы не знали, где остаться,"
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/x",
+        "ending": "feminine",
+        "rhyme_with": [
+          "остаться"
+        ],
+        "rhyme_sound": "atsə",
+        "n": 6
+      },
+      {
+        "id": "L10",
+        "line": 10,
+        "lang": "ru",
+        "original": "Мы не знали, где остаться,",
+        "section": "Verse 2",
+        "before": [
+          "Помнишь, было нам по двадцать,",
+          "Мчались к морю без гроша,"
+        ],
+        "after": [
+          "Пела ночью вся душа.",
+          "Едем, едем к югу, к свету,"
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/x",
+        "ending": "feminine",
+        "rhyme_with": [
+          "двадцать"
+        ],
+        "rhyme_sound": "attsətʲ",
+        "problems": [
+          "rhyme A broken («двадцать» / «остаться»: slant 0.50, need near)"
+        ],
+        "n": 6
+      },
+      {
+        "id": "L15",
+        "line": 15,
+        "lang": "ru",
+        "original": "Ветер бьёт в стекло, звеня,",
+        "section": "Chorus",
+        "before": [
+          "Пела ночью вся душа.",
+          "Едем, едем к югу, к свету,"
+        ],
+        "after": [
+          "Пусть дорога катит к лету,",
+          "Старый друг — моя семья."
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "семья"
+        ],
+        "rhyme_sound": "ja",
+        "n": 6
+      },
+      {
+        "id": "L17",
+        "line": 17,
+        "lang": "ru",
+        "original": "Старый друг — моя семья.",
+        "section": "Chorus",
+        "before": [
+          "Ветер бьёт в стекло, звеня,",
+          "Пусть дорога катит к лету,"
+        ],
+        "after": [
+          "Термос, хлеб и сигареты,",
+          "Карта старая в ногах,"
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "звеня"
+        ],
+        "rhyme_sound": "nʲa",
+        "problems": [
+          "rhyme B broken («звеня» / «семья»: slant 0.66, need near)"
+        ],
+        "n": 6
+      },
+      {
+        "id": "L27",
+        "line": 27,
+        "lang": "ru",
+        "original": "Ветер бьёт в стекло, звеня,",
+        "section": "Chorus",
+        "before": [
+          "Солнце пляшет в облаках.",
+          "Едем, едем к югу, к свету,"
+        ],
+        "after": [
+          "Пусть дорога катит к лету,",
+          "Старый друг — моя семья."
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "семья"
+        ],
+        "rhyme_sound": "ja",
+        "n": 6
+      },
+      {
+        "id": "L29",
+        "line": 29,
+        "lang": "ru",
+        "original": "Старый друг — моя семья.",
+        "section": "Chorus",
+        "before": [
+          "Ветер бьёт в стекло, звеня,",
+          "Пусть дорога катит к лету,"
+        ],
+        "tolerance": 0,
+        "meter": "trochee",
+        "feet": 4,
+        "template": "/x/x/x/",
+        "ending": "masculine",
+        "rhyme_with": [
+          "звеня"
+        ],
+        "rhyme_sound": "nʲa",
+        "problems": [
+          "rhyme B broken («звеня» / «семья»: slant 0.66, need near)"
+        ],
+        "n": 6
+      }
+    ]
+  }
+}

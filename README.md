@@ -243,29 +243,25 @@ everyday forms and twelve harder ones: per-line melody grids with set
 endings, a separate chorus form, ternary meters, Armenian feminine endings,
 and translations into the source's grid. Claude writers with no access to
 ashugh drafted each song; then `fit` asked Claude for candidates for the
-lines that failed. These are the two holdout sets, 72 drafts from six
-writers, scored and repaired with the analyzer frozen before they were
-written:
+lines that failed. The latest holdout, 48 drafts from two new writers, was
+scored and repaired with the analyzer frozen before they were written:
 
 | | lines meeting the spec | songs meeting the spec |
 |---|---|---|
-| Claude alone | 1,464 / 1,482 (98.8%) | 63 / 72 |
-| Claude with ashugh | **1,482 / 1,482** | **72 / 72** |
+| Claude alone | 822 / 836 (98.3%) | 40 / 48 |
+| Claude with ashugh | **835 / 836** | **47 / 48** |
 
-Every repair took one round. A strong model gets most lines right on its
-own; what it misses is what it cannot hear: a rhyme that lands on an
-unstressed Armenian auxiliary, a stress on the weak beat of a dactyl or an
-anapest. The checker is the weak point: of the 18 lines it flagged, 14 were
-its own mistakes (a dictionary gap such as кружи́тся, the Armenian
-possessive after a plural, a particle counted as stressed). Each cost a
-needless rewrite, and each has since been fixed with a test; the numbers
-above are from before those fixes. One of those rewrites did harm: the
-lullaby line Աչուկներդ փակիր already had its six syllables (ա-չուկ-նե-րըդ),
-and fit padded it to seven. Rescored with today's analyzer, the repaired
-songs meet 1,479 / 1,482 lines and 71 / 72 songs. An earlier set of 24 drafts
-was the development set the rules were tuned on, so it is reported in
-RESULTS.md but not here. The writers and proposers were Claude subagents,
-not API calls; RESULTS.md has every flagged line and the caveats.
+The repair took one round. A strong model gets most lines right on its own;
+what it misses is what it cannot hear: a schwa Armenian sings but does not
+write (աչ-քե-րըս, մայ-րըս), a rhyme on another vowel (դուրս / չորս), an open
+rhyme without its supporting consonant (звеня / семья). Of the 14 lines the
+checker flagged, 13 were real. One was its own mistake (the dictionary's
+са́ней for сане́й), and one repair passed only through another (стене read
+as сте́не, from an obsolete unit), so it counts as failed above; both are
+fixed with tests. In two earlier holdouts, scored with older analyzers, 14
+of the 18 flags were the checker's mistakes. RESULTS.md has every flagged
+line, those holdouts, the development set and the caveats. The writers and
+proposers were Claude subagents, not API calls.
 
 **Russian, on RIFMA** (Koziev 2025: 5,121 poems and stanzas with every
 stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):

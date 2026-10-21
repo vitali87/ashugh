@@ -1,8 +1,10 @@
 # Results
 
-Measured on 2026-10-20 with the scripts described in [README.md](README.md).
-The raw outputs are in [runs/2026-10-20/](runs/2026-10-20/), the analyzer
-benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
+Measured on 2026-10-20 and 2026-10-21 with the scripts described in
+[README.md](README.md). The raw outputs are in [runs/2026-10-20/](runs/2026-10-20/)
+(the analyzer benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json`
+and `oov.json`, rerun as the analyzer changed) and the third holdout's in
+[runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/).
 
 ## The analyzer
 
@@ -239,10 +241,58 @@ strict standard this line broke is no longer the one it checks. One false alarm 
 repair Դու աչուկներդ փակիր sings seven syllables in a slot of six, so the
 repaired songs, rescored today, meet 997 / 1,000 lines and 47 / 48 songs.
 
+### Holdout 3
+
+After nine more rounds of fixes, two new cold writers wrote all 24 briefs
+again (48 drafts, 836 lines, in
+[runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/)). They were scored
+and repaired with the analyzer frozen at commit 0420c02, run from an export
+while later work went on. A fresh subagent answered the repair requests in
+one round (`ashugh eval requests`, then `ashugh eval apply`), with nothing
+but the requests to go on.
+
+| | lines meeting the spec | songs meeting the spec |
+|---|---|---|
+| Claude alone | 822 / 836 (98.3%) | 40 / 48 |
+| Claude with ashugh, by the checker | **836 / 836** | **48 / 48** |
+| Claude with ashugh, on reading | 835 / 836 | 47 / 48 |
+
+Read one by one, the 14 flagged lines were 6 real errors, 7 lines that
+break the strict rhyme standard ashugh documents (an open rhyme wants the
+consonant before its vowel; a closed ending does not rhyme an open one),
+and 1 false alarm:
+
+| flagged | real? | after fit |
+|---|---|---|
+| hy-mother: Աչքերս փակում՝ քեզ եմ տեսնում | yes: աչ-քե-րըս is three syllables, the line nine in a slot of eight | Աչքերս փակ՝ քեզ եմ տեսնում |
+| hy-iamb: Նայում էր մայրս հեռու ճամփին | yes: մայ-րըս has two syllables, so every stress after it falls a beat late | Ու մայրս էր նայում ճամփին |
+| hy-iamb: Այդ լույսն երբեք էլ չի հանգչում | yes: լույ-սըն keeps its schwa, as ե after it is [je] | Երբեք այդ լույսը չի հանգչում |
+| hy-trochee (3 lines): …գան դուրս, against չորս | yes: դուրս and չորս differ in their stressed vowel | Թող կատուն գնա իր որս |
+| hy-wedding (2 lines): …դուք երկու, against հարսնացու | by the strict standard: -կու / -ցու | Սիրով ապրեք, ոչ կծու |
+| ru-road: двадцать / остаться | by the strict standard: closed against open | Нам по двадцать — что бояться? |
+| ru-road (2 lines): звеня / семья | by the strict standard: -ня́ / -мья́ | Ветер бьёт в стекло, друзья |
+| ru-dog: навстречу / вечер | by the strict standard: closed against open | И в тот вечер, в эту встречу |
+| ru-city: стене / голове | by the strict standard (-не́ / -ве́), but ashugh also misread стене as сте́не | И в тишине звенят ступени |
+| ru-troika: Не вернуть ни саней, ни коней | no: the dictionary dump stresses са́ней, the norm is сане́й | Не вернуть ни возка, ни коней |
+
+One repair was a defect: the ru-city line passed the checker only through
+its misreading of стене as сте́не, from стен, an obsolete unit the
+dictionary dump lists. «Ступени» rhymes with сте́не, not with «по белой
+стене́», so the repaired stanza still does not rhyme, and the
+with-ashugh line reads 835 / 836. Both mistakes were fixed after the run,
+each with a test: сани is stressed сане́й, саня́м, and obsolete words are
+left out of the dictionary build. Rescored with today's analyzer, the drafts
+meet 823 / 836 lines and the repaired texts 835 / 836: the troika line
+passes, and the ru-city repair is flagged, as it should be.
+
+The checker's own mistakes fell from 14 of the 18 flags in the two earlier
+holdouts to 1 of 14 here.
+
 ### What this does and does not show
 
-- The measurement is 72 holdout drafts of 24 tasks from six writers; the
-  first 24 drafts, from a seventh, are the development set.
+- The measurement is 120 holdout drafts of 24 tasks from eight writers, 48
+  of them scored with today's analyzer; the first 24 drafts, from a ninth,
+  are the development set.
 - The writers and the proposers were Claude subagents of the session that
   built ashugh, not calls to the API. They had no access to the code, the
   tool or the conversation, only their briefs and fit's requests.

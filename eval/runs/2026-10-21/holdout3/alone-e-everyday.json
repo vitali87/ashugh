@@ -1,0 +1,144 @@
+{
+  "summary": {
+    "alone": {
+      "tasks": 12,
+      "line_pass_rate": 1.0,
+      "songs_ok": 1.0,
+      "failed": 0
+    }
+  },
+  "rows": [
+    {
+      "task": "en-harbor",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nThe gulls still circle over stone,\nThe lantern rusts above the quay,\nThe fishers mend their nets alone\nAnd watch the empty, silent sea.\n\n[Verse 2]\nMy father sailed at break of day\nWith salt and silver in his hand,\nBut now the timbers rot away\nAnd weeds grow thick along the sand.\n\n[Chorus]\nOh, no more ships will come to town,\nNo sails will crown the morning tide,\nThe harbor bell has rusted down\nAnd all our songs have slowly died.\n\n[Verse 3]\nThe tavern door is boarded tight,\nThe children left for distant streets,\nWe sit beneath the ghostly light\nAnd hum the tune the wind repeats.\n\n[Chorus]\nOh, no more ships will come to town,\nNo sails will crown the morning tide,\nThe harbor bell has rusted down\nAnd all our songs have slowly died.\n\n[Outro]\nSo light the lamp and hold it high,\nIn case a sail should cross the bay;\nThe sea forgets, but you and I\nWill keep the harbor night and day.\n"
+    },
+    {
+      "task": "en-summer",
+      "language": "en",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nSun is sinking, gold and slow,\nBonfire burning down below,\nAll my friends are here tonight,\nDancing in the fading light.\n\n[Chorus]\nHold me till the morning comes,\nLet our hearts beat loud like drums,\nLast night of the summer sky,\nWe're too young to say goodbye.\n\n[Verse 2]\nSalty hair and sunburned skin,\nTides are rolling slowly in,\nSoon the city, soon the rain,\nKiss me once and once again.\n\n[Chorus]\nHold me till the morning comes,\nLet our hearts beat loud like drums,\nLast night of the summer sky,\nWe're too young to say goodbye.\n\n[Bridge]\nStars are blinking one by one,\nSummer's nearly said and done,\nTurn the radio up high,\nSing it to the open sky.\n\n[Chorus]\nHold me till the morning comes,\nLet our hearts beat loud like drums,\nLast night of the summer sky,\nWe're too young to say goodbye.\n"
+    },
+    {
+      "task": "hy-iamb",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՄեր հին տան դուռը բաց է միշտ,\nԾաղկում են դեռ բակում ծառեր,\nԻսկ պատերին պահված է վիշտ,\nՈւ հին փոշու տակ՝ մեր ողջ սեր։\n\n[Verse 2]\nԱյստեղ մայրիկն էր երգ ասում,\nԾաղկում էր մեր բակում ծիրան,\nՊապիկն էր մեզ հետ միշտ խոսում,\nԼի էր լույսով մեր հին ճամփան։\n\n[Chorus]\nՀին տուն, դու իմ հիշողություն,\nԿանչում ես ինձ ամեն գիշեր,\nԴու իմ անցած, իմ մանկություն,\nՎերադարձնում ես հին օրեր։\n\n[Verse 3]\nՀիմա դատարկ է տունը մեր,\nՄիայն քամին է ներս գալիս,\nԲայց դեռ այստեղ ապրում է սեր,\nԿանչում է ձայնը մայրիկիս։\n\n[Chorus]\nՀին տուն, դու իմ հիշողություն,\nԿանչում ես ինձ ամեն գիշեր,\nԴու իմ անցած, իմ մանկություն,\nՎերադարձնում ես հին օրեր։\n"
+    },
+    {
+      "task": "hy-lullaby",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՕրոր, բալիկ, օրոր,\nԳիշեր է իջել սար,\nԼուսինն է քեզ պահում,\nՔեզ՝ համբույր մի հազար։\n\n[Chorus]\nՆանի, նանի, բալես,\nՔուն, արի աչքերին,\nՆանի, նանի, բալես,\nԲարի քուն բալիկին։\n\n[Verse 2]\nԶով քամին է գալիս,\nԱստղերն են լուռ վառվում,\nԳառնուկն էլ է հանգիստ,\nՕրրանն է օրորվում։\n\n[Chorus]\nՆանի, նանի, բալես,\nՔուն, արի աչքերին,\nՆանի, նանի, բալես,\nԲարի քուն բալիկին։\n"
+    },
+    {
+      "task": "hy-mother",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 16,
+      "passing": 16,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nՀեռու եմ քեզնից, իմ մայրիկ,\nԵս նույն քո փոքրիկ, քո բալիկ,\nՀիշում եմ ես ձայնդ անուշ\nՈւ ձեռքերդ՝ տաք ու քնքուշ։\n\n[Chorus]\nՄայրիկ ջան, մի օր ետ կգամ,\nՔեզ հետ կլինեմ ամեն ժամ,\nԳիտեմ՝ դու ինձ ես սպասում\nՈւ կարոտով երգեր ասում։\n\n[Verse 2]\nԱյստեղ օտար են փողոցներ,\nՕտար լեզու, օտար դեմքեր,\nԵս քո նամակն եմ պահում մոտ,\nԵվ սիրտս լցվում է կարոտ։\n\n[Chorus]\nՄայրիկ ջան, մի օր ետ կգամ,\nՔեզ հետ կլինեմ ամեն ժամ,\nԳիտեմ՝ դու ինձ ես սպասում\nՈւ կարոտով երգեր ասում։\n"
+    },
+    {
+      "task": "hy-mountains",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԱրագած, դու մեր հին հսկա,\nԱմպերից վեր ես կանգնած,\nՔո պես սար աշխարհում չկա,\nՁյունով ես դու զարդարված։\n\n[Chorus]\nԱրագած, ո՛վ Արագած սար,\nԳյուղերդ՝ քո փեշերին,\nՈւ կանգնած ես դու դարից դար\nՈրպես պահակ մեր երկրին։\n\n[Verse 2]\nՆերքևում գյուղերն են շարված,\nՀովիվն է հոտը կանչում,\nԱյգիներն են ծաղկով պատված,\nՎանքից զանգեր են հնչում։\n\n[Chorus]\nԱրագած, ո՛վ Արագած սար,\nԳյուղերդ՝ քո փեշերին,\nՈւ կանգնած ես դու դարից դար\nՈրպես պահակ մեր երկրին։\n\n[Verse 3]\nՀազար տարի, հազար անգամ\nՔեզ են երգել մեր պապեր,\nՄենք քեզ կպահենք ամեն ժամ\nՈւ կերգենք դեռ շատ դարեր։\n\n[Chorus]\nԱրագած, ո՛վ Արագած սար,\nԳյուղերդ՝ քո փեշերին,\nՈւ կանգնած ես դու դարից դար\nՈրպես պահակ մեր երկրին։\n"
+    },
+    {
+      "task": "hy-night-city",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 8,
+      "passing": 8,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳիշեր է իջել Երևան,\nԱստղերն են լուռ ինձ հետ խոսում,\nԴատարկ է մեր հին նստարան,\nԻսկ ես քեզ եմ դեռ սպասում։\n\n[Chorus]\nԱրի, Երևանն է արթուն,\nՔանի լուսինն է մեզ ժպտում,\nՈւ առանց քեզ ես եմ անքուն,\nԻմ սիրտը քեզ է կարոտում։\n"
+    },
+    {
+      "task": "hy-spring",
+      "language": "hy",
+      "mode": "alone",
+      "lines": 24,
+      "passing": 24,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nԳարնան առաջին տաք օր,\nԾաղկել են բոլոր դաշտեր,\nԱմեն ինչ թվում է նոր,\nՈւ ես քեզ եմ գտել, սեր։\n\n[Chorus]\nԳարուն է, գարուն, գարուն,\nՈւ սիրտս թռչում է վեր,\nՔո ձեռքն է տաք ու սիրուն,\nՍիրում եմ քեզ, անուշ սեր։\n\n[Verse 2]\nՔայլում ենք մենք միասին\nԳետափով մինչ մայրամուտ,\nԵրգ եմ ասում քո մասին,\nՈւ օրն անցավ այնքան շուտ։\n\n[Chorus]\nԳարուն է, գարուն, գարուն,\nՈւ սիրտս թռչում է վեր,\nՔո ձեռքն է տաք ու սիրուն,\nՍիրում եմ քեզ, անուշ սեր։\n\n[Bridge]\nԾիծեռնակներ են գալիս,\nԾաղիկ եմ քեզ ես բերել,\nԳարունն է համբույր տալիս,\nՈւ հենց այսօր եմ սիրել։\n\n[Chorus]\nԳարուն է, գարուն, գարուն,\nՈւ սիրտս թռչում է վեր,\nՔո ձեռքն է տաք ու սիրուն,\nՍիրում եմ քեզ, անուշ սեր։\n"
+    },
+    {
+      "task": "ru-city",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nГород не спит, как и я, давно,\nФары скользят по пустой стене,\nКто-то курит, свесившись в окно,\nИ всё, что было, горит во мне.\n\n[Verse 2]\nСчитаю окна и провода,\nСветофор мигает сам себе,\nИ никто не едет никуда,\nИ я снова думаю о тебе.\n\n[Chorus]\nМне опять не спится, не снится,\nЭтот город не даёт уснуть,\nТолько небо в окне кружится,\nИ до утра ещё долгий путь.\n\n[Bridge]\nНеон на мокром асфальте горит,\nТакси проносится в темноту,\nМой телефон всё ещё молчит,\nЯ кричу твоё имя в пустоту.\n\n[Chorus]\nМне опять не спится, не снится,\nЭтот город не даёт уснуть,\nТолько небо в окне кружится,\nИ до утра ещё долгий путь.\n"
+    },
+    {
+      "task": "ru-road",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nРано утром, на рассвете,\nМы выходим за порог,\nСтарый друг и я — как дети,\nПеред нами сто дорог.\n\n[Verse 2]\nЗаведём мотор, как прежде,\nКурс на юг, к морской волне,\nМы в дороге и в надежде,\nСолнце красное в окне.\n\n[Chorus]\nЕдем, едем к югу, к югу,\nВетер треплет нам виски,\nМы плечо подставим другу —\nНет ни боли, ни тоски.\n\n[Verse 3]\nПомнишь, как, ещё мальчишки,\nМы мечтали о морях,\nМы о них читали в книжке,\nА теперь они в глазах.\n\n[Chorus]\nЕдем, едем к югу, к югу,\nВетер треплет нам виски,\nМы плечо подставим другу —\nНет ни боли, ни тоски.\n"
+    },
+    {
+      "task": "ru-sea",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nНа скалах высоких — маяк,\nОн светит сквозь ветер и мрак,\nА женщина ждёт у воды\nПод светом вечерней звезды.\n\n[Verse 2]\nЛюбимый ушёл за моря,\nКогда разгоралась заря,\nИ ждёт она год, и другой\nНад тёмной солёной волной.\n\n[Chorus]\nГори, мой маяк, над водой,\nПусть парус вернётся домой\nСквозь бурю, сквозь ночь и туман,\nСквозь синий седой океан.\n\n[Verse 3]\nНад морем кружат журавли,\nИ снова плывут корабли,\nОна всё глядит в тишину,\nВстречая ночную волну.\n\n[Chorus]\nГори, мой маяк, над водой,\nПусть парус вернётся домой\nСквозь бурю, сквозь ночь и туман,\nСквозь синий седой океан.\n"
+    },
+    {
+      "task": "ru-winter",
+      "language": "ru",
+      "mode": "alone",
+      "lines": 20,
+      "passing": 20,
+      "line_pass_rate": 1.0,
+      "song_ok": true,
+      "errors": {},
+      "text": "[Verse 1]\nЗимой вечерний снег кружится\nНад старым домом у реки,\nЯ жду письма, и мне не спится,\nИ гаснут в окнах огоньки.\n\n[Verse 2]\nПустой почтовый ящик снова\nМолчит, как прежде, у ворот,\nНи строчки нет, ни даже слова,\nА я всё жду, который год.\n\n[Chorus]\nМетель, метель, неси мне вести\nИз дальних, незнакомых мест,\nМы были так недолго вместе,\nА снег на всё кладёт свой крест.\n\n[Verse 3]\nОстывший чай, огонь в камине,\nИ тени пляшут на стене,\nЯ снова в доме, как в пустыне,\nА ты не пишешь больше мне.\n\n[Chorus]\nМетель, метель, неси мне вести\nИз дальних, незнакомых мест,\nМы были так недолго вместе,\nА снег на всё кладёт свой крест.\n"
+    }
+  ]
+}
