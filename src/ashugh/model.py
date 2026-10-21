@@ -52,6 +52,7 @@ class Word:
     short_readings: tuple[Reading, ...] = ()  # dictionary readings sung short: our as are
     optional_why: str = ""  # why the optional schwa may go, for the note
     notes: list[str] = field(default_factory=list)
+    held: bool = False  # one held vowel (Ооо, աաա): a vocable, no rhyme word after a word
 
     @property
     def size(self) -> int:
@@ -133,6 +134,8 @@ VOWEL_LETTERS = set("аеёиоуыэюяaeiouyաեէըիոօև")
 def mark_stress(text: str) -> str:
     """text with an acute after its first vowel letter (ё needs none)."""
     for i, ch in enumerate(text):
+        if ch.lower() == "y" and text[i + 1 : i + 2].lower() in VOWEL_LETTERS - {"y"}:
+            continue  # yes, be-yond, kyan: a y before a vowel is a glide
         if ch.lower() in VOWEL_LETTERS:
             if ch.lower() == "ё":
                 return text

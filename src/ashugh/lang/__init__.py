@@ -93,7 +93,7 @@ def foreign_word(token: str) -> Word:
     )
 
 
-PHRASE_END = re.compile(r"\s*[,.;:!?…—–։՝]")
+PHRASE_END = re.compile(r"\s*[,.;:!?…—–։՝․]")  # ․ the Armenian middle dot
 SENTENCE_END = re.compile(r"\s*[.!?…]")
 
 

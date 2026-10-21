@@ -1169,6 +1169,7 @@ def analyze_word(
             syllables=(Syllable(token),),
             readings=(Reading(0, transcribe(v, 0), v, "rule"),),
             weak=True,
+            held=True,
         )
     norm, marked = read_marks(token)
     shown = token.replace(ACUTE, "")

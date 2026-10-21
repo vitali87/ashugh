@@ -71,6 +71,10 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
     unless chosen_only asks for the fit's own reading there too.
     """
     words = line.words
+    cut = len(words)
+    while cut > 1 and words[cut - 1].held and any(not w.held for w in words[: cut - 1]):
+        cut -= 1  # Իմ յար, աաա: a held vowel after the rhyme word is no rhyme of its own
+    words = words[:cut]
     ss = slots(words, fit.elided)
     k = _anchor(ss)
     if k is None:

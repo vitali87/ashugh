@@ -526,7 +526,7 @@ def _article_schwa(syllables: list[list[Seg]]) -> list[list[Seg]] | None:
     last = syllables[-1] if syllables else []
     if len(last) < 3 or last[-1].ph != "n" or last[-2].ph not in ARTICLE_SONORANTS:
         return None
-    if not last[-3].vowel:
+    if not last[-3].vowel and last[-3].ph != "j":  # ձայնն: ձայ-նըն, as տու-նըն
         return None
     return [*syllables[:-1], last[:-2], [last[-2], _schwa(), last[-1]]]
 
@@ -814,8 +814,10 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
     low = head.lower()
     if not all(ch in LETTERS or ch in LETTER_VOWELS for ch in low):
         return None
-    if "ու" in low or low in short_words():
-        return None  # ԴՈՒ, ՔԵԶ, ԻՆՁ: a word written in capitals for emphasis
+    if low in ("եվ", "եւ"):
+        return None  # ԵՎ: և, which has no capital of its own
+    if ("ու" in low or low in short_words()) and not hyphen:
+        return None  # ԴՈՒ, ՔԵԶ, ԻՆՁ: a word written in capitals for emphasis (but ԵՄ-ում)
     vowels = sum(ch in LETTER_VOWELS for ch in low)
     if vowels and (capitals or vowels > 1 or len(low) > 3):
         return None
@@ -844,7 +846,11 @@ def analyze_word(
             return spelled
     if lyrics.held_note(norm, "աեէըիոօ"):  # Օօօ: one held note
         word = analyze_word(token[0], overrides, capitals)
-        word.text, word.norm = token, norm
+        if word.clitic or word.enclitic:  # աաա is sung, not the auxiliary ա
+            phones = word.readings[0].phones if word.readings else ()
+            word.readings = (Reading(0, phones, norm, "rule"),)
+            word.clitic = word.enclitic = False
+        word.text, word.norm, word.held = token, norm, True
         word.syllables = tuple(replace(s, text=token) for s in word.syllables)
         return word
     override = (overrides or {}).get(norm)
