@@ -240,8 +240,8 @@ intelligibility rather than every sung schwa.
 * **MCP.** `claude mcp add ashugh -- ashugh mcp` (or, with nothing installed,
   `claude mcp add ashugh -- uvx --from git+https://github.com/vitali87/ashugh ashugh mcp`)
   gives an agent the tools
-  `scan`, `syllables`, `rhyme`, `pick`, `suno`, `derive_spec` and
-  `spec_template`.
+  `scan`, `syllables`, `rhyme`, `requests`, `pick`, `translate`, `suno`,
+  `derive_spec` and `spec_template`.
 * **Language server.** `ashugh lsp` underlines the lines that do not scan and
   shows on hover how a line is sung. The spec is the file's sibling `.toml`
   (song.txt -> song.toml) or the nearest `ashugh.toml`; saving the spec
