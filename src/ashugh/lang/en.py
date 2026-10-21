@@ -267,8 +267,8 @@ def lookup(norm: str) -> list[str] | None:
         return derived
     parts = _compound_parts(norm)
     if parts:  # lovestruck, facetime: two words, stressed on the first
-        left, right = ((TABLE.get(p) or "").split("|")[0] for p in parts)
-        return [left + " " + right.replace("1", "2")]
+        left, right = ((TABLE.get(p) or "").split("|") for p in parts)
+        return [x + " " + right[0].replace("1", "2") for x in left]  # fire-light, fir'-light
     if norm.endswith("'s") and len(norm) > 3:  # bustle's, mornin's: the word, then its -s
         found = lookup(norm[:-2])
         if found:
@@ -517,12 +517,57 @@ ONSETS = {
 
 
 def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
-    """The first inner e that only lengthens the vowel before it: love-ly, some-time."""
+    """The first inner e that only lengthens the vowel before it: love-ly, some-time
+    (not the e of every, dropped before an r)."""
     for k in range(1, len(groups) - 1):
         a, b = groups[k]
-        if low[a:b] == "e" and groups[k - 1][1] == a - 1:
+        if low[a:b] == "e" and groups[k - 1][1] == a - 1 and not _before_r(low, groups, k):
             return k
     return None
+
+
+def _before_r(low: str, groups: list[tuple[int, int]], k: int) -> bool:
+    """Whether vowel group k is one letter between consonants and a single r before
+    the next vowel: the e of every, the e of camera, which speech drops."""
+    if not 0 < k < len(groups) - 1:
+        return False
+    a, b = groups[k]
+    return b - a == 1 and low[b : b + 1] == "r" and groups[k + 1][0] == b + 1
+
+
+# A suffix whose i is a glide, never a syllable of its own: na-tion, gla-cial, re-li-gion.
+GLIDE_SUFFIX_RE = re.compile(
+    r"(?:[tsc]i(?:on|an|al|ous|ent|ence)|gi(?:on|ous)|xi(?:ous|on))(?:s|ly)?$"
+)
+
+
+def _hiatus_cut(low: str, groups: list[tuple[int, int]]) -> tuple[int, int] | None:
+    """Where a vowel run splits into two sung vowels: cre-a-tion, sit-u-a-tion (not
+    the glide of the -tion), al-le-lu-ia (an i between vowels begins the next)."""
+    for h in HIATUS:
+        for k, (a, b) in enumerate(groups):
+            at = low.find(h, a, b)
+            if at < 0 or (at and GLIDE_SUFFIX_RE.match(low, at - 1)):
+                continue
+            if h[0] == "i" and at > a:
+                return k, at  # lu-ia: the i glides into the vowel after it
+            return k, at + 1
+    return None
+
+
+def _archaic_ending(low: str) -> bool:
+    """Whether low is an old verb form the dictionary lacks, -est or -eth on a
+    stem it has: walk-est, bless-eth (but la-test of late)."""
+    if not low.endswith(("est", "eth")) or len(low) < 6:
+        return False
+    stem = low[:-3]
+    own = TABLE.get(stem)
+    if not own or stem[-1] in LETTER_VOWELS:
+        return False
+    silent = TABLE.get(stem + "e")  # late is the stem of latest, not lat
+    if silent and not set(silent.split("|")) & set(own.split("|")):
+        return False
+    return not TABLE.get(low)  # an old verb form the dictionary lacks: har-vest stays
 
 
 def _hiatus(low: str, groups: list[tuple[int, int]]) -> bool:
@@ -573,18 +618,29 @@ def split_spelling(
     if len(groups) < n:
         # an -ed or -es is sung where its stem has a syllable fewer (learn-ed), not
         # where a hiatus in the stem holds the missing one (cho-re-o-graphed)
-        stem = TABLE.get(low[:-2]) if low.endswith(("ed", "es")) else None
+        stems = [low[:-2]] if low.endswith(("ed", "es")) else []
+        if low.endswith("ves"):
+            stems += [low[:-3] + "f", low[:-3] + "fe"]  # our-selves of ourself, knives
+        stem = next((TABLE.get(x) for x in stems if TABLE.get(x)), None)
         if stem is not None:
             revive = sum(ch.isdigit() for ch in stem.split("|")[0]) < n
         else:
             revive = not _hiatus(low, groups)
         if revive:
             groups = _vowel_groups(low) or groups
-    sung_ed = low.endswith("ed") and len(groups) > 1 and groups[-1] == (len(low) - 2, len(low) - 1)
+    sung_ed = (
+        low.endswith("ed")
+        and len(groups) > 1
+        and groups[-1] == (len(low) - 2, len(low) - 1)
+        and bool(TABLE.get(low[:-2]) or TABLE.get(low[:-1]))  # learn-ed, not hundr-ed
+    )
     while len(groups) > n:
         # a silent e (love-ly), else the vowel after the first, which speech drops
         # (choco-late, came-ra), else the last
         k = _silent_e(low, groups) or (1 if len(groups) > 2 else len(groups) - 1)
+        if _before_r(low, groups, k):  # ev-ery, cam-era, dif-ferent: it goes with the r
+            groups[k : k + 2] = [(groups[k][0], groups[k + 1][1])]
+            continue
         a, b = groups[k - 1], groups.pop(k)
         groups[k - 1] = (a[0], b[1])
     while len(groups) < n:  # one vowel run is two syllables: a hiatus first (Lou-i-si-a-na)
@@ -601,19 +657,7 @@ def split_spelling(
             ((k, ing.start()) for k, (a, b) in enumerate(groups) if ing and a < ing.start() < b),
             None,
         )
-        cut = (
-            ending
-            or glide
-            or next(
-                (
-                    (k, a + low[a:b].find(h) + 1)
-                    for h in HIATUS
-                    for k, (a, b) in enumerate(groups)
-                    if h in low[a:b]
-                ),
-                None,
-            )
-        )
+        cut = ending or glide or _hiatus_cut(low, groups)
         if cut is None:
             longest = max(range(len(groups)), key=lambda k: groups[k][1] - groups[k][0])
             a, b = groups[longest]
@@ -637,6 +681,9 @@ def split_spelling(
         if suffix is not None and end <= suffix < start:
             cuts.append(suffix)  # dark-ness, weak-ness, kind-ly
             continue
+        if start == len(low) - 3 and _archaic_ending(low):
+            cuts.append(start)  # walk-est, bless-eth
+            continue
         if sung_ed and start == len(low) - 2 and low[start - 1] not in "td" + low[start - 2]:
             cuts.append(start)  # learn-ed: the ending sung as a syllable (but bles-sed)
             continue
@@ -650,6 +697,10 @@ def split_spelling(
             onset = 0  # tow-er, flow-er, how-ev-er (but a-wake, to-ward)
         elif gap == "n" and low[end - 3 : end] in ("tio", "sio", "cio"):
             onset = 0  # pro-mo-tion-al, na-tion-al
+        elif gap[-1:] in ("g", "q") and re.match(r"u[aeiou]", low[start : start + 2]):
+            onset = 1  # lan-guage, ba-guette: the u is a glide after g or q
+        elif gap[-2:] in ("qu", "gu"):
+            onset = 2  # li-quid, con-quer
         elif gap[-1:] in ("t", "s", "c", "g") and re.match(r"i[aou]", low[start : start + 2]):
             onset = 1  # na-tion, pas-sion, ma-gi-cian: the suffix keeps its consonant
         else:
@@ -707,6 +758,8 @@ def _parted(phones: list[str], norm: str) -> frozenset[str]:
     out = {d for d, first in SPLIT_DIGRAPHS if (first, "HH") in pairs}
     if "ph" in norm and "F" not in phones:
         out.add("ph")
+    if "sh" in norm and not {"SH", "ZH"} & set(phones):
+        out.add("sh")  # dis-hon-est, mis-hear
     return frozenset(out)
 
 
@@ -927,6 +980,8 @@ def _short_part_ok(low: str, k: int) -> bool:
     inflection's ending that happens to spell a word: darke-ned, withe-red."""
     if low[:k].endswith("e"):
         return not low.endswith(("ed", "es"))
+    if low[k:] == "one":
+        return True  # ev-ery-one, an-y-one: one begins with a w
     return (
         len(low) - k == SHORT_PART
         and low[k - 1] not in LETTER_VOWELS
@@ -953,18 +1008,23 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
     """Where low splits into two dictionary words whose syllables add up to n, and
     how many the first has; the most even such split."""
     best = None
-    for k in range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1):
+    seams = range(MIN_COMPOUND_PART, len(low) - SHORT_PART + 1)
+    if low.endswith("one"):
+        seams = sorted({*seams, len(low) - 3})  # an-y-one
+    for k in seams:
         if len(low) - k < MIN_COMPOUND_PART and not _short_part_ok(low, k):
             continue
         left, right = TABLE.get(low[:k]), TABLE.get(low[k:])
         if not left or not right or not low[:k].isalpha() or not low[k:].isalpha():
             continue
-        a = sum(ch.isdigit() for ch in left.split("|")[0])
-        b = sum(ch.isdigit() for ch in right.split("|")[0])
-        if a and b and a + b == n and _sounds_like_parts(low, left, right):
-            even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))
-            if best is None or even < best[0]:
-                best = (even, k, a)
+        counts = {  # ev-ery-one: any reading of a part, every said in two or three
+            (_vowels(x), _vowels(y)) for x in left.split("|") for y in right.split("|")
+        }
+        for a, b in sorted(counts):
+            if a and b and a + b == n and _sounds_like_parts(low, left, right):
+                even = (not low[:k].endswith("e"), abs(len(low) - 2 * k))
+                if best is None or even < best[0]:
+                    best = (even, k, a)
     return (best[1], best[2]) if best else None
 
 
@@ -975,14 +1035,31 @@ def _sounds_like_parts(low: str, left: str, right: str) -> bool:
     if not whole:
         return True
 
-    def bare(variant: str) -> str:
-        return re.sub(r"\d", "", variant)
+    def bare(variant: str) -> list[str]:
+        return re.sub(r"\d", "", variant).split()
 
     return any(
-        bare(w) == f"{bare(x)} {bare(y)}"
+        _one_phone_apart(bare(w), bare(x) + bare(y))
         for w in whole.split("|")
         for x in left.split("|")
         for y in right.split("|")
+    )
+
+
+def _vowels(variant: str) -> int:
+    return sum(ch.isdigit() for ch in variant)
+
+
+def _one_phone_apart(a: list[str], b: list[str]) -> bool:
+    """Whether a and b are the same phones, or one consonant more in one of them:
+    Christmastime says a T that Christmas lacks."""
+    if a == b:
+        return True
+    if abs(len(a) - len(b)) != 1:
+        return False
+    long, short = (a, b) if len(a) > len(b) else (b, a)
+    return any(
+        long[:k] + long[k + 1 :] == short and long[k] in CONSONANTS_ARPA for k in range(len(long))
     )
 
 
@@ -1086,12 +1163,11 @@ def analyze_word(
         for f in full if len(stresses) == longest - 1 else ():
             if word.drop is None:  # fa-vo-rite, fav-rite: a reduced vowel either way
                 word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare))
-    vowels = full[0][2]
     if word.drop is None and (k := _syncope(*full[0])) is not None:
         word.drop = k  # mem'ry, whisp'ring, glo-rious, op'ning
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
-    if word.drop is None and _smoothed(*full[0]):
-        word.drop = len(vowels) - 1
+    if word.drop is None:
+        word.drop = _smoothed(*full[0])
     if norm in SHORT_FIRST and word.drop is not None:
         word.drop_cost = SHORT_PREFERENCE
 
@@ -1240,12 +1316,15 @@ def _sung_ed(variant: str) -> str:
     return variant
 
 
-def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> bool:
-    """Whether the last vowel is an unstressed er right after aɪ or aʊ."""
-    if len(bare) < 2 or bare[-1] != "ER" or stresses[-1] or bare[-2] not in SMOOTHED:
-        return False
+def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> int | None:
+    """The vowel that is an unstressed er right after aɪ or aʊ, which the singer may
+    run into it: fi-re, hour-glass, fire-side."""
     at = [i for i, p in enumerate(phones) if is_vowel(p)]
-    return at[-1] == at[-2] + 1
+    for k in range(len(bare) - 1, 0, -1):
+        if bare[k] == "ER" and not stresses[k] and bare[k - 1] in SMOOTHED:
+            if at[k] == at[k - 1] + 1:
+                return k
+    return None
 
 
 RUN_RE = re.compile(r"([a-z])\1{2,}", re.I)  # a letter written three times or more
@@ -1445,7 +1524,9 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
         return pieces
     after = pieces[drop + 1] if drop < last else ""
     glide = pieces[drop][-1:].lower() in ("i", "y") and after[:1].lower() in tuple("aeiou")
-    if short and 0 < drop < last and glide:  # glo-ri-ous: glo-rious, the i a glide
+    if short and drop > 0 and HIDDEN_ER_RE.match(pieces[drop - 1] + pieces[drop]):
+        pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + pieces[drop]]  # fire-light
+    elif short and 0 < drop < last and glide:  # glo-ri-ous: glo-rious, the i a glide
         pieces[drop : drop + 2] = [pieces[drop] + pieces[drop + 1]]
     elif short and 0 < drop < last:
         cut = pieces[drop]
@@ -1455,12 +1536,15 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
     elif short:
         at = drop - 1 if drop > 0 else 0
         pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
-    elif drop == last and pieces[last].lower() == "re":  # fi-re: fi-er
-        pieces[last] = _case_of(pieces[last], "er")
-    elif drop == last and pieces[last].lower() == "ur" and pieces[last - 1][-1:].lower() == "o":
-        pieces[last - 1] += pieces[last][0]  # ho-ur: hou-er
-        pieces[last] = _case_of(pieces[last], "er")
+    elif drop > 0 and (m := HIDDEN_ER_RE.match(pieces[drop - 1] + pieces[drop])):
+        er = _case_of(pieces[drop], "er") + m.group(2)  # fi-re: fi-er, tir-ed: ti-erd
+        pieces[drop - 1 : drop + 1] = [m.group(1), er]
     return pieces
+
+
+# A syllable the spelling hides in -ire, -our and their endings, sung as er:
+# fi-re, fi-res, tir-ed, de-sir-ed, ho-ur, ho-urs, ho-ur-glass.
+HIDDEN_ER_RE = re.compile(r"(?i)^(.*(?:[iy]|ou))re?([ds]?)$")
 
 
 def _case_of(written: str, new: str) -> str:

@@ -88,7 +88,7 @@ class Word:
     def sung(self, stress: int | None = None, mark: bool = False, dropped: bool = False) -> str:
         """Syllables joined by hyphens; with dropped, the droppable one as the line
         sings it: an Armenian schwa in brackets (սե-ր(ը)ն), an English syllable run
-        into the one before it (eve-ry)."""
+        into the one before it (fi-re), or the one after it before an r (ev-ery)."""
         if not self.syllables:
             return self.text
         parts = []
@@ -107,8 +107,9 @@ class Word:
                 parts[d] = parts[d].replace("ը", "(ը)", 1).replace("Ը", "(Ը)", 1)
             elif "ə" in parts[d]:  # kyan-k(ə)n: Armenian typed in Latin
                 parts[d] = parts[d].replace("ə", "(ə)", 1)
-            else:
-                at = d - 1 if d > 0 else 0
+            else:  # ev-ery, his-tory: a vowel dropped before an r goes with the r
+                ahead = d + 1 < len(parts) and parts[d + 1][:1] in ("r", "R")
+                at = d if ahead or d == 0 else d - 1
                 parts[at : at + 2] = ["".join(parts[at : at + 2])]
         return "-".join(parts)
 

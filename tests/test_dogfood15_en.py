@@ -153,3 +153,74 @@ def test_a_dolnik_song_rhymes_melody_and_free():
 
 def test_a_final_y_next_to_the_stress_does_not_rhyme_on_it():
     assert rhymes("happy", "free") < 0.45
+
+
+def pieces(word: str) -> str:
+    from ashugh.lang import en
+
+    return "-".join(s.text for s in en.analyze_word(word).syllables)
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("hundred", "hun-dred"), ("kindred", "kin-dred"), ("sacred", "sa-cred"),
+        ("creation", "cre-a-tion"), ("situation", "sit-u-a-tion"), ("graduation", "grad-u-a-tion"),
+        ("walkest", "walk-est"), ("blesseth", "bless-eth"), ("worketh", "work-eth"),
+        ("everyone", "ev-ery-one"), ("dishonest", "dis-hon-est"), ("baguette", "ba-guette"),
+        ("learned", "learn-ed"), ("nation", "na-tion"), ("forest", "for-est"),
+    ],
+)  # fmt: skip
+def test_split_display_round_15(word, split):
+    assert pieces(word) == split
+
+
+def displays(word: str) -> tuple[str, str, str]:
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    pieces = [s.text for s in w.syllables]
+    full = "-".join(en.sung_pieces(pieces, w.drop, False))
+    short = "-".join(en.sung_pieces(pieces, w.drop, True))
+    return full, short, w.sung(dropped=True)
+
+
+@pytest.mark.parametrize(
+    "word,full,short",
+    [
+        ("ourselves", "ou-er-selves", "our-selves"), ("hours", "hou-ers", "hours"),
+        ("tired", "ti-erd", "tired"), ("desired", "de-si-erd", "de-sired"),
+        ("fires", "fi-ers", "fires"), ("hourglass", "hou-er-glass", "hour-glass"),
+        ("firelight", "fi-er-light", "fire-light"), ("fireside", "fi-er-side", "fire-side"),
+        ("fire", "fi-er", "fire"), ("flower", "flow-er", "flower"),
+    ],
+)  # fmt: skip
+def test_a_hidden_er_is_sung_as_er_anywhere_in_the_word(word, full, short):
+    got = displays(word)
+    assert got[:2] == (full, short)
+    assert got[2] == short  # syl runs it into the syllable before
+
+
+def test_a_vowel_dropped_before_r_goes_with_the_r():
+    assert displays("every")[2] == "ev-ery"
+    assert displays("every")[1] == "ev'-ry"
+
+
+def test_a_compound_with_a_droppable_part_keeps_its_drop():
+    from ashugh.lang import en
+
+    assert en.analyze_word("firelight").drop == 1  # fire: one syllable or two
+    assert en.analyze_word("lovestruck").drop is None
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("language", "lan-guage"), ("liquid", "li-quid"), ("penguin", "pen-guin"),
+        ("anyone", "an-y-one"), ("everybody", "ev-ery-bod-y"), ("harvest", "har-vest"),
+        ("latest", "la-test"), ("interest", "in-te-rest"), ("chocolate", "cho-co-late"),
+        ("cooperation", "co-op-e-ra-tion"), ("association", "as-so-ci-a-tion"),
+    ],
+)  # fmt: skip
+def test_split_display_negatives_and_neighbours(word, split):
+    assert pieces(word) == split

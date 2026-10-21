@@ -454,7 +454,7 @@ def test_an_off_beat_word_is_quoted_as_the_line_sings_it():
     )
     report = scan(limerick, from_dict({"language": "en", "meter": "anapest"}))
     (beat,) = [i for i in report.issues if "off the beat" in i.message]
-    assert "e\u0301ve-ry" in beat.message and "-e-ry" not in beat.message
+    assert "e\u0301v-ery" in beat.message and "-e-ry" not in beat.message
 
 
 @pytest.mark.parametrize(
