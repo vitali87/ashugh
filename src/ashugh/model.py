@@ -106,7 +106,7 @@ class Word:
     def _with_yo(self, stress: int | None) -> list[str]:
         """The syllables with the ё their reading has where the text writes е: мо-ё."""
         texts = [s.text for s in self.syllables]
-        spelling = self.reading(stress).spelling if self.readings else ""
+        spelling = self.reading(stress).spelling.replace("-", "") if self.readings else ""
         flat = "".join(texts)
         if "ё" not in spelling or flat.lower().replace("ё", "е") != spelling.replace("ё", "е"):
             return texts

@@ -189,3 +189,18 @@ def test_a_derived_yo_form_does_not_shadow_a_listed_e_form(tmp_path):
     assert listed["нужен"] == [1]
     assert "нужён" not in made
     assert "нужённый" in made, "the rest of the participle stays"
+
+
+@pytest.mark.parametrize(
+    "form,positions",
+    [
+        ("трёхэта'жный", {3}),
+        ("надё'жный", {2}),
+        ("ёлка", {1}),
+        ("чёрно-бе'лый", {1, 3}),
+        ("го'ссекретарём", {5}),
+        ("такс'иста", {2}),  # a mark the dump put before its vowel
+    ],
+)
+def test_a_compound_yo_beside_a_marked_stress_is_not_a_reading(form, positions):
+    assert ru_build.stress_positions(form)[1] == positions

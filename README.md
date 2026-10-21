@@ -268,8 +268,8 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | **97.3%** correct |
-| each word's first reading, without meter or rhyme | 92.9% |
+| stress of polysyllabic words (60,855) | **97.4%** correct |
+| each word's first reading, without meter or rhyme | 93.0% |
 | words the dictionary lists | 98.2% |
 | ambiguous words, resolved by meter and rhyme | 95.4% |
 | unknown words (7%), guessed from the ending, meter and rhyme | 88.6% |
@@ -379,6 +379,19 @@ one the meter may use, the last part carrying the main stress and the rhyme
    теряю, начав from начать, создавший from создать;
 7. else a prior learned from word endings (from step 3's forms alone),
    which the meter can overrule.
+
+A capitalized word inside a sentence that spells one of about 230 first
+names, diminutives and places is that name (Ма́шу, Ко́лю, Со́чи, Росто́ва,
+not машу́, колю́, сочи́); one that opens a sentence keeps the dictionary's
+reading first and gains the name's. A name written without its ё gets it
+(Лёха, Алёна). An abbreviation in capitals with no vowel letter, or ending
+on its only vowels (США, МГУ), is sung letter by letter and stressed on the
+last (эс-пэ-бэ́); ЗАГС and НАТО stay words, and a line in capitals is never
+spelt out. A preposition or conjunction said twice in a row is a vocable,
+not a clitic (на-на-на, да-да-да), and тя leans on its verb like бы. A
+hyphenated word the dictionary stresses only before its last part takes the
+last part's stress too (чёрно-бе́лый), and a compound's earlier ё is no
+reading of its own (трёхэта́жный).
 
 After в, во and на, about a hundred nouns take the stressed second locative
 (на берегу́, в саду́, в крови́). In about a hundred set pairs the stress may

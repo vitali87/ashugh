@@ -89,6 +89,18 @@ def foreign_word(token: str) -> Word:
 
 
 PHRASE_END = re.compile(r"\s*[,.;:!?…—–։՝]")
+SENTENCE_END = re.compile(r"\s*[.!?…]")
+
+
+def _sentence_starts(tokens: list[str], text: str | None) -> list[bool]:
+    """Which tokens open a sentence: the first, and any after . ! ? or …"""
+    starts = [k == 0 for k in range(len(tokens))]
+    if text is not None:
+        spans = lyrics.token_spans(text)
+        for k, (_, stop, _) in enumerate(spans[: len(tokens) - 1]):
+            if SENTENCE_END.match(text, stop):
+                starts[k + 1] = True
+    return starts
 
 
 def analyze(
@@ -109,6 +121,8 @@ def analyze(
         script = script_of(token)
         if script == en.CODE:
             words.append(en.analyze_word(token, lexicon, capitals))
+        elif script == ru.CODE:
+            words.append(ru.analyze_word(token, lexicon, capitals))
         elif script in ANALYZERS:
             words.append(ANALYZERS[script].analyze_word(token, lexicon))
         else:
@@ -116,6 +130,8 @@ def analyze(
     if lang == "hy" or any(w.lang == "hy" for w in words):
         _armenian_elision(words)
     if any(w.lang == "ru" for w in words):
+        ru.prefer_names(words, _sentence_starts(tokens, text))
+        ru.vocables(words)
         ru.second_locatives(words)
         ru.preposition_shift(words)
     end = words[-1] if words else None

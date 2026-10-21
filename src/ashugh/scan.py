@@ -111,6 +111,11 @@ class Report:
         return seen
 
 
+def _count(n: int, one: str, many: str = "") -> str:
+    """1 line, 2 lines; 1 foot, 3 feet."""
+    return f"{n} {one if n == 1 else many or one + 's'}"
+
+
 def _quote(text: str) -> str:
     return f"«{text}»"
 
@@ -558,7 +563,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                     ln.number,
                     "feet",
                     "error",
-                    f"{f.feet} feet, slot is {feet}",
+                    f"{_count(f.feet, 'foot', 'feet')}, slot is {feet}",
                     detail,
                     {"expected": feet, "actual": f.feet},
                 )
@@ -610,7 +615,7 @@ def _check_rhyme(reports: list[LineReport], rule: Rule, groups: bool = True) -> 
                 lr.line.number,
                 "scheme",
                 "warning",
-                f"stanza has {len(reports)} lines, rhyme {rule.rhyme} wants {n}",
+                f"stanza has {_count(len(reports), 'line')}, rhyme {rule.rhyme} wants {n}",
             )
         )
     if groups:

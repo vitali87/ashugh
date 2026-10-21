@@ -23,6 +23,7 @@ from importlib import resources
 
 from ..model import Reading, Syllable, Word
 from ..table import SuffixPrior
+from . import ru_names
 from .ru_lexicon import TABLE
 
 SUFFIXES = SuffixPrior("data/ru_suffix.tsv")
@@ -78,7 +79,7 @@ CLITICS = {
     "из-за",
     "из-под",
 }
-ENCLITICS = {"ли", "ль", "же", "ж", "бы", "б", "то", "ка"}
+ENCLITICS = {"ли", "ль", "же", "ж", "бы", "б", "то", "ка", "тя"}  # тя: люблю́ тя
 # Polysyllabic function words that verse often leaves unstressed.
 WEAK = {
     "через",
@@ -167,6 +168,29 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
         for k in (v, v.replace("ё", "е"))
     },
     "дождалась": ("дождалась", (2,)),  # the dictionary dump's row is garbled
+    **{k: ("ё-моё", (0, 2)) for k in ("е-мое", "ё-моё", "е-моё")},
+    # Verse's forms and words the table lacks or lists without a stress mark.
+    "ветры": ("ветры", (0,)),
+    "крылах": ("крылах", (1,)),
+    "светает": ("светает", (1,)),
+    "вослед": ("вослед", (1,)),
+    "впотьмах": ("впотьмах", (1,)),
+    # не грусти́ before гру́сти of грусть, which a preposition usually announces
+    "грусти": ("грусти", (1, 0)),
+    # Slang and loanwords of songs the dictionary lacks.
+    **{
+        f: (f, (k,))
+        for k, forms in (
+            (0, "сорян селфи сторис"),
+            (
+                1,
+                "онлайн офлайн ваще ютуб тикток плейлист плейлиста тусить тусил тусила "
+                "тусили тусим тусит тусят кринжовый кринжово",
+            ),
+            (2, "инстаграм инстаграма инстаграме"),
+        )
+        for f in forms.split()
+    },
     # The dump's colloquial све́рлит and ма́стерски for the norm сверли́т, мастерски́; and
     # зна́чимость beside значи́мость, which dictionaries give too.
     **{f: (f, (1,)) for f in "сверлю сверлишь сверлит сверлим сверлите сверлят".split()},
@@ -260,6 +284,8 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
 }
 PARTICLES = {"то", "либо", "нибудь", "ка", "таки"}
 YO_NAMES = {"петр": "пётр"}  # one-syllable names the table lacks
+# One-syllable words whose е spelling is slang of its own: сек (a second), not сёк.
+NOT_YO = {"сек"}
 # Nouns whose locative after в, во or на is stressed on the ending: в саду́, на ветру́,
 # в крови́. After these prepositions the stem-stressed dative or genitive cannot be meant.
 # Some take it after one preposition only: в полку́ but на по́лку, на виду́ but в ви́ду.
@@ -701,6 +727,9 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     if not options:
         for spelling, stress in _shift_lookup(norm):
             options.append((spelling, stress, "lexicon"))
+    if not options:  # Ростова, Алёна: a name the table lacks
+        for spelling, stress in ru_names.readings(norm):
+            options.append((spelling, stress, "lexicon"))
     elif norm.endswith("ей") and norm not in CORE:
         # the short comparative keeps the stress of its -ее form even where the same
         # spelling is another word: миле́й (милее), not only ми́лей (of miles)
@@ -708,6 +737,7 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             options.append((norm, stress, "lexicon"))
     readings = []
     for spelling, stress, source in options:
+        stress = _with_last_part(spelling, stress)
         if "-" in spelling and len(stress) > 1 and len({_part_of(spelling, p) for p in stress}) > 1:
             # давны́м-давно́ is stressed in both parts, not in one or the other
             main = max(stress)
@@ -717,6 +747,20 @@ def _lexicon_readings(norm: str) -> list[Reading]:
         for p in stress:
             readings.append(Reading(p, transcribe(spelling, p), spelling, source))
     return readings
+
+
+def _with_last_part(spelling: str, stress: tuple[int, ...]) -> tuple[int, ...]:
+    """A hyphenated form the table stresses only before its last part (чёрно-белый,
+    whose ё is all the dump marks) gains the last part's own stress: чёрно-бе́лый."""
+    parts = spelling.split("-")
+    if len(parts) < 2 or parts[-1] in PARTICLES or not vowel_count(parts[-1]):
+        return stress
+    if any(_part_of(spelling, p) == len(parts) - 1 for p in stress):
+        return stress
+    tail = analyze_word(parts[-1]).readings
+    if not tail or tail[0].stress is None:
+        return stress
+    return (*stress, vowel_count("".join(parts[:-1])) + tail[0].stress)
 
 
 def _part_of(spelling: str, vowel: int) -> int:
@@ -729,6 +773,51 @@ def _part_of(spelling: str, vowel: int) -> int:
     return k
 
 
+# The names of the letters, for an abbreviation sung letter by letter: эс-пэ-бэ́.
+LETTER_NAMES = dict(
+    zip(
+        "абвгдеёжзиклмнопрстуфхцчшщыэюя",
+        "а бэ вэ гэ дэ е ё жэ зэ и ка эль эм эн о пэ эр эс тэ у эф ха цэ че ша ща ы э ю я".split(),
+    )
+)
+
+
+def abbreviation(token: str, capitals: bool = False) -> Word | None:
+    """An abbreviation in capitals sung letter by letter, stressed on the last: СПб,
+    МСК, США. One with no vowel letter is always spelt; one with a vowel only when it
+    ends on it and has more consonants (США, МГУ, but ЗАГС, ВУЗ and НАТО are words).
+    Not in a line written all in capitals."""
+    if capitals or not 2 <= len(token) <= 6 or not token[:2].isupper():
+        return None
+    low = token.lower()
+    if not all(ch in LETTER_NAMES for ch in low):
+        return None
+    vowels = vowel_count(low)
+    if vowels and not (low[-1] in VOWELS and vowels < len(low) - vowels):
+        return None
+    spelling = "".join(LETTER_NAMES[ch] for ch in low)
+    last = len(low) - 1
+    return Word(
+        text=token,
+        norm=low,
+        lang=CODE,
+        syllables=tuple(Syllable(ch) for ch in token),
+        readings=(Reading(last, transcribe(spelling, last), spelling, "lexicon"),),
+        spelled=True,
+    )
+
+
+def vocables(words: list[Word]) -> None:
+    """A preposition or conjunction said twice in a row is a vocable or an answer,
+    not a clitic: на-на-на, да-да-да."""
+    for k, w in enumerate(words):
+        if w.lang != CODE or not w.clitic:
+            continue
+        near = [words[j].norm for j in (k - 1, k + 1) if 0 <= j < len(words)]
+        if w.norm in near:
+            w.clitic = False
+
+
 def _hyphenated(norm: str) -> list[Reading]:
     """A hyphenated word the table lacks, read part by part: the last stressed
     part carries the stress and the rhyme, the parts before keep theirs as
@@ -737,20 +826,25 @@ def _hyphenated(norm: str) -> list[Reading]:
     parts = norm.split("-")
     offsets = [vowel_count("".join(parts[:k])) for k in range(len(parts))]
     stresses = []
+    spellings = []
     for part in parts:
         if part in PARTICLES or not vowel_count(part):
             stresses.append([])
+            spellings.append(part)
         else:  # a part the table lacks is guessed like any word: ба́юшки
-            stresses.append([r.stress for r in analyze_word(part).readings if r.stress is not None])
+            readings = analyze_word(part).readings
+            stresses.append([r.stress for r in readings if r.stress is not None])
+            spellings.append(readings[0].spelling if readings else part)  # моё, not мое
     stressed = [k for k, options in enumerate(stresses) if options]
     if not stressed:
         return []
+    spelling = "-".join(spellings)
     last = stressed[-1]
     secondary = tuple(offsets[k] + stresses[k][0] for k in stressed[:-1])
     readings = []
     for p in dict.fromkeys(stresses[last]):
         at = offsets[last] + p
-        readings.append(Reading(at, transcribe(norm, at), norm, "lexicon", secondary))
+        readings.append(Reading(at, transcribe(spelling, at), spelling, "lexicon", secondary))
     return readings
 
 
@@ -784,8 +878,14 @@ def cyrillic(token: str) -> str:
     return unicodedata.normalize("NFC", decomposed)  # й and ё again; а + ́ has no single form
 
 
-def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
+def analyze_word(
+    token: str, overrides: dict[str, str] | None = None, capitals: bool = False
+) -> Word:
     token = cyrillic(token)
+    if not (overrides or {}).get(token.lower()):
+        spelled = abbreviation(token, capitals)
+        if spelled is not None:
+            return spelled
     norm, marked = read_marks(token)
     shown = token.replace(ACUTE, "")
     syllables = tuple(Syllable(s) for s in split_syllables(shown)) if vowel_count(norm) else ()
@@ -811,7 +911,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     if not readings and n == 0:
         readings = [Reading(None, transcribe(norm, None), norm, "clitic")]
     elif not readings and n == 1:
-        yo = yo_only().get(norm) or YO_NAMES.get(norm)  # ждет is ждёт: no word is spelled ждет
+        # ждет is ждёт: no word is spelled ждет
+        yo = None if norm in NOT_YO else yo_only().get(norm) or YO_NAMES.get(norm)
         spellings = [yo] if yo else [norm] + [s for s, _ in TABLE.variants(norm) if s != norm]
         source = "clitic" if clitic else "rule"
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
@@ -825,6 +926,31 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         word.notes.append("stress unknown")
     word.readings = tuple(readings)
     return word
+
+
+def prefer_names(words: list[Word], starts: list[bool]) -> None:
+    """A capitalized word inside a sentence is the name it spells (Ма́шу, Ко́лю, Со́чи,
+    not машу́, колю́, сочи́); one that opens a sentence keeps the dictionary's
+    reading first and gains the name's (Машу́ рукой, or Ма́шу встретил)."""
+    for w, start in zip(words, starts):
+        if w.lang != CODE or not w.text[:1].isupper() or w.text.isupper() or w.size < 2:
+            continue
+        if any(r.source in ("mark", "user") for r in w.readings):
+            continue
+        names = [
+            Reading(p, transcribe(spelling, p), spelling, "lexicon")
+            for spelling, stress in ru_names.readings(w.norm)
+            for p in stress
+        ]
+        if not names:
+            continue
+        if start:
+            seen = {(r.spelling, r.stress) for r in w.readings}
+            w.readings = (*w.readings, *(n for n in names if (n.spelling, n.stress) not in seen))
+        else:
+            w.readings = tuple(names)
+            if "stress unknown" in w.notes:
+                w.notes.remove("stress unknown")
 
 
 def second_locatives(words: list[Word]) -> None:

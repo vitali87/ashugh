@@ -54,8 +54,19 @@ SECTION_NAMES = {
     "хук": "Hook",
     "instrumental": "Instrumental",
     "проигрыш": "Instrumental",
+    "инструментал": "Instrumental",
     "solo": "Solo",
     "соло": "Solo",
+    "break": "Break",
+    "брейк": "Break",
+    "interlude": "Interlude",
+    "интерлюдия": "Interlude",
+    "post-chorus": "Post-Chorus",
+    "постприпев": "Post-Chorus",
+    "финал": "Outro",
+    "end": "End",
+    "конец": "End",
+    "վերջ": "End",
 }
 
 

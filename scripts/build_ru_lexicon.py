@@ -57,13 +57,29 @@ DERIVED_OUT = OUT.with_name("ru_derived.tsv")
 
 
 def stress_positions(form: str) -> tuple[str, set[int], int]:
-    positions: set[int] = set()
+    """The bare form, its stressed vowels and its vowel count. In a compound without
+    a hyphen that marks one vowel and has an ё elsewhere, the later of the two is
+    the stress and the earlier the first part's: трёхэта́жный, госсекретарём (the
+    dump's го'ссекретарём). A hyphenated form keeps both (чёрно-бе́лый)."""
+    marks: set[int] = set()
+    yos: set[int] = set()
     count = 0
     for i, ch in enumerate(form):
         if ch in VOWELS:
             count += 1
-            if ch == "ё" or (i + 1 < len(form) and form[i + 1] == "'"):
-                positions.add(count)
+            # the mark follows its vowel, or in a few rows (такс'ист) comes before it
+            if form[i + 1 : i + 2] == "'" or (
+                form[i - 1 : i] == "'" and form[i - 2 : i - 1] not in VOWELS and i > 1
+            ):
+                marks.add(count)
+            elif ch == "ё":
+                yos.add(count)
+    positions = marks | yos
+    if marks and yos and "-" not in form:
+        if max(yos) < min(marks):
+            positions = marks
+        elif min(yos) > max(marks):
+            positions = yos
     return form.replace("'", ""), positions, count
 
 
