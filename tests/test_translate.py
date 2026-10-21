@@ -244,3 +244,20 @@ def test_a_candidate_that_only_misses_the_count_is_still_the_fallback():
     result = translate.translate_song(COUPLET, "hy", proposer, keep={"syllables"}, rounds=1)
     assert "Ես քեզ եմ սպասում ամբողջ գիշեր" in result.text
     assert [c.line for c in result.changes] == [2]
+
+
+def test_translate_cli_marks_a_kept_attempt_that_fails(tmp_path, capsys):
+    src = tmp_path / "en.txt"
+    src.write_text(COUPLET, encoding="utf-8")
+    cands = tmp_path / "c.json"
+    cands.write_text(
+        json.dumps({"1": ["Я жду тебя всю ночь"], "2": ["Слишком длинная строка для этого места"]}),
+        encoding="utf-8",
+    )
+    out = tmp_path / "ru.txt"
+    args = ["translate", str(src), "--to", "ru", "--proposer", f"file:{cands}", "--rounds", "1"]
+    code = main([*args, "--keep", "syllables", "-o", str(out)])
+    assert code == 1
+    log = capsys.readouterr().out
+    assert "best attempt, fails its checks" in log
+    assert "1 line(s) changed" in log and "1 attempt kept" in log

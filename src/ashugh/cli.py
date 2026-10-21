@@ -158,17 +158,21 @@ def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | 
     for why in result.warnings:
         print(f"warning: {why}", file=sys.stderr)
     written = lyrics.split_lines(result.text)
+    unresolved = {u.line for u in result.unresolved}
     for c in result.changes:  # the line as written, its backing vocal and stop in place
         shown = written[c.line - 1].strip() if c.line <= len(written) else c.new
-        print(f"L{c.line}  {c.old}\n   → {shown}", file=log)
+        kept = "  (best attempt, fails its checks)" if c.line in unresolved else ""
+        print(f"L{c.line}  {c.old}\n   → {shown}{kept}", file=log)
     for u in result.unresolved:
         print(f"L{u.line}  unresolved: {'; '.join(u.reasons)}", file=log)
         for r in u.rejected[-3:]:
             print(f"   ✗ {r['text']} — {r['why']}", file=log)
     rep = result.report
     passing = sum(1 for lr in rep.lines if lr.ok)
+    attempts = sum(1 for c in result.changes if c.line in unresolved)
+    kept = f" · {attempts} attempt{'s' if attempts != 1 else ''} kept" if attempts else ""
     print(
-        f"{len(result.changes)} line(s) changed in {result.rounds} round(s) · "
+        f"{len(result.changes) - attempts} line(s) changed in {result.rounds} round(s){kept} · "
         f"{len(result.unresolved)} unresolved · {passing}/{len(rep.lines)} lines pass",
         file=log,
     )
