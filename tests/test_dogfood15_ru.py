@@ -125,3 +125,39 @@ def test_a_two_syllable_preposition_is_known_and_unstressed(word):
 
 def test_suno_leaves_obo_unmarked():
     assert "обо мне" in sung("Загрустила шибко обо мне\n")
+
+
+@pytest.mark.parametrize("phrase", ["на Дону", "в Крыму", "Казаки на Дону"])
+def test_a_place_takes_its_stressed_locative(phrase):
+    w = line_words(phrase)[-1]
+    assert w.readings[0].stress == 1 and len({r.stress for r in w.readings}) == 1
+
+
+def test_a_hyphenated_place_ends_on_its_locative():
+    w = line_words("Я из Ростова-на-Дону")[-1]
+    assert w.readings[0].stress == w.size - 1
+
+
+def test_suno_leaves_krymu_alone():
+    assert "в Крыму" in sung("Мы встретились в Крыму\n")
+
+
+def test_tikho_na_donu_scans():
+    report = scan(
+        "Тихо-тихо на Дону\n", from_dict({"language": "ru", "meter": "trochee", "feet": 4})
+    )
+    assert report.lines[0].ok, report.lines[0].issues
+
+
+@pytest.mark.parametrize(
+    "word,stress",
+    [("полчаса", 2), ("утраченный", 1), ("полжизни", 1), ("трёхсот", 1), ("трехсот", 1)],
+)
+def test_dictionary_slips_are_corrected(word, stress):
+    assert line_words(word)[0].readings[0].stress == stress
+
+
+def test_polchasa_couplet_passes():
+    text = "Прошло всего лишь полчаса,\nА я забыл твои глаза.\n"
+    report = scan(text, from_dict({"language": "ru", "meter": "iamb", "feet": 4, "rhyme": "AA"}))
+    assert report.ok, report.issues

@@ -200,6 +200,11 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # не грусти́ before гру́сти of грусть, which a preposition usually announces
     "грусти": ("грусти", (1, 0)),
     "дабы": ("дабы", (0,)),  # the table's даба́ is a misprint
+    # the norm where the table has only the colloquial or a wrong stress
+    "полчаса": ("полчаса", (2, 0)),
+    "утраченный": ("утраченный", (1,)),
+    "полжизни": ("полжизни", (1,)),
+    **{k: ("трёхсот", (1,)) for k in ("трёхсот", "трехсот")},
     "посреди": ("посреди", (2,)),
     # дождаться's present, which the dump's garbled row lacks: дожду́сь, дождёшься
     **{
@@ -335,6 +340,7 @@ SECOND_LOCATIVE = frozenset(
     льду лугу мелу меду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
     полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
     сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу пылу
+    дону крыму
     глуби глуши горсти груди грязи крови мели ночи оси печи пыли руси степи
     тени тиши чести шерсти
     """.split()
@@ -1275,6 +1281,17 @@ def second_locatives(words: list[Word]) -> None:
             continue
         last = w.size - 1
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+    for w in words:  # Росто́ва-на-Дону́: a place named with its locative
+        parts = w.norm.split("-")
+        if w.lang != CODE or len(parts) < 3 or not w.readings:
+            continue
+        if parts[-2] in LOCATIVE_PREPOSITIONS and parts[-1] in SECOND_LOCATIVE:
+            first, last = w.readings[0], w.size - 1
+            secondary = tuple(p for p in first.secondary if p != last)
+            reading = Reading(
+                last, transcribe(first.spelling, last), first.spelling, first.source, secondary
+            )
+            w.readings = (reading,)
     for k, w in enumerate(words):  # в э́том дыму́, на то́м берегу́: past the adjectives
         if w.lang != CODE or w.norm not in SECOND_LOCATIVE or w.size < 2:
             continue
