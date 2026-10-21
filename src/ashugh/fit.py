@@ -147,6 +147,7 @@ class _Var:
     malformed: list[str] = field(default_factory=list)  # why unusable ones were dropped
     written: bool = True  # the line as written may stand (not in a translation)
     foreign: set[str] = field(default_factory=set)  # rejected as no translation at all
+    copy_of: int | None = None  # the line this one repeats (a chorus), which asks for both
 
     @property
     def number(self) -> int:
@@ -282,6 +283,8 @@ def run(
     says so in warnings; failing in the first, it raises."""
     pending = set(variables)
     later = _later_copies(variables)
+    for k, src in later.items():
+        variables[k].copy_of = src
     used = asked = 0
     for _ in range(rounds):
         if not pending - set(later):
@@ -531,6 +534,8 @@ def _same_word_rejections(var: _Var, partners: list[LineReport]) -> None:
 
 
 def _why_empty(var: _Var) -> str:
+    if var.copy_of is not None and not var.offered:
+        return f"repeats L{var.copy_of}, and no repair of L{var.copy_of} fits here"
     if not var.offered:
         return "no candidates given"
     if len(var.malformed) == var.offered:

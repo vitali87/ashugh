@@ -659,7 +659,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
         else:
             _elision_notes(ln, f, add)  # the spec's count asks for it
-    elif f.elided:
+    elif f.elided and not (f.off_beat or f.ending_off):
         _elision_notes(ln, f, add, source)  # the meter dropped it: Eve-ry heartbeat
 
     if source == "spec" and meter_name != "free" and (f.off_beat or f.ending_off):

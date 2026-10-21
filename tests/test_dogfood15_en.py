@@ -368,3 +368,30 @@ def test_a_reader_that_stops_early_is_no_error(tmp_path):
     proc.stdout.close()  # head -1
     err = proc.stderr.read().decode()
     assert proc.wait(timeout=60) == 0 and "Broken pipe" not in err, err
+
+
+def test_a_line_that_fails_its_meter_gets_no_note_that_it_fits():
+    report = scan("We sat for hours\n", from_dict({"language": "en", "meter": "trochee"}))
+    assert not [i for i in report.issues if i.message.startswith("fits if")]
+    assert [i for i in report.issues if i.code == "meter"]
+
+
+def test_a_line_the_drop_lets_pass_keeps_its_note():
+    spec = from_dict({"language": "en", "meter": "trochee", "feet": 4})
+    report = scan("Every heartbeat calls your name\n", spec)
+    assert report.lines[0].ok
+    assert [i for i in report.issues if i.message.startswith("fits if «Every»")]
+
+
+def test_an_unresolved_chorus_copy_names_the_line_it_follows():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = (
+        "[Chorus]\nHold on tight\nWe will dance all through the night\n\n"
+        "[Chorus]\nHold on tight\nWe will dance all through the night\n"
+    )
+    spec = from_dict({"language": "en", "syllables": [3, 5]})
+    result = fit_song(text, spec, StaticProposer({3: ["We will dance all through the day"]}))
+    why = {u.line: u.reasons for u in result.unresolved}
+    assert why[7][0].startswith("repeats L3") and "no candidates given" not in why[7][0]
