@@ -1361,6 +1361,9 @@ def heteronyms(words: list[Word]) -> None:
         if not any(r.stress == want for r in w.readings):
             continue
         first = [replace(r, penalty=0.0) for r in w.readings if r.stress == want]
+        if before in NOMINAL:  # the récord, a présent: a noun, which no rhyme makes a verb
+            w.readings = tuple(first)
+            continue
         rest = [
             replace(r, penalty=max(r.penalty, ALTERNATIVE_COST))
             for r in w.readings
