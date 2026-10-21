@@ -400,6 +400,7 @@ DIGITS = "digits are not counted"  # a warning to a reader, an error to a repair
 ROMAN_RE = re.compile(r"(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})")
 RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
 RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
+RHYME_REACH = 8  # lines either side a rhyme partner may be, in a stanza that never ends
 
 
 def _rhyme_stress(
@@ -427,7 +428,8 @@ def _rhyme_stress(
             tries = _rhyme_tries(lr)
             if not tries:
                 continue
-            others = [r.tails + could[m] for m, r in enumerate(reports) if m != k]
+            near = range(max(0, k - RHYME_REACH), min(len(reports), k + RHYME_REACH + 1))
+            others = [reports[m].tails + could[m] for m in near if m != k]
             others += (beyond or {}).get(lr.line.number, [])
             if not others:
                 return

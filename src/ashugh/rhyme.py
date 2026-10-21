@@ -13,6 +13,7 @@ assonance >= 0.25, none below.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from functools import lru_cache
 
 from .lang import ru
 from .lang.en import OBJECTS, PREPOSITIONS
@@ -208,6 +209,7 @@ def match(xs: list[Tail], ys: list[Tail]) -> tuple[float, Tail | None, Tail | No
     return best
 
 
+@lru_cache(maxsize=1 << 16)  # a song asks the same pairs again: every line of a stanza
 def score(a: Tail | None, b: Tail | None) -> float:
     if a is None or b is None:
         return 0.0

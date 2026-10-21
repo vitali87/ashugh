@@ -272,6 +272,8 @@ def test_no_possessive_exception_contradicts_wiktionary():
     from ashugh.lang.hy import NOT_POSSESSIVE
 
     data = Path(__file__).resolve().parent.parent / "eval" / "data" / "hye_armn_e_broad.tsv"
+    if not data.exists():  # a download, not in git: uv run eval/wikipron.py fetches it
+        pytest.skip("eval/data/hye_armn_e_broad.tsv not downloaded")
     ipa = dict(line.split("\t", 1) for line in data.read_text(encoding="utf-8").splitlines())
     wrong = [w for w in NOT_POSSESSIVE if w in ipa and ipa[w].rstrip().endswith(("ə s", "ə d"))]
     assert wrong == []
