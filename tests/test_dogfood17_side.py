@@ -80,3 +80,19 @@ def test_greek_names_are_counted_in_full(word, n):
 def test_a_possessive_after_a_vowel_adds_no_syllable():
     (ln,) = analyze_lines("Persephone's", Spec(language="en"))
     assert ln.words[0].sung() == "Per-seph-o-ne's"
+
+
+def test_lyres_and_fires_are_counted_alike():
+    from ashugh.scan import scan
+    from ashugh.translate import derive_spec
+
+    report = scan("Amid the lyres\nAround the fires\n")
+    assert [lr.fit.count for lr in report.lines] == [4, 4]
+    assert derive_spec(report, {"endings"})["stanza"]["1"]["endings"] == "mm"
+
+
+def test_a_line_may_still_sing_fire_in_two():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    assert scan("Come on baby light my fire\n", from_dict({"syllables": 8})).lines[0].ok

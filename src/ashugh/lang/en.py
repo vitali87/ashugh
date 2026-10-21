@@ -1114,6 +1114,9 @@ NOMINAL = set(
     "each another of in on for with at by from about".split()
 )
 SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
+# Endings sung short unless the line asks more, as lyre, spire and admire always are
+# in CMUdict: fire, desire, tired, hour (but flow-er, pow-er).
+SHORT_ENDINGS = ("ire", "ires", "ired", "yre", "yres", "hour", "hours")
 # Abbreviations said as the words they stand for, shown in those words' syllables.
 SAID_AS = {"etc": ("et", "cet", "er", "a")}
 SHORT_PREFERENCE = -0.05
@@ -1407,7 +1410,8 @@ def analyze_word(
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
     if word.drop is None:
         word.drop = _smoothed(*full[0])
-    if (norm in SHORT_FIRST or short_listed) and word.drop is not None:
+    short = norm in SHORT_FIRST or short_listed or norm.endswith(SHORT_ENDINGS)
+    if short and word.drop is not None:
         word.drop_cost = SHORT_PREFERENCE
 
     readings: list[Reading] = []

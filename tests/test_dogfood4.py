@@ -16,7 +16,9 @@ def errors(rep):
 )
 def test_ire_and_our_may_merge_into_one_syllable_like_fire(word):
     w = en.analyze_word(word)
-    assert w.drop == w.size - 1 and w.drop_cost == 0  # de-sire or de-si-re, pow'r or po-wer
+    assert w.drop == w.size - 1 and w.drop_cost <= 0  # de-sire or de-si-re, pow'r or po-wer
+    # the -ire words lean short, as lyre and admire are listed; pow-er stays free
+    assert (w.drop_cost < 0) == word.endswith("ire")
 
 
 @pytest.mark.parametrize("word", ["tiger", "spider", "louder", "lion", "loyal"])
