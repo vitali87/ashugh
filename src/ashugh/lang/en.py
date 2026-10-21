@@ -470,7 +470,9 @@ def _counted_groups(w: str) -> list[tuple[int, int]]:
             w.endswith("e")
             and last == "e"
             and not (w.endswith("le") and len(w) > 2 and w[-3] not in LETTER_VOWELS)
-        )
+            and not (w.endswith("re") and len(w) > 3 and w[-3] not in LETTER_VOWELS + "rw")
+        )  # thea-tre, li-tre: a British -re is sung
+        silent_ue = w.endswith(("gue", "que", "gues", "ques")) and last == "ue"  # fa-tigue
         silent_ed = w.endswith("ed") and last == "e" and before[-1:] not in ("t", "d")
         silent_es = (
             w.endswith("es")
@@ -478,7 +480,7 @@ def _counted_groups(w: str) -> list[tuple[int, int]]:
             and not before.endswith(("s", "z", "x", "ch", "sh", "g", "c"))  # fa-ces, pa-ges
             and not (w.endswith("les") and len(w) > 3 and w[-4] not in LETTER_VOWELS)
         )
-        if silent_e or silent_ed or silent_es:
+        if silent_e or silent_ed or silent_es or silent_ue:
             groups.pop()
     return groups or [(0, len(w))]
 
@@ -504,11 +506,19 @@ def _hiatus(low: str, groups: list[tuple[int, int]]) -> bool:
     return any(h in low[a:b] for h in HIATUS for a, b in groups)
 
 
-def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> list[str]:
+def split_spelling(
+    token: str,
+    n: int,
+    short: frozenset[int] = frozenset(),
+    parted: frozenset[str] = frozenset(),
+    ly: bool = False,
+) -> list[str]:
     """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful;
     could-n't; a compound of two dictionary words at its seam: heart-ache. A
     syllable in short has a stressed short vowel, which keeps a consonant: fish-ing,
-    whis-key, rec-ord (but pa-per)."""
+    whis-key, rec-ord (but pa-per). A digraph in parted is two sounds, cut between
+    them: up-hill, hot-house, mis-hap. A consonant suffix is a piece of its own
+    (dark-ness, care-less), -ly only where ly says it is one (quick-ly, not ap-ply)."""
     low = "".join(unicodedata.normalize("NFD", ch)[0] for ch in token.lower())  # èd: ed
     if n >= 2 and low.endswith(("n't", "n’t")) and len(_counted_groups(low[:-3])) < n:
         return split_spelling(token[:-3], n - 1) + [token[-3:]]
@@ -517,15 +527,36 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
     if low.startswith("mc") and n >= 2 and len(_counted_groups(low)) < n:
         rest = frozenset(k - 1 for k in short if k > 0)
         return [token[:2], *split_spelling(token[2:], n - 1, rest)]  # Mc-Don-ald's
+    parts = _written_parts(token)
+    if len(parts) > 1 and n >= len(parts):
+        counts = [len(_counted_groups(_plain(p))) for p in parts]
+        if sum(counts) == n:  # T-shirt, a-goin', Linked-In: the writer's own parts
+            return [piece for p, c in zip(parts, counts) for piece in split_spelling(p, c)]
+    if low.endswith(("'s", "’s")) and n >= 2 and len(_counted_groups(low[:-2])) == n:
+        out = split_spelling(token[:-2], n, short, parted, ly)
+        return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
     seam = _compound_seam(low, n)
     if seam is not None:
         k, left = seam
-        return split_spelling(token[:k], left) + split_spelling(token[k:], n - left)
+        head = frozenset(j for j in short if j < left)
+        tail = frozenset(j - left for j in short if j >= left)
+        return split_spelling(token[:k], left, head, parted) + split_spelling(
+            token[k:], n - left, tail, parted
+        )  # ev-er-more, riv-er-side: each part keeps its short vowels
     groups = _counted_groups(low)
     # a silent-looking vowel sung after all (fi-re, learn-ed), unless a vowel run
     # holds two (sci-ence, vi-o-lence)
-    if len(groups) < n and (low.endswith(("ed", "es")) or not _hiatus(low, groups)):
-        groups = _vowel_groups(low) or groups
+    if len(groups) < n:
+        # an -ed or -es is sung where its stem has a syllable fewer (learn-ed), not
+        # where a hiatus in the stem holds the missing one (cho-re-o-graphed)
+        stem = TABLE.get(low[:-2]) if low.endswith(("ed", "es")) else None
+        if stem is not None:
+            revive = sum(ch.isdigit() for ch in stem.split("|")[0]) < n
+        else:
+            revive = not _hiatus(low, groups)
+        if revive:
+            groups = _vowel_groups(low) or groups
+    sung_ed = low.endswith("ed") and len(groups) > 1 and groups[-1] == (len(low) - 2, len(low) - 1)
     while len(groups) > n:
         # a silent e (love-ly), else the vowel after the first, which speech drops
         # (choco-late, came-ra), else the last
@@ -568,10 +599,26 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         k, at = cut
         a, b = groups[k]
         groups[k : k + 1] = [(a, at), (at, b)]
+    suffix = next(
+        (
+            len(low) - len(x)
+            for x, _ in CONSONANT_SUFFIXES
+            if low.endswith(x) and len(low) > len(x) + 2 and (x != "ly" or ly)
+        ),
+        None,
+    )
     cuts = []
     for k, ((begin, end), (start, _)) in enumerate(zip(groups, groups[1:])):
         gap = low[end:start]
-        if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
+        if suffix is not None and end <= suffix < start:
+            cuts.append(suffix)  # dark-ness, weak-ness, kind-ly
+            continue
+        if sung_ed and start == len(low) - 2 and low[start - 1] not in "td" + low[start - 2]:
+            cuts.append(start)  # learn-ed: the ending sung as a syllable (but bles-sed)
+            continue
+        if gap in parted:
+            onset = 1  # up-hill, hot-house, dog-house
+        elif start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
         elif gap == "gh" or (not gap and low[end - 1 : end] == "y"):
             onset = 0  # laugh-ing, weigh-ing; play-ing (but Lam-bor-ghi-ni)
@@ -610,6 +657,33 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         half = mark or len(pieces[k]) // 2  # rock-'n: the apostrophe begins a syllable
         pieces[k : k + 1] = [pieces[k][:half], pieces[k][half:]]
     return pieces
+
+
+CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z][a-z])")  # LinkedIn, YouTube, iPhone
+
+
+def _written_parts(token: str) -> list[str]:
+    """The parts a word is written in: at its hyphens (T-shirt, rock-'n'-roll), and
+    at a capital inside it (Linked-In, You-Tube)."""
+    parts = [p for p in token.split("-") if p]
+    return [q for p in parts for q in CAMEL_RE.split(p) if q]
+
+
+def _plain(part: str) -> str:
+    return "".join(unicodedata.normalize("NFD", ch)[0] for ch in part.lower())
+
+
+SPLIT_DIGRAPHS = (("ph", "P"), ("th", "T"), ("sh", "S"), ("gh", "G"))
+
+
+def _parted(phones: list[str], norm: str) -> frozenset[str]:
+    """The digraphs a word says as two sounds: uphill P HH, hothouse T HH, mishap
+    S HH, doghouse G HH; ph with no F at all (shepherd)."""
+    pairs = set(zip(phones, phones[1:]))
+    out = {d for d, first in SPLIT_DIGRAPHS if (first, "HH") in pairs}
+    if "ph" in norm and "F" not in phones:
+        out.add("ph")
+    return frozenset(out)
 
 
 def _piece(text: str, k: int, n: int) -> str:
@@ -1040,7 +1114,9 @@ def analyze_word(
     for k, at in enumerate(vowel):  # or-ange, for-est, mor-al keep the r; sto-ry does not
         if first[at] == "AO1" and first[at + 1 : at + 3] == ["R", "AH0"]:
             short.add(k)
-    pieces = split_spelling(token, longest, frozenset(short))
+    # quick-ly, but ap-ply (stressed), sim-ply and hum-bly (simple, humble + y)
+    ly = first[-2:] == ["L", "IY0"] and not TABLE.get(norm[:-2] + "le")
+    pieces = split_spelling(token, longest, frozenset(short), _parted(first, norm), ly)
     said = SAID_AS.get(norm)
     if said and len(said) == longest:  # etc: et-cet-er-a, not its letters cut four ways
         pieces = [token[0] + said[0][1:], *said[1:]]

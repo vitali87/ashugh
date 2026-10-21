@@ -260,3 +260,104 @@ def test_an_archaic_or_inflected_oe_is_not_british(word):
     from ashugh.lang import en
 
     assert en.american(word) == []
+
+
+def pieces(word: str) -> str:
+    from ashugh.lang import en
+
+    return "-".join(s.text for s in en.analyze_word(word).syllables)
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("catalogue", "cat-a-logue"),
+        ("dialogue", "di-a-logue"),
+        ("fatigue", "fa-tigue"),
+        ("colleagues", "col-leagues"),
+        ("intrigue", "in-trigue"),
+        ("unique", "u-nique"),
+        ("argue", "ar-gue"),  # a sung ue stays
+        ("choreographed", "cho-re-o-graphed"),
+        ("triumphed", "tri-umphed"),
+        ("theatre", "the-a-tre"),
+        ("litre", "li-tre"),
+        ("sombre", "som-bre"),
+        ("darkness", "dark-ness"),
+        ("weakness", "weak-ness"),
+        ("sickness", "sick-ness"),
+        ("blackness", "black-ness"),
+        ("unknown", "un-known"),
+        ("evermore", "ev-er-more"),
+        ("nevermore", "nev-er-more"),
+        ("riverside", "riv-er-side"),
+        ("seventeen", "sev-en-teen"),
+        ("uphill", "up-hill"),
+        ("hothouse", "hot-house"),
+        ("pothole", "pot-hole"),
+        ("doghouse", "dog-house"),
+        ("mishap", "mis-hap"),
+        ("shepherd", "shep-herd"),
+        ("haphazard", "hap-haz-ard"),
+        ("uphold", "up-hold"),
+        ("mother", "moth-er"),  # a true digraph stays whole
+        ("bishop", "bish-op"),
+        ("orphan", "or-phan"),
+    ],
+)
+def test_split_spelling_cuts_where_the_word_is_said(word, split):
+    assert pieces(word) == split
+
+
+def test_suno_split_all_cuts_darkness_and_uphill_right():
+    from ashugh import suno
+
+    out = suno.format_song("The darkness and the weakness uphill\n", split="all", tags=False)
+    assert "dark-ness" in out.text and "weak-ness" in out.text and "up-hill" in out.text
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("apply", "ap-ply"),
+        ("supply", "sup-ply"),
+        ("reply", "re-ply"),
+        ("assembly", "as-sem-bly"),
+        ("humbly", "hum-bly"),
+        ("simply", "sim-ply"),
+        ("quickly", "quick-ly"),
+        ("deeply", "deep-ly"),
+        ("helpless", "help-less"),
+        ("hopeless", "hope-less"),
+        ("Italy", "It-a-ly"),
+    ],
+)
+def test_ly_is_a_suffix_only_where_it_is_one(word, split):
+    assert pieces(word) == split
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("T-shirt", "T-shirt"),
+        ("X-ray", "X-ray"),
+        ("a-goin'", "a-go-in'"),
+        ("hurricane's", "hur-ri-cane's"),
+        ("LinkedIn", "Linked-In"),
+        ("YouTube", "You-Tube"),
+        ("PlayStation", "Play-Sta-tion"),
+        ("rock-'n'-roll", "rock-'n'-roll"),
+    ],
+)
+def test_split_spelling_cuts_at_hyphens_and_capitals(word, split):
+    assert pieces(word) == split
+
+
+@pytest.mark.parametrize(
+    "word,n,split",
+    [("learned", 2, "learn-ed"), ("blessed", 2, "bles-sed"), ("belovèd", 3, "be-lov-èd")],
+)
+def test_a_sung_ed_after_a_vowel_pair_is_its_own_piece(word, n, split):
+    from ashugh.lang import en
+
+    assert "-".join(en.split_spelling(word, n)) == split
