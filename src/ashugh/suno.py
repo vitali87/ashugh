@@ -298,6 +298,16 @@ def _render(
             st = w.readings[0].stress  # the line fails its meter anyway: the usual reading
         new = _russian(w, token, st, stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
+    if w.lang == "hy" and languages.LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում
+        if mode != "latin":
+            return token
+        name, ending = token.split("-", 1)
+        phones = tuple(s.ph for s in hy.segments("ա" + ending)[1:])
+        if w.syllables[-1].text == "ը" + ending:  # iPhone-ս, iPhone-əs
+            phones = ("ə", *phones)
+        new = f"{name}-{_latin(phones, False, schwa)}"
+        notes.append(Note(n, "armenian", token, new, "latin"))
+        return new
     if w.lang == "hy" and w.spelled:  # ԱՄՆ as Ա-Մե-Նե, A-Me-Ne
         if mode == "latin":
             new = "-".join(  # the letters' names capitalized, an ending not: A-Me-Ne-its

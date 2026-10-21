@@ -54,3 +54,37 @@ def test_a_syllable_count_counts_the_letters():
 
 def test_analyze_word_alone():
     assert hy.analyze_word("ՀՀ-ի").size == 3
+
+
+@pytest.mark.parametrize(
+    "line, k, size, stress",
+    [
+        ("Ասում ա՝ Ararat-ը սիրում եմ ես", 2, 4, 2),  # a-ra-rat-ը: never on ը
+        ("Տեսա TikTok-ում", 1, 3, 2),  # tik-tok-ում, the ending stressed
+        ("Facebook-ից եկավ", 0, 3, 2),
+        ("Իմ iPhone-ս", 1, 3, 1),  # i-phone-ըս: the possessive's schwa after a consonant
+        ("Իմ Gucci-ն", 1, 2, 1),  # after a vowel the article is a coda
+    ],
+)
+def test_a_latin_name_with_an_armenian_ending(line, k, size, stress):
+    w = words(line)[k]
+    assert w.lang == "hy" and (w.size, w.readings[0].stress) == (size, stress)
+
+
+def test_a_latin_line_of_names_with_endings_keeps_them():
+    ws = words("TikTok-ում, YouTube-ում, Facebook-ում")
+    assert [w.size for w in ws] == [3, 3, 3]
+
+
+@pytest.mark.parametrize(
+    "line, mode, out",
+    [
+        ("Տեսա TikTok-ում\n", "latin", "TikTok-um"),
+        ("Ասում ա՝ Ararat-ը սիրում եմ ես\n", "latin", "Ararat-ə"),
+        ("Տեսա TikTok-ում\n", "script", "TikTok-ում"),
+        ("Տեսա TikTok-ում\n", "schwa", "TikTok-ում"),
+        ("TikTok-ում, YouTube-ում\n", "latin", "TikTok-um, YouTube-um"),
+    ],
+)
+def test_suno_keeps_the_name_and_writes_the_ending(line, mode, out):
+    assert out in suno.format_song(line, tags=False, armenian=mode).text

@@ -52,7 +52,7 @@ def override_error(word: str, value: str) -> str | None:
 def detect(tokens: list[str]) -> str:
     counts: dict[str, int] = {}
     for t in tokens:
-        s = script_of(t)
+        s = hy.CODE if LATIN_WITH_ENDING.fullmatch(t) else script_of(t)  # TikTok-ում
         if s and s != "xx":
             counts[s] = counts.get(s, 0) + 1
     if not counts:
@@ -115,6 +115,9 @@ def analyze(
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
     in_latin = lang == hy.CODE and latin_armenian(tokens)
     for token in tokens:
+        if LATIN_WITH_ENDING.fullmatch(token) and (lang == hy.CODE or in_latin):
+            words.append(_latin_with_ending(token, lexicon))
+            continue
         if in_latin and script_of(token) == en.CODE:
             words.append(_from_latin(token, lexicon))
             continue
@@ -258,6 +261,40 @@ def _from_latin(token: str, lexicon: dict[str, str]) -> Word:
         first = w.syllables[0]
         w.syllables = (replace(first, text=first.text.capitalize()), *w.syllables[1:])
     return w
+
+
+# A name in Latin letters with an Armenian case ending or article: TikTok-ում,
+# Ararat-ը, iPhone-ս.
+LATIN_WITH_ENDING = re.compile(r"([A-Za-z][A-Za-z'.]*)-([\u0561-\u0587]+)")
+
+
+def _latin_with_ending(token: str, lexicon: dict[str, str]) -> Word:
+    """A Latin name with an Armenian ending, an Armenian word: the name as English
+    says it when it is English (TikTok, YouTube), else read in Armenian letters;
+    the ending after it, a lone consonant taking a schwa after a consonant
+    (iPhone-ս, -նըս); the stress on the ending's vowel, else on the name's end
+    (TikTok-ու́մ, Ararát-ը)."""
+    name, ending = token.split("-", 1)
+    english = en.known(name.lower())
+    head = en.analyze_word(name, lexicon) if english else _from_latin(name, lexicon)
+    phones = head.readings[0].phones
+    segs = hy.segments("ա" + ending)[1:]  # not word-initial: ով is [ov]
+    tail: list[Syllable] = []
+    syllables = list(head.syllables)
+    if any(s.vowel for s in segs):
+        for syl in hy.syllabify(segs, possessive=False):
+            tail.append(Syllable("".join(s.src for s in syl), False, tuple(s.ph for s in syl)))
+    elif phones and is_vowel(phones[-1]):  # Gucci-ն: a coda
+        last = syllables[-1]
+        syllables[-1] = replace(last, text=last.text + ending)
+    else:  # iPhone-ս: ըս
+        schwa = hy.Seg("ə", "ը", True, epenthetic=True)
+        tail.append(Syllable("ը" + ending, True, ("ə", *(s.ph for s in segs))))
+        segs = [schwa, *segs]
+    full = [k for k, t in enumerate(tail) if any(is_vowel(p) and p != "ə" for p in t.phones)]
+    stress = len(syllables) + full[-1] if full else len(syllables) - 1
+    reading = Reading(stress, phones + tuple(s.ph for s in segs), token.lower(), "rule")
+    return Word(token, token.lower(), hy.CODE, (*syllables, *tail), (reading,))
 
 
 def _swallow_head(w: Word) -> None:

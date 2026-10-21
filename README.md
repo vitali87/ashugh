@@ -373,7 +373,13 @@ with բերք). An abbreviation in capitals is said letter by letter (Ա-Մե-Ն
 ending after a hyphen follows the letters and takes the stress (ԱՄՆ-ից
 Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́). In an Armenian song, a line in Latin letters whose words are mostly
 not English is Armenian typed in Latin (Mtnem aygin, kyanq), read in
-Armenian letters: mət-nem, ay-gin. A hyphenated reduplication
+Armenian letters: mət-nem, ay-gin. A name in Latin letters with an Armenian
+ending (TikTok-ում, Ararat-ը, iPhone-ս) is one Armenian word: the name as
+English says it (or in Armenian letters if English lacks it), the ending after
+it with a schwa where a lone consonant follows a consonant (iPhone-ըս), and the
+stress on the ending's vowel or else on the name's end, never on ը; `suno`
+keeps the name as written and, in Latin mode, writes the ending in Latin
+(TikTok-um, Ararat-ə). A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other
 hyphenated word the dictionary lacks keeps each part's stress as a secondary
 one the meter may use, the last part carrying the main stress and the rhyme
