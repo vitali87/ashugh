@@ -149,6 +149,7 @@ def fit_song(
     extra: Callable[[_Var, Request], None] | None = None,
 ) -> FitResult:
     spec = spec or Spec()
+    text = lyrics.clean(text)
     report = scan(text, spec, lang=lang)
     variables, groups = _variables(report, keep_original)
     if not variables:

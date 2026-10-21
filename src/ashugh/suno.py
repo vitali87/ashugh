@@ -133,6 +133,7 @@ def format_song(
         raise ValueError("schwa must be a letter, e.g. ə or e")
     if policy is not None:
         check_policy(policy)
+    text = lyrics.clean(text)
     words_policy = ((policy or {}).get("hy") or {}).get("words") or {}
     default_mode = ((policy or {}).get("hy") or {}).get("default", armenian) if policy else armenian
     ru_words: dict[str, str] = {}

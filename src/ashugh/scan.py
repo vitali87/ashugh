@@ -121,7 +121,7 @@ def _quote(text: str) -> str:
 
 
 def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line]:
-    lines = lyrics.parse(text)
+    lines = lyrics.parse(lyrics.clean(text))
     tokens = [lyrics.tokenize(ln.text) for ln in lines]
     default = forced or spec.language or languages.detect([t for ts in tokens for t in ts])
     for ln, ts in zip(lines, tokens):
@@ -132,6 +132,7 @@ def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line
 
 def scan(text: str, spec: Spec | None = None, path: str = "-", lang: str | None = None) -> Report:
     spec = spec or Spec()
+    text = lyrics.clean(text)
     lines = analyze_lines(text, spec, lang)
     units: dict[int, list[Line]] = {}
     for ln in lines:
@@ -442,6 +443,7 @@ def _errors(lr: LineReport) -> int:
 
 def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
     """A copy of ln holding text instead, analyzed in the same slot."""
+    text = lyrics.clean(text)
     tokens = lyrics.tokenize(text)
     code = lang or spec.language or languages.detect(tokens) or ln.lang
     new = Line(ln.number, text.strip(), ln.section, ln.key, ln.unit, ln.index, code)

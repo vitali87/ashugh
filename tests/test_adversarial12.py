@@ -99,3 +99,63 @@ def test_section_tag_variants_get_suno_names(tag, name):
 def test_a_tag_naming_no_section_is_left_alone():
     assert lyrics.suno_tag("Male Vocal") is None
     assert lyrics.suno_tag("Chorus Line Dance") is None
+
+
+def counts(text: str, lang: str | None = None) -> list[tuple[int, str, int]]:
+    """Each line's count, stress grid and number of words."""
+    rep = scan(text, from_dict({"language": lang} if lang else {}))
+    return [(lr.fit.count, lr.fit.grid, len(lr.line.words)) for lr in rep.lines]
+
+
+def nfd(text: str) -> str:
+    import unicodedata
+
+    return unicodedata.normalize("NFD", text)
+
+
+@pytest.mark.parametrize(
+    "line, lang",
+    [("Мой тёплый дом, ещё зимой", "ru"), ("A naïve café", "en"), ("Իմ տունը", "hy")],
+)
+def test_decomposed_letters_count_as_composed(line, lang):
+    assert counts(nfd(line), lang) == counts(line, lang)
+
+
+def test_suno_writes_decomposed_text_as_composed():
+    plain = suno.format_song("Мой тёплый дом\n", tags=False).text
+    assert suno.format_song(nfd("Мой тёплый дом\n"), tags=False).text == plain
+    assert "̈" not in plain
+
+
+@pytest.mark.parametrize("mark", ["´", "`", "‘", "′", "ʼ"])
+def test_any_apostrophe_inside_a_word_is_an_apostrophe(mark):
+    assert counts(f"I don{mark}t know", "en") == counts("I don't know", "en")
+
+
+@pytest.mark.parametrize("dash", ["‐", "‑"])
+def test_a_unicode_hyphen_inside_a_word_is_a_hyphen(dash):
+    assert counts(f"по{dash}моему", "ru") == counts("по-моему", "ru")
+
+
+@pytest.mark.parametrize("mark", ["­", "​", "‌", "‍", "⁠", "﻿"])
+@pytest.mark.parametrize("word, lang", [("старых", "ru"), ("forever", "en"), ("սիրում", "hy")])
+def test_an_invisible_character_inside_a_word_does_not_split_it(mark, word, lang):
+    at = len(word) // 2
+    assert counts(word[:at] + mark + word[at:], lang) == counts(word, lang)
+
+
+def test_quotes_at_the_edges_of_a_word_stay_quotes():
+    assert counts("‘Hello’ she said `softly`", "en") == counts("Hello she said softly", "en")
+
+
+def test_cleaning_keeps_the_lines_where_they_are():
+    rep = scan("I walk​\n­\nthe way\n", from_dict({"language": "en"}))
+    assert [lr.line.number for lr in rep.lines] == [1, 3]
+
+
+def test_syllables_tool_reads_a_spacing_acute_apostrophe():
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    (ln,) = analyze_lines("I don´t know", Spec(language="en"))
+    assert [w.text for w in ln.words] == ["I", "don't", "know"]

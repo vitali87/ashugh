@@ -84,7 +84,10 @@ stanza, and text in parentheses is a backing vocal left out of the count. A
 tag line may carry more tags or a note (`[Verse 1] [Male Vocal]`,
 `[Chorus] (softly)`, `[Verse 2 - Rap]`); the tag Suno knows as a section names
 it, and a style tag on a line of its own right after a section tag keeps that
-section.
+section. Text pasted from elsewhere reads as typed: decomposed letters are
+composed, soft hyphens and zero-width characters are dropped, and the
+look-alikes of the apostrophe (´ ` ‘ ′ ʼ) and of the hyphen inside a word count
+as ' and -.
 
 ### The spec
 

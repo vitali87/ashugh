@@ -8,6 +8,7 @@ vocal, so it is left out of the line's count.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from .model import Line
 
@@ -24,6 +25,14 @@ WORD_RE = re.compile(
     r"|&"  # sung as and, и, և
 )  # letters glued to digits ('80s, 4ever, mp3) are no word: the digits warn
 DIGIT_RE = re.compile(r"\d")
+# What a paste or another keyboard leaves inside a word: a soft hyphen, zero-width
+# spaces and joiners, a word joiner or a stray byte order mark, all unseen; the
+# look-alikes of the apostrophe (don´t, don`t, don‘t, don′t, donʼt) and of the
+# hyphen (по‐моему, по‑моему).
+INVISIBLE_RE = re.compile("[\u00ad\u200b-\u200d\u2060\ufeff]")
+LETTER = r"[^\W\d_]"
+APOSTROPHE_RE = re.compile(rf"(?<={LETTER})[´`‘′ʼ](?={LETTER})")
+HYPHEN_RE = re.compile(rf"(?<={LETTER})[\u2010\u2011](?={LETTER})")
 
 
 # Section names Suno knows, from their English, Russian and Armenian names.
@@ -198,6 +207,17 @@ def retag(line: str) -> str:
         return m.group(0) if name is None else f"[{name}]"
 
     return BRACKET_RE.sub(named, body) + line[len(body) :]
+
+
+def clean(text: str) -> str:
+    """Text as the tools read it: letters composed (е with a combining diaeresis is
+    ё, as an editor shows it), unseen characters gone and the look-alikes of the
+    apostrophe and the hyphen inside a word written ' and -. Lines stay where
+    they are, so a report's line numbers are the file's."""
+    if text.isascii() and "`" not in text:
+        return text
+    text = INVISIBLE_RE.sub("", unicodedata.normalize("NFC", text))
+    return HYPHEN_RE.sub("-", APOSTROPHE_RE.sub("'", text))
 
 
 def split_lines(text: str, keepends: bool = False) -> list[str]:
