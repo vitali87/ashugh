@@ -22,6 +22,8 @@ and the suffix prior learns from ru_stress.tsv alone. And it writes
 src/ashugh/data/ru_yo.tsv: the one-vowel forms that exist only
 with ё (ждёт, шёл, лёд), one per line, so that ждет written without its ё
 reads as ждёт. A form whose е spelling is a word too (всё and все) is left out.
+And src/ashugh/data/ru_short.tsv: the one-vowel forms spelt like an abbreviation
+(жду, дни, где), so the same word in capitals is still read as a word.
 """
 
 from __future__ import annotations
@@ -55,6 +57,9 @@ OBSOLETE = {"стен"}
 OUT = Path(__file__).resolve().parent.parent / "src" / "ashugh" / "data" / "ru_stress.tsv"
 YO_OUT = OUT.with_name("ru_yo.tsv")
 DERIVED_OUT = OUT.with_name("ru_derived.tsv")
+SHORT_OUT = OUT.with_name("ru_short.tsv")
+# Rows of the dump that are abbreviations, sung letter by letter: США, ЦРУ.
+ABBREVIATIONS = {"сша", "цру", "пво", "нпо", "цска"}
 
 
 def stress_positions(form: str) -> tuple[str, set[int], int]:
@@ -214,6 +219,21 @@ def yo_only(forms: set[str]) -> list[str]:
         ),
         key=lambda f: f.encode(),
     )
+
+
+def short_words(forms: set[str]) -> list[str]:
+    """One-vowel forms spelt like an abbreviation, so a word in capitals is not sung
+    letter by letter (ЖДУ, ДНИ, ГДЕ): two letters, or a vowel at the end after
+    more consonants; ё written е, as capitals often write it."""
+
+    def like(f: str) -> bool:
+        vowels = sum(ch in VOWELS for ch in f)
+        if vowels != 1 or not 2 <= len(f) <= 6 or not f.isalpha() or set(f) & set("йьъ"):
+            return False
+        return len(f) == 2 or (f[-1] in VOWELS and vowels < len(f) - vowels)
+
+    found = {f.replace("ё", "е") for f in forms if like(f)} - ABBREVIATIONS
+    return sorted(found, key=lambda f: f.encode())
 
 
 def column_rank(column: str) -> int:
@@ -381,9 +401,13 @@ def main() -> None:
             for key in keys:
                 out.write(f"{key}\t{encode(rows[key])}\n")
         print(f"{len(keys)} forms -> {path}")
-    yo = yo_only(all_forms(Path(sys.argv[1])))
+    forms = all_forms(Path(sys.argv[1]))
+    yo = yo_only(forms)
     YO_OUT.write_text("".join(f + "\n" for f in yo), encoding="utf-8", newline="\n")
     print(f"{len(yo)} forms only with ё -> {YO_OUT}")
+    short = short_words(forms)
+    SHORT_OUT.write_text("".join(f + "\n" for f in short), encoding="utf-8", newline="\n")
+    print(f"{len(short)} one-vowel forms spelt like abbreviations -> {SHORT_OUT}")
 
 
 if __name__ == "__main__":

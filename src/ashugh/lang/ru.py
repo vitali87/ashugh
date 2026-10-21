@@ -929,17 +929,13 @@ SPOKEN_ABBREVIATIONS = {"сша": ("сэ", "шэ", "а"), "цска": ("цэ", "
 INTERJECTIONS = set("хм хмм гм мм ммм тс тсс брр бррр шш шшш пс пст псс кх кхм".split())
 
 
-# Words of one syllable spelt like an abbreviation (two letters, or consonants then a
-# vowel), which the stress table, holding words of two syllables and more, lacks.
-SHORT_WORDS = frozenset(
-    """
-    да не ни но на по за до во со ко же ли бы то ты вы мы он их им ем ел ах ох эх ух уж
-    уф ус ум юг яд ад ил из от об ну ля ре ми фа си ша щи
-    где все вся всю кто что сто мне вне два две три сна сну дна дну зла злу зло дно пса
-    псу рта рту лба лбу мха мху пня пню дня дню тля вша ржи лжи зря жгу лгу мну гну жму
-    тку чту мщу рву жну шлю злю сплю мгла мглу мглы мзда мзду
-    """.split()
-)
+@cache
+def short_words() -> frozenset[str]:
+    """Words of one syllable spelt like an abbreviation (two letters, or consonants
+    then a vowel: жду, дни, где), which the stress table, holding words of two
+    syllables and more, lacks."""
+    text = resources.files("ashugh").joinpath("data/ru_short.tsv").read_text(encoding="utf-8")
+    return frozenset(text.split())
 
 
 def letter_names(low: str) -> tuple[str, ...]:
@@ -950,7 +946,7 @@ def letter_names(low: str) -> tuple[str, ...]:
 def _a_word(low: str) -> bool:
     """Whether a token in capitals spells a word: СТРАНА, ГДЕ, ВО are no abbreviations."""
     return (
-        low in SHORT_WORDS
+        low.replace("ё", "е") in short_words()
         or low in CLITICS
         or low in CORE
         or bool(TABLE.variants(low))

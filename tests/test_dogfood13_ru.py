@@ -431,3 +431,16 @@ def test_a_repeated_stanza_is_said_to_be_the_chorus():
     whys = tag_notes("la la la\n\nno no no\n\nla la la\n")
     assert whys[0] == "a stanza that comes back is the chorus"
     assert whys[1] == "a stanza that does not come back is a verse"
+
+
+@pytest.mark.parametrize(
+    "line, k", [("Я ЖДУ тебя", 1), ("Все эти ДНИ", 2), ("Мы ШЛИ домой", 1), ("ЖДИ меня", 0)]
+)
+def test_a_short_word_in_capitals_is_a_word(line, k):
+    w = word_in(line, k)
+    assert w.size == 1 and not w.spelled
+
+
+@pytest.mark.parametrize("line, k", [("Работал на ЦРУ", 2), ("Я из США", 2)])
+def test_abbreviations_the_dictionary_lists_are_still_spelt(line, k):
+    assert word_in(line, k).spelled
