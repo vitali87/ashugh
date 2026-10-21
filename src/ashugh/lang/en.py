@@ -163,7 +163,7 @@ LETTER_PHONES = {
 
 
 def is_latin(ch: str) -> bool:
-    return ch.isascii() and ch.isalpha() or "À" <= ch <= "ɏ"
+    return ch.isascii() and ch.isalpha() or "À" <= ch <= "ɏ" or ch in "ə@"  # ə, @: Latin-typed ը
 
 
 def normalize(token: str) -> str:

@@ -20,7 +20,8 @@ BRACKET_RE = re.compile(r"\[([^\]]*)\]")
 NOTE_RE = re.compile(r"[:\u055d\u0589]|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Տուն 2՝ ռեփ]
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
-    r"(?<![^\W_])(?<!\d[-'’])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
+    r"(?<![^\W_])(?<!\d[-'’])(?>(?:@(?=[^\W\d_]))?"  # @ typed for ը: @nkers, sirt@; not a@b.com
+    r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*(?:@(?![^\W_]))?"
     r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?"  # a dropped g: goin', lovin'
     r"(?:(?<=(?<![^\W\d_])(?<!['’])[oO])['’](?![^\W\d_]))?)(?!\d)"  # of: a cup o' tea
     r"|&"  # sung as and, и, և

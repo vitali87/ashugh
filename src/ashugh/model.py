@@ -94,7 +94,10 @@ class Word:
         if not self.syllables:
             return self.text
         parts = []
-        caps = [ch for ch in self.text[1:] if ch.isupper()]
+        # a capital opening a part is no mark: Փարիզ-Երևան, Д'Артаньян
+        caps = [
+            ch for k, ch in enumerate(self.text[1:]) if ch.isupper() and self.text[k] not in "-'’"
+        ]
         # замОк: the writer's capital mark, shown by the acute as every other is
         writer_caps = (
             mark

@@ -200,3 +200,112 @@ def test_the_mcp_requests_schema_names_n():
 def test_a_word_in_capitals_keeps_its_capitals(line, shown):
     ws = words(line)
     assert shown in {w.sung(w.readings[0].stress, mark=True) for w in ws}
+
+
+@pytest.mark.parametrize(
+    "latin,armenian",
+    [
+        ("@nkers u sirt@ het en", "ընկերս ու սիրտը հետ են"),
+        ("əntaniqs u əspasum", "ընտանիքս ու ըսպասում"),
+    ],
+)
+def test_latin_typed_schwas_read_as_the_armenian_letters(latin, armenian):
+    lat, arm = analyze_lines(f"{latin}\n{armenian}", Spec(language="hy"))
+    assert [w.size for w in lat.words] == [w.size for w in arm.words]
+    assert all(w.lang == "hy" for w in lat.words)
+
+
+def test_a_word_opening_with_a_latin_schwa_is_not_foreign():
+    report = scan("əntaniqs u əspasum\n", Spec(language="hy"))
+    assert not any("not Armenian" in i.message for i in report.issues)
+
+
+def test_suno_writes_the_latin_schwa_once():
+    from ashugh import suno
+
+    out = suno.format_song(
+        "@nkers u sirt@ het en\n", Spec(language="hy"), armenian="latin", tags=False
+    )
+    assert out.text.strip() == "ənkers u sirtə het en"
+
+
+@pytest.mark.parametrize(
+    "text,tokens",
+    [
+        ("write to john@mail.com", ["write", "to", "john", "mail", "com"]),
+        ("sirt@5", ["sirt"]),
+        ("me @ 5", ["me"]),
+    ],
+)
+def test_an_at_sign_inside_an_address_is_no_letter(text, tokens):
+    from ashugh.lyrics import tokenize
+
+    assert tokenize(text) == tokens
+
+
+def test_an_english_handle_is_read_as_its_name():
+    (ln,) = analyze_lines("follow me @john tonight", Spec(language="en"))
+    john = ln.words[2]
+    assert john.text == "@john" and not john.guessed and john.size == 1
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("Բոնդ", "Բոնդ"), ("Հովարդ", "Հո-վարդ"), ("Էդմունդ", "Էդ-մունդ"), ("Ռոլանդ", "Ռո-լանդ"),
+        ("Դիսնեյլենդ", "Դիս-նեյ-լենդ"), ("Մակդոնալդս", "Մակ-դո-նալդս"), ("ֆրենդ", "ֆը-րենդ"),
+        ("Մակդոնալդ", "Մակ-դո-նալդ"),
+    ],
+)  # fmt: skip
+def test_foreign_names_and_loans_take_no_possessive_schwa(word, shown):
+    assert sung(word) == shown
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("հայերենդ", "հա-յե-րե-նըդ"), ("տունդ", "տու-նըդ"), ("անունդ", "ա-նու-նըդ"),
+        ("բանդ", "բա-նըդ"), ("քայլդ", "քայ-լըդ"),
+    ],
+)  # fmt: skip
+def test_a_native_word_still_takes_the_possessive(word, shown):
+    assert sung(word) == shown
+
+
+@pytest.mark.parametrize(
+    "word,shown,phones",
+    [
+        ("Ինչ-որ", "Ինչ-որ", "intʃʰvoɾ"),
+        ("Փարիզ-Երևան", "Փա-րիզ-Ե-րե-վան", "pʰaɾizjeɾevan"),
+        ("Սայաթ-Նովա", "Սա-յաթ-Նո-վա", "sajatʰnova"),
+    ],
+)
+def test_the_part_after_a_hyphen_opens_like_a_word(word, shown, phones):
+    (w,) = words(word)
+    assert w.sung() == shown
+    assert "".join(w.readings[0].phones) == phones
+
+
+@pytest.mark.parametrize(
+    "mode,out",
+    [("schwa", "Փարիզ-Երևան չըվերթով"), ("latin", "Pariz-Yerevan chəvertov")],
+)
+def test_suno_keeps_the_hyphen_of_a_compound(mode, out):
+    from ashugh import suno
+
+    text = suno.format_song("Փարիզ-Երևան չվերթով\n", Spec(language="hy"), armenian=mode, tags=False)
+    assert text.text.strip() == out
+
+
+def test_suno_latin_writes_the_v_of_inch_vor():
+    from ashugh import suno
+
+    text = suno.format_song(
+        "Ինչ-որ մեկը կանչեց\n", Spec(language="hy"), armenian="latin", tags=False
+    )
+    assert text.text.startswith("Inch-vor ")
+
+
+def test_a_capital_opening_a_hyphen_part_is_kept_in_syl():
+    (w,) = words("Փարիզ-Երևան")
+    assert w.sung(w.readings[0].stress, mark=True) == "Փա-րիզ-Ե-րե-վա́ն"

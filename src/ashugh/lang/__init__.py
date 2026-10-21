@@ -168,7 +168,10 @@ def analyze(
             words.append(replace(seen[token], notes=list(seen[token].notes)))
             continue
         script = script_of(token)
-        if script == en.CODE:
+        if script == en.CODE and "@" in token:  # @john: a handle, and no ը in English
+            word = en.analyze_word(token.strip("@"), lexicon, capitals)
+            word.text = token
+        elif script == en.CODE:
             word = en.analyze_word(token, lexicon, capitals)
         elif script == ru.CODE:
             word = ru.analyze_word(token, lexicon, capitals)
@@ -274,7 +277,7 @@ COMMON_ENGLISH = set(
 )
 # Spellings English hardly has: q without u (kyanq), gh between vowels or before a
 # consonant other than t (qaghaq, aghjik; not night), kh, zh, dz.
-ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz")
+ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz|[@ə]")
 
 
 # English words an Armenian line in Latin letters borrows (sirum em qez, baby),

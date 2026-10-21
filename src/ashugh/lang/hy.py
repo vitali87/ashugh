@@ -113,7 +113,9 @@ MAX_FINAL_CODA = 3
 POSSESSIVE_AFTER = {"ɾ", "r", "n", "l", "ʁ", "m"}
 # Agent nouns and ordinals in -որդ (վարորդ, հինգերորդ), and nouns in -ուրդ
 # after a stem of three letters or more (ժողովուրդ, but հյուր-դ, ջուր-դ).
-LEXICAL_SUFFIXES = (("որդ", 3), ("ուրդ", 7))
+LEXICAL_SUFFIXES = (("որդ", 3), ("ուրդ", 7), ("ենդ", 3), ("լդս", 4))
+# but -ենդ of a language's name is yours: քո հայերենդ, ռուսերենդ
+POSSESSIVE_SUFFIXES = ("երենդ",)
 # A compound joined by ա or ե ends in a listed stem: նորա-հարս, դափնե-վարդ;
 # but not հա-մարդ (your number) or մա-զերդ (your hair).
 LINKERS = ("ա", "ե")
@@ -134,7 +136,7 @@ NOT_POSSESSIVE = {
     # names from other languages, sung as they are spelled
     "էդուարդ", "ռոնալդ", "արնոլդ", "էդմոնդ", "լեոնարդ", "բեռնարդ", "ջերալդ", "դոնալդ",
     "հարոլդ", "ռայմոնդ", "էդգարդ", "ջեյմս", "հանս", "ջոնս", "ռիչարդ", "էդվարդ",
-    "ժերարդ", "գերհարդ", "էրհարդ",
+    "ժերարդ", "գերհարդ", "էրհարդ", "հովարդ", "բոնդ", "էդմունդ", "զիգմունդ", "ռոլանդ",
     "նուարդ", "նվարդ",  # and Armenian ones
 }  # fmt: skip
 
@@ -147,6 +149,7 @@ class Seg:
     epenthetic: bool = False
     stressed: bool = False  # a stress mark follows its vowel
     ligature: bool = False  # one half of և
+    part: bool = False  # opens the part after a hyphen: the Ե of Փարիզ-Երևան
 
 
 def is_armenian(ch: str) -> bool:
@@ -161,6 +164,7 @@ def normalize(word: str) -> str:
 def segments(word: str) -> list[Seg]:
     norm = normalize(word)
     segs: list[Seg] = []
+    parts: list[int] = []
     chars = list(word)
     i = 0
     while i < len(chars):
@@ -175,7 +179,11 @@ def segments(word: str) -> list[Seg]:
                     break
             i += 1
             continue
-        first = not segs
+        if ch == "-":
+            parts.append(len(segs))
+            i += 1
+            continue
+        first = not segs or chars[i - 1] == "-"  # ինչ-որ: inch-vor, Փարիզ-Երևան
         after_vowel = bool(segs) and segs[-1].vowel
         if low == "ո" and i + 1 < len(chars) and chars[i + 1].lower() == "ւ":
             segs.append(Seg("u", ch + chars[i + 1], True))
@@ -206,6 +214,9 @@ def segments(word: str) -> list[Seg]:
             ph = LETTERS[low]
             segs.append(Seg(ph, ch, ph in VOWEL_PHONES))
         i += 1
+    for k in parts:
+        if 0 < k < len(segs):
+            segs[k].part = True
     return segs
 
 
@@ -309,13 +320,19 @@ def stem_final(norm: str) -> bool:
         vowels = sum(seg.vowel for seg in segments(norm))
         return norm[-3:-2] in "եէոօ" or vowels == 1 or norm.endswith("միքս")
     words = lexical_endings()
-    if norm in words or any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
+    if norm in words:
         return True
+    if any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
+        return not norm.endswith(POSSESSIVE_SUFFIXES)  # լեգենդ, Մակդոնալդս
+    if any(norm.endswith(name) for name in FOREIGN_NAMES if len(norm) > len(name)):
+        return True  # Մակդոնալդ
     return any(
         norm[k:] in words for k in range(MIN_HEAD, len(norm) - 2) if norm[k - 1 : k] in LINKERS
     ) or any(norm.startswith(h) and norm[len(h) :] in words for h in COMPOUND_HEADS)
 
 
+# Names ending a longer one: Մակ-դոնալդ
+FOREIGN_NAMES = ("դոնալդ", "ռոնալդ", "արնոլդ", "հարոլդ", "ջերալդ", "էդմոնդ", "ռայմոնդ")
 # Heads of compounds with no linker: the tens of քսանչորս, երեսունչորս, and գեր- of
 # գերմարդ, before a stem whose final ս or դ is its own.
 COMPOUND_HEADS = (
@@ -470,6 +487,16 @@ def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
             current, cluster = [], cluster[2:]
             parsed = _parse_cluster(cluster, has_prev=False, has_next=True)
             _, run, onset = parsed if parsed else ([], [], cluster)
+            syllables.extend(o + [_schwa()] + c for o, c in run)
+            current = onset + [segs[end]]
+            continue
+        cut = next((j for j, s in enumerate(segs[v + 1 : end + 1]) if s.part), None)
+        if has_next and cut is not None:  # no consonant crosses a hyphen: Փա-րիզ-Ե-րե-վան
+            left = _parse_cluster(cluster[:cut], True, False, possessive) or (cluster[:cut], [], [])
+            right = _parse_cluster(cluster[cut:], False, True) or ([], [], cluster[cut:])
+            coda, run, onset = left[0], left[1] + right[1], right[2]
+            current.extend(coda)
+            syllables.append(current)
             syllables.extend(o + [_schwa()] + c for o, c in run)
             current = onset + [segs[end]]
             continue
