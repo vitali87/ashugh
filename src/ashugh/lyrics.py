@@ -17,7 +17,7 @@ from .model import Line
 # ([Verse 1] [Male Vocal], [Chorus] (softly)); a BOM may open the file.
 TAG_RE = re.compile(r"^\ufeff?\s*(?:\([^)]*\)\s*)*\[[^\]]*\](?:\s*(?:\[[^\]]*\]|\([^)]*\)))*\s*$")
 BRACKET_RE = re.compile(r"\[([^\]]*)\]")
-NOTE_RE = re.compile(r":|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Verse 2 - Rap]
+NOTE_RE = re.compile(r"[:\u055d\u0589]|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Տուն 2՝ ռեփ]
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
     r"(?<![^\W_])(?<!\d[-'’])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
@@ -94,6 +94,8 @@ SECTION_NAMES = {
     "վերջ": "End",
     # Armenian loan and native names
     "կուպլետ": "Verse",
+    "պրիպև": "Chorus",  # the studio's words, from припев and chorus
+    "քորուս": "Chorus",
     "ռեֆրեն": "Chorus",
     "նախակրկներգ": "Pre-Chorus",
     "բրիջ": "Bridge",
@@ -208,6 +210,7 @@ def suno_tag(tag: str) -> str | None:
     if rest:  # [Куплет 2 - Рэп] -> [Verse 2 - Rap]
         sep = NOTE_RE.match(rest)
         head = rest[: sep.end()] if sep else ""
+        head = head.replace("\u055d", ":").replace("\u0589", ":")  # [Կրկներգ՝ մեղմ]: Suno's colon
         body = rest[len(head) :].rstrip()
         note = body.lstrip()
         rest = head + body[: len(body) - len(note)] + _note(note)

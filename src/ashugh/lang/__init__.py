@@ -67,7 +67,8 @@ def detect(tokens: list[str]) -> str:
             counts[s] = counts.get(s, 0) + 1
     if not counts:
         return "xx" if any(script_of(t) == "xx" for t in tokens) else ""
-    return max(counts, key=lambda k: counts[k])
+    # a tie goes to the script that is not Latin: XXI դար, iPhone-ом are Armenian, Russian
+    return max(counts, key=lambda k: (counts[k], k != en.CODE))
 
 
 # Vowel letters of scripts ashugh does not analyze, by their base letter: Latin

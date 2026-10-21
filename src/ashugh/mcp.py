@@ -305,7 +305,13 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
         "syllables, meter template, ending, the words it must rhyme with, its problems "
         "and the lines around it. A chorus written twice is asked once (see copies). "
         "Write candidates for each request, then call pick.",
-        _schema(["lyrics"], lyrics="the lyrics", spec=SPEC_DOC, lang=LANG_DOC),
+        _schema(
+            ["lyrics"],
+            lyrics="the lyrics",
+            spec=SPEC_DOC,
+            lang=LANG_DOC,
+            n="how many candidates to ask for per line (default 6)",
+        ),
         t_requests,
     ),
     "translate": (

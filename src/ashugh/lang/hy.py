@@ -167,8 +167,10 @@ def segments(word: str) -> list[Seg]:
         ch = chars[i]
         low = ch.lower()
         if ch in STRESS_MARKS:
+            # on the vowel before it, but never a schwa: սարը՜ is սա́րը, an exclamation
+            # over the word, as Armenian stresses no ը
             for seg in reversed(segs):
-                if seg.vowel:
+                if seg.vowel and seg.ph != "ə":
                     seg.stressed = True
                     break
             i += 1

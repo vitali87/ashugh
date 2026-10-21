@@ -592,6 +592,20 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     for i, w in enumerate(ln.words):
         if w.lang == "xx":
             continue
+        classical = next((n for n in w.notes if n.startswith("classical spelling")), None)
+        if classical and w.norm not in warned:  # Կեանքս, read as Կյանքս
+            warned.add(w.norm)
+            modern = classical.removeprefix("classical spelling, read as ")
+            add(
+                Issue(
+                    ln.number,
+                    "stress",
+                    "info",
+                    f"{_quote(w.text)} is classical spelling, read as {modern}",
+                    "as the 1922 reform spells it; add it to [lexicon] if it is sung otherwise",
+                    {"word": w.text, "reformed": modern},
+                )
+            )
         if w.assumed and w.norm not in warned:  # Persephone as perse + phone
             warned.add(w.norm)
             detail = f"not in the dictionary, so sung {w.sung(f.stresses.get(i), mark=True)}"

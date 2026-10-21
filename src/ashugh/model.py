@@ -96,7 +96,12 @@ class Word:
         parts = []
         caps = [ch for ch in self.text[1:] if ch.isupper()]
         # замОк: the writer's capital mark, shown by the acute as every other is
-        writer_caps = mark and len(caps) == 1 and caps[0].lower() in VOWEL_LETTERS
+        writer_caps = (
+            mark
+            and len(caps) == 1
+            and caps[0].lower() in VOWEL_LETTERS
+            and not self.text.isupper()  # ՏԱ, ДА: a word in capitals marks nothing
+        )
         for i, text in enumerate(self._with_yo(stress)):
             if writer_caps:
                 text = text[:1] + text[1:].lower() if i == 0 else text.lower()
