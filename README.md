@@ -444,7 +444,11 @@ end (ВСЁ В СССР), and ХМ and ТСС are sounds, not letters. A preposi
 row is a vocable, not a clitic (на-на-на, да-да-да), and тя leans on its
 verb like бы. A hyphenated word the dictionary stresses only before its last
 part takes the last part's stress too (чёрно-бе́лый), and a compound's
-earlier ё is no reading of its own (трёхэта́жный).
+earlier ё is no reading of its own (трёхэта́жный). A name in Latin letters
+with a Russian case ending (TikTok'е, iPhone-а, Instagram'ами) is one Russian
+word: the name as English says it, the ending's vowels sung after it
+(тик-то́-ке, ин-ста-гра́-ме), the stress on the name's last full vowel as
+Russian takes English names (айфо́н, but гу́гле).
 
 A dictionary reading after the first costs the meter a little, so where the
 meter leaves the choice open the usual reading wins (уже́, not у́же; е́ду,
@@ -508,7 +512,17 @@ vowel there (MY, WHY and GYM are words) and HMM, SHH and PSST are sounds. One
 of four letters or more that alternates
 consonant and vowel is a word (FOMO, NASA), and Dr. is doctor. Song slang
 the dictionary lacks or gets wrong is listed: yeet, highkey, lowkey, rizz,
-bae, email, spring.
+bae, email, spring. A British spelling the dictionary lacks is read as the
+American one (colourful, organised, litre, theatre, jewellery). A name run
+together from words and capitals is read part by part (Chat-G-P-T,
+O-pen-A-I, Space-X), a letter compound is stressed on its letter (Á-list,
+K-pop), and capitals against an & are letters (AT&T). o' is of, unstressed (a
+cup o' tea), a hum is a syllable (mm, hmm), and a vowel sung again after its
+word is an unstressed echo (hey-ey-ey). After the stress, an er or a y-like
+vowel right before another weak vowel, or a schwa before n and a weak vowel,
+may be sung away as hymns and pop do (whisp'ring, glo-rious, op'ning), a
+licence the meter takes only when the line needs it; never across another
+consonant (liberty) or before a full vowel (radio).
 
 **Meter** (`meter.py`). Each syllable position is a strong or a weak beat.
 Fitting a line picks a reading for every ambiguous word and prices the
@@ -550,7 +564,11 @@ rhyme (за́мок / замо́к, désert / desért), and English keeps apart 
 contrasts (still / feel, far / war) but not the ones it merges before r
 (here / year, tour / poor), and an English r is no l (care / bell is slant). A line that rhymes only on the word an earlier
 line ends with, or on another form of it (сердце / сердца, սիրտս / սիրտը), is
-warned about as a refrain, not a rhyme.
+warned about as a refrain, not a rhyme. An English tail against a Russian
+or Armenian one is heard in the other language's sounds (star as стар, okay
+as окей, love as լավ) and judged by that language's rules, so star / гитар
+rhymes. A line whose last sung token is in digits ('99) has no rhyme until
+the number is spelt out, and is left out of its rhyme group.
 
 ## Limits
 
