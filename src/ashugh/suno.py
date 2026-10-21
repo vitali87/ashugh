@@ -183,9 +183,9 @@ def format_song(
             line_out = " ".join(lyrics.EMOJI_RE.sub(" ", line_out).split())
             notes.append(Note(lr.line.number, "emoji", " ".join(icons), "", "no emoji is sung"))
         repeat = REPEAT_MARK_RE.search(line_out)
-        if repeat and 2 <= int(repeat.group(1) or repeat.group(2)) <= MAX_REPEAT:
+        if repeat and 2 <= _times(repeat) <= MAX_REPEAT:
             # Hold me tonight x2: Suno would sing the mark; the line is written out
-            times = int(repeat.group(1) or repeat.group(2))
+            times = _times(repeat)
             line_out = line_out[: repeat.start()].rstrip()
             mark = repeat.group(0).strip()
             notes.append(
@@ -210,11 +210,20 @@ def format_song(
 
 
 ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
-# A repeat mark at the end of a sung line, bare or in parentheses: x2, 2x, (х2), (2x)
+# A repeat mark at the end of a sung line, bare or in parentheses: x2, 2x, (х2), (2x);
+# and in words, in parentheses only, as a sung "twice" is a word: (repeat), (2 раза)
 REPEAT_MARK_RE = re.compile(
-    r"\s*\(?\s*(?<!\w)(?:[xх×]\s*(\d+)|(\d+)\s*[xх×])(?!\w)\s*\)?[\s.!?,…]*$", re.I
+    r"\s*\(?\s*(?<!\w)(?:[xх×]\s*(\d+)|(\d+)\s*[xх×])(?!\w)\s*\)?[\s.!?,…]*$"
+    r"|\s*\(\s*(?:(\d+)\s*(?:times|раза?)|(repeat|rpt|повтор|twice|дважды|կրկնել))\s*\)"
+    r"[\s.!?,…]*$",
+    re.I,
 )
 MAX_REPEAT = 4
+
+
+def _times(m: re.Match) -> int:
+    """How many times a repeat mark sings its line: (repeat) and (twice) are two."""
+    return int(m.group(1) or m.group(2) or m.group(3) or 2)
 
 
 INITIAL_RE = re.compile(r"(?<![^\W\d_])([Ա-Ֆ])ը\.|(?<![^\W\d_])([A-Z][a-z]?)ə\.")

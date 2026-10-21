@@ -126,3 +126,20 @@ def test_consonance_on_a_weak_syllable_reaches_assonance(a, b):
 def test_unlike_consonants_or_a_bare_coda_are_still_no_rhyme(text):
     spec = from_dict({"language": "en", "rhyme": "AA", "min_rhyme": "assonance"})
     assert not scan(text, spec).ok
+
+
+@pytest.mark.parametrize(
+    "line,word",
+    [("Hold on (repeat)", "Hold on"), ("Держись (2 раза)", "Держись"), ("Stay (twice)", "Stay")],
+)
+def test_a_repeat_in_words_writes_the_line_out(line, word):
+    from ashugh import suno
+
+    out = suno.format_song(f"[Chorus]\n{line}\n", tags=False).text
+    assert out.splitlines()[1:] == [word, word]
+
+
+def test_a_sung_twice_is_a_word():
+    from ashugh import suno
+
+    assert suno.format_song("I love you twice\n", tags=False).text == "I love you twice\n"
