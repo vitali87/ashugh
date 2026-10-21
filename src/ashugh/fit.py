@@ -36,7 +36,7 @@ from .spec import Spec
 
 MAX_LINE = 300
 PUNCT_RE = re.compile(r"[,.;:!?…։՝—-]+\s*$")  # not ՛ ՜ ՞: they mark a stressed vowel
-ASIDE_RE = re.compile(r"(\s*\([^)]*\))([,.;:!?…։՝]*)\s*$")  # a backing vocal ending the line
+ASIDE_PUNCT = ",.;:!?…։՝"
 TO_ARMENIAN = str.maketrans({".": "։"})
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
@@ -631,6 +631,33 @@ def _current(var: _Var | None, original: LineReport | None) -> LineReport | None
     return best.report if best else original
 
 
+def _trailing_asides(body: str) -> tuple[int, str, str] | None:
+    """The backing vocals that end a line, read from its end: where they start,
+    with the space before them; their text, (oh) (yeah) or (oh), (yeah); and the
+    closing punctuation after them. None when the line ends on words."""
+
+    def back(j: int, chars: str | None) -> int:  # past spaces, or past those chars
+        while j > 0 and (body[j - 1].isspace() if chars is None else body[j - 1] in chars):
+            j -= 1
+        return j
+
+    k = back(len(body), None)
+    j = back(k, ASIDE_PUNCT)
+    after, close, start = body[j:k], j, None
+    while j > 0 and body[j - 1] == ")":
+        o = body.rfind("(", 0, j - 1)
+        if o < 0 or ")" in body[o + 1 : j - 1]:
+            break
+        start = o
+        j = back(back(o, None), ASIDE_PUNCT)  # (oh), (yeah): the comma between
+        if j == 0 or body[j - 1] != ")":
+            break
+    if start is None:
+        return None
+    start = back(start, None)
+    return start, body[start:close], after
+
+
 def replace_lines(
     text: str, new: dict[int, str], lang: str | None = None, asides: bool = True
 ) -> str:
@@ -653,13 +680,13 @@ def replace_lines(
             ending = line[len(body) :]
             lead = body[: len(body) - len(body.lstrip())]
             body = body[len(lead) :]
-            aside = ASIDE_RE.search(body)
+            aside = _trailing_asides(body)
             if aside and "(" in content:
                 lines[number - 1] = lead + content + ending
                 continue
             if aside:
-                body = body[: aside.start()]
-            paren, after = (aside.group(1), aside.group(2)) if aside and asides else ("", "")
+                body = body[: aside[0]]
+            paren, after = aside[1:] if aside and asides else ("", "")
             own = PUNCT_RE.search(content)
             mark = PUNCT_RE.search(body)
             if own and paren and mark and not after:  # Բալիկ իմ, իմ գանձ։ (օրո՜ր)

@@ -252,3 +252,27 @@ def test_translate_takes_a_source_with_a_line_of_digits():
     proposer = StaticProposer({2: ["Раз, два, три, четыре!"], 3: ["Я шёл по берегу реки"]})
     result = translate_song(DIGITS_SONG, "ru", proposer, rounds=1)
     assert "Я шёл по берегу реки" in result.text
+
+
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        ("I walked the long river side (oh) (yeah)", "I walked the riverside (oh) (yeah)"),
+        ("I walked the long river side (oh), (yeah)!", "I walked the riverside (oh), (yeah)!"),
+        ("I walked the long river side. (oh) (yeah)", "I walked the riverside. (oh) (yeah)"),
+    ],
+)
+def test_a_replaced_line_keeps_every_backing_vocal_that_ends_it(old, new):
+    from ashugh.fit import replace_lines
+
+    assert replace_lines(old + "\n", {1: "I walked the riverside"}) == new + "\n"
+
+
+def test_pick_keeps_both_backing_vocals():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "I walked along the long river side (oh) (yeah)\n"
+    proposer = StaticProposer({1: ["I walked along the riverside"]})
+    res = fit_song(text, from_dict({"language": "en", "syllables": 8}), proposer, rounds=1)
+    assert res.text == "I walked along the riverside (oh) (yeah)\n"
