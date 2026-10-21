@@ -512,6 +512,15 @@ warned about as a refrain, not a rhyme.
 - Only Eastern Armenian. Western Armenian is not supported yet.
 - Rhyme follows modern pronunciation, as Suno sings it: an unwritten ё is
   ё, so a classical rhyme like безнадежной / нежный reads as no rhyme.
+- No sentence is parsed. A Russian homograph is read by the meter and the
+  usual reading (уже́, е́ду), so where both fit, the rarer one may be picked
+  against the grammar (твои́ руки́ for ру́ки): mark the stress (ру́ки or рУки)
+  where it matters. Russian forms the dictionary lacks are derived by rule
+  (scripts/ru_forms.py), and verbs whose participles move their stress their
+  own way are left to the guess.
+- Armenian typed in Latin letters is turned back into Armenian letters, but
+  Latin spelling cannot tell ч from ճ or ց from ծ, nor mark aspiration;
+  syllables and stress come out right, rhymes only approximately.
 - `probe` needs you to generate the clips in Suno; ashugh cannot call Suno.
 
 ## Development
