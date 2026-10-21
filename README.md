@@ -376,9 +376,11 @@ auxiliary of I (սիրում եմ ես) or its clause has a verb of I (հիմա 
 with բերք). An abbreviation in capitals is said letter by letter (Ա-Մե-Նե,
 Հա-Հա), even in a line in capitals when it has no vowel letter, and a case
 ending after a hyphen follows the letters and takes the stress (ԱՄՆ-ից
-Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́). In an Armenian song, a line in Latin letters whose words are mostly
-not English is Armenian typed in Latin (Mtnem aygin, kyanq), read in
-Armenian letters: mət-nem, ay-gin. A name in Latin letters with an Armenian
+Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́). In an Armenian song, a line in Latin
+letters whose words are mostly not English is Armenian typed in Latin (Mtnem
+aygin, kyanq), read in Armenian letters: mət-nem, ay-gin; the English words
+it borrows stay English (sirum em qez, baby), and in an English line a word
+spelt as Armenian is Armenian (oh baby kyanqs: kyan-kʰəs). A name in Latin letters with an Armenian
 ending (TikTok-ում, Ararat-ը, iPhone-ս) is one Armenian word: the name as
 English says it (or in Armenian letters if English lacks it), the ending after
 it with a schwa where a lone consonant follows a consonant (iPhone-ըս), and the
