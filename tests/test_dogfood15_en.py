@@ -284,3 +284,48 @@ def test_a_dictionary_compound_at_a_line_start_draws_no_name_warning():
         "Somewhere in the moonlight\nMoonlight on the barefoot\n", from_dict({"language": "en"})
     )
     assert not [i for i in report.issues if "read as" in i.message]
+
+
+@pytest.mark.parametrize(
+    "line,word,size",
+    [
+        ("I LOVE NYC", "NYC", 3), ("LOVE YOU, NY", "NY", 2), ("TYVM MY FRIEND", "TYVM", 4),
+        ("I LOVE NYC", "LOVE", 1), ("WHY THE SKY", "WHY", 1), ("FEEL THE RHYTHM", "RHYTHM", 2),
+        ("IN THE GYMS", "GYMS", 1), ("MY MYTHS", "MYTHS", 1),
+    ],
+)  # fmt: skip
+def test_capitals_with_only_a_y_are_letters_unless_a_word(line, word, size):
+    words = scan(line + "\n", from_dict({"language": "en"})).lines[0].line.words
+    assert next(w for w in words if w.text == word).size == size
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("smote", "wrote"), ("clave", "grave"), ("zorb", "orb"), ("shawty", "naughty"),
+        ("aight", "night"), ("homie", "foamy"), ("bruh", "duh"), ("fam", "jam"),
+        ("swag", "bag"), ("hella", "fella"), ("skrrt", "dirt"), ("canst", "manse"),
+    ],
+)  # fmt: skip
+def test_slang_archaic_and_guessed_words_rhyme_as_they_sound(a, b):
+    assert rhymes(a, b) >= rhyme.THRESHOLD["near"], (a, b)
+
+
+@pytest.mark.parametrize(
+    "word",
+    "tryna finna imma bouta aight bruh fam bestie skrrt ayy yuh swag shawty homie hella "
+    "canst couldst wouldst shouldst hadst didst mayst mightst wast saith seest goeth goest "
+    "smote prithee forsooth alack".split(),
+)
+def test_common_slang_and_archaic_forms_are_known(word):
+    from ashugh.lang import en
+
+    assert not en.analyze_word(word).guessed
+
+
+def test_a_word_still_unknown_is_still_named():
+    report = scan("I glorped the zibber\n", from_dict({"language": "en"}))
+    assert {i.data.get("word") for i in report.issues if "unknown" in i.message} == {
+        "glorped",
+        "zibber",
+    }

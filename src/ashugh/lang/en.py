@@ -799,8 +799,8 @@ def abbreviation(token: str, capitals: bool = False) -> tuple[str, bool] | None:
     """The letters of an abbreviation sung letter by letter, and whether it is a
     plural (DMs): capitals 2 to 5 long that are no word, or listed in SPELLED_OUT.
     In a line all in capitals (where AM is am), only one with no vowel letter, as
-    MC, DJ and TV are anywhere; Y is a vowel there (MY, WHY, GYM) and an
-    interjection is no abbreviation (HMM, PSST)."""
+    MC, DJ and TV are anywhere; Y is a vowel there in a word (MY, WHY, GYM, not
+    NYC) and an interjection is no abbreviation (HMM, PSST)."""
     m = ABBREVIATION_RE.fullmatch(token)
     if m is None:
         return None
@@ -809,6 +809,8 @@ def abbreviation(token: str, capitals: bool = False) -> tuple[str, bool] | None:
         return None
     if not re.search("[AEIOUY]", core):
         return core.lower(), bool(m.group(2))  # MC, DJ, TV: no word to read
+    if capitals and not re.search("[AEIOU]", core) and not lookup(core.lower()):
+        return core.lower(), bool(m.group(2))  # I LOVE NYC: no word with that Y
     if capitals:
         return None
     if len(core) >= 4 and re.fullmatch(r"(?:[^AEIOU][AEIOU])+|(?:[AEIOU][^AEIOU])+", core):
@@ -933,6 +935,53 @@ REPLACED = {
     "musta": ["M AH1 S T AH0"],
     "sorta": ["S AO1 R T AH0"],
     "xoxo": ["EH2 K S OW2 EH2 K S OW1"],
+    # slang CMUdict lacks
+    "tryna": ["T R AY1 N AH0"],
+    "finna": ["F IH1 N AH0"],
+    "imma": ["AY1 M AH0"],
+    "ima": ["AY1 M AH0"],
+    "bouta": ["B AW1 T AH0"],
+    "aight": ["AY1 T"],
+    "ight": ["AY1 T"],
+    "bruh": ["B R AH1"],
+    "fam": ["F AE1 M"],
+    "bestie": ["B EH1 S T IY0"],
+    "besties": ["B EH1 S T IY0 Z"],
+    "skrrt": ["S K ER1 T"],
+    "ayy": ["EY1"],
+    "ayyy": ["EY1"],
+    "yuh": ["Y AH1"],
+    "swag": ["S W AE1 G"],
+    "shawty": ["SH AO1 T IY0"],
+    "homie": ["HH OW1 M IY0"],
+    "homies": ["HH OW1 M IY0 Z"],
+    "hella": ["HH EH1 L AH0"],
+    "periodt": ["P IH1 R IY0 AH0 D"],
+    "boujee": ["B UW1 ZH IY0"],
+    "bougie": ["B UW1 ZH IY0"],
+    "thang": ["TH AE1 NG"],
+    "thangs": ["TH AE1 NG Z"],
+    # archaic forms of the King James and the old ballads
+    "canst": ["K AE1 N S T"],
+    "couldst": ["K UH1 D S T"],
+    "wouldst": ["W UH1 D S T"],
+    "shouldst": ["SH UH1 D S T"],
+    "hadst": ["HH AE1 D S T"],
+    "didst": ["D IH1 D S T"],
+    "mayst": ["M EY1 S T"],
+    "mightst": ["M AY1 T S T"],
+    "wast": ["W AA1 S T"],
+    "saith": ["S EH1 TH"],
+    "seest": ["S IY1 IH0 S T"],
+    "seeth": ["S IY1 IH0 TH"],
+    "goeth": ["G OW1 IH0 TH"],
+    "goest": ["G OW1 IH0 S T"],
+    "doeth": ["D UW1 IH0 TH"],
+    "smote": ["S M OW1 T"],
+    "prithee": ["P R IH1 DH IY0"],
+    "forsooth": ["F ER0 S UW1 TH"],
+    "alack": ["AH0 L AE1 K"],
+    "clave": ["K L EY1 V"],
 }
 # Words stressed on the first syllable as a noun or adjective and on the second
 # as a verb (a récord, to recórd). The word before tells them apart; the
@@ -1068,27 +1117,88 @@ def _one_phone_apart(a: list[str], b: list[str]) -> bool:
     )
 
 
+# Spelling read as sound, for a word the dictionary lacks: vowel digraphs, a
+# vowel lengthened by a silent e (smote, clave), one coloured by an r (zorb).
+VOWEL_DIGRAPHS = {
+    "ai": "eɪ", "ay": "eɪ", "ei": "eɪ", "ey": "eɪ", "ee": "i", "ea": "i", "ie": "i",
+    "oa": "oʊ", "oe": "oʊ", "ow": "aʊ", "ou": "aʊ", "oo": "u", "ue": "u", "ew": "u",
+    "ui": "u", "au": "ɔ", "aw": "ɔ", "oi": "ɔɪ", "oy": "ɔɪ",
+}  # fmt: skip
+LONG_VOWELS = {"a": "eɪ", "e": "i", "i": "aɪ", "o": "oʊ", "u": "u", "y": "aɪ"}
+R_VOWELS = {"a": "ɑ", "o": "ɔ", "e": "ɝ", "i": "ɝ", "u": "ɝ", "y": "ɝ"}
+CONSONANT_DIGRAPHS = {"sh": "ʃ", "ch": "tʃ", "th": "θ", "ph": "f", "ck": "k", "ng": "ŋ", "wh": "w"}
+
+
 def _guess_phones(norm: str) -> tuple[str, ...]:
     """Rough phonemes from spelling, one vowel per counted vowel group."""
     w = re.sub(r"[^a-z]", "", norm)
     if not re.search(f"[{LETTER_VOWELS}]", w):
+        if "r" in w:  # skrrt, brr: the r is the vowel
+            head, _, tail = re.sub("r+", "R", w, count=1).partition("R")
+            return (*[LETTER_PHONES[ch] for ch in head], "ɝ", *[LETTER_PHONES[ch] for ch in tail])
         consonants = [LETTER_PHONES[ch] for ch in w]
         return tuple(consonants[:1] + ["ə"] + consonants[1:])
-    group_of = {}
-    for a, b in _counted_groups(w):
-        for k in range(a, b):
-            group_of[k] = a
+    groups = _counted_groups(w)
+    starts = {a: b for a, b in groups}
+    inside = {k for a, b in groups for k in range(a, b)}
     phones: list[str] = []
-    for k, ch in enumerate(w):
-        if k in group_of:
-            if group_of[k] == k:
-                phones.append(LETTER_PHONES[ch] if ch in LETTER_VOWELS else "ə")
+    k = 0
+    while k < len(w):
+        ch = w[k]
+        if k in starts:
+            vowel, k = _guess_vowel(w, k, starts[k], len(groups))
+            if vowel == "ɝ" and w[k : k + 1] == "r":
+                k += 1  # the r is in the vowel: zerb, skirt
+            phones.append(vowel)
+            continue
+        if k in inside or (ch in LETTER_VOWELS and ch != "y"):
+            k += 1  # a silent e
+            continue
+        pair = w[k : k + 2]
+        if pair == "gh":
+            k += 2  # light, aight: silent
+            continue
+        if pair in CONSONANT_DIGRAPHS:
+            phones.append(CONSONANT_DIGRAPHS[pair])
+            k += 2
+            continue
+        if k == 0 and pair in ("wr", "kn"):
+            k += 1  # write, know: the first letter is silent
+            continue
+        if pair == "qu":
+            phones += ["k", "w"]
+            k += 2
             continue
         if ch == "y":
             phones.append("j")
-        elif ch not in LETTER_VOWELS:
+        elif ch == "c" and w[k + 1 : k + 2] in ("e", "i", "y"):
+            phones.append("s")
+        elif ch == "x":
+            phones += ["k", "s"]
+        elif not phones or phones[-1] != LETTER_PHONES[ch]:  # a double letter is one
             phones.append(LETTER_PHONES[ch])
+        k += 1
     return tuple(phones)
+
+
+def _guess_vowel(w: str, a: int, b: int, count: int) -> tuple[str, int]:
+    """The vowel a group of vowel letters most likely spells, and where it ends:
+    past a w or y that belongs to it (shaw-ty, boy)."""
+    pair = w[a : a + 2]
+    if w[a : a + 3] == "igh":
+        return "aɪ", b
+    if pair in VOWEL_DIGRAPHS:
+        return VOWEL_DIGRAPHS[pair], max(b, a + 2)
+    first, after = w[a], w[b:]
+    if b - a == 1 and after[:1] == "r" and after[1:2] not in tuple(LETTER_VOWELS):
+        return R_VOWELS[first], b  # zorb, skirt: a vowel before r and no vowel after
+    if b - a == 1 and re.fullmatch(r"[^aeiouy]e[sd]?", after) and first in LONG_VOWELS:
+        return LONG_VOWELS[first], b  # smote, clave: lengthened by a silent e
+    if first == "y" and b == len(w):
+        return ("aɪ" if count == 1 else "i"), b  # sly; baby
+    if first == "y":  # tryna, python; gym, cymbal
+        return ("aɪ" if re.match(r"[^aeiouy][aeiou]", after) else "ɪ"), b
+    return LETTER_PHONES[first], b
 
 
 def analyze_word(
