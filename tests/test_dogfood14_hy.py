@@ -133,3 +133,15 @@ def test_an_iamb_line_with_a_linking_n_before_e_fits_eight():
         from_dict({"language": "hy", "syllables": 8, "meter": "iamb4"}),
     )
     assert rep.ok, [i.message for i in rep.issues if i.severity == "error"]
+
+
+@pytest.mark.parametrize(
+    "token, size", [("DM-ում", 3), ("VK-ում", 3), ("BTS-ի", 4), ("FB-ում", 3), ("KFC-ում", 4)]
+)
+def test_a_latin_abbreviation_with_an_armenian_ending_is_spelt(token, size):
+    w = words(f"Ես դեռ քո {token} եմ")[3]
+    assert w.size == size and w.lang == "hy"
+
+
+def test_a_latin_word_with_an_ending_is_still_read_as_a_word():
+    assert words("Տեսա TikTok-ում")[1].size == 3

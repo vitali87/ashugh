@@ -307,7 +307,8 @@ def _latin_with_ending(token: str, lexicon: dict[str, str]) -> Word:
     (iPhone-ս, -նըս); the stress on the ending's vowel, else on the name's end
     (TikTok-ու́մ, Ararát-ը)."""
     name, ending = token.split("-", 1)
-    english = en.known(name.lower())
+    # DM-ում, BTS-ի: an abbreviation is its letters, as English spells them
+    english = en.known(name.lower()) or en.abbreviation(name) is not None
     head = en.analyze_word(name, lexicon) if english else _from_latin(name, lexicon)
     phones = head.readings[0].phones
     segs = hy.segments("ա" + ending)[1:]  # not word-initial: ով is [ov]
