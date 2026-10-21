@@ -98,6 +98,8 @@ def analyze(
     With the line's text, a preposition before a comma or full stop is stressed
     like one at the end of the line: hold on, hold on."""
     words: list[Word] = []
+    letters = "".join(ch for t in tokens for ch in t if ch.isalpha())
+    capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
     for token in tokens:
         if token == "&":  # rock & roll: the line's own and
             and_ = analyze_word_as(AMPERSAND.get(lang, "and"), lexicon)
@@ -105,7 +107,9 @@ def analyze(
             words.append(and_)
             continue
         script = script_of(token)
-        if script in ANALYZERS:
+        if script == en.CODE:
+            words.append(en.analyze_word(token, lexicon, capitals))
+        elif script in ANALYZERS:
             words.append(ANALYZERS[script].analyze_word(token, lexicon))
         else:
             words.append(foreign_word(token))
@@ -120,7 +124,7 @@ def analyze(
     before = words[-2] if len(words) > 1 else None
     if end is not None and before is not None and end.lang == before.lang == "en":
         if end.norm in en.OBJECTS and not (before.clitic or before.norm in en.WEAK):
-            end.enclitic = True  # need it, hold me; but for you, with me
+            end.enclitic = end.free_end = True  # need it, hold me, missing yóu on a beat
         content = words[-3] if len(words) > 2 else None
         if (
             end.norm in en.OBJECTS

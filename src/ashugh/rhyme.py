@@ -12,7 +12,7 @@ assonance >= 0.25, none below.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .lang.en import OBJECTS, PREPOSITIONS
 from .meter import Fit, _anchor, slots
@@ -92,10 +92,14 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
         if fit.promoted:  # the beat on the last syllable carries the rhyme: memory / free
             dropped_last = w in fit.elided and word.drop == word.size - 1
             later.append(word.size - (2 if dropped_last else 1))
+        # Sung short (real in one syllable rhymes with feel), and as written (fire
+        # in one syllable still rhymes with empire).
+        sung = _as_sung(word, reading, w in fit.elided)
         for stress in [reading.stress, *later]:
-            t = _tail(word, reading, stress, words[w + 1 :])
-            if t is not None and t not in out:
-                out.append(t)
+            for form in dict.fromkeys([sung, reading]):
+                t = _tail(word, form, stress, words[w + 1 :])
+                if t is not None and t not in out:
+                    out.append(t)
     last = words[-1]
     leaning = w == len(words) - 3 and words[-2].norm in PREPOSITIONS
     if (w == len(words) - 2 or leaning) and last.lang == "en" and last.enclitic:
@@ -103,6 +107,17 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
         if own is not None and own not in out:
             out.append(own)
     return out
+
+
+def _as_sung(word, reading, elided: bool):
+    """The reading as the line sings it: real in one syllable rhymes with feel."""
+    if not elided or word.drop is None or reading.stress is None or word.drop <= reading.stress:
+        return reading
+    vs = nuclei(reading.phones)
+    if word.drop >= len(vs):
+        return reading
+    cut = vs[word.drop]
+    return replace(reading, phones=reading.phones[:cut] + reading.phones[cut + 1 :])
 
 
 def _shifted_tail(words, w: int) -> Tail | None:

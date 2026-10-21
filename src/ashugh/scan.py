@@ -453,7 +453,22 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     for i, w in enumerate(ln.words):
         if w.lang == "xx":
             continue
-        if w.guessed and w.size > 1:
+        if w.guessed and w.size == 1 and w.lang == "en":
+            # Russian and Armenian count a word's syllables by its vowels; English
+            # spelling does not (zorb, gnaw, Ngozi), so a guessed one is named too.
+            if w.norm not in warned:
+                warned.add(w.norm)
+                add(
+                    Issue(
+                        ln.number,
+                        "stress",
+                        "warning",
+                        f"{_quote(w.text)} unknown",
+                        "counted as one syllable from its spelling; add it to [lexicon] if wrong",
+                        {"word": w.text},
+                    )
+                )
+        elif w.guessed and w.size > 1:
             if w.norm in warned:
                 continue
             warned.add(w.norm)

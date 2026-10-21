@@ -394,10 +394,19 @@ pronoun twice (need it / want it). After a verb and a preposition the pronoun
 may stay weak or take the beat (cáll to me / áll to me, walk with mé / free). A
 grave sings an -ed (blessèd), an old -est
 or -eth after a vowel is its own syllable (go-est), & is sung as and, and a
-word glued to digits ('80s) is left to the digits warning. A plural the
-dictionary lacks is its singular and an ending (lán-ces, be-síe-ges); other
-unknown words are counted from their spelling and stressed by the ending prior. A preposition that ends a
-line takes the stress (ships gone by / sky).
+word glued to digits ('80s) is left to the digits warning. A dropped g is
+the -ing word ending in [ɪn] (goin', nothin' / within), and ya and 'em are
+weak like you and them. A word the dictionary lacks is its stem and an ending
+where it has one: a plural (lán-ces, be-síe-ges), -ing, -ed and -er (ví-bing,
+ghó-sted, ín-flu-en-cer). An abbreviation in capitals is sung letter by
+letter, stress on the last (L-Á, N-Y-C, D-Ms), unless the whole line is in
+capitals (I AM THE ONE) or the dictionary has it as a word (NASA); a lowercase
+word is never read as its letters (ba is not B.A.). Other unknown words are
+counted from their spelling and stressed by the ending prior, and named in a
+warning, a one-syllable one too (zorb), since English spelling does not count
+syllables. A preposition that ends a line takes the stress (ships gone by /
+sky). A word sung a syllable short rhymes as sung (real in one syllable /
+feel), and as written.
 
 **Meter** (`meter.py`). Each syllable position is a strong or a weak beat.
 Fitting a line picks a reading for every ambiguous word and prices the

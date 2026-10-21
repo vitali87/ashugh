@@ -43,6 +43,7 @@ class Word:
     clitic: bool = False  # no stress of its own (prepositions, "and", auxiliaries)
     enclitic: bool = False  # leans on the word before it, so rhymes with it
     free_end: bool = False  # a line-final pronoun after a preposition: a foot if on a beat
+    spelled: bool = False  # an abbreviation sung letter by letter (L-A), never hyphenated
     head_schwa: bool = False  # starts with a schwa that a vowel before it can swallow
     tail_schwa: bool = False  # ends in a schwa syllable whose consonant can link forward
     drop: int | None = None  # syllable whose schwa may drop in this line's context

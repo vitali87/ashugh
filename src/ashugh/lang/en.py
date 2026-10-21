@@ -75,7 +75,7 @@ CONSONANTS_ARPA = {
 # hold on, come in, what is it for. Not articles or conjunctions.
 # Object pronouns: ending a line after a verb or a noun they lean on it (néed it,
 # hóld me) and rhyme with it, though a song may still rhyme on them (love yóu / true).
-OBJECTS = {"it", "me", "you", "him", "her", "them", "us"}
+OBJECTS = {"it", "me", "you", "him", "her", "them", "us", "ya", "em"}  # find ya, need 'em
 PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
     "a",
@@ -201,6 +201,12 @@ def override_error(word: str, value: str) -> str | None:
 
 
 def lookup(norm: str) -> list[str] | None:
+    if norm.endswith("in'") and len(norm) > 4:
+        # goin', blowin', cryin': the -ing word with its last sound sung [ɪn], the
+        # same for all of them whatever the dictionary lists for each
+        raw = TABLE.get(norm[:-1] + "g") or TABLE.get(norm)
+        if raw:
+            return [_dropped_g(v) for v in raw.split("|")]
     candidates = [norm]
     if norm.endswith("in'"):
         candidates.append(norm[:-1] + "g")  # lovin' -> loving
@@ -222,6 +228,9 @@ def lookup(norm: str) -> list[str] | None:
             raw = TABLE.get(stem) if len(stem) > 1 else None
             if raw and (stem + "s" == norm or stem.endswith(("s", "x", "z", "ch", "sh", "y"))):
                 return [v + _s_ending(v) for v in raw.split("|")]
+    derived = _derived(norm)
+    if derived:
+        return derived
     parts = _compound_parts(norm)
     if parts:  # lovestruck, facetime: two words, stressed on the first
         left, right = ((TABLE.get(p) or "").split("|")[0] for p in parts)
@@ -231,6 +240,47 @@ def lookup(norm: str) -> list[str] | None:
         if raw:
             return [v + _s_ending(v) for v in raw.split("|")]
     return None
+
+
+def _derived(norm: str) -> list[str] | None:
+    """An -ed, -ing or -er form the dictionary lacks, from its stem: ghosted, vibing,
+    influencer (ghost, vibe, influence)."""
+    for ending, stems in (
+        ("ing", (norm[:-3], norm[:-3] + "e", norm[:-4])),
+        ("ed", (norm[:-2], norm[:-1], norm[:-3], norm[:-3] + "y" if norm.endswith("ied") else "")),
+        ("er", (norm[:-2], norm[:-1], norm[:-3])),
+    ):
+        if not norm.endswith(ending) or len(norm) < len(ending) + 3:
+            continue
+        for stem in stems:
+            raw = TABLE.get(stem) if len(stem) > 2 else None
+            if not raw:
+                continue
+            if stem == norm[: len(stem)] and len(stem) == len(norm) - len(ending) - 1:
+                if stem[-1] != norm[len(stem)]:
+                    continue  # stopped: stop and a doubled p, not stopp
+            return [v + _ending_phones(v, ending) for v in raw.split("|")]
+    return None
+
+
+def _ending_phones(variant: str, ending: str) -> str:
+    last = variant.split()[-1].rstrip("012")
+    if ending == "ing":
+        return " IH0 NG"
+    if ending == "er":
+        return " ER0"
+    if last in ("T", "D"):
+        return " IH0 D"
+    return " T" if last in ("P", "K", "F", "TH", "S", "SH", "CH") else " D"
+
+
+def _dropped_g(variant: str) -> str:
+    phones = variant.split()
+    if phones[-1:] == ["NG"]:
+        phones[-1] = "N"
+    if len(phones) > 1 and phones[-1] == "N" and phones[-2] in ("AH0", "IH0", "IY0"):
+        phones[-2] = "IH0"
+    return " ".join(phones)
 
 
 def _s_ending(variant: str) -> str:
@@ -361,7 +411,7 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         a, b = groups[k]
         groups[k : k + 1] = [(a, at), (at, b)]
     cuts = []
-    for k, ((_, end), (start, _)) in enumerate(zip(groups, groups[1:])):
+    for k, ((begin, end), (start, _)) in enumerate(zip(groups, groups[1:])):
         gap = low[end:start]
         if start == len(low) - 1 and low.endswith("le") and len(gap) >= 2:
             onset = 2  # lit-tle, can-dle, ta-ble
@@ -369,9 +419,20 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
             onset = 0  # laugh-ing, weigh-ing; play-ing
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
-            if k in short and gap:  # the short vowel keeps one consonant, or a digraph
+            closed = re.search(r"[^aeiouy]", low[begin:end])  # some-thin': a silent e closes it
+            if k in short and gap and not closed:  # the short vowel keeps a consonant, or a digraph
                 onset = 0 if len(gap) == 1 or gap in DIGRAPHS else min(onset, len(gap) - 1)
         cuts.append(start - min(onset, len(gap)))
+    # A contraction keeps its apostrophe (would-'ve, not would'-ve), and a consonant
+    # before an apostrophe stays with its own syllable (rock-'n'-roll, not roc-k'n).
+    cuts = [
+        c - 1
+        if token[c - 1 : c] in APOSTROPHES and token[c:].lower() in CONTRACTIONS
+        else c + 1
+        if token[c + 1 : c + 2] in APOSTROPHES
+        else c
+        for c in cuts
+    ]
     bounds = list(zip([0, *cuts], [*cuts, len(token)]))
     pieces = [_piece(token[a:b], k, len(bounds)) for k, (a, b) in enumerate(bounds)]
     while len(pieces) < n:  # too few vowel letters to cut: split the longest piece
@@ -379,28 +440,91 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         if len(pieces[k]) < 2:
             pieces.append(pieces[k])
             continue
-        half = len(pieces[k]) // 2
+        mark = next((j for j, ch in enumerate(pieces[k]) if j and ch in APOSTROPHES), None)
+        half = mark or len(pieces[k]) // 2  # rock-'n: the apostrophe begins a syllable
         pieces[k : k + 1] = [pieces[k][:half], pieces[k][half:]]
     return pieces
 
 
 def _piece(text: str, k: int, n: int) -> str:
     """A piece without the hyphens and apostrophes at its cuts; the last keeps a
-    dropped g's apostrophe (fix-in')."""
+    dropped g's apostrophe (fix-in') and a contraction its own (would-'ve)."""
     out = text.strip("-")
-    if k > 0:
+    if out.strip("'’").lower() == "n":
+        return out  # the 'n' of rock 'n' roll
+    if k > 0 and out.lstrip("'’").lower() not in CONTRACTIONS:
         out = out.lstrip("'’")
     if k < n - 1:
         out = out.rstrip("'’")
     return out or text
 
 
+CONTRACTIONS = {"ve", "ll", "re", "d", "m", "s", "t"}
+APOSTROPHES = ("'", "’")
 DIGRAPHS = {"sh", "th", "ch", "ph", "ng", "ck", "wh"}
+# Letter names, for an abbreviation sung letter by letter: L-A, N-Y-C, B-F-F.
+LETTER_NAMES = {
+    "a": "EY", "b": "B IY", "c": "S IY", "d": "D IY", "e": "IY", "f": "EH F", "g": "JH IY",
+    "h": "EY CH", "i": "AY", "j": "JH EY", "k": "K EY", "l": "EH L", "m": "EH M",
+    "n": "EH N", "o": "OW", "p": "P IY", "q": "K Y UW", "r": "AA R", "s": "EH S",
+    "t": "T IY", "u": "Y UW", "v": "V IY", "w": "D AH B AH L Y UW", "x": "EH K S",
+    "y": "W AY", "z": "Z IY",
+}  # fmt: skip
+# Abbreviations spelt like a word: LA is L-A, not la, wherever the line is not in capitals.
+SPELLED_OUT = {"LA", "US", "AM", "PM", "ID", "RIP", "USA"}
+ABBREVIATION_RE = re.compile(r"([A-Z]{2,5})(s?)")
+
+
+def abbreviation(token: str, capitals: bool = False) -> tuple[str, bool] | None:
+    """The letters of an abbreviation sung letter by letter, and whether it is a
+    plural (DMs): capitals 2 to 5 long that are no word, or listed in SPELLED_OUT
+    (unless the whole line is in capitals, where AM is am)."""
+    m = ABBREVIATION_RE.fullmatch(token)
+    if m is None:
+        return None
+    core = m.group(1)
+    if TABLE.get(core.lower()) and (capitals or core not in SPELLED_OUT):
+        return None
+    return core.lower(), bool(m.group(2))
+
+
+def _letter_spelling(norm: str, variant: str) -> bool:
+    """Whether a dictionary reading only spells the word's letters (ba as B.A.)."""
+    names = " ".join(LETTER_NAMES.get(ch, "?") for ch in norm)
+    return re.sub(r"\d", "", variant) == names
+
+
+def _spelled_out(word: Word, letters: str, plural: bool) -> Word:
+    """An abbreviation sung letter by letter, the last letter stressed (el-Á)."""
+    phones: list[str] = []
+    pieces: list[str] = []
+    token = word.text
+    for k, ch in enumerate(letters):
+        mark = "1" if k == len(letters) - 1 else "2"
+        if ch == "w":  # dou-ble-u
+            phones += ["D", "AH" + mark, "B", "AH0", "L", "Y", "UW0"]
+            pieces += [token[k] + "(dou", "ble", "u)"]
+        else:
+            phones += [p + mark if p in VOWELS_ARPA else p for p in LETTER_NAMES[ch].split()]
+            pieces.append(token[k])
+    if plural:
+        phones.append("Z")
+    pieces[-1] += token[len(letters) :]
+    parsed, stresses, _ = _parse(" ".join(phones))
+    stress = max(i for i, d in enumerate(stresses) if d == 1)
+    word.syllables = tuple(Syllable(p) for p in pieces)
+    secondary = tuple(i for i, d in enumerate(stresses) if d and i != stress)
+    word.readings = (Reading(stress, parsed, word.norm, "lexicon", secondary),)
+    word.weak = len(pieces) == 1
+    word.spelled = True
+    return word
+
+
 SHORT_VOWELS = {"IH", "EH", "AE", "AH", "UH", "AA"}  # fish, bed, cat, cup, book, rock
 MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
 # Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
-EXTRA = {"yeah": ["Y EH1 R"], "real": ["R IY1 AH0 L"], "poem": ["P OW1 M"]}
+EXTRA = {"yeah": ["Y EH1 R"], "real": ["R IY1 AH0 L"], "poem": ["P OW1 M"], "woah": ["W OW1"]}
 SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
 SHORT_PREFERENCE = -0.05
 ARCHAIC = re.compile(r"[aeiouy]e(?:st|th)$")  # go-est, see-est, fly-eth
@@ -478,10 +602,21 @@ def _guess_phones(norm: str) -> tuple[str, ...]:
     return tuple(phones)
 
 
-def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
+def analyze_word(
+    token: str, overrides: dict[str, str] | None = None, capitals: bool = False
+) -> Word:
+    """One English word; capitals says its line is all in capitals (I AM is am)."""
     norm = normalize(token)
     variants = lookup(norm)
     user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
+    spelled = None if user else abbreviation(token, capitals)
+    if spelled is None and not user and variants and token.isupper() and len(norm) > 1:
+        if _letter_spelling(norm, variants[0]):  # BMW: the dictionary spells it too
+            spelled = (norm, False)
+    if spelled is not None:
+        return _spelled_out(Word(token, norm, CODE, (), ()), *spelled)
+    if variants and len(variants) > 1 and token.islower() and _letter_spelling(norm, variants[0]):
+        variants = variants[1:]  # ba, the vocable, not B.A.
     if norm in EXTRA and not user:
         variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
     if user:
