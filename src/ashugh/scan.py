@@ -132,6 +132,11 @@ def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line
     lines = lyrics.parse(lyrics.clean(text))
     tokens = [lyrics.tokenize(ln.text) for ln in lines]
     default = forced or spec.language or languages.detect([t for ts in tokens for t in ts])
+    if not forced and not spec.language and default == "en":
+        # Ari u el mi gna: a song mostly in Armenian typed in Latin letters is Armenian
+        typed = [languages.latin_armenian(ts) for ts in tokens if ts]
+        if len(typed) >= 2 and 2 * sum(typed) > len(typed):
+            default = "hy"
     for ln, ts in zip(lines, tokens):
         detected = languages.detect(ts)
         if default == "hy" and detected == "en" and languages.latin_armenian(ts):

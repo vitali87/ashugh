@@ -256,9 +256,11 @@ def test_translate_refuses_bad_options(arguments, message):
 def test_derive_spec_reads_the_source_in_the_language_given():
     s = Server()
     song = "Mtnem aygin, kyanqs\nSirum em qez\n"
-    _, by_lang = tool(s, "derive_spec", lyrics=song, source_lang="hy", keep="syllables")
+    _, as_hy = tool(s, "derive_spec", lyrics=song, source_lang="hy", keep="syllables")
     _, guessed = tool(s, "derive_spec", lyrics=song, keep="syllables")
-    assert by_lang["toml"] != guessed["toml"]
+    _, as_en = tool(s, "derive_spec", lyrics=song, source_lang="en", keep="syllables")
+    assert as_hy["toml"] == guessed["toml"]  # a song typed in Latin is found Armenian
+    assert as_en["toml"] != as_hy["toml"]  # and the language given is the one read
 
 
 def test_syllables_warns_of_digits_and_guessed_words():

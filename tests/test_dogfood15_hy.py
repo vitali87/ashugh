@@ -194,3 +194,20 @@ def test_schwa_mode_keeps_an_initial():
 
     out = suno.format_song("Ս. Սարգիս, իմ սեր\n", armenian="schwa", tags=False).text
     assert out.startswith("Ս. Սարգիս"), out
+
+
+def test_a_song_wholly_in_latin_typed_armenian_is_armenian():
+    from ashugh.scan import scan
+
+    text = "Ari u el mi gna\nAranc qez chka huys\nSirtd inch e asum\nQo achqery lusin en\n"
+    report = scan(text)
+    assert all(lr.line.lang == "hy" for lr in report.lines)
+    assert not [i for i in report.issues if "unknown" in i.message]
+
+
+def test_an_english_song_with_slang_stays_english():
+    from ashugh.scan import scan
+
+    text = "Yeah we vibin all night\nShawty got the drip so tight\nNo cap we lit tonight\n"
+    report = scan(text)
+    assert all(lr.line.lang == "en" for lr in report.lines)

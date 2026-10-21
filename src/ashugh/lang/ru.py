@@ -713,7 +713,7 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
         # неся is несу́'s gerund, not не with -ся
         bare = norm[:-2]  # гася is гашу́'s gerund, not га with -ся: a bare stem is a word
         if norm.endswith(suffix) and not found and not gerund and bare not in CLITICS:
-            if vowel_count(bare) > 1 or TABLE.variants(bare):
+            if vowel_count(bare) > 1 or TABLE.variants(bare) or bare[-1:] not in VOWELS:
                 twin(bare, lambda p: p)
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:

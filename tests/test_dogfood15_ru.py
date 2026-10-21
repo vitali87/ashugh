@@ -289,3 +289,9 @@ def test_a_bad_candidate_is_named_in_the_error():
 
     with pytest.raises(ProposerError, match=r"line 17: candidate 2 is null"):
         parse_candidates({"17": ["Я иду домой", None]})
+
+
+@pytest.mark.parametrize("word", ["спится", "мнится", "снится"])
+def test_a_reflexive_on_a_one_syllable_verb_is_known(word):
+    w = line_words(word)[0]
+    assert not w.guessed and w.readings[0].stress == 0
