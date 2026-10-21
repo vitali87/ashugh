@@ -200,7 +200,11 @@ def _impossible_slots(report: Report) -> list[tuple[str, str]]:
             if feet is None or ending is None or syllables is None:
                 continue
             need = meter.length(name, feet, ending)
-            if need is None or abs(need - syllables) <= rule.tolerance:
+            english = any(w.lang == "en" for w in lr.line.words)
+            fewest = meter.shortest(name, feet, ending, english)
+            if need is None or fewest is None:
+                continue
+            if fewest - rule.tolerance <= syllables <= need + rule.tolerance:
                 continue
             message = (
                 f"the spec asks {syllables} syllables of {name}{feet} with a "

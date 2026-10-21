@@ -79,6 +79,15 @@ def length(meter: str, feet: int, ending: int) -> int | None:
     return phase + period * (feet - 1) + 1 + ending
 
 
+def shortest(meter: str, feet: int, ending: int, english: bool) -> int | None:
+    """The fewest syllables such a line may have: English ternary verse may begin
+    a foot short and drop one weak syllable inside (fit_loose)."""
+    n = length(meter, feet, ending)
+    if n is None or not english or CLASSICAL[meter][0] != 3:
+        return n
+    return n - min(CLASSICAL[meter][1], 1) - min(MAX_INNER_SUBSTITUTIONS, feet - 1)
+
+
 MAX_FEET = 50  # a sung line has far fewer; more is a typo that would hang a fit
 
 

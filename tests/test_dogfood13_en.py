@@ -118,3 +118,15 @@ def test_lines_ending_on_a_preposition_and_it_rhyme_on_the_preposition(a, b):
 def test_a_final_me_after_a_preposition_may_still_take_the_beat():
     rep = scan("come with me\n", from_dict({"language": "en", "meter": "trochee2"}))
     assert rep.ok
+
+
+def test_a_ternary_slot_one_short_foot_long_is_no_impossible_slot():
+    spec = {"language": "en", "meter": "anapest4", "syllables": 12, "endings": "f"}
+    rep = scan("The master of method, the marvel of measure\n", from_dict(spec))
+    assert rep.ok and not [i for i in rep.issues if "no line can pass" in i.detail]
+
+
+def test_a_ternary_slot_far_too_short_is_still_impossible():
+    spec = {"language": "en", "meter": "anapest4", "syllables": 8, "endings": "f"}
+    rep = scan("The master of method\n", from_dict(spec))
+    assert [i for i in rep.issues if "no line can pass" in i.detail]
