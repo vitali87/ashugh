@@ -14,7 +14,11 @@ another), a headword's own stress first: вода is вода́ the noun before 
 with one vowel are left out unless they contain ё, because their stress
 carries no information but their ё does.
 
-It also writes src/ashugh/data/ru_yo.tsv: the one-vowel forms that exist only
+It also writes src/ashugh/data/ru_derived.tsv, in the same format: regular forms
+the dump leaves out (scripts/ru_forms.py), derived from its lemmas, wherever the
+dump lists no form with the same spelling; ashugh reads it after ru_stress.tsv,
+and the suffix prior learns from ru_stress.tsv alone. And it writes
+src/ashugh/data/ru_yo.tsv: the one-vowel forms that exist only
 with ё (ждёт, шёл, лёд), one per line, so that ждет written without its ё
 reads as ждёт. A form whose е spelling is a word too (всё and все) is left out.
 """
@@ -26,6 +30,8 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+import ru_forms
 
 VOWELS = set("аеёиоуыэюя")
 FILES = ("nouns.csv", "verbs.csv", "adjectives.csv", "others.csv")
@@ -47,6 +53,7 @@ FORM_RE = re.compile(r"[а-яё'\-]+")
 OBSOLETE = {"стен"}
 OUT = Path(__file__).resolve().parent.parent / "src" / "ashugh" / "data" / "ru_stress.tsv"
 YO_OUT = OUT.with_name("ru_yo.tsv")
+DERIVED_OUT = OUT.with_name("ru_derived.tsv")
 
 
 def stress_positions(form: str) -> tuple[str, set[int], int]:
@@ -240,15 +247,75 @@ def build(source: Path) -> dict[str, list[int]]:
     }
 
 
+def extra(source: Path, table: dict[str, list[int]]) -> dict[str, list[int]]:
+    """The derived forms (see derived) whose spelling the dump's table lacks, ё read
+    as е: нужён, of нудить, would make the dictionary's ну́жен ambiguous."""
+    listed = {form.replace("ё", "е") for form in table}
+    return {f: p for f, p in derived(source).items() if f.replace("ё", "е") not in listed}
+
+
+NOUN_FORMS = ("sg_nom", "sg_gen", "sg_dat", "sg_acc", "sg_inst", "sg_prep", "pl_nom", "pl_gen")
+DECLENSION = ("decl_m_gen", "decl_m_dat", "decl_f_gen", "decl_pl_gen")
+
+
+def _rows(source: Path, name: str) -> list[dict[str, str]]:
+    with open(source / name, encoding="utf-8", newline="") as fh:
+        return [
+            {k: (v or "").strip().lower().replace("\u0301", "'") for k, v in row.items() if k}
+            for row in csv.DictReader(fh, delimiter="\t")
+        ]
+
+
+def derived(source: Path) -> dict[str, list[int]]:
+    """Regular forms the dump leaves out (ru_forms): the declension of an adjective
+    or a noun whose row lists none, comparatives (with по-), and participles. The
+    caller adds one only where the dump lists no form with its spelling."""
+    csv.field_size_limit(sys.maxsize)
+    forms: list[str] = []
+    comparatives: list[str] = list(ru_forms.IRREGULAR_COMPARATIVES)
+    for row in _rows(source, "adjectives.csv"):
+        lemma = row.get("accented", "")
+        if row.get("bare") in OBSOLETE:
+            continue
+        if not any(row.get(c) for c in DECLENSION):
+            forms += ru_forms.adjective(lemma)
+        listed = [v.strip() for v in re.split(r"[,;/]", row.get("comparative", "")) if v.strip()]
+        comparatives += listed or ru_forms.comparatives(lemma, row.get("short_f", ""))
+    for row in _rows(source, "others.csv"):
+        forms += ru_forms.adjective(row.get("accented", ""))
+    for row in _rows(source, "nouns.csv"):
+        if row.get("bare") not in OBSOLETE and not any(row.get(c) for c in NOUN_FORMS):
+            forms += ru_forms.noun(row.get("accented", ""), row.get("gender", ""))
+    for row in _rows(source, "verbs.csv"):
+        past = row.get("past_m", "")
+        forms += ru_forms.past_passive(
+            row.get("accented", ""), past, row.get("presfut_sg1", ""), row.get("presfut_sg2", "")
+        )
+        for variant in re.split(r"[,;/]", past):
+            forms += ru_forms.past_active(variant.strip(), row.get("accented", ""))
+    forms += comparatives + [ru_forms.with_po(c) for c in comparatives]
+    out: dict[str, list[int]] = {}
+    for form in forms:
+        if not FORM_RE.fullmatch(form):
+            continue
+        bare, positions, count = stress_positions(form)
+        if not positions or (count < 2 and "ё" not in bare):
+            continue
+        listed = out.setdefault(bare, [])
+        listed += [p for p in sorted(positions) if p not in listed]
+    return out
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     table = build(Path(sys.argv[1]))
-    keys = sorted(table, key=lambda k: k.encode())
-    with open(OUT, "w", encoding="utf-8", newline="\n") as out:
-        for key in keys:
-            out.write(f"{key}\t{''.join(str(p) for p in table[key])}\n")
-    print(f"{len(keys)} forms -> {OUT}")
+    for path, rows in ((OUT, table), (DERIVED_OUT, extra(Path(sys.argv[1]), table))):
+        keys = sorted(rows, key=lambda k: k.encode())
+        with open(path, "w", encoding="utf-8", newline="\n") as out:
+            for key in keys:
+                out.write(f"{key}\t{''.join(str(p) for p in rows[key])}\n")
+        print(f"{len(keys)} forms -> {path}")
     yo = yo_only(all_forms(Path(sys.argv[1])))
     YO_OUT.write_text("".join(f + "\n" for f in yo), encoding="utf-8", newline="\n")
     print(f"{len(yo)} forms only with ё -> {YO_OUT}")

@@ -268,11 +268,11 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | **97.2%** correct |
-| each word's first reading, without meter or rhyme | 92.5% |
-| words the dictionary lists | 98.3% |
+| stress of polysyllabic words (60,854) | **97.3%** correct |
+| each word's first reading, without meter or rhyme | 92.9% |
+| words the dictionary lists | 98.2% |
 | ambiguous words, resolved by meter and rhyme | 95.4% |
-| unknown words (9%), guessed from the ending, meter and rhyme | 88.5% |
+| unknown words (7%), guessed from the ending, meter and rhyme | 88.6% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.88, F1 0.91 |
 
 RIFMA was also the development set for the Russian rules, so these numbers
@@ -361,16 +361,24 @@ one the meter may use, the last part carrying the main stress and the rhyme
 
 1. a mark in the text;
 2. the spec's `[lexicon]`;
-3. 559,395 stressed forms from OpenRussian, with ё restored (еще becomes
+3. 559,393 stressed forms from OpenRussian, with ё restored (еще becomes
    ещё), the past tenses the dump leaves out derived from the infinitive,
    and a prefixed verb's feminine past ending-stressed where its base's is
    (позвала́ like звала́; the dump's позва́ла stays second, for verse);
-4. the dictionary twin of a poetic or derived form: мгновенье, мглою,
+4. 395,968 regular forms the dump leaves out, derived from its lemmas and
+   read only where it lists no form with that spelling (ё read as е):
+   comparatives with their по- (нежне́е, кре́пче, подо́льше), past
+   participles (бро́шен, решённый, сби́ты, обма́нутых, ста́вший), and the
+   declension of a lemma listed without one (пре́жнему, вселе́нной,
+   людски́х); verbs whose participles move their stress their own way
+   (о́тдан, отдана́; про́лит) are left to the steps below;
+5. the dictionary twin of a poetic or derived form: мгновенье, мглою,
    сильней, -ся, не-, folk -ся after a vowel (ложи́ся), and a prefixed verb
    the dump lacks (отжила́ like жила́);
-5. the verb forms that share a gerund's or participle's stress: теряя from
+6. the verb forms that share a gerund's or participle's stress: теряя from
    теряю, начав from начать, создавший from создать;
-6. else a prior learned from word endings, which the meter can overrule.
+7. else a prior learned from word endings (from step 3's forms alone),
+   which the meter can overrule.
 
 After в, во and на, about a hundred nouns take the stressed second locative
 (на берегу́, в саду́, в крови́). In about a hundred set pairs the stress may

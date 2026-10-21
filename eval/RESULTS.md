@@ -12,16 +12,21 @@ and `oov.json`, rerun as the analyzer changed) and the third holdout's in
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,854) | 97.2% |
-| each word's first reading, without meter or rhyme | 92.5% |
-| words the dictionary lists (50,171) | 98.3% |
-| ambiguous words resolved by meter and rhyme (3,679) | 95.4% |
-| unknown words guessed from the ending, meter and rhyme (5,327) | 88.5% |
-| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.878, F1 0.909 |
+| stress of polysyllabic words (60,854) | 97.3% |
+| each word's first reading, without meter or rhyme | 92.9% |
+| words the dictionary lists (50,868) | 98.2% |
+| ambiguous words resolved by meter and rhyme (3,781) | 95.4% |
+| unknown words guessed from the ending, meter and rhyme (4,528) | 88.6% |
+| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.879, F1 0.909 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
 led to the gerund and participle twins, the ending prior, the second
-locative and the rhyme-aware stress choice. The rhyme threshold was checked
+locative and the rhyme-aware stress choice. The derived forms (comparatives,
+participles, the declension of lemmas the dump lists bare) moved 799 words
+from guess to dictionary; against RIFMA's marks, 98 words came out right
+that had been wrong and 45 the other way, most of those 45 a colloquial
+stress the poets used where the dictionary has another (огово́рен for
+оговорён, отклю́чен for отключён). The rhyme threshold was checked
 on it too. In a sweep, 0.70 ("near") was the F1 optimum; at 0.60, recall and
 precision were both 0.89.
 

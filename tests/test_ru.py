@@ -20,6 +20,19 @@ def test_table_binary_search_hits_and_misses():
     assert TABLE.stresses("") is None
 
 
+def test_a_derived_form_is_read_after_the_listed_ones():
+    t = StressTable("аб\t1\n".encode(), derived="аб\t2\nвг\t2\n".encode())
+    assert t.stresses("аб") == (0,), "the listed form wins"
+    assert t.stresses("вг") == (1,)
+    assert StressTable("аб\t1\n".encode()).stresses("вг") is None
+
+
+def test_the_bundled_tables_know_derived_forms():
+    assert TABLE.stresses("нежнее") == (1,)
+    assert TABLE.stresses("брошенных") == (0,)
+    assert TABLE.variants("решенный") == [("решённый", (1,))]
+
+
 def test_table_edges():
     data = "аб\t1\nвг\t2\nяя\t12\n".encode()
     t = StressTable(data)

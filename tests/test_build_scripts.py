@@ -118,3 +118,74 @@ def test_an_obsolete_word_lends_no_stress_to_a_common_one(tmp_path):
     for name in ("verbs.csv", "adjectives.csv", "others.csv"):
         (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
     assert ru_build.build(tmp_path)["стене"] == [2]
+
+
+def _dump(tmp_path, **files):
+    for name in ("nouns.csv", "verbs.csv", "adjectives.csv", "others.csv"):
+        header, rows = files.get(name.removesuffix(".csv"), (["bare", "accented"], []))
+        (tmp_path / name).write_text(
+            "\n".join("\t".join(r) for r in [header, *rows]) + "\n", encoding="utf-8"
+        )
+
+
+def test_build_derives_the_forms_the_dump_leaves_out(tmp_path):
+    adjectives = (
+        ["bare", "accented", "comparative", "short_f", "decl_m_gen", "decl_pl_gen"],
+        [
+            ["прежний", "пре'жний", "", "", "", ""],
+            ["нежный", "не'жный", "", "нежна'", "не'жного", "не'жных"],
+            ["крепкий", "кре'пкий", "", "крепка'", "кре'пкого", "кре'пких"],
+        ],
+    )
+    verbs = (
+        ["bare", "accented", "past_m", "presfut_sg1", "presfut_sg2"],
+        [
+            ["бросить", "бро'сить", "бро'сил", "бро'шу", "бро'сишь"],
+            ["стать", "стать", "ста'л", "ста'ну", "ста'нешь"],
+        ],
+    )
+    nouns = (
+        ["bare", "accented", "gender", "sg_nom", "sg_gen"],
+        [["вселенная", "вселе'нная", "f", "", ""]],
+    )
+    others = (["bare", "accented"], [["людской", "людско'й"]])
+    _dump(tmp_path, adjectives=adjectives, verbs=verbs, nouns=nouns, others=others)
+    listed = ru_build.build(tmp_path)
+    table = ru_build.extra(tmp_path, listed)
+    assert "прежнему" not in listed, "derived forms go to their own table"
+    assert "нежного" in listed and "нежного" not in table
+    assert table["прежнему"] == [1]
+    assert table["нежнее"] == [2] and table["понежнее"] == [3]
+    assert table["крепче"] == [1] and table["покрепче"] == [2]
+    assert table["брошен"] == [1] and table["брошенных"] == [1]
+    assert table["ставший"] == [1]
+    assert table["вселенной"] == [2]
+    assert table["людских"] == [2]
+    assert table["подольше"] == [2], "irregular comparatives with по-"
+    assert "крепкее" not in table
+
+
+def test_a_derived_form_never_overrules_a_listed_one(tmp_path):
+    adjectives = (
+        ["bare", "accented", "comparative", "short_f"],
+        [["узкий", "у'зкий", "", "узка'"]],
+    )
+    others = (["bare", "accented"], [["уже", "уже'"]])
+    _dump(tmp_path, adjectives=adjectives, others=others)
+    listed = ru_build.build(tmp_path)
+    assert listed["уже"] == [2], "уже́ (already) stays as the dump has it"
+    assert "уже" not in ru_build.extra(tmp_path, listed)
+
+
+def test_a_derived_yo_form_does_not_shadow_a_listed_e_form(tmp_path):
+    adjectives = (["bare", "accented", "short_m"], [["нужный", "ну'жный", "ну'жен"]])
+    verbs = (
+        ["bare", "accented", "past_m", "presfut_sg1", "presfut_sg2"],
+        [["нудить", "нуди'ть", "нуди'л", "нужу'", "нуди'шь"]],
+    )
+    _dump(tmp_path, adjectives=adjectives, verbs=verbs)
+    listed = ru_build.build(tmp_path)
+    made = ru_build.extra(tmp_path, listed)
+    assert listed["нужен"] == [1]
+    assert "нужён" not in made
+    assert "нужённый" in made, "the rest of the participle stays"
