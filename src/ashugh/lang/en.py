@@ -375,6 +375,11 @@ def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
     return None
 
 
+def _hiatus(low: str, groups: list[tuple[int, int]]) -> bool:
+    """Whether a vowel run holds two sung vowels: sci-ence, vi-o-lence."""
+    return any(h in low[a:b] for h in HIATUS for a, b in groups)
+
+
 def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> list[str]:
     """Cut the written word into n pieces that follow its vowel groups: beau-ti-ful;
     could-n't; a compound of two dictionary words at its seam: heart-ache. A
@@ -393,7 +398,9 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
         k, left = seam
         return split_spelling(token[:k], left) + split_spelling(token[k:], n - left)
     groups = _counted_groups(low)
-    if len(groups) < n:  # a silent-looking vowel is sung after all: fi-re
+    # a silent-looking vowel sung after all (fi-re, learn-ed), unless a vowel run
+    # holds two (sci-ence, vi-o-lence)
+    if len(groups) < n and (low.endswith(("ed", "es")) or not _hiatus(low, groups)):
         groups = _vowel_groups(low) or groups
     while len(groups) > n:
         # a silent e (love-ly), else the vowel after the first, which speech drops
@@ -410,14 +417,23 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
             ),
             None,
         )
-        cut = glide or next(
-            (
-                (k, a + low[a:b].find(h) + 1)
-                for h in HIATUS
-                for k, (a, b) in enumerate(groups)
-                if h in low[a:b]
-            ),
+        ing = re.search(r"(?<=[aeiouy])(?=i(?:ng|ngs|n'|n’)$)", low)  # see-ing, do-ing
+        ending = next(
+            ((k, ing.start()) for k, (a, b) in enumerate(groups) if ing and a < ing.start() < b),
             None,
+        )
+        cut = (
+            ending
+            or glide
+            or next(
+                (
+                    (k, a + low[a:b].find(h) + 1)
+                    for h in HIATUS
+                    for k, (a, b) in enumerate(groups)
+                    if h in low[a:b]
+                ),
+                None,
+            )
         )
         if cut is None:
             longest = max(range(len(groups)), key=lambda k: groups[k][1] - groups[k][0])
@@ -439,8 +455,8 @@ def split_spelling(token: str, n: int, short: frozenset[int] = frozenset()) -> l
             onset = 0  # tow-er, flow-er, how-ev-er (but a-wake, to-ward)
         elif gap == "n" and low[end - 3 : end] in ("tio", "sio", "cio"):
             onset = 0  # pro-mo-tion-al, na-tion-al
-        elif gap[-1:] in ("t", "s", "c") and low[start : start + 3] == "ion":
-            onset = 1  # na-tion, pas-sion: the suffix keeps its consonant
+        elif gap[-1:] in ("t", "s", "c", "g") and re.match(r"i[aou]", low[start : start + 2]):
+            onset = 1  # na-tion, pas-sion, ma-gi-cian: the suffix keeps its consonant
         else:
             onset = next((k for k in (3, 2) if len(gap) >= k and gap[-k:] in ONSETS), 1)
             closed = re.search(r"[^aeiouy]", low[begin:end])  # some-thin': a silent e closes it
@@ -544,6 +560,16 @@ def _name_reading(first: str, other: str) -> bool:
     return vb[sb][:-1] in ("EY", "IY") and va[sb][-1] == "0"
 
 
+def _letters_meant(norm: str, variants: list[str], capitals: bool) -> bool:
+    """Whether capitals the dictionary reads as a word are letters after all: its
+    reading says what they stand for (FYI, for your information: more syllables
+    than letters), or, unless the whole line is in capitals, it spells them too
+    (AKA)."""
+    if len(_parse(variants[0])[1]) > len(norm):
+        return True
+    return not capitals and any(_letter_spelling(norm, v) for v in variants[1:])
+
+
 def _letter_spelling(norm: str, variant: str) -> bool:
     """Whether a dictionary reading only spells the word's letters (ba as B.A.)."""
     names = " ".join(LETTER_NAMES.get(ch, "?") for ch in norm)
@@ -610,6 +636,8 @@ REPLACED = {
     "vibes": ["V AY1 B Z"],
 }
 SHORT_FIRST = {"real"}  # sung in one syllable unless the line asks two
+# Abbreviations said as the words they stand for, shown in those words' syllables.
+SAID_AS = {"etc": ("et", "cet", "er", "a")}
 SHORT_PREFERENCE = -0.05
 ARCHAIC = re.compile(r"[aeiouy]e(?:st|th)$")  # go-est, see-est, fly-eth
 SYNCOPE_COST = 0.5
@@ -717,16 +745,26 @@ def analyze_word(
 ) -> Word:
     """One English word; capitals says its line is all in capitals (I AM is am)."""
     norm = normalize(token)
-    variants = lookup(norm)
+    variants = ["W IH1 DH"] if token == "w" else lookup(norm)  # me w/ you: with
     user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
     spelled = None if user else abbreviation(token, capitals)
+    if token == "W" and not user:
+        spelled = ("w", False)  # a W: the letter, dou-ble-u
     if spelled is None and not user and variants and token.isupper() and len(norm) > 1:
         if _letter_spelling(norm, variants[0]):  # BMW: the dictionary spells it too
             spelled = (norm, False)
+        elif ABBREVIATION_RE.fullmatch(token) and _letters_meant(norm, variants, capitals):
+            spelled = (norm, False)
     if spelled is not None:
         return _spelled_out(Word(token, norm, CODE, (), ()), *spelled)
-    if variants and len(variants) > 1 and token.islower() and _letter_spelling(norm, variants[0]):
-        variants = variants[1:]  # ba, the vocable, not B.A.
+    if (
+        variants
+        and len(variants) > 1
+        and token.islower()
+        and re.search("[aeiouy]", norm)
+        and _letter_spelling(norm, variants[0])
+    ):
+        variants = variants[1:]  # ba, the vocable, not B.A.; but tv has no word to read
     if variants and len(variants) > 1 and not token[:1].isupper():
         variants = [variants[0]] + [v for v in variants[1:] if not _name_reading(variants[0], v)]
     if norm in EXTRA and not user:
@@ -813,8 +851,17 @@ def analyze_word(
             readings.append(Reading(primary[0], phones, norm, "clash", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
     _, stresses, bare = full[0]
-    short = frozenset(k for k, (v, d) in enumerate(zip(bare, stresses)) if d and v in SHORT_VOWELS)
-    word.syllables = tuple(Syllable(p) for p in split_spelling(token, longest, short))
+    short = {k for k, (v, d) in enumerate(zip(bare, stresses)) if d and v in SHORT_VOWELS}
+    first = next(v for v, p in zip(variants, parsed) if len(p[1]) == longest).split()
+    vowel = [i for i, ph in enumerate(first) if ph[-1:].isdigit()]
+    for k, at in enumerate(vowel):  # or-ange, for-est, mor-al keep the r; sto-ry does not
+        if first[at] == "AO1" and first[at + 1 : at + 3] == ["R", "AH0"]:
+            short.add(k)
+    pieces = split_spelling(token, longest, frozenset(short))
+    said = SAID_AS.get(norm)
+    if said and len(said) == longest:  # etc: et-cet-er-a, not its letters cut four ways
+        pieces = [token[0] + said[0][1:], *said[1:]]
+    word.syllables = tuple(Syllable(p) for p in pieces)
     word.weak = word.weak or word.clitic or longest == 1
     return word
 

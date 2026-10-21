@@ -310,14 +310,44 @@ def _render(
         after_link = after_link or (w.norm == "ես" and w.enclitic)
         return _armenian(w, token, dropped, mode, hold, schwa, n, notes, after_link)
     if hold and w.size > 1:
+        if w.spelled:  # WTF as W-T-F, DMs as D-Ms: the letters, each sung by its name
+            return "-".join(s.text for s in w.syllables).replace("(dou-ble-u)", "")
         pieces = [s.text for s in w.syllables]
+        if "".join(pieces) != token:
+            return token  # pieces the spelling cannot give (W, etc): Suno reads it whole
         short = dropped or i in lr.fit.elided  # the meter's own short form, count or not
-        if short and w.drop is not None and 0 <= w.drop < len(pieces):
-            d = w.drop  # the line sings it shorter: eve-ry, fire
-            at = d - 1 if d > 0 else 0
-            pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
-        return "-".join(pieces)
+        return "-".join(_english_pieces(pieces, w.drop, short))
     return token
+
+
+def _english_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
+    """Sung pieces of an English word as Suno should read them. A syllable the line
+    drops is an apostrophe (ev'-ry, diff'-rent), or runs into the one before at the
+    end (fire, de-sire); one it sings that the spelling hides is written as it
+    sounds (fi-er, hou-er)."""
+    pieces = list(pieces)
+    last = len(pieces) - 1
+    if drop is None or not 0 <= drop <= last:
+        return pieces
+    if short and 0 < drop < last:
+        cut = pieces[drop]
+        at = next((k for k, ch in enumerate(cut) if ch.lower() in "aeiouy"), len(cut))
+        pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + cut[:at] + "'"]
+        pieces[drop] = cut[at:].lstrip("aeiouyAEIOUY") + pieces[drop]
+    elif short:
+        at = drop - 1 if drop > 0 else 0
+        pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
+    elif drop == last and pieces[last].lower() == "re":  # fi-re: fi-er
+        pieces[last] = _like(pieces[last], "er")
+    elif drop == last and pieces[last].lower() == "ur" and pieces[last - 1][-1:].lower() == "o":
+        pieces[last - 1] += pieces[last][0]  # ho-ur: hou-er
+        pieces[last] = _like(pieces[last], "er")
+    return pieces
+
+
+def _like(written: str, new: str) -> str:
+    """new in the case written is in: FIRE's RE is ER."""
+    return new.upper() if written.isupper() else new
 
 
 def _russian(

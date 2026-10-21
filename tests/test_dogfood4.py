@@ -66,6 +66,6 @@ def test_held_note_pieces_add_up_to_the_count_for_ire_and_our(count):
     out = suno.format_song("I feel the power of desire", spec=spec, split="all", tags=False).text
     assert sum(len(word.split("-")) for word in out.split()) == count
     if count == 9:
-        assert out == "I feel the pow-er of de-si-re"
+        assert out == "I feel the pow-er of de-si-er"  # as sung, not de-si-re
     if count == 7:
         assert out == "I feel the power of de-sire"
