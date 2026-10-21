@@ -75,7 +75,7 @@ LATIN = {
 @dataclass
 class Note:
     line: int
-    kind: str  # yo | stress | armenian | split | tag
+    kind: str  # yo | stress | armenian | split | tag | spelled
     word: str
     new: str
     why: str = ""
@@ -280,6 +280,12 @@ def _render(
         ):
             new = _mark_vowel(token, 0, stress)  # по́ лесу: the noun gave the preposition its stress
             notes.append(Note(n, "stress", token, new, "stress on the preposition"))
+            return new
+        if w.spelled:  # СПб as эс-пэ-бэ́: a singer may read the letters as one word
+            names = [ru.LETTER_NAMES[ch] for ch in w.norm]
+            names[-1] = _mark_vowel(names[-1], 0, stress) if stress != "none" else names[-1]
+            new = "-".join(names)
+            notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))
             return new
         new = _russian(w, token, chosen.get(i), stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new

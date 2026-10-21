@@ -166,3 +166,19 @@ def test_sek_keeps_its_e():
 
 def test_ne_grusti_is_the_verb_first():
     assert first_stress("Не грусти, прошу", "грусти")[0] == 1
+
+
+def test_suno_spells_a_russian_abbreviation_out():
+    from ashugh import suno
+
+    out = suno.format_song("Из СПб в МСК опять\n", tags=False, stress="acute").text
+    assert "эс-пэ-бэ́" in out and "эм-эс-ка́" in out
+    out = suno.format_song("Из СПб в МСК опять\n", tags=False).text
+    assert "эс-пэ-бЭ" in out
+
+
+def test_suno_leaves_a_name_and_an_english_acronym_alone():
+    from ashugh import suno
+
+    assert "Сочи" in suno.format_song("Мы едем в Сочи к Маше\n", tags=False).text
+    assert "LA" in suno.format_song("Driving through LA tonight\n", tags=False).text
