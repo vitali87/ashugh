@@ -154,3 +154,12 @@ def test_latin_typed_display_shows_the_dropped_schwa_and_es():
     )
     sung = report.lines[0].sung
     assert "yes" not in sung and "(ə)" in sung, sung
+
+
+def test_schwa_mode_splits_latin_typed_armenian():
+    from ashugh import suno
+
+    out = suno.format_song(
+        "Mtnem aygin, qez em sirum\n", armenian="schwa", split="all", tags=False, lang="hy"
+    )
+    assert "Mət-nem" in out.text and "ay-gin" in out.text, out.text

@@ -482,7 +482,8 @@ def _armenian(
         parts[stressed] = _put_mark(parts[stressed], mark, mode)  # the writer's own stress
     groups = []  # by the writer's hyphenated parts: Սայաթ-Նովեն, Sayat-Noven
     for piece, group in _by_part(w, token, parts):
-        joined = ("-" if hold else "").join(_merge_vowelless(group, mode))
+        letters = "latin" if token[:1].isascii() else mode  # Mət-nem: typed in Latin
+        joined = ("-" if hold else "").join(_merge_vowelless(group, letters))
         groups.append(_case_like(piece, joined) if mode == "latin" else joined)
     new = "-".join(groups)
     if mode != "latin" and "և" in token.lower():

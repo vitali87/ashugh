@@ -271,3 +271,25 @@ def test_syllables_warns_of_digits_and_guessed_words():
 def test_syllables_of_a_plain_line_warn_of_nothing():
     _, data = tool(Server(), "syllables", text="I walk along the river")
     assert data["lines"][0]["warnings"] == []
+
+
+def test_requests_refuses_a_boolean_n():
+    result, _ = tool(Server(), "requests", lyrics="Я жду тебя\n", n=True)
+    assert result["isError"]
+
+
+def test_suno_takes_schwa_and_policy():
+    server = Server()
+    _, data = tool(
+        server, "suno", lyrics="Ես սպասում եմ\n", armenian="latin", schwa="e", tags=False
+    )
+    assert "espasum" in data["text"].lower() and "ə" not in data["text"]
+    policy = {"ru": {"default": "acute"}}
+    result, data = tool(server, "suno", lyrics="Звезды над морем\n", policy=policy, tags=False)
+    assert not result.get("isError"), data
+
+
+def test_translate_names_min_rhyme_without_blaming_a_spec():
+    result, data = tool(Server(), "translate", lyrics="I wait\n", to="ru", min_rhyme="great")
+    assert result["isError"]
+    assert not str(data).startswith("spec"), data

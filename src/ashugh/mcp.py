@@ -134,7 +134,7 @@ def t_pick(args: dict) -> dict:
 
 def t_requests(args: dict) -> dict:
     n = args.get("n", 6)
-    if not isinstance(n, int) or n < 1:
+    if isinstance(n, bool) or not isinstance(n, int) or n < 1:  # true is no count
         raise ToolError("n must be a whole number of 1 or more")
     warnings: list[str] = []
     reqs = requests_for(_str(args, "lyrics"), _spec(args), n, _lang(args), warnings)
@@ -192,14 +192,22 @@ def t_suno(args: dict) -> dict:
         tags = True
     if not isinstance(tags, bool):  # "false" is no boolean, and bool("false") is True
         raise ToolError("tags must be true or false")
-    result = format_song(
-        _str(args, "lyrics"),
-        _spec(args),
-        stress=_opt(args, "stress") or "caps",
-        armenian=_opt(args, "armenian") or "script",
-        split=_opt(args, "split") or "none",
-        tags=tags,
-    )
+    policy = args.get("policy")
+    if policy is not None and not isinstance(policy, dict):
+        raise ToolError("policy must be an object, as probe score writes it")
+    try:
+        result = format_song(
+            _str(args, "lyrics"),
+            _spec(args),
+            stress=_opt(args, "stress") or "caps",
+            armenian=_opt(args, "armenian") or "script",
+            split=_opt(args, "split") or "none",
+            schwa=_opt(args, "schwa") or "ə",
+            tags=tags,
+            policy=policy,
+        )
+    except ValueError as e:
+        raise ToolError(str(e)) from None
     return {"text": result.text, "notes": [vars(n) for n in result.notes]}
 
 
@@ -231,6 +239,8 @@ def _schema(required: list[str], **props: str) -> dict:
         "source_lang": {"type": "string", "enum": ["hy", "ru", "en"]},
         "tolerance": {"type": "integer", "minimum": 0},
         "min_rhyme": {"type": "string", "enum": ["perfect", "near", "slant", "assonance"]},
+        "policy": {"type": "object"},
+        "n": {"type": "integer", "minimum": 1},
     }
     return {
         "type": "object",
@@ -322,6 +332,8 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             stress="caps (default), acute or none",
             armenian="script (default), schwa or latin",
             split="none (default), last or all",
+            schwa="the letter for a sung Armenian schwa in latin mode (default ə)",
+            policy="what probe score learned Suno reads best, per language and word",
             tags="normalize and infer section tags (default true)",
             lang=LANG_DOC,
         ),
