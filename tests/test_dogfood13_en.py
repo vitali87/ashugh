@@ -168,3 +168,52 @@ def test_a_derived_ending_follows_the_rhyme_the_line_makes():
     assert data["stanza"]["1"]["endings"][3] == "m"  # rhymes on me, with Tennessee
     rep = scan(BRIDGE, loads(dumps({"language": "en", **data})))
     assert not [i for i in rep.issues if i.severity == "error"]
+
+
+@pytest.mark.parametrize(
+    "word, size",
+    [
+        ("o'er", 1),
+        ("e'en", 1),
+        ("e'er", 1),
+        ("calleth", 2),
+        ("heareth", 2),
+        ("knowest", 2),
+        ("loveth", 2),
+        ("maketh", 2),
+        ("shoulda", 2),
+        ("coulda", 2),
+        ("woulda", 2),
+        ("musta", 2),
+        ("sorta", 2),
+        ("xoxo", 4),
+    ],
+)
+def test_archaic_and_spoken_forms_are_known(word, size):
+    w = en.analyze_word(word)
+    assert w.size == size and not w.guessed
+
+
+@pytest.mark.parametrize("word", ["calleth", "knowest", "loveth"])
+def test_an_old_verb_ending_keeps_its_stems_stress(word):
+    assert en.analyze_word(word).readings[0].stress == 0
+
+
+def test_th_with_an_apostrophe_runs_into_the_next_vowel():
+    rep = scan("I sail across th' eternal sea\n", from_dict({"language": "en", "syllables": 8}))
+    assert rep.ok
+
+
+@pytest.mark.parametrize(
+    "word, counts",
+    [
+        ("favorite", {2, 3}),
+        ("separate", {2, 3}),
+        ("comfortable", {3, 4}),
+        ("chocolate", {2, 3}),
+        ("diamond", {2, 3}),
+    ],
+)
+def test_words_sung_shorter_or_longer_count_both_ways(word, counts):
+    w = en.analyze_word(word)
+    assert {w.size, w.size - 1 if w.drop is not None else w.size} == counts

@@ -14,7 +14,7 @@ from ashugh.lang import en
         ("Tahoe", ["Ta", "hoe"]),
         ("hundreds", ["hun", "dreds"]),
         ("children", ["chil", "dren"]),
-        ("chocolate", ["choco", "late"]),
+        ("chocolate", ["cho", "co", "late"]),  # sung choc'-late where the line asks
     ],
 )
 def test_held_note_splits(word, pieces):

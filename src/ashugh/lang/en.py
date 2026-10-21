@@ -256,12 +256,15 @@ def lookup(norm: str) -> list[str] | None:
 
 
 def _derived(norm: str) -> list[str] | None:
-    """An -ed, -ing or -er form the dictionary lacks, from its stem: ghosted, vibing,
-    influencer (ghost, vibe, influence)."""
+    """An -ed, -ing, -er, -eth or -est form the dictionary lacks, from its stem:
+    ghosted, vibing, influencer, calleth, knowest (ghost, vibe, influence, call,
+    know)."""
     for ending, stems in (
         ("ing", (norm[:-3], norm[:-3] + "e", norm[:-4])),
         ("ed", (norm[:-2], norm[:-1], norm[:-3], norm[:-3] + "y" if norm.endswith("ied") else "")),
         ("er", (norm[:-2], norm[:-1], norm[:-3])),
+        ("eth", (norm[:-3], norm[:-3] + "e", norm[:-4])),  # calleth, loveth
+        ("est", (norm[:-3], norm[:-3] + "e", norm[:-4])),  # knowest, and a superlative
     ):
         if not norm.endswith(ending) or len(norm) < len(ending) + 3:
             continue
@@ -282,6 +285,8 @@ def _ending_phones(variant: str, ending: str) -> str:
         return " IH0 NG"
     if ending == "er":
         return " ER0"
+    if ending in ("eth", "est"):
+        return " IH0 TH" if ending == "eth" else " IH0 S T"
     if last in ("T", "D"):
         return " IH0 D"
     return " T" if last in ("P", "K", "F", "TH", "S", "SH", "CH") else " D"
@@ -315,6 +320,12 @@ def _drop_index(longer: list[str], shorter: list[str], merge: bool = False) -> i
             if longer[: i - 1] == shorter[: i - 1] and longer[i + 1 :] == shorter[i:]:
                 return i
     return None
+
+
+def _reduced(stresses: list[int], vowels: list[str]) -> list[str]:
+    """Vowels with the unstressed [ɪ] and [ə] alike, as a short reading may write
+    them: the i of fa-vo-rite is [ɪ] in its long reading and [ə] in fav-rite."""
+    return ["AH" if v == "IH" and not d else v for v, d in zip(vowels, stresses)]
 
 
 def guess_syllables(token: str) -> int:
@@ -608,7 +619,15 @@ SHORT_VOWELS = {"IH", "EH", "AE", "AH", "UH", "AA"}  # fish, bed, cat, cup, book
 MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
 # Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
-EXTRA = {"yeah": ["Y EH1 R"], "real": ["R IY1 AH0 L"], "poem": ["P OW1 M"], "woah": ["W OW1"]}
+EXTRA = {
+    "yeah": ["Y EH1 R"],
+    "real": ["R IY1 AH0 L"],
+    "poem": ["P OW1 M"],
+    "woah": ["W OW1"],
+    "comfortable": ["K AH1 M F T ER0 B AH0 L"],  # comf-ter-ble
+    "chocolate": ["CH AO1 K AH0 L AH0 T"],  # choc-o-late
+    "diamond": ["D AY1 AH0 M AH0 N D"],  # di-a-mond
+}
 # Words the dictionary lacks or gets wrong for songs: its spring has a second
 # reading in two syllables, its bae is a surname, its email stresses -mail, its Dr.
 # reads drive.
@@ -636,6 +655,15 @@ REPLACED = {
     "tiktok": ["T IH1 K T AA2 K"],
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
+    "o'er": ["OW1 R"],
+    "e'en": ["IY1 N"],
+    "e'er": ["EH1 R"],
+    "shoulda": ["SH UH1 D AH0"],
+    "coulda": ["K UH1 D AH0"],
+    "woulda": ["W UH1 D AH0"],
+    "musta": ["M AH1 S T AH0"],
+    "sorta": ["S AO1 R T AH0"],
+    "xoxo": ["EH2 K S OW2 EH2 K S OW1"],
 }
 # Words stressed on the first syllable as a noun or adjective and on the second
 # as a verb (a récord, to recórd). The word before tells them apart; the
@@ -766,6 +794,8 @@ def analyze_word(
 ) -> Word:
     """One English word; capitals says its line is all in capitals (I AM is am)."""
     norm = normalize(token)
+    if norm == "th" and token[1:] == "h":  # th' eternal: the, run into the next vowel
+        return Word(token, norm, CODE, (), (), clitic=True, weak=True)
     variants = ["W IH1 DH"] if token == "w" else lookup(norm)  # me w/ you: with
     user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
     spelled = None if user else abbreviation(token, capitals)
@@ -821,6 +851,9 @@ def analyze_word(
     for _, stresses, bare in parsed:
         if len(stresses) == longest - 1 and word.drop is None:
             word.drop = _drop_index(full[0][2], bare, merge=True)
+        for f in full if len(stresses) == longest - 1 else ():
+            if word.drop is None:  # fa-vo-rite, fav-rite: a reduced vowel either way
+                word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare))
     vowels, marks = full[0][2], full[0][1]
     if word.drop is None and len(vowels) >= 3 and vowels[-2:] == ["ER", "IY"] and marks[-2] == 0:
         word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er before a final y
