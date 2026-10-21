@@ -108,3 +108,20 @@ def test_yesenin_tebe_scans():
     spec = from_dict({"language": "ru", "meter": "anapest", "feet": 3})
     report = scan("Я готов рассказать тебе поле\n", spec)
     assert report.lines[0].ok, report.lines[0].issues
+
+
+@pytest.mark.parametrize("word,stress", [("замученный", 1), ("купленный", 0), ("провален", 1)])
+def test_a_mobile_verbs_participle_reads_stem_stressed_first(word, stress):
+    # the end-stressed twin stays second: poetry has погружённый and искуплён too
+    assert line_words(word)[0].readings[0].stress == stress
+
+
+@pytest.mark.parametrize("word", ["обо", "ото", "безо", "предо"])
+def test_a_two_syllable_preposition_is_known_and_unstressed(word):
+    w = line_words(word + " мне")[0]
+    assert w.clitic or w.weak
+    assert not w.guessed
+
+
+def test_suno_leaves_obo_unmarked():
+    assert "обо мне" in sung("Загрустила шибко обо мне\n")

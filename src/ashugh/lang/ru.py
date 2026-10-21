@@ -1188,6 +1188,8 @@ def analyze_word(
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
     elif not readings:
         readings = _lexicon_readings(norm)
+    if not readings and clitic:  # обо, ото, безо: a preposition, unstressed, no guess
+        readings = [Reading(0, transcribe(norm, 0), norm, "clitic")]
     if not readings and token.isupper() and not capitals and len(token) <= 6:
         # an abbreviation said as a word is stressed on its end: ЕГЭ́, like ОМО́Н
         readings = [Reading(n - 1, transcribe(norm, n - 1), norm, "rule")]
