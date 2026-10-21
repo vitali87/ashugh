@@ -125,3 +125,50 @@ def test_mcp_derive_spec_names_a_line_with_digits():
     assert reply is not None
     data = json.loads(reply["result"]["content"][0]["text"])
     assert data["warnings"] and "digits" in data["warnings"][0]
+
+
+def test_the_stressed_locative_of_chain_net_and_door():
+    from ashugh.scan import scan
+
+    text = "Сидит собака на цепи,\nПопалась рыбка нам в сети,\nВисит табличка на двери.\n"
+    rep = scan(text, from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AAA"}))
+    assert rep.ok, [i.message for i in rep.issues]
+
+
+@pytest.mark.parametrize("text, stress", [("на лету", 1), ("к лету", 0), ("в пылу", 1)])
+def test_locatives_that_need_their_preposition(text, stress):
+    from ashugh.scan import scan
+
+    rep = scan(text + "\n", from_dict({"language": "ru"}))
+    assert rep.lines[0].fit.stresses[1] == stress
+
+
+def test_the_feminine_past_of_dozhdatsya():
+    from ashugh.lang import ru
+
+    assert ru.analyze_word("дождалась").readings[0].stress == 2  # дождала́сь
+
+
+@pytest.mark.parametrize(
+    "line, meter, stress",
+    [
+        ("Чуть слышно, кто-то, в двери постучал.", "iamb5", 0),  # в две́ри: into the doors
+        ("Висит табличка на двери.", "iamb4", 1),
+        ("Нет, нет, меня ты в сети не заманишь", "iamb5", 0),
+    ],
+)
+def test_a_locative_noun_may_still_be_the_plural_after_v(line, meter, stress):
+    from ashugh.scan import scan
+
+    rep = scan(line + "\n", from_dict({"language": "ru", "meter": meter}))
+    lr = rep.lines[0]
+    i = next(k for k, w in enumerate(lr.line.words) if w.norm in ("двери", "сети"))
+    assert rep.ok and lr.fit.stresses[i] == stress
+
+
+def test_a_prefixed_feminine_past_may_keep_the_stem_stress_of_verse():
+    from ashugh.scan import scan
+
+    text = "Меня к тебе душа моя призвала,\nТы стала, словно светлое начало,\n"
+    rep = scan(text, from_dict({"language": "ru", "meter": "iamb5", "rhyme": "AA"}))
+    assert rep.ok  # призва́ла / нача́ло, as the poet has it

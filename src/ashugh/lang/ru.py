@@ -166,6 +166,7 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
         for v, s in (("серёжа", 1), ("фёдор", 0), ("семён", 1), ("алёша", 1), ("артём", 1))
         for k in (v, v.replace("ё", "е"))
     },
+    "дождалась": ("дождалась", (2,)),  # the dictionary dump's row is garbled
     "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
     "баюшки": ("баюшки", (0,)),
     "кого": ("кого", (1,)),
@@ -258,12 +259,16 @@ SECOND_LOCATIVE = frozenset(
     аэропорту газу глазу гробу году дому дубу дыму жару клею кону краю кругу крюку ладу лбу лесу
     льду лугу мелу меду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
     полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
-    сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу
+    сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу пылу
     глуби глуши горсти груди грязи крови мели ночи оси печи пыли руси степи
     тени тиши чести шерсти
     """.split()
 )
 LOCATIVE_PREPOSITIONS = frozenset({"в", "во", "на"})
+# Nouns whose stressed locative (на двери́, в сети́, на цепи́) is spelt like their plural,
+# which follows в and на as often (стучать в две́ри, попасть в се́ти): both stay
+# possible, the locative first.
+LOCATIVE_OR_PLURAL = frozenset({"двери", "сети", "цепи"})
 # Pairs where the stress may move from the noun onto the preposition: по́ лесу, на́ ночь,
 # за́ руку. Both readings stay possible; the shifted one costs the meter a little.
 PREPOSITION_SHIFT = {
@@ -286,7 +291,13 @@ PREPOSITION_SHIFT = {
     "от": set("роду".split()),
 }
 LEAN_COST = 0.2
-LOCATIVE_ONLY_AFTER = {"полку": {"в", "во"}, "связи": {"в", "во"}, "виду": {"на"}, "суку": {"на"}}
+LOCATIVE_ONLY_AFTER = {
+    "полку": {"в", "во"},
+    "связи": {"в", "во"},
+    "виду": {"на"},
+    "суку": {"на"},
+    "лету": {"на"},  # на лету́, but к ле́ту
+}
 # -ого / -его is said -ово / -ево, except in these words.
 NOT_OGO = {
     "много",
@@ -759,6 +770,11 @@ def second_locatives(words: list[Word]) -> None:
     """End-stress the second locative after в, во, на: на берегу́, в крови́."""
     for prev, w in zip(words, words[1:]):
         if w.lang != CODE or prev.norm not in LOCATIVE_PREPOSITIONS:
+            continue
+        if w.norm in LOCATIVE_OR_PLURAL and w.readings[0].source not in ("mark", "user"):
+            last = w.size - 1
+            end = Reading(last, transcribe(w.norm, last), w.norm, "lexicon")
+            w.readings = (end, *(r for r in w.readings if r.stress != last))
             continue
         allowed = LOCATIVE_ONLY_AFTER.get(w.norm)
         if allowed is not None:

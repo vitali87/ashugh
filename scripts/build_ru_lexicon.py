@@ -76,6 +76,87 @@ def past_forms(infinitive: str) -> list[str]:
     return [stem + e for e in endings]
 
 
+# Verb prefixes, longest first. A prefixed verb whose base ends its feminine past on
+# the ending (звала́, ждала́, мела́) does too (позвала́, дождала́сь, замела́), where the
+# dump often has only the stem stress; that reading stays second, as verse and speech
+# use it too (призва́ла / нача́ло). The bases are the verbs whose past moves its
+# stress (Zaliznyak's past pattern c, and -сти, -зти and -чь verbs); родить and стричь
+# are not among them (породи́ла, остри́гла). вы- takes the stress itself (вы́звала), and
+# забыть keeps забы́ла, unlike была́.
+PREFIXES = sorted(
+    "пере пред при про пре разо раз рас без бес взо воз вос вз вс изо из ис недо "
+    "надо над подо под обо об ото от по до за на со с у о во в".split(),
+    key=len,
+    reverse=True,
+)
+STEM_FEMININE = {"забыть", "забыться"}
+MOBILE = set(
+    "брать быть взять вить врать гнать дать драть ждать жить звать лгать лить пить плыть "
+    "рвать слыть спать ткать жрать стлать клясть вести мести нести плести грести цвести "
+    "брести трясти везти ползти расти печь течь мочь лечь жечь беречь стеречь сечь".split()
+)
+
+
+def end_feminines(source: Path) -> dict[str, tuple[str, int, str]]:
+    """The MOBILE verbs whose feminine past is stressed on its last vowel:
+    infinitive -> (the form, its vowel count, the first person present)."""
+    csv.field_size_limit(sys.maxsize)
+    out: dict[str, tuple[str, int, str]] = {}
+    with open(source / "verbs.csv", encoding="utf-8", newline="") as fh:
+        rows = csv.reader(fh, delimiter="\t")
+        header = next(rows)
+        if "past_f" not in header:
+            return out
+        at = header.index("past_f")
+        for row in rows:
+            infinitive = row[0].strip().lower() if row else ""
+            if infinitive not in MOBILE or at >= len(row):
+                continue
+            for variant in re.split(r"[,;/]", row[at]):
+                form = variant.strip().lower().replace("\u0301", "'")
+                bare, positions, count = stress_positions(form)
+                if count and positions == {count} and FORM_RE.fullmatch(form):
+                    out[infinitive] = (bare, count, _first_person(header, row))
+    return out
+
+
+def _first_person(header: list[str], row: list[str]) -> str:
+    if row and row[0].strip() == "быть":
+        return "буду"  # the dump gives есть, which no prefixed быть conjugates like
+    at = header.index("presfut_sg1") if "presfut_sg1" in header else len(row)
+    form = row[at].split(",")[0].strip().lower().replace("'", "") if at < len(row) else ""
+    return form.removesuffix("сь").removesuffix("ся")
+
+
+def feminine_like_base(
+    infinitive: str, form: str, bases: dict[str, tuple[str, int, str]], first: str = ""
+) -> str | None:
+    """form, the past of infinitive, stressed on its ending where its base's feminine
+    is, or None. first, the verb's first person present, must end like the base's:
+    позову and зову, but not воплю and пью (вопить is no во- with пить)."""
+    bare = form.replace("'", "")
+    if infinitive in STEM_FEMININE:
+        return None
+    reflexive = infinitive.endswith(("ся", "сь"))
+    stem = infinitive[:-2] if reflexive else infinitive
+    for prefix in PREFIXES:
+        if prefix == "вы" or not stem.startswith(prefix) or stem[len(prefix) :] not in bases:
+            continue
+        base, count, base_first = bases[stem[len(prefix) :]]
+        if first and base_first and not first.endswith(base_first):
+            continue
+        if bare == prefix + base + ("сь" if reflexive else ""):
+            target = sum(ch in VOWELS for ch in prefix) + count
+            out, seen = [], 0
+            for ch in bare:
+                out.append(ch)
+                seen += ch in VOWELS
+                if ch in VOWELS and seen == target and ch != "ё":
+                    out.append("'")
+            return "".join(out)
+    return None
+
+
 def all_forms(source: Path) -> set[str]:
     """Every form the dump lists, without its stress marks."""
     csv.field_size_limit(sys.maxsize)
@@ -114,7 +195,8 @@ def build(source: Path) -> dict[str, list[int]]:
     is the common one."""
     csv.field_size_limit(sys.maxsize)
     table: dict[str, set[int]] = defaultdict(set)
-    headword: dict[str, set[int]] = defaultdict(set)
+    headword: dict[str, set[int]] = defaultdict(set)  # listed first: the common reading
+    bases = end_feminines(source)
     for name in FILES:
         with open(source / name, encoding="utf-8", newline="") as fh:
             rows = csv.reader(fh, delimiter="\t")
@@ -132,8 +214,15 @@ def build(source: Path) -> dict[str, list[int]]:
                 listed_past = "".join(row[past : past + 1]).strip() if past is not None else "?"
                 if accented is not None and not listed_past:
                     forms += past_forms(row[accented].strip().lower())
+                infinitive = row[0].strip().lower() if past is not None and row else ""
+                first = _first_person(header, row) if infinitive else ""
                 for variant in forms:
                     form = variant.strip().lower().replace("\u0301", "'").replace("*", "")
+                    norm = infinitive and feminine_like_base(infinitive, form, bases, first)
+                    if norm:  # позвала́ before позва́ла
+                        bare, positions, _ = stress_positions(norm)
+                        table[bare] |= positions
+                        headword[bare] |= positions
                     if not FORM_RE.fullmatch(form):
                         continue
                     bare, positions, count = stress_positions(form)
