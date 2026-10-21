@@ -345,8 +345,10 @@ def _render(
             notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))
             return new
         st = chosen.get(i)
-        if lr.fit.off_beat and w.ambiguous and w.readings:
-            st = w.readings[0].stress  # the line fails its meter anyway: the usual reading
+        if lr.fit.off_beat and w.ambiguous and w.readings and not w.guessed:
+            # the line fails its meter anyway: the usual reading; but a guess as the
+            # scan assumed it, which its warning names
+            st = w.readings[0].stress
         new = _russian(w, token, st, stress, n, notes, prefer)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy" and languages.LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում

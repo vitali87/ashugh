@@ -255,6 +255,8 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # Parts of foreign place names: Лос-А́нджелес, Сан-Франци́ско, Улан-Удэ́, Рио-де-Жане́йро.
     **{f: (f, (0,)) for f in "анджелес анджелеса анджелесе анджелесу анджелесом рио".split()},
     **{f: (f, (1,)) for f in "франциско удэ жанейро".split()},
+    # из Твери́, на Арба́те
+    **{f: (f, (1,)) for f in "твери арбат арбата арбату арбатом арбате".split()},
     # Slang and loanwords of songs the dictionary lacks.
     **{
         f: (f, (k,))

@@ -85,8 +85,9 @@ tag line may carry more tags or a note (`[Verse 1] [Male Vocal]`,
 `[Chorus] (softly)`, `[Verse 2 - Rap]`); the tag Suno knows as a section names
 it, and a style tag on a line of its own right after a section tag keeps that
 section. A section named in plain text, as lyrics sites write it (`Chorus:`,
-`Verse 1:`, `Repeat Chorus`, `CHORUS x2`, `Припев:`), is a tag too, and suno
-writes it in brackets; a label for who sings (`MABEL:`, `Call:`) and an emoji
+`Verse 1:`, `Repeat Chorus`, `CHORUS x2`, `Припев (2 раза)`, `Chorus twice`,
+`Припев:`), is a tag too, and suno writes it in brackets, a count in words as
+Suno's x2; a label for who sings (`MABEL:`, `Call:`) and an emoji
 are warned of, as Suno would sing the one and may say the other. Text pasted from elsewhere reads as typed: decomposed letters are
 composed, soft hyphens and zero-width characters are dropped, a stray Latin
 letter in a Cyrillic word or the other way round (oкон, hеllo) is read as its
@@ -453,7 +454,7 @@ ends on a vowel and has more consonants (США, МГУ), has two letters (ИП,
 word is stressed on its end (ЕГЭ́) unless the dictionary knows it (НА́ТО);
 a word in capitals for emphasis stays a word (СТРАНА, ГДЕ), ЗАГС and ВУЗ stay
 words, a line in capitals spells only the ones with no vowel or a doubled
-end (ВСЁ В СССР), and ХМ and ТСС are sounds, not letters. A preposition or conjunction said twice in a
+end (ВСЁ В СССР), and ХМ and ТСС are sounds, not letters; a hum (Ммм, хм) is one held note. A preposition or conjunction said twice in a
 row is a vocable, not a clitic (на-на-на, да-да-да), and тя leans on its
 verb like бы. A hyphenated word the dictionary stresses only before its last
 part takes the last part's stress too (чёрно-бе́лый), and a compound's

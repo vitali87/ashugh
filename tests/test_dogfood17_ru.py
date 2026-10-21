@@ -2,7 +2,7 @@
 
 import pytest
 
-from ashugh import meter, rhyme, suno
+from ashugh import lyrics, meter, rhyme, suno, translate
 from ashugh.scan import analyze_lines, scan
 from ashugh.spec import Spec, from_dict
 
@@ -267,3 +267,90 @@ def test_a_warning_keeps_its_colon_at_any_width(word):
     assert " :" not in row
     if row:
         assert "unknown: assumed" in row
+
+
+@pytest.mark.parametrize(
+    "line,tag",
+    [
+        ("Припев дважды", "[Chorus x2]"),
+        ("Chorus twice", "[Chorus x2]"),
+        ("Chorus (twice)", "[Chorus x2]"),
+        ("Припев (трижды)", "[Chorus x3]"),
+        ("[Припев дважды]", "[Chorus x2]"),
+        ("Припев 2 раза", "[Chorus x2]"),
+    ],
+)
+def test_a_repeat_count_in_words_is_a_tag(line, tag):
+    assert lyrics.is_tag(line)
+    label = lyrics.plain_label(line) or line
+    assert lyrics.retag(label) == tag
+
+
+@pytest.mark.parametrize("line", ["Я люблю тебя дважды", "Twice as nice", "Дважды в одну реку"])
+def test_a_lyric_with_twice_is_no_tag(line):
+    assert not lyrics.is_tag(line)
+
+
+def test_a_bracket_tag_with_a_count_in_words_keys_its_section():
+    assert lyrics.section_key("Припев дважды") == "chorus"
+    assert lyrics.section_key("Chorus twice") == "chorus"
+
+
+class Scripted:
+    name = "scripted"
+
+    def __init__(self, rounds):
+        self.rounds = list(rounds)
+        self.calls = []
+
+    def propose(self, requests):
+        self.calls.append(list(requests))
+        answers = self.rounds.pop(0) if self.rounds else {}
+        return {r.id: answers.get(r.line, []) for r in requests}
+
+
+COUPLET = "I wait for you all night\nuntil the morning light\n"
+
+
+def test_translate_names_the_partner_that_must_rhyme_from_the_first_round():
+    proposer = Scripted([{1: ["Я жду тебя всю ночь"], 2: ["И мне нельзя помочь"]}])
+    translate.translate_song(COUPLET, "ru", proposer, keep={"syllables", "rhyme"})
+    first = {r.line: r for r in proposer.calls[0]}
+    assert any("L2" in p and "rhyme" in p for p in first[1].problems)
+    assert any("L1" in p and "rhyme" in p for p in first[2].problems)
+    # never the source language's rhyme sound
+    assert first[1].rhyme_sound is None and first[2].rhyme_sound is None
+
+
+def test_translate_partners_aim_at_one_rhyme_not_at_each_other():
+    proposer = Scripted(
+        [{1: ["Я жду тебя всю ночь"], 2: ["До самого утра"]}, {2: ["И мне нельзя помочь"]}]
+    )
+    result = translate.translate_song(COUPLET, "ru", proposer, keep={"syllables", "rhyme"})
+    assert result.ok and result.rounds == 2
+    retry = {r.line: r for r in proposer.calls[1]}
+    assert retry[2].rhyme_with == ["ночь"]
+    assert "утра" not in retry.get(1, retry[2]).rhyme_with
+    if 1 in retry:
+        assert retry[1].rhyme_sound == retry[2].rhyme_sound
+
+
+def test_suno_sings_a_guess_as_the_scan_assumed_it():
+    spec = from_dict({"language": "ru", "meter": "trochee"})
+    text = "Звонит мне Таня из Кшвери,\nЯ люблю тебя, Елена,\n"
+    (lr, _) = scan(text, spec).lines
+    i = next(k for k, w in enumerate(lr.line.words) if w.text == "Кшвери")
+    assumed = lr.fit.stresses[i]
+    out = suno.format_song(text, spec, tags=False).text.splitlines()[0]
+    assert out.endswith("КшвЕри," if assumed == 0 else "КшверИ,")
+
+
+def test_suno_still_sings_a_known_words_usual_reading_off_the_meter():
+    spec = from_dict({"language": "ru", "meter": "iamb"})
+    out = sung("Я звонил ему вчера из Твери,", spec=spec)
+    assert "ТверИ" in out or "Твери" in out
+
+
+@pytest.mark.parametrize("word,shown", [("Твери", "Тве-ри́"), ("Арбате", "Ар-ба́-те")])
+def test_places_of_songs(word, shown):
+    assert first(word) == shown

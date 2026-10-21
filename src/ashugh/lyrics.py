@@ -143,10 +143,13 @@ ORDINALS = (
 ORDINAL_RE = re.compile(
     r"\b(?:(\d+)(?:st|nd|rd|th)|" + "|".join(f"({words})" for words, _ in ORDINALS) + r")\b"
 )
-# x2, 2x, х2, and in words: 2 times, 2 раза, 2 անգամ
+# x2, 2x, х2, and in words: 2 times, 2 раза, 2 անգամ, twice, дважды
 REPEAT_RE = re.compile(
-    r"(?<!\w)[xх×]\s*(\d+)\b|\b(\d+)\s*[xх×](?!\w)|\b(\d+)\s*(?:times|раза?|անգամ)(?!\w)", re.I
+    r"(?<!\w)[xх×]\s*(\d+)\b|\b(\d+)\s*[xх×](?!\w)|\b(\d+)\s*(?:times|раза?|անգամ)(?!\w)"
+    r"|(?<!\w)(twice|thrice|дважды|трижды)(?!\w)",
+    re.I,
 )
+TIMES = {"twice": 2, "thrice": 3, "дважды": 2, "трижды": 3}
 # A tag's word for repeating the section: Repeat Chorus, Повтор припева, Կրկնել կրկներգը
 REPEAT_WORD_RE = re.compile(r"^\s*(?:repeat|повтор(?:ить)?|կրկնել)\s+", re.I)
 
@@ -160,6 +163,8 @@ def _ordinal(m: re.Match) -> str:
 def _repeat(m: re.Match) -> str:
     if m.group(3):  # 2 раза, 2 անգամ: Suno's x2
         return f"x{m.group(3)}"
+    if m.group(4):  # twice, дважды
+        return f"x{TIMES[m.group(4).lower()]}"
     return re.sub("[хХ×]", "x", re.sub(r"\s+", "", m.group(0)))  # as written: x2 or 2x
 
 
@@ -241,7 +246,8 @@ def is_tag(line: str) -> bool:
 # A section named in plain text: Chorus:, Verse 1:, Repeat Chorus, CHORUS x2, Припев:
 LABEL_RE = re.compile(
     r"\ufeff?\s*(repeat\s+|повтор(?:ить)?\s+|կրկնել\s+)?([^\W\d_][^\[\]():\u055d\u0589]{0,30}?)"
-    r"(\s*\(\s*(?:[xх×]\s*\d+|\d+\s*[xх×]|\d+\s*(?:times|раза?|անգամ))\s*\))?"  # Припев (х2)
+    r"(\s*\(\s*(?:[xх×]\s*\d+|\d+\s*[xх×]|\d+\s*(?:times|раза?|անգամ)|twice|thrice|дважды"
+    r"|трижды)\s*\))?"  # Припев (х2), Chorus (twice)
     r"\s*([:\u055d])?\s*",  # not ։, the Armenian full stop: Վերջ։ is a sung line
     re.IGNORECASE,
 )
@@ -266,6 +272,7 @@ def plain_label(line: str) -> str | None:
     if m is None or suno_tag(m.group(2)) is None:
         return None
     numbered = bool(m.group(1)) or bool(m.group(3)) or bool(DIGIT_RE.search(m.group(2)))
+    numbered = numbered or bool(REPEAT_RE.search(m.group(2)))  # Припев дважды
     name = m.group(2).lower()
     if not numbered and (name in SUNG_NAMES or not m.group(4) and name not in BARE_LABELS):
         return None

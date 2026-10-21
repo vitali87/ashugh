@@ -162,7 +162,6 @@ def translate_with_spec(
     def as_translation(var, req) -> None:
         req.source, req.source_lang = req.original, var.lr.line.lang
         req.original, req.lang = "", target
-        req.problems = list(var.blocked)
 
     warnings: list[str] = []
     used, asked = run(

@@ -651,17 +651,22 @@ def _request(
             and (
                 k not in variables
                 or variables[k].chosen is not None
-                or not (line_errors(variables[k].lr) or _breaks_rhyme(variables[k].lr))
+                # a line still to translate passes as its source, but must change
+                or variables[k].written
+                and not (line_errors(variables[k].lr) or _breaks_rhyme(variables[k].lr))
             )
         ]
         # When every partner must change, all aim at the first line's rhyme, not at
         # each other's discarded originals: nice and street would chase each other.
         # The first line itself keeps its rhyme sound, and a rhyme word that has to
-        # go (a forbidden final, the wrong ending) is nobody's target.
+        # go (a forbidden final, the wrong ending) is nobody's target. In a
+        # translation the first line's rhyme is its best attempt so far.
         head = members[0]
         anchors = settled
-        if not anchors and head != ln.number and _rhyme_word_stays(variables[head].lr):
-            anchors = [head]
+        first = variables.get(head)
+        if not anchors and head != ln.number and first is not None:
+            if _rhyme_word_stays(first.lr) if first.written else _current(first, None):
+                anchors = [head]
         for k in anchors:
             current = _current(variables.get(k), lines[k] if partners_from_lines else None)
             t = _sung_tail(current) if current else None
@@ -670,8 +675,11 @@ def _request(
                 sound = sound or t.rime
                 partner_ending = t.post if partner_ending is None else partner_ending
         if not anchors:
-            if head == ln.number and lr.tail is not None and _rhyme_word_stays(lr):
+            if head == ln.number and var.written and lr.tail is not None and _rhyme_word_stays(lr):
                 sound = lr.tail.rime
+            own = _current(var, None) if head == ln.number and not var.written else None
+            t = _sung_tail(own) if own else None
+            sound = t.rime if t is not None else sound  # its attempt's rhyme, not its source's
             moving = [k for k in members if k != ln.number and k in variables]
     syllables = rule.syllables_at(idx)
     want_ending = rule.ending_at(idx)
@@ -708,8 +716,9 @@ def _request(
         # a count without the digits misleads: spell them out, then count
         if not (digits and i.code in ("syllables", "feet", "meter"))
     ]
+    problems = problems if var.written else []  # a source line's checks are not the target's
     problems.extend(b for b in var.blocked if b not in problems)
-    if not problems and var.group is not None:  # a passing line asked for its partner's sake
+    if not problems and var.group is not None and var.written:  # asked for a partner's sake
         for k in groups[var.group]:
             refrain = next((i for i in lines[k].issues if i.detail == REFRAIN), None)
             if k != ln.number and refrain is not None:
