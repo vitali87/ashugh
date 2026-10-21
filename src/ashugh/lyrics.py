@@ -219,8 +219,36 @@ def suno_tag(tag: str) -> str | None:
 
 
 def is_tag(line: str) -> bool:
-    """Whether a line holds tags alone: [Chorus], [Verse 1] [Male Vocal], [Chorus] (softly)."""
-    return bool(TAG_RE.match(line.rstrip("\r\n")))
+    """Whether a line holds tags alone: [Chorus], [Verse 1] [Male Vocal], [Chorus] (softly);
+    or names its section in plain text, as lyrics sites do (Chorus:, Repeat Chorus)."""
+    return bool(TAG_RE.match(line.rstrip("\r\n"))) or plain_label(line) is not None
+
+
+# A section named in plain text: Chorus:, Verse 1:, Repeat Chorus, CHORUS x2, Припев:
+LABEL_RE = re.compile(
+    r"\ufeff?\s*(repeat\s+|повтор(?:ить)?\s+)?([^\W\d_][^\[\]():\u055d\u0589]{0,30}?)"
+    r"\s*([:\u055d\u0589])?\s*",
+    re.IGNORECASE,
+)
+# Names a line may give alone, with no colon, number or Repeat, and be no lyric: not
+# End or Վերջ, Տուն (a house), Break, which a song may sing.
+BARE_LABELS = {
+    "chorus", "verse", "bridge", "intro", "outro", "refrain", "pre-chorus", "post-chorus",
+    "prechorus", "interlude", "instrumental", "припев", "куплет", "бридж", "կրկներգ",
+    "կուպլետ", "նախակրկներգ",
+}  # fmt: skip
+
+
+def plain_label(line: str) -> str | None:
+    """The bracketed tag a plain-text section label stands for ([Chorus] for Chorus:),
+    or None for a line that is no section's name."""
+    m = LABEL_RE.fullmatch(line.rstrip("\r\n"))
+    if m is None or suno_tag(m.group(2)) is None:
+        return None
+    bare = not m.group(1) and not m.group(3) and not DIGIT_RE.search(m.group(2))
+    if bare and m.group(2).lower() not in BARE_LABELS:
+        return None
+    return f"[{m.group(2)}]"
 
 
 def section_tag(line: str, keep: bool = False) -> str | None:
@@ -230,7 +258,7 @@ def section_tag(line: str, keep: bool = False) -> str | None:
     ([Chorus], then [Female Vocal] on a line of its own). None for a lyric line."""
     if not is_tag(line):
         return None
-    names = BRACKET_RE.findall(line)
+    names = BRACKET_RE.findall(plain_label(line) or line)
     known = [n for n in names if suno_tag(n) is not None]
     if known:
         return known[0]
@@ -242,6 +270,9 @@ def retag(line: str) -> str:
     body = line.rstrip("\r\n")
     if not is_tag(body):
         return line
+    label = plain_label(body)
+    if label is not None:  # Chorus: as [Chorus], which Suno does not sing
+        return retag(label) + line[len(body) :]
 
     def named(m: re.Match) -> str:
         name = suno_tag(m.group(1))

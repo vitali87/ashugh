@@ -232,3 +232,64 @@ def test_a_word_listed_short_first_may_still_be_sung_long():
 def test_a_subject_past_an_adverb_makes_a_verb(line, word, stress):
     w = next(w for w in words(line) if w.norm == word)
     assert {r.stress for r in w.readings} == {stress}
+
+
+LABELLED = (
+    "Chorus:\nOh, take me home tonight\nAnd hold me till the light\n\n"
+    "Verse 1:\nI walked along the road\n\nRepeat Chorus\n\nCHORUS x2\n"
+)
+
+
+@pytest.mark.parametrize(
+    "line,tag",
+    [
+        ("Chorus:", "[Chorus]"), ("Verse 1:", "[Verse 1]"), ("CHORUS x2", "[CHORUS x2]"),
+        ("Repeat Chorus", "[Chorus]"), ("Bridge", "[Bridge]"), ("Припев:", "[Припев]"),
+        ("Կրկներգ՝", "[Կրկներգ]"), ("Hook:", "[Hook]"),
+    ],
+)  # fmt: skip
+def test_a_plain_text_section_label_is_a_tag(line, tag):
+    from ashugh import lyrics
+
+    assert lyrics.plain_label(line) == tag and lyrics.is_tag(line)
+
+
+@pytest.mark.parametrize("line", ["Վերջ", "Տուն", "The End", "Hook", "Love me", "Chorus girl"])
+def test_a_lyric_that_only_looks_like_a_label_is_sung(line):
+    from ashugh import lyrics
+
+    assert lyrics.plain_label(line) is None
+
+
+def test_labels_are_not_counted_and_name_their_sections():
+    report = scan(LABELLED)
+    assert [lr.line.number for lr in report.lines] == [2, 3, 6]
+    assert [lr.line.section for lr in report.lines] == ["Chorus", "Chorus", "Verse 1"]
+    assert not report.issues
+
+
+def test_suno_turns_labels_into_tags():
+    from ashugh import suno
+
+    out = suno.format_song(LABELLED).text
+    assert out.splitlines()[0] == "[Chorus]" and "[Verse 1]" in out and "Chorus:" not in out
+    assert "Repeat Chorus" not in out and "[Chorus x2]" in out
+
+
+@pytest.mark.parametrize(
+    "line,name",
+    [
+        ("FREDERIC: Oh, is there not one maiden breast", "FREDERIC"),
+        ("MABEL: Poor wand'ring one!", "MABEL"),
+        ("Call: who will come with me", "Call"),
+    ],
+)
+def test_a_label_for_who_sings_is_warned(line, name):
+    report = scan(line + "\n")
+    (issue,) = [i for i in report.issues if i.message == "a label for who sings is sung"]
+    assert f"«{name}:»" in issue.detail
+
+
+@pytest.mark.parametrize("line", ["OK: let it go", "I said: come home", "Time: it flies"])
+def test_a_colon_after_a_word_is_no_label(line):
+    assert not any("who sings" in i.message for i in scan(line + "\n").issues)

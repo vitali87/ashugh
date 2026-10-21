@@ -380,6 +380,11 @@ def check_line(
     return lr
 
 
+# A label naming who sings a line: FREDERIC: Oh, is there not, Call: who will come
+SPEAKER_RE = re.compile(
+    r"\s*([A-Z][A-Z'’.]{2,}(?: [A-Z][A-Z'’.]+)?|Call|Response|Lead|All|Both|Solo|Choir"
+    r"|Men|Women|Boys|Girls)\s*:\s+\S"
+)
 STAGE_RE = re.compile(r"\*[^*\n]+\*")  # *spoken*, *whispers*
 LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
 
@@ -591,6 +596,11 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     if "(" in outside or ")" in outside:  # I walk alone (and cry
         detail = "a backing vocal goes in (…) closed on its line; these words are counted"
         add(Issue(ln.number, "tag", "warning", "an unclosed parenthesis", detail))
+    speaker = SPEAKER_RE.match(outside)
+    if speaker:  # MABEL: Poor wand'ring one!, Call: who will come
+        name = speaker.group(1)
+        detail = f"put «{name}:» in a tag such as [{name.title()}]; this word is counted"
+        add(Issue(ln.number, "tag", "warning", "a label for who sings is sung", detail))
     if STAGE_RE.search(outside):  # *spoken*: Suno sings it
         detail = "a direction goes in a tag such as [Spoken]; these words are counted"
         add(Issue(ln.number, "tag", "warning", "a direction in asterisks", detail))
