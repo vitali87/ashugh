@@ -200,6 +200,11 @@ def override_error(word: str, value: str) -> str | None:
     return None
 
 
+def known(token: str) -> bool:
+    """Whether the dictionary has the word, as listed or in a regular form."""
+    return bool(lookup(normalize(token)))
+
+
 def lookup(norm: str) -> list[str] | None:
     if norm.endswith("in'") and len(norm) > 4:
         # goin', blowin', cryin': the -ing word with its last sound sung [ɪn], the

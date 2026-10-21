@@ -124,3 +124,57 @@ def test_suno_without_a_spec_swallows_a_leading_schwa_after_a_vowel():
         "U spasum"
         in suno.format_song("Ու սպասում է քեզ նորից\n", tags=False, armenian="latin").text
     )
+
+
+@pytest.mark.parametrize(
+    "latin,script",
+    [
+        ("Mtnem", "մտնեմ"),
+        ("spasum", "սպասում"),
+        ("kyanq", "կյանք"),
+        ("hrashq", "հրաշք"),
+        ("qaghem", "քաղեմ"),
+        ("vard", "վարդ"),
+        ("yes", "ես"),
+        ("vor", "որ"),
+        ("sirum", "սիրում"),
+        ("chem", "չեմ"),
+        ("aghjik", "աղջիկ"),
+        ("Yerevan", "երեվան"),  # եվ before a vowel, as Եվրոպա; Երևան reads the same
+        ("Sevan", "սեվան"),
+        ("ev", "և"),
+    ],
+)
+def test_latin_armenian_is_read_in_armenian_letters(latin, script):
+    assert hy.from_latin(latin) == script
+
+
+def test_a_latin_armenian_line_counts_armenian_syllables():
+    ws = words("Mtnem aygin, qaghem vard")
+    assert [w.size for w in ws] == [2, 2, 2, 1]
+    assert ws[0].text == "Mtnem" and ws[0].lang == "hy"
+
+
+def test_an_english_line_in_an_armenian_song_stays_english():
+    ws = words("I love you so")
+    assert all(w.lang == "en" for w in ws)
+
+
+def test_latin_armenian_rhymes_by_its_sounds():
+    a, b = words("kyanq")[0], words("hrashq")[0]
+    assert a.readings[0].phones[-1] == b.readings[0].phones[-1] == "kʰ"  # Armenian, not English k
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["Ari ari im anush yar", "Kez em sirum du im kyanqn es", "Yerevan Yerevan im sirun qaghaq"],
+)
+def test_latin_armenian_lines_are_recognised(line):
+    assert all(w.lang == "hy" for w in words(line))
+
+
+@pytest.mark.parametrize(
+    "line", ["I love you baby", "Midnight city lights", "Dance with me tonight"]
+)
+def test_english_lines_in_an_armenian_song_are_not(line):
+    assert all(w.lang == "en" for w in words(line))

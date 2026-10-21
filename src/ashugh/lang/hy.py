@@ -603,6 +603,56 @@ def _after_r(phones: tuple[str, ...]) -> tuple[str, ...]:
     )
 
 
+# Armenian typed in Latin letters, as chats and Suno prompts write it: longest
+# spellings first. ե opens a word as ye, ո as vo; elsewhere e and o.
+FROM_LATIN = (
+    ("tch", "ճ"), ("dzh", "ջ"), ("ch'", "չ"), ("ts'", "ց"), ("t'", "թ"), ("p'", "փ"),
+    ("k'", "ք"), ("sh", "շ"), ("ch", "չ"), ("zh", "ժ"), ("kh", "խ"), ("gh", "ղ"),
+    ("ts", "ց"), ("dz", "ձ"), ("rr", "ռ"), ("th", "թ"), ("ph", "փ"), ("ou", "ու"),
+    ("ev", "և"), ("u", "ու"), ("a", "ա"), ("b", "բ"), ("g", "գ"), ("d", "դ"),
+    ("e", "ե"), ("z", "զ"), ("i", "ի"), ("l", "լ"), ("x", "խ"), ("k", "կ"),
+    ("h", "հ"), ("m", "մ"), ("n", "ն"), ("o", "ո"), ("p", "պ"), ("j", "ջ"),
+    ("r", "ր"), ("s", "ս"), ("v", "վ"), ("t", "տ"), ("c", "ց"), ("q", "ք"),
+    ("f", "ֆ"), ("w", "վ"), ("@", "ը"), ("ə", "ը"),
+)  # fmt: skip
+LATIN_VOWELS = set("aeiouəy")
+
+
+def from_latin(word: str) -> str:
+    """Latin-letter Armenian in Armenian letters: mtnem մտնեմ, kyanq կյանք, vor որ,
+    yes ես, Yerevan Երևան. y is յ after or before a vowel and ը between
+    consonants (ynker ընկեր)."""
+    low = word.lower().replace("’", "'")
+    if low in ("ev", "yev"):
+        return "և"
+    out, k = [], 0
+    if low.startswith("ye"):
+        out, k = ["ե"], 2
+    elif low.startswith("vo") and low[2:3] not in LATIN_VOWELS:
+        out, k = ["ո"], 2
+    elif low.startswith("e"):
+        out, k = ["է"], 1
+    elif low.startswith("o"):
+        out, k = ["օ"], 1
+    while k < len(low):
+        ch = low[k]
+        if ch == "y":
+            near_vowel = low[k - 1 : k] in LATIN_VOWELS or low[k + 1 : k + 2] in LATIN_VOWELS
+            out.append("յ" if near_vowel and k else "ը" if not near_vowel else "յ")
+            k += 1
+            continue
+        for latin, armenian in FROM_LATIN:
+            if low.startswith(latin, k):
+                if latin == "ev" and k + 2 < len(low) and low[k + 2] in LATIN_VOWELS:
+                    continue  # եվ before a vowel: Եվրոպա
+                out.append(armenian)
+                k += len(latin)
+                break
+        else:
+            k += 1  # an apostrophe or a letter Armenian has no use for
+    return "".join(out)
+
+
 # Abbreviations are said letter by letter: a vowel as itself, Հ and Կ with ա,
 # any other consonant with ե: ԱՄՆ Ա-Մե-Նե, ԵՊՀ Ե-Պե-Հա, ՀՀ Հա-Հա.
 LETTER_VOWELS = {

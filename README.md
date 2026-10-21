@@ -345,13 +345,19 @@ as possible:
   are longest reading from the right: մը-կըր-տիչ, ա-դըր-բե-ջան.
 
 In connected speech, a vowel before a word swallows its leading ը (նա
-ստացավ), and a final schwa syllable links onto a vowel after it (կյանքն է).
-The check uses whichever length fits the slot. Stress falls on the last full
-vowel, or where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… is an unstressed
-enclitic that rhymes with the word before it. ես is the pronoun I [jes]
-instead where it opens its clause (Ես եմ, ու ես), follows an auxiliary of I
-(սիրում եմ ես) or its clause has a verb of I (հիմա ես գիտեմ, քեզ ես սիրեցի),
-and the auxiliary [es] otherwise (ինչու ես լռում, գեղեցիկ ես ամեն անգամ). A hyphenated reduplication
+ստացավ), and a final schwa syllable links onto a vowel after it (կյանքն է);
+where a word does both (քո ստվերն է), the leading ը goes for good. The check
+uses whichever length fits the slot. Stress falls on the last full vowel, or
+where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… (and speech's ա for է) is
+an unstressed enclitic that rhymes with the word before it. ես is the pronoun
+I [jes] instead where it opens its clause (Ես եմ, ու ես), follows an
+auxiliary of I (սիրում եմ ես) or its clause has a verb of I (հիմա ես գիտեմ,
+քեզ ես սիրեցի), and the auxiliary [es] otherwise (ինչու ես լռում, գեղեցիկ
+ես ամեն անգամ). A voiced stop after ր is said aspirated (երգ [jɛɾkʰ] rhymes
+with բերք). An abbreviation in capitals is said letter by letter (Ա-Մե-Նե,
+Հա-Հա). In an Armenian song, a line in Latin letters whose words are mostly
+not English is Armenian typed in Latin (Mtnem aygin, kyanq), read in
+Armenian letters: mət-nem, ay-gin. A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other
 hyphenated word the dictionary lacks keeps each part's stress as a secondary
 one the meter may use, the last part carrying the main stress and the rhyme

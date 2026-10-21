@@ -113,7 +113,11 @@ def analyze(
     words: list[Word] = []
     letters = "".join(ch for t in tokens for ch in t if ch.isalpha())
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
+    latin_armenian = lang == hy.CODE and _latin_armenian(tokens)
     for token in tokens:
+        if latin_armenian and script_of(token) == en.CODE:
+            words.append(_from_latin(token, lexicon))
+            continue
         if token == "&":  # rock & roll: the line's own and
             and_ = analyze_word_as(AMPERSAND.get(lang, "and"), lexicon)
             and_.text = token
@@ -196,6 +200,50 @@ def _armenian_elision(words: list[Word]) -> None:
             w.drop = 0
         elif tail:
             w.drop = w.size - 1
+
+
+# The commonest English words: a Latin line of an Armenian song that has more of
+# these than words English lacks is English (I love you, baby).
+COMMON_ENGLISH = set(
+    """the a an and or but if of to in on at by for with from up down out over about
+    into is am are was were be been have has had do does did will would can could
+    should i you he she it we they me him her us them my your his its our their this
+    that what who where when why how all no not yes oh so just like love baby know
+    want need go get got come say see make take give tell feel think time day night
+    way one heart life world never always now here there then again back still only
+    more ever every tonight dance dream""".split()
+)
+# Spellings English hardly has: q without u (kyanq), gh between vowels or before a
+# consonant other than t (qaghaq, aghjik; not night), kh, zh, dz.
+ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz")
+
+
+def _latin_armenian(tokens: list[str]) -> bool:
+    """A line of an Armenian song written in Latin letters (Mtnem aygin, qaghem
+    vard) rather than an English line within it (I love you, baby): no Armenian
+    letter, and more words English lacks or Armenian spells (q, gh, kh) than
+    common English ones."""
+    if any(script_of(t) == hy.CODE for t in tokens):
+        return False
+    latin = [t.lower() for t in tokens if script_of(t) == en.CODE]
+    armenian = sum(1 for t in latin if ARMENIAN_LATIN.search(t) or not en.known(t))
+    english = sum(1 for t in latin if t in COMMON_ENGLISH)
+    return bool(latin) and armenian > english
+
+
+def _from_latin(token: str, lexicon: dict[str, str]) -> Word:
+    """A Latin-letter Armenian word, read in Armenian letters and shown in its own."""
+    from ..suno import LATIN  # the same letters suno writes Armenian with
+
+    w = hy.analyze_word(hy.from_latin(token), lexicon)
+    w.text = token
+    w.syllables = tuple(
+        replace(s, text="".join(LATIN.get(ph, ph) for ph in s.phones)) for s in w.syllables
+    )
+    if token[:1].isupper() and w.syllables:
+        first = w.syllables[0]
+        w.syllables = (replace(first, text=first.text.capitalize()), *w.syllables[1:])
+    return w
 
 
 def _swallow_head(w: Word) -> None:
