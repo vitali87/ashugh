@@ -248,10 +248,37 @@ def lookup(norm: str) -> list[str] | None:
     if parts:  # lovestruck, facetime: two words, stressed on the first
         left, right = ((TABLE.get(p) or "").split("|")[0] for p in parts)
         return [left + " " + right.replace("1", "2")]
-    if norm.endswith("'s") and len(norm) > 3:  # bustle's: the word, then its -s
-        raw = TABLE.get(norm[:-2])
-        if raw:
-            return [v + _s_ending(v) for v in raw.split("|")]
+    if norm.endswith("'s") and len(norm) > 3:  # bustle's, mornin's: the word, then its -s
+        found = lookup(norm[:-2])
+        if found:
+            return [v + _s_ending(v) for v in found]
+    return _elided(norm)
+
+
+def _elided(norm: str) -> list[str] | None:
+    """A word with a vowel left out and an apostrophe in its place, as verse writes
+    it (pow'r, heav'n, wand'ring, hist'ry): the full word, its first unstressed
+    vowel after the stress not sung, an r-colored one leaving its r."""
+    k = norm.find("'")
+    if k <= 0 or k + 1 >= len(norm) or not (norm[k - 1].isalpha() and norm[k + 1].isalpha()):
+        return None
+    for vowel in "eoiau":
+        full = lookup(norm[:k] + vowel + norm[k + 1 :])
+        if full:
+            out = [v for v in (_drop_after_stress(v) for v in full) if v]
+            return list(dict.fromkeys(out)) or None
+    return None
+
+
+def _drop_after_stress(pron: str) -> str | None:
+    phones = pron.split()
+    stressed = next((k for k, p in enumerate(phones) if p.endswith("1")), None)
+    if stressed is None:
+        return None
+    for k in range(stressed + 1, len(phones)):
+        if phones[k].endswith("0"):
+            kept = ["R"] if phones[k] == "ER0" else []
+            return " ".join(phones[:k] + kept + phones[k + 1 :])
     return None
 
 
@@ -655,7 +682,7 @@ REPLACED = {
     "tiktok": ["T IH1 K T AA2 K"],
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
-    "o'er": ["OW1 R"],
+    "o'er": ["AO1 R"],  # said as or, ore: rhymes with more
     "e'en": ["IY1 N"],
     "e'er": ["EH1 R"],
     "shoulda": ["SH UH1 D AH0"],

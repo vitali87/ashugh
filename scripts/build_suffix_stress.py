@@ -24,10 +24,11 @@ def russian() -> list[tuple[str, int]]:
     vowels = set("аеёиоуыэюя")
     out = []
     for line in (DATA / "ru_stress.tsv").read_text(encoding="utf-8").splitlines():
-        form, _, positions = line.partition("\t")
+        form, _, raw = line.partition("\t")
+        positions = [ch for ch in raw if ch.isdigit()]  # past its marks: сёла is "1p"
         n = sum(ch in vowels for ch in form)
         if len(positions) == 1 and n >= 2 and "-" not in form:
-            out.append((form, n - int(positions)))
+            out.append((form, n - int(positions[0])))
     return out
 
 

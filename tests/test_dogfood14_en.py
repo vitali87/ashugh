@@ -60,3 +60,58 @@ def test_a_song_passes_the_spec_derived_from_it():
     data = derive_spec(src, {"syllables", "meter", "rhyme", "endings"})
     rep = scan(FIRE, loads(dumps({"language": "en", **data})))
     assert not [i.message for i in rep.issues if i.severity == "error"]
+
+
+def en_word(token: str):
+    from ashugh.lang import en
+
+    return en.analyze_word(token)
+
+
+@pytest.mark.parametrize(
+    "token, size", [("mornin's", 2), ("warnin's", 2), ("evenin's", 2), ("somethin's", 2)]
+)
+def test_a_dropped_g_plural_is_the_ing_plural(token, size):
+    w = en_word(token)
+    assert w.size == size and not w.guessed
+
+
+def test_dropped_g_plurals_rhyme():
+    assert rhymes("Holdin' on to Sunday mornin's", "Y'all can keep your city warnin's") >= 0.7
+
+
+def test_evenins_is_stressed_on_its_first_syllable():
+    assert en_word("evenin's").readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "token, size",
+    [
+        ("pow'r", 1),
+        ("flow'r", 1),
+        ("heav'n", 1),
+        ("pray'r", 1),
+        ("ev'ry", 2),
+        ("wand'ring", 2),
+        ("pow'rful", 2),
+        ("fall'n", 1),
+        ("hist'ry", 2),
+        ("fam'ly", 2),
+    ],
+)
+def test_a_vowel_elided_with_an_apostrophe_is_known(token, size):
+    w = en_word(token)
+    assert w.size == size and not w.guessed
+
+
+@pytest.mark.parametrize("a, b", [("pow'r", "hour"), ("heav'n", "leav'n"), ("o'er", "more")])
+def test_elided_words_rhyme_as_they_sound(a, b):
+    assert rhymes(a, b) >= rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize("token", ["don't", "we'll", "y'all", "ma'am", "o'clock"])
+def test_contractions_are_read_as_the_dictionary_lists_them(token):
+    from ashugh.lang import en
+
+    listed = en.TABLE.get(token)
+    assert listed is not None and en.lookup(token) == listed.split("|")
