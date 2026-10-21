@@ -276,7 +276,7 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 | each word's first reading, without meter or rhyme | 92.5% |
 | words the dictionary lists | 98.2% |
 | ambiguous words, resolved by meter and rhyme | 95.2% |
-| unknown words (9%), guessed from the ending, meter and rhyme | 88.3% |
+| unknown words (9%), guessed from the ending, meter and rhyme | 88.4% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.88, F1 0.91 |
 
 RIFMA was also the development set for the Russian rules, so these numbers
@@ -356,10 +356,13 @@ one the meter may use, the last part carrying the main stress and the rhyme
 
 1. a mark in the text;
 2. the spec's `[lexicon]`;
-3. 559,393 stressed forms from OpenRussian, with ё restored (еще becomes
-   ещё) and the past tenses the dump leaves out derived from the infinitive;
+3. 559,395 stressed forms from OpenRussian, with ё restored (еще becomes
+   ещё), the past tenses the dump leaves out derived from the infinitive,
+   and a prefixed verb's feminine past ending-stressed where its base's is
+   (позвала́ like звала́; the dump's позва́ла stays second, for verse);
 4. the dictionary twin of a poetic or derived form: мгновенье, мглою,
-   сильней, -ся, не-;
+   сильней, -ся, не-, folk -ся after a vowel (ложи́ся), and a prefixed verb
+   the dump lacks (отжила́ like жила́);
 5. the verb forms that share a gerund's or participle's stress: теряя from
    теряю, начав from начать, создавший from создать;
 6. else a prior learned from word endings, which the meter can overrule.

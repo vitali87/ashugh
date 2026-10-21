@@ -250,3 +250,21 @@ def test_the_sung_form_writes_the_unwritten_yo(capsys):
     assert main(["syl", "--lang", "ru", "мое твое лед еще идет Ее"]) == 0
     out = capsys.readouterr().out
     assert "мо-ё тво-ё лёд е-щё и-дёт Е-ё" in out
+
+
+@pytest.mark.parametrize(
+    "word, stress",
+    [("отжила", 2), ("подзабыла", 2), ("отлюбовалась", 3), ("перепрятать", 2)],
+)
+def test_an_unknown_prefixed_verb_takes_its_bases_stress(word, stress):
+    from ashugh.lang import ru
+
+    w = ru.analyze_word(word)
+    assert stress in w.stress_options() and not w.guessed
+
+
+@pytest.mark.parametrize("word", ["западло", "усладила"])
+def test_no_prefix_is_split_off_a_noun_or_with_one_letter(word):
+    from ashugh.lang import ru
+
+    assert ru.analyze_word(word).guessed

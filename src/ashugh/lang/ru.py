@@ -513,6 +513,17 @@ def transcribe(spelling: str, stress: int | None) -> tuple[str, ...]:
     return tuple(out)
 
 
+# Prefixes of two letters or more: у-, о-, с- and в- split too many words wrongly
+# (у-сладила). A neuter in -ло is too often no verb (западло).
+VERB_PREFIXES = sorted(
+    "пере пред при про пре разо раз рас без бес взо воз вос вз вс изо из ис недо "
+    "надо над подо под обо об ото от по до за на со во".split(),
+    key=len,
+    reverse=True,
+)
+VERB_ENDINGS = ("л", "ла", "ли", "лся", "лась", "лось", "лись", "ть", "ться")
+
+
 def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     """Look up a form the table lacks through its dictionary twin."""
     found: list[tuple[str, tuple[int, ...]]] = []
@@ -556,6 +567,16 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
                 break
     if gerund and not found:
         twin(norm[:-2], lambda p: p)
+    # A prefixed verb form the table lacks is stressed as its base is (отжила́ as жила́,
+    # подзабы́ла as забы́ла), but for вы-, which takes the stress itself.
+    if not found and norm.endswith(VERB_ENDINGS):
+        for prefix in VERB_PREFIXES:
+            rest = norm[len(prefix) :]
+            if norm.startswith(prefix) and vowel_count(rest) > 1:
+                q = vowel_count(prefix)
+                twin(rest, lambda p, q=q: p + q)
+                if found:
+                    break
     return found
 
 

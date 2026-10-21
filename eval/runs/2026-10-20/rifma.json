@@ -2,24 +2,24 @@
   "samples": 5121,
   "stress": {
     "words": 60854,
-    "accuracy": 0.9719,
-    "first_reading_accuracy": 0.9247,
+    "accuracy": 0.9721,
+    "first_reading_accuracy": 0.925,
     "by_source": {
       "dictionary": {
-        "words": 50069,
-        "accuracy": 0.9823
+        "words": 50153,
+        "accuracy": 0.9822
       },
       "guess": {
-        "words": 5422,
-        "accuracy": 0.8831
+        "words": 5328,
+        "accuracy": 0.8844
       },
       "mark": {
         "words": 1677,
         "accuracy": 0.9917
       },
       "meter": {
-        "words": 3686,
-        "accuracy": 0.9523
+        "words": 3696,
+        "accuracy": 0.9521
       }
     },
     "skipped_lines": 25,
@@ -28,7 +28,7 @@
   "rhyme_pairs": {
     "pairs": 33798,
     "precision": 0.9408,
-    "recall": 0.8785,
-    "f1": 0.9086
+    "recall": 0.8783,
+    "f1": 0.9085
   }
 }
