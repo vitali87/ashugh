@@ -209,8 +209,13 @@ def _parse(variant: str) -> tuple[tuple[str, ...], list[int], list[str]]:
 
 
 def override_error(word: str, value: str) -> str | None:
-    """Why a [lexicon] entry cannot be used, or None: ARPABET with stress digits."""
+    """Why a [lexicon] entry cannot be used, or None: ARPABET with stress digits, one
+    reading or several between | (the usual first)."""
     example = 'like "Z AO1 R B L AE0 K S"'
+    if "|" in value:
+        return next(
+            (e for part in value.split("|") if (e := override_error(word, part.strip()))), None
+        )
     symbols = value.split()
     heads = [s.rstrip("012") for s in symbols]
     if not symbols or any(h not in VOWELS_ARPA and h not in CONSONANTS_ARPA for h in heads):
@@ -1476,7 +1481,10 @@ def analyze_word(
         if not any("AY1 ER0" in v for v in variants):
             variants = variants + [v for v in long if v not in variants]
     if user:
-        variants = [user] if any(ch.isdigit() for ch in user) else variants
+        # "HH EH1 V AH0 N|HH EH1 V N": the usual reading, then the one a line may take
+        variants = (
+            [v.strip() for v in user.split("|")] if any(ch.isdigit() for ch in user) else variants
+        )
     elif variants and token.lower().endswith(("èd", "éd")):  # blessèd, wingéd: -ed sung
         variants = list(dict.fromkeys(_sung_ed(v) for v in variants))
     elif variants and token.lower().endswith("é"):  # résumé: the reading that sings its é

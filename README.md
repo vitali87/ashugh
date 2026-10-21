@@ -136,7 +136,8 @@ syllables = [9, 8, 9, 8]
 
 Each `[lexicon]` entry is checked when the spec loads, so a correction is
 never silently ignored: a Russian word needs its stress marked, an English one
-ARPABET with a digit on every vowel, an Armenian one its sung syllables split
+ARPABET with a digit on every vowel (several readings between `|`, the usual
+first: `"HH EH1 V AH0 N|HH EH1 V N"`), an Armenian one its sung syllables split
 by hyphens, one vowel each, and every entry must spell its word.
 
 Top-level keys apply everywhere; `[section.<name>]` overrides them for its

@@ -93,3 +93,20 @@ def test_a_song_with_verse_and_chorus_tags_is_left_as_tagged():
 
     text = "[Verse]\nI walk the road alone\n\n[Chorus]\nStay with me\n\nThe night is cold\n"
     assert "[Verse 2]" not in suno.format_song(text).text
+
+
+def test_an_english_lexicon_entry_may_give_two_readings():
+    spec = from_dict(
+        {"language": "en", "syllables": 6, "lexicon": {"heaven": "HH EH1 V AH0 N|HH EH1 V N"}}
+    )
+    report = scan("And heaven and nature sing\n", spec)
+    assert report.ok
+    w = report.lines[0].line.words[1]
+    assert all(r.source == "user" or r.source == "lexicon" for r in w.readings)
+
+
+def test_each_reading_of_a_lexicon_entry_is_checked():
+    from ashugh.spec import SpecError
+
+    with pytest.raises(SpecError, match="not ARPABET"):
+        from_dict({"language": "en", "lexicon": {"zorblax": "Z AO1 R B|Q Q"}})
