@@ -39,6 +39,7 @@ spec's [lexicon] table fixes them.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from functools import cache
 from importlib import resources
@@ -842,9 +843,39 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
     )
 
 
+# Classical spellings the 1922 reform replaced, read as their reformed ones: իւ is
+# յու (ձիւն, իւր), ոյ before a consonant ույ (լոյս), եա before ն or յ յա (կեանք,
+# Թումանեան); never a loan's եա (ռեալ) or a final ոյ (Նոյ).
+CLASSICAL = (
+    (re.compile("իւ"), "յու"),
+    (re.compile("ոյ(?=[^\u0561-\u0587]*[բգդզթժլխծկհձղճմյնշչպջռսվտրցփքֆ])"), "ույ"),
+    (re.compile("եա(?=[նյ])"), "յա"),
+    (re.compile("եօ"), "յո"),
+)
+
+
+def reformed(token: str) -> str:
+    """token in the reformed spelling, its letter case kept: կեանք as կյանք."""
+    low = token.lower()
+    new = low
+    for pattern, repl in CLASSICAL:
+        new = pattern.sub(repl, new)
+    if new == low:
+        return token
+    if len(token) > 1 and token.isupper():
+        return new.upper()
+    return new[:1].upper() + new[1:] if token[:1].isupper() else new
+
+
 def analyze_word(
     token: str, overrides: dict[str, str] | None = None, capitals: bool = False
 ) -> Word:
+    modern = reformed(token)
+    if modern != token and not (overrides or {}).get(normalize(token)):
+        word = analyze_word(modern, overrides, capitals)  # կեանք: classical spelling
+        word.text = token
+        word.notes.append(f"classical spelling, read as {modern}")
+        return word
     norm = normalize(token)
     if not (overrides or {}).get(norm):
         spelled = abbreviation(token, capitals)

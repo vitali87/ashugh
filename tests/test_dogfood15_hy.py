@@ -163,3 +163,20 @@ def test_schwa_mode_splits_latin_typed_armenian():
         "Mtnem aygin, qez em sirum\n", armenian="schwa", split="all", tags=False, lang="hy"
     )
     assert "Mət-nem" in out.text and "ay-gin" in out.text, out.text
+
+
+@pytest.mark.parametrize(
+    "token,size", [("կեանք", 1), ("ձիւն", 1), ("իւր", 1), ("Թումանեան", 3), ("Հայաստանեայց", 4)]
+)
+def test_classical_spelling_is_read_as_reformed(token, size):
+    w = words(token)[0]
+    assert w.size == size and w.text == token
+
+
+def test_classical_lojs_rhymes_with_hujs():
+    assert hy_rhyme("լոյս", "հույս") >= 0.9
+
+
+@pytest.mark.parametrize("token,size", [("ռեալ", 2), ("իդեալ", 3), ("Նոյ", 1)])
+def test_reformed_words_with_ea_or_oy_are_left_alone(token, size):
+    assert words(token)[0].size == size
