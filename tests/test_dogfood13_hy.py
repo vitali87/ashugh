@@ -241,3 +241,14 @@ def test_a_lexicon_schwa_the_word_writes_stays():
 def test_the_prefix_ver_keeps_its_stems_schwa_before_s_and_a_stop(word, pieces):
     (w,) = words(word)
     assert shown(w) == pieces
+
+
+@pytest.mark.parametrize("name", ["Նուարդ", "Նվարդ", "Ռիչարդ", "Լեոնարդ", "Էդվարդ"])
+def test_names_in_rd_are_no_possessive(name):
+    (w,) = words(name)
+    assert not shown(w).endswith("րըդ")
+
+
+def test_a_possessive_in_rd_still_takes_its_schwa():
+    (w,) = words("քարդ")  # քա-րըդ: your stone
+    assert w.size == 2
