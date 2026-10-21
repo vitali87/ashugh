@@ -42,6 +42,9 @@ NOT_FORMS = {
     "aspect",
 }
 FORM_RE = re.compile(r"[а-яё'\-]+")
+# Rare words whose forms are spelt like a common word's and stressed otherwise: the
+# sthene (сте́не) is no reading of стене́, the wall's.
+OBSOLETE = {"стен"}
 OUT = Path(__file__).resolve().parent.parent / "src" / "ashugh" / "data" / "ru_stress.tsv"
 YO_OUT = OUT.with_name("ru_yo.tsv")
 
@@ -205,6 +208,8 @@ def build(source: Path) -> dict[str, list[int]]:
             past = header.index("past_m") if "past_m" in header else None
             accented = header.index("accented") if "accented" in header else None
             for row in rows:
+                if row and row[0].strip().lower() in OBSOLETE:
+                    continue
                 forms = [v for i in columns if i < len(row) for v in re.split(r"[,;/]", row[i])]
                 if accented is not None and accented < len(row):
                     head = row[accented].strip().lower().replace("\u0301", "'")

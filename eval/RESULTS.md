@@ -12,8 +12,8 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 |---|---|
 | stress of polysyllabic words (60,854) | 97.2% |
 | each word's first reading, without meter or rhyme | 92.5% |
-| words the dictionary lists (50,167) | 98.3% |
-| ambiguous words resolved by meter and rhyme (3,683) | 95.4% |
+| words the dictionary lists (50,171) | 98.3% |
+| ambiguous words resolved by meter and rhyme (3,679) | 95.4% |
 | unknown words guessed from the ending, meter and rhyme (5,327) | 88.5% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.878, F1 0.909 |
 

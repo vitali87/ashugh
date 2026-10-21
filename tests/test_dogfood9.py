@@ -151,3 +151,16 @@ def test_a_broken_rhyme_names_the_best_reading_either_line_could_take():
     rep = scan(text, from_dict({"syllables": 9, "rhyme": "ABAB", "tolerance": 1, "language": "ru"}))
     (issue,) = [i for i in rep.issues if i.code == "rhyme"]
     assert "slant 0.66" in issue.detail  # стене́ / голове́, not the rare сте́не's none
+
+
+def test_a_wall_is_never_read_as_an_obsolete_unit():
+    assert ru.analyze_word("стене").stress_options() == [1]  # стене́, not сте́не of стен
+
+
+def test_a_rhyme_that_only_the_obsolete_reading_made_is_broken():
+    text = (
+        "Кофе остыл на краю стола,\nТени ползут по белой стене,\n"
+        "Ты в эту ночь от меня ушла,\nИ в тишине звенят ступени.\n"
+    )
+    rep = scan(text, from_dict({"syllables": 9, "rhyme": "ABAB", "tolerance": 1, "language": "ru"}))
+    assert any(i.message == "rhyme B broken" for i in rep.issues)

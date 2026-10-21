@@ -104,3 +104,17 @@ def test_a_prefixed_verb_ends_its_feminine_past_like_its_base(tmp_path):
     assert table["узнала"] == [2], "a base stressed on its stem changes nothing"
     assert table["вопила"] == [2], "вопить is no во- with пить: воплю, not вопью"
     assert table["породила"] == [3] and table["остригла"] == [2], "роди́ла, стри́гла"
+
+
+def test_an_obsolete_word_lends_no_stress_to_a_common_one(tmp_path):
+    header = ["bare", "accented", "sg_nom", "sg_prep", "pl_nom"]
+    rows = [
+        ["стена", "стена'", "стена'", "стене'", "сте'ны"],
+        ["стен", "сте'н", "сте'н", "сте'не", "сте'ны"],  # the sthene, a unit no one sings
+    ]
+    (tmp_path / "nouns.csv").write_text(
+        "\n".join("\t".join(r) for r in [header, *rows]) + "\n", encoding="utf-8"
+    )
+    for name in ("verbs.csv", "adjectives.csv", "others.csv"):
+        (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
+    assert ru_build.build(tmp_path)["стене"] == [2]

@@ -3,10 +3,10 @@
   "stress": {
     "words": 60854,
     "accuracy": 0.9725,
-    "first_reading_accuracy": 0.9252,
+    "first_reading_accuracy": 0.9253,
     "by_source": {
       "dictionary": {
-        "words": 50167,
+        "words": 50171,
         "accuracy": 0.9825
       },
       "guess": {
@@ -18,8 +18,8 @@
         "accuracy": 0.9917
       },
       "meter": {
-        "words": 3683,
-        "accuracy": 0.9536
+        "words": 3679,
+        "accuracy": 0.9535
       }
     },
     "skipped_lines": 25,
