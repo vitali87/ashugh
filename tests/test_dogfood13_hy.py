@@ -252,3 +252,28 @@ def test_names_in_rd_are_no_possessive(name):
 def test_a_possessive_in_rd_still_takes_its_schwa():
     (w,) = words("քարդ")  # քա-րըդ: your stone
     assert w.size == 2
+
+
+@pytest.mark.parametrize(
+    "tag, out",
+    [
+        ("[Վերջաբան]", "[Outro]"),
+        ("[Նախաբան]", "[Intro]"),
+        ("[Ռեփ]", "[Rap]"),
+        ("[Սոլո]", "[Solo]"),
+    ],
+)
+def test_more_armenian_section_names(tag, out):
+    from ashugh import lyrics
+
+    assert lyrics.retag(tag) == out
+
+
+def test_an_outro_rule_matches_the_armenian_tag():
+    from ashugh.scan import scan
+    from ashugh.spec import loads
+
+    spec = loads('language = "hy"\n[section.outro]\nsyllables = 8\n')
+    rep = scan("[Վերջաբան]\nՈւ մնաց միայն իմ սիրտը\n", spec)
+    assert not any("matches no section" in i.message for i in rep.issues)
+    assert rep.lines[0].line.key == "outro" and rep.lines[0].target == 8
