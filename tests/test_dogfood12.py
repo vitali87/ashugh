@@ -228,7 +228,7 @@ def test_a_proposer_answer_names_its_line_any_usual_way(ident):
     assert out == {"L5": ["a line"]}
 
 
-def test_a_latin_armenian_candidate_is_accepted_for_an_armenian_line():
+def test_a_latin_armenian_candidate_is_armenian_but_in_the_wrong_letters():
     from ashugh.fit import fit_song
     from ashugh.proposers import StaticProposer
 
@@ -239,4 +239,6 @@ def test_a_latin_armenian_candidate_is_accepted_for_an_armenian_line():
         StaticProposer({1: ["Ari u el mi gna"]}),
         rounds=1,
     )
-    assert not any("not in Armenian" in r["why"] for u in res.unresolved for r in u.rejected)
+    whys = [r["why"] for u in res.unresolved for r in u.rejected]
+    assert not any("not in Armenian" in why for why in whys)
+    assert whys == ["Armenian in the wrong letters: the song writes it in Armenian letters"]

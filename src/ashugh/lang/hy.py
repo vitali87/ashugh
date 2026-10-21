@@ -342,6 +342,9 @@ def stem_final(norm: str) -> bool:
     ) or any(norm.startswith(h) and norm[len(h) :] in words for h in COMPOUND_HEADS)
 
 
+# A hum or a hush: one sonorant or sibilant held, after a ծ, տ or պ at most (Մմմ,
+# Ննն, Շշշ, Սսս, Տսսս); written twice is enough (Մմ, Շշ).
+HUM_RE = re.compile(r"[տպծ]?([մնշսզժ])\1+")
 # A vowel written three times or more, one held note: Ջաաաան, Սիրուուում
 HELD_RUN = re.compile(r"(ու|[աեէըիոօ])\1{2,}", re.IGNORECASE)
 # Names ending a longer one: Մակ-դոնալդ
@@ -1008,6 +1011,18 @@ def analyze_word(
         word.text, word.norm, word.held = token, norm, True
         word.syllables = tuple(replace(s, text=token) for s in word.syllables)
         return word
+    if HUM_RE.fullmatch(norm) and not (overrides or {}).get(norm):
+        # Մմմ, Շշշ, Տսսս: a hum or a hush, one held sound with no vowel sung into it
+        phones = tuple(LETTERS[ch] for ch in norm)
+        return Word(
+            token,
+            norm,
+            CODE,
+            (Syllable(token, False, phones),),
+            (Reading(0, phones, norm, "rule"),),
+            weak=True,
+            held=True,
+        )
     squeezed = None if (overrides or {}).get(norm) else lyrics.squeeze(token, HELD_RUN)
     if squeezed is not None:  # Ջաաաան: one held syllable, sung as ջան
         word = analyze_word(squeezed[0], overrides, capitals)

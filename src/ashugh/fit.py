@@ -21,6 +21,7 @@ from functools import cached_property
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
+from .lang import hy
 from .proposers import Proposer, ProposerError, Request, faithfulness
 from .scan import (
     DIGITS,
@@ -311,6 +312,10 @@ def run(
             for raw in answers.get(req.id, []) or []:
                 var.offered += 1
                 _consider(var, raw, spec, lang, weigh)
+        for k, src in later.items():  # a copy, never asked, weighs its first copy's lines
+            for c in list(variables[src].pool):
+                if not c.original:
+                    _consider(variables[k], c.text, spec, lang, weigh)
         pending = _settle(variables, groups, lines, solver)
         pending -= _same_repair_for_copies(variables, later, spec, lang, weigh)
     return used, asked
@@ -437,6 +442,12 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
         name = languages.NAMES.get(want, want)
         var.foreign.add(text)
         var.rejected.append((text, f"not in {name}"))  # a translation left in its source
+        return
+    if var.written and want == "hy" and _latin_typed(var.lr.line) != _latin_typed(text):
+        # Qez em spasum in a song typed in Latin: Քեզ եմ սպասում would mix the scripts
+        script = "Latin letters" if _latin_typed(var.lr.line) else "Armenian letters"
+        why = f"Armenian in the wrong letters: the song writes it in {script}"
+        var.rejected.append((text, why))
         return
     line = reanalyze(var.lr.line, text, spec, lang)
     lr = check_line(line, var.unit.rule, var.unit.meter, var.unit.meter_source)
@@ -590,6 +601,8 @@ def _alike(pool: list[Candidate]) -> dict[tuple, list[int]]:
 def _rhyme_ok(x: Candidate, y: Candidate) -> bool:
     """y rhymes with x at y's min_rhyme, and not on the same word or another form
     of it (сердца / сердце) unless both lines were written that way."""
+    if _norm(x.text) == _norm(y.text):
+        return True  # Take me home, take me home, twice in its rhyme group: a hook, sung alike
     s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
     if s < rhyme.THRESHOLD[y.report.min_rhyme]:
         return False
@@ -606,6 +619,13 @@ def _rhymes(c: Candidate) -> list:
 def _same_rhyme_word(x: Candidate, y: Candidate) -> bool:
     a, b = x.report.tail, y.report.tail
     return a is not None and b is not None and a.spelling == b.spelling
+
+
+def _latin_typed(line) -> bool:
+    """Whether an Armenian line, or a candidate's text, is typed in Latin letters."""
+    text = line if isinstance(line, str) else line.text
+    letters = [ch for ch in text if ch.isalpha()]
+    return bool(letters) and not any(hy.is_armenian(ch) for ch in letters)
 
 
 def _request(
@@ -721,6 +741,7 @@ def _request(
         problems=problems,
         rejected=[f"{text} — {why}" for text, why in (var.rejected + _near_misses(var))[-8:]],
         copies=[k for k, src in _later_copies(variables).items() if src == ln.number],
+        script=("latin" if _latin_typed(ln) else "armenian") if ln.lang == "hy" else "",
         n=n,
     )
     if extra is not None:

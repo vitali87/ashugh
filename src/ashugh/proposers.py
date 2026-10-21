@@ -58,6 +58,7 @@ class Request:
     copies: list[int] = field(default_factory=list)  # the same line again: one repair for all
     source: str | None = None  # translate: the line being translated
     source_lang: str | None = None
+    script: str = ""  # Armenian lines: latin or armenian, the letters the song writes it in
     n: int = 6
 
     def as_dict(self) -> dict:

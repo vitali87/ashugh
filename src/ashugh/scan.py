@@ -374,16 +374,30 @@ def check_line(
         short = meter.fit(ln.words, meter_name, f.count - 1, 0, force, feet, promote)
         if short.ending == want and short.count == f.count - 1:
             f = short
+    elif (
+        target is None
+        and want is not None
+        and f.ending == want - 1
+        and len(ln.words) - 1 in f.elided
+    ):
+        # սե-րըն: a last word whose dropped syllable, sung, gives the asked ending
+        long = meter.fit(ln.words, meter_name, f.count + 1, 0, force, feet, promote)
+        if long.ending == want and long.count == f.count + 1:
+            f = long
     tails = [] if ends_in_number(ln.text) else rhyme.tails(ln, f)  # in '99: no rhyme on in
     lr = LineReport(ln, f, tails, target=target, min_rhyme=rule.min_rhyme)
     _check_line(lr, rule, meter_name, source)
     return lr
 
 
+# Latin-typed Armenian with 8 for ու, as chats write it: inch8, lr8m, t8n@
+EIGHT_RE = re.compile(r"[A-Za-z@]*(?:[A-Za-z@]8|8[A-Za-z@])[A-Za-z@8]*")
 # A label naming who sings a line: FREDERIC: Oh, is there not, Call: who will come
 SPEAKER_RE = re.compile(
-    r"\s*([A-Z][A-Z'’.]{2,}(?: [A-Z][A-Z'’.]+)?|Call|Response|Lead|All|Both|Solo|Choir"
-    r"|Men|Women|Boys|Girls)\s*:\s+\S"
+    r"\s*([A-Z][A-Z'’.]{2,}(?: [A-Z][A-Z'’.]+)?|[Ա-Ֆ]{3,}|[А-ЯЁ]{3,}"  # MABEL:, ԱՐՄԵՆ:, ОН:
+    r"|Call|Response|Lead|All|Both|Solo|Choir|Men|Women|Boys|Girls"
+    r"|Տղա|Աղջիկ|Երկուսով|Միասին|Խումբ|Կին|Տղամարդ"  # a duet: Տղա: Արի ինձ մոտ
+    r"|Он|Она|Оба|Вместе|Хор|Мужчина|Женщина|Солист|Солистка)\s*:\s+\S"
 )
 STAGE_RE = re.compile(r"\*[^*\n]+\*")  # *spoken*, *whispers*
 LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
@@ -591,7 +605,11 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 f"{names}: syllables counted by vowel groups, stress and rhyme unknown",
             )
         )
-    if lyrics.has_digits(ln.text):
+    eights = [m.group(0) for m in EIGHT_RE.finditer(ln.text)] if ln.lang == "hy" else []
+    if eights:  # inch8, lr8m: chat Armenian's 8 for ու
+        detail = f"{', '.join(eights)}: write u (inchu, lrum); these words are not counted"
+        add(Issue(ln.number, "script", "warning", "8 typed for ու is not read", detail))
+    elif lyrics.has_digits(ln.text):
         add(Issue(ln.number, "script", "warning", DIGITS, "spell numbers out"))
     icons = lyrics.emoji(ln.text)
     if icons:  # I love you so 💔: no syllable, and Suno may say its name

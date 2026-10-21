@@ -265,3 +265,113 @@ def test_a_passing_line_asked_for_its_partners_refrain_is_told_why():
     spec = from_dict({"language": "hy", "syllables": [6, 7, 6, 8], "rhyme": "ABAB"})
     reqs = requests_for(text, spec)
     assert reqs and all(r.problems for r in reqs)
+
+
+HOOK = (
+    "[Chorus]\nԱրի ինձ մոտ, յար,\nՄնա ինձ հետ մինչև լույս,\n"
+    "Արի ինձ մոտ, յար,\nԻմ միակ ու վերջին հույս։\n"
+)
+
+
+def test_a_hook_repeated_in_its_own_rhyme_group_is_repaired_alike():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    spec = from_dict({"language": "hy", "syllables": [6, 7, 6, 7], "rhyme": "ABAB"})
+    cands = StaticProposer({2: ["Արի ինձ մոտ, իմ յար,", "Արի, արի, իմ յար,"]})
+    result = fit_song(HOOK, spec, cands, rounds=1)
+    new = {c.line: c.new for c in result.changes}
+    assert new[2] == new[4] and not result.unresolved
+
+
+def test_a_translated_hook_is_translated_both_times():
+    from ashugh.proposers import StaticProposer
+    from ashugh.translate import translate_song
+
+    source = (
+        "Take me home, take me home,\nWhere the river flows,\n"
+        "Take me home, take me home,\nWhere the poppy grows.\n"
+    )
+    cands = StaticProposer({1: ["Տար ինձ տուն, տար ինձ տուն,"]})
+    result = translate_song(source, "hy", cands, rounds=1)
+    new = {c.line: c.new for c in result.changes}
+    assert new.get(1) == new.get(3) == "Տար ինձ տուն, տար ինձ տուն,"
+
+
+def test_two_different_lines_on_one_rhyme_word_are_still_no_rhyme():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "Արի ինձ մոտ, ջան,\nՄնա ինձ հետ, լույս,\nԵս քեզ կսպասեմ,\nԴու իմ հույսն ես, հույս,\n"
+    spec = from_dict({"language": "hy", "rhyme": "ABAB"})
+    result = fit_song(text, spec, StaticProposer({3: ["Ես քեզ կսպասեմ ջան,"]}), rounds=1)
+    assert not any(c.line == 3 for c in result.changes)
+
+
+def test_an_ending_rule_takes_the_optional_schwa_that_gives_it():
+    report = scan("Իմ կյանքը քո սերն\n", from_dict({"language": "hy", "endings": "f"}))
+    assert report.lines[0].ok and report.lines[0].fit.count == 6
+    report = scan("Իմ կյանքը քո սերն\n", from_dict({"language": "hy", "endings": "m"}))
+    assert report.lines[0].ok and report.lines[0].fit.count == 5
+
+
+@pytest.mark.parametrize(
+    "key,value", [("srtis", "sər-tis"), ("srtis", "սըր-տիս"), ("սրտիս", "սըր-տիս")]
+)
+def test_a_lexicon_entry_reaches_a_latin_typed_word(key, value):
+    spec = from_dict({"language": "hy", "lexicon": {key: value}})
+    (ln,) = analyze_lines("Du im srtis mej es", spec)
+    (w,) = [w for w in ln.words if w.text == "srtis"]
+    assert w.size == 2 and w.readings[0].source == "user"
+
+
+def test_an_english_lexicon_entry_still_takes_arpabet():
+    spec = from_dict({"lexicon": {"gonna": "G AA1 N AH0"}})
+    assert spec.lexicon["gonna"] == "G AA1 N AH0"
+
+
+@pytest.mark.parametrize("word", ["Մմմ", "մմ", "Շշշ", "Տսսս", "Ննն"])
+def test_a_hum_is_one_held_sound_with_no_schwa(word):
+    (w,) = words(word)
+    assert w.size == 1 and w.held and "ը" not in w.sung()
+
+
+def test_suno_writes_a_hum_as_it_is():
+    from ashugh import suno
+
+    for mode, out in (("schwa", "Մմմ, իմ յար"), ("latin", "Mmm, im yar")):
+        text = suno.format_song(
+            "Մմմ, իմ յար\n", Spec(language="hy"), armenian=mode, tags=False
+        ).text
+        assert text.strip() == out
+
+
+def test_chat_eight_for_u_is_named():
+    report = scan("Inch8 es lr8m, jan?\n", Spec(language="hy"))
+    (issue,) = [i for i in report.issues if i.code == "script"]
+    assert issue.message == "8 typed for ու is not read" and "Inch8, lr8m" in issue.detail
+
+
+def test_an_english_number_word_with_8_is_no_eight_for_u():
+    report = scan("Call me at 8\n", Spec(language="en"))
+    assert not any("ու" in i.message for i in report.issues)
+
+
+@pytest.mark.parametrize(
+    "line", ["Տղա: Արի ինձ մոտ, իմ յար", "Աղջիկ: Չեմ գա", "ԱՐՄԵՆ: Արի", "Она: Я жду"]
+)
+def test_an_armenian_or_russian_singer_label_is_warned(line):
+    assert any(i.message == "a label for who sings is sung" for i in scan(line + "\n").issues)
+
+
+def test_a_latin_typed_song_asks_and_keeps_latin_letters():
+    from ashugh.fit import fit_song, requests_for
+    from ashugh.proposers import StaticProposer
+
+    text = "Qez em spasum gisherov,\nSrtis mej ches, chem karoghanum,\n"
+    spec = from_dict({"language": "hy", "syllables": 7})
+    (req, *_) = requests_for(text, spec)
+    assert req.script == "latin"
+    result = fit_song(text, spec, StaticProposer({1: ["Քեզ եմ սպասում հիմա,"]}), rounds=1)
+    whys = [r["why"] for u in result.unresolved for r in u.rejected]
+    assert "Armenian in the wrong letters: the song writes it in Latin letters" in whys

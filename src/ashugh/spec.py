@@ -33,7 +33,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from . import lyrics
-from .lang import ANALYZERS, override_error
+from .lang import ANALYZERS, latin_armenian_entries, override_error
 from .meter import MAX_FEET, parse_meter
 from .rhyme import THRESHOLD
 
@@ -266,6 +266,7 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     lexicon = data.get("lexicon", {})
     if not isinstance(lexicon, dict) or not all(isinstance(v, str) for v in lexicon.values()):
         raise SpecError(f"{where}: [lexicon] maps words to strings")
+    lexicon = dict(latin_armenian_entries(lexicon))  # srtis = "sər-tis": սրտիս
     for word, value in lexicon.items():
         problem = override_error(word, value)
         if problem:

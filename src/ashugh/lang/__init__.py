@@ -48,6 +48,22 @@ def script_of(token: str) -> str:
     return ""
 
 
+def latin_armenian_entries(lexicon: dict[str, str]):
+    """[lexicon] entries, a Latin-typed Armenian word's under its Armenian spelling,
+    where its line looks it up: srtis = "sər-tis" or "սըր-տիս" is սրտիս = "սըր-տիս".
+    Its value says it is Armenian, in Armenian letters or with a ə or @ for ը; an
+    English word's value is ARPABET."""
+    for word, value in lexicon.items():
+        armenian = any(hy.is_armenian(ch) for ch in value)
+        latin = script_of(word) == en.CODE and (armenian or any(ch in "ə@" for ch in value))
+        if not latin:
+            yield word, value
+            continue
+        if not armenian:  # sər-tis: each syllable in Armenian letters
+            value = "-".join(hy.from_latin(part) for part in value.split("-"))
+        yield hy.from_latin(word), value
+
+
 def override_error(word: str, value: str) -> str | None:
     """Why a [lexicon] entry cannot be used, by the script of its word; None if
     it can, or if no analyzer reads that script."""
