@@ -507,6 +507,9 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         )
     if lyrics.has_digits(ln.text):
         add(Issue(ln.number, "script", "warning", "digits are not counted", "spell numbers out"))
+    if any(ch in "[]" for ch in lyrics.sub_asides(ln.text, lambda _: " ")):  # [Bridge] I walk
+        detail = "a tag such as [Chorus] goes on a line of its own; these words are counted"
+        add(Issue(ln.number, "tag", "warning", "brackets in a sung line", detail))
     warned: set[str] = set()  # a word guessed twice in a line is named once
     for i, w in enumerate(ln.words):
         if w.lang == "xx":
@@ -671,8 +674,33 @@ def _check_rhyme(reports: list[LineReport], rule: Rule, groups: bool = True) -> 
                 f"stanza has {_count(len(reports), 'line')}, rhyme {rule.rhyme} wants {n}",
             )
         )
+    elif groups and len(reports) > n:
+        _short_scheme(reports, rule.rhyme)
     if groups:
         _check_groups(_groups(reports, rule))
+
+
+def _short_scheme(reports: list[LineReport], scheme: str) -> None:
+    """A scheme shorter than its stanza starts over with new rhymes, as AABB on
+    eight lines is AABBCCDD. Warn where that leaves rhymes the writer likely
+    meant unchecked: AB on four lines names each letter once, so no line must
+    rhyme (ABAB says A and A rhyme), and ABAB on six leaves lines 5 and 6
+    with no partner."""
+    size, n = len(reports), len(scheme)
+    letters = [c.upper() for c in scheme if c.isalpha()]
+    message = detail = ""
+    if letters and len(set(letters)) == len(letters):
+        message = f"rhyme {scheme} names each letter once: on {size} lines no line must rhyme"
+        detail = f"for rhymes across the stanza write them out: {scheme * (size // n)}"
+    elif size % n:
+        part = [c.upper() for c in scheme[: size % n] if c.isalpha()]
+        alone = [c for c in part if part.count(c) == 1 and letters.count(c) > 1]
+        if alone:
+            message = f"stanza has {_count(size, 'line')}, rhyme {scheme} fits {n}"
+            detail = f"the last {size % n} start it over, where {alone[0]} has no partner"
+    if message:
+        lr = reports[-1]
+        lr.issues.append(Issue(lr.line.number, "scheme", "warning", message, detail))
 
 
 def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]]:

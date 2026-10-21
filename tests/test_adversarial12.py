@@ -504,3 +504,39 @@ def test_mcp_requests_carry_the_spec_warnings():
     spec = 'syllables = 8\nmeter = "iamb4"\nendings = "f"\n'
     failed, data = tool("requests", lyrics="I walk the way\nand talk all day\n", spec=spec)
     assert not failed and any("no line can pass" in w for w in data["warnings"])
+
+
+def warnings_of(text: str, spec: dict) -> list[tuple[int, str, str]]:
+    rep = scan(text, from_dict({"language": "en", **spec}))
+    return [(i.line, i.code, i.message) for i in rep.issues if i.severity == "warning"]
+
+
+@pytest.mark.parametrize("line", ["[Bridge] I walk the way", "[[Chorus]]", "[Verse", "[Outro]]"])
+def test_brackets_in_a_sung_line_are_warned_about(line):
+    found = warnings_of(f"{line}\nI talk all day\n", {})
+    assert (1, "tag", "brackets in a sung line") in found
+
+
+def test_brackets_in_a_backing_vocal_are_not():
+    assert not [w for w in warnings_of("I walk the way (oh [yeah])\n", {}) if w[1] == "tag"]
+
+
+FOUR = "I walk the way\nI see the sun\nand talk all day\nmy work is done\n"
+SIX = FOUR + "I sing my song\nand then I rest\n"
+
+
+def test_a_scheme_that_names_each_letter_once_warns_on_a_longer_stanza():
+    found = warnings_of(FOUR, {"rhyme": "AB"})
+    assert any(code == "scheme" and "no line must rhyme" in m for _, code, m in found)
+
+
+def test_a_scheme_that_leaves_a_line_of_its_repeat_alone_warns():
+    found = warnings_of(SIX, {"rhyme": "ABAB"})
+    assert any(code == "scheme" and "fits 4" in m for _, code, m in found)
+
+
+@pytest.mark.parametrize(
+    "text, scheme", [(SIX, "AABB"), (FOUR + FOUR, "ABCB"), (FOUR, "ABCD"), (FOUR, "ABAB")]
+)
+def test_a_scheme_that_fits_its_stanza_says_nothing(text, scheme):
+    assert not [w for w in warnings_of(text, {"rhyme": scheme}) if w[1] == "scheme"]
