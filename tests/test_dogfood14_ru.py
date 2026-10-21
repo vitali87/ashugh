@@ -385,3 +385,14 @@ def test_other_toml_errors_get_no_quote_hint():
     with pytest.raises(SpecError) as e:
         loads("syllables = = 8\n")
     assert "quotes" not in str(e.value)
+
+
+@pytest.mark.parametrize("line", ["Стоит предо мною", "Стоит надо мною"])
+def test_predo_is_free_like_peredo(line):
+    report = scan(line + "\n", from_dict({"language": "ru", "meter": "amphibrach"}))
+    assert report.lines[0].ok, report.lines[0].issues
+
+
+def test_pred_is_a_proclitic():
+    w = line_words("пред тобой")[0]
+    assert w.clitic
