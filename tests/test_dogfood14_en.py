@@ -115,3 +115,64 @@ def test_contractions_are_read_as_the_dictionary_lists_them(token):
 
     listed = en.TABLE.get(token)
     assert listed is not None and en.lookup(token) == listed.split("|")
+
+
+@pytest.mark.parametrize("token", ["liberty", "poverty", "tenderly", "property", "bitterly"])
+def test_no_syncope_with_a_consonant_between_er_and_y(token):
+    assert en_word(token).drop is None
+
+
+@pytest.mark.parametrize("token", ["memory", "mystery", "every"])
+def test_mem_ry_syncope_stays(token):
+    assert en_word(token).drop is not None
+
+
+def test_liberty_does_not_fit_five():
+    rep = scan("[V]\nWe sang of liberty\n", from_dict({"language": "en", "syllables": 5}))
+    assert not rep.ok
+
+
+@pytest.mark.parametrize("line, size", [("Ba-da-ba-ba-ba, ba-da-ba-ba-ba", 10), ("Ba ba ba", 3)])
+def test_a_capitalized_vocable_is_no_abbreviation(line, size):
+    (ln,) = analyze_lines(line, Spec(language="en"))
+    assert sum(w.size for w in ln.words) == size
+
+
+def test_a_vocable_in_capitals_is_still_letters():
+    (ln,) = analyze_lines("We met at the BA", Spec(language="en"))
+    assert ln.words[-1].spelled
+
+
+@pytest.mark.parametrize("token", ["NYC's", "MVP's"])
+def test_a_possessive_abbreviation_is_spelt(token):
+    w = en_word(token)
+    assert w.spelled and w.size == 3 and w.syllables[-1].text.endswith("'s")
+
+
+@pytest.mark.parametrize(
+    "token, size, stress",
+    [
+        ("loveliness", 3, 0),
+        ("homeliness", 3, 0),
+        ("timelessly", 3, 0),
+        ("gracelessly", 3, 0),
+        ("wakefulness", 3, 0),
+    ],
+)
+def test_a_suffix_after_a_silent_e_stem_adds_only_its_own_syllable(token, size, stress):
+    w = en_word(token)
+    assert (w.size, w.readings[0].stress) == (size, stress) and not w.guessed
+
+
+def test_loveliness_fits_an_iamb_of_eight():
+    rep = scan(
+        "[V]\nI sing of all your loveliness\n",
+        from_dict({"language": "en", "syllables": 8, "meter": "iamb4"}),
+    )
+    assert rep.ok, [i.message for i in rep.issues]
+
+
+@pytest.mark.parametrize("token, size", [("y'all'd've", 2), ("y'all'd", 1), ("y'all'll", 1)])
+def test_stacked_contractions_on_yall(token, size):
+    w = en_word(token)
+    assert w.size == size and not w.guessed

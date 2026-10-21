@@ -235,13 +235,18 @@ def lookup(norm: str) -> list[str] | None:
         base = lookup(norm[:-3])
         if base:
             return [v + " AH0 V" for v in base]
+    for clitic, phones in (("'d", " D"), ("'ll", " L")):  # y'all'd, y'all'll
+        if norm.endswith(clitic) and len(norm) > len(clitic) + 1:
+            base = lookup(norm[: -len(clitic)])
+            if base:
+                return [v + phones for v in base]
     if norm.endswith("s") and not norm.endswith(("ss", "'s")) and len(norm) > 3:
         # lances, besieges, rhapsodies: a plural the dictionary lacks, its singular's
         for stem in (norm[:-1], norm[:-2], norm[:-3] + "y" if norm.endswith("ies") else ""):
             raw = TABLE.get(stem) if len(stem) > 1 else None
             if raw and (stem + "s" == norm or stem.endswith(("s", "x", "z", "ch", "sh", "y"))):
                 return [v + _s_ending(v) for v in raw.split("|")]
-    derived = _derived(norm)
+    derived = _derived(norm) or _suffixed(norm)
     if derived:
         return derived
     parts = _compound_parts(norm)
@@ -262,12 +267,14 @@ def _elided(norm: str) -> list[str] | None:
     k = norm.find("'")
     if k <= 0 or k + 1 >= len(norm) or not (norm[k - 1].isalpha() and norm[k + 1].isalpha()):
         return None
-    for vowel in "eoiau":
-        full = lookup(norm[:k] + vowel + norm[k + 1 :])
-        if full:
-            out = [v for v in (_drop_after_stress(v) for v in full) if v]
-            return list(dict.fromkeys(out)) or None
-    return None
+    words = [norm[:k] + vowel + norm[k + 1 :] for vowel in "eoiau"]
+    # a listed word first: fam'ly is family, not fame-ly
+    listed = (raw.split("|") for raw in (TABLE.get(w) for w in words) if raw)
+    full = next(listed, None) or next((f for f in map(lookup, words) if f), None)
+    if not full:
+        return None
+    out = [v for v in (_drop_after_stress(v) for v in full) if v]
+    return list(dict.fromkeys(out)) or None
 
 
 def _drop_after_stress(pron: str) -> str | None:
@@ -303,6 +310,25 @@ def _derived(norm: str) -> list[str] | None:
                 if stem[-1] != norm[len(stem)]:
                     continue  # stopped: stop and a doubled p, not stopp
             return [v + _ending_phones(v, ending) for v in raw.split("|")]
+    return None
+
+
+# Suffixes that begin on a consonant, so the stem stays as it is (a silent e
+# silent still): loveliness, timelessly, wakefulness, from lovely, timeless, wakeful.
+CONSONANT_SUFFIXES = (("ness", "N AH0 S"), ("less", "L AH0 S"), ("ful", "F AH0 L"), ("ly", "L IY0"))
+
+
+def _suffixed(norm: str) -> list[str] | None:
+    """A -ness, -less, -ful or -ly form the dictionary lacks, from its stem, a
+    final i written for its y (loveli-ness of lovely)."""
+    for suffix, phones in CONSONANT_SUFFIXES:
+        stem = norm[: -len(suffix)]
+        if not norm.endswith(suffix) or len(stem) < 3:
+            continue
+        for candidate in (stem, stem[:-1] + "y" if stem.endswith("i") else ""):
+            found = lookup(candidate) if candidate else None
+            if found:
+                return [v + " " + phones for v in found]
     return None
 
 
@@ -554,7 +580,7 @@ LETTER_NAMES = {
 }  # fmt: skip
 # Abbreviations spelt like a word: LA is L-A, not la, wherever the line is not in capitals.
 SPELLED_OUT = {"LA", "US", "AM", "PM", "ID", "RIP", "USA"}
-ABBREVIATION_RE = re.compile(r"([A-Z]{2,5})(s?)")
+ABBREVIATION_RE = re.compile(r"([A-Z]{2,5})(s|'s)?")  # DMs, NYC's
 # Words with no vowel letter that are sounds, not letters: HMM, SHH, PSST.
 INTERJECTIONS = set(
     "hm hmm hmmm mm mmm mhm sh shh shhh ssh psst pst brr brrr tsk zzz grr grrr pfft pff".split()
@@ -838,7 +864,7 @@ def analyze_word(
     if (
         variants
         and len(variants) > 1
-        and token.islower()
+        and not token.isupper()  # Ba at a line start too; BA is the letters
         and re.search("[aeiouy]", norm)
         and _letter_spelling(norm, variants[0])
     ):
@@ -885,8 +911,15 @@ def analyze_word(
             if word.drop is None:  # fa-vo-rite, fav-rite: a reduced vowel either way
                 word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare))
     vowels, marks = full[0][2], full[0][1]
-    if word.drop is None and len(vowels) >= 3 and vowels[-2:] == ["ER", "IY"] and marks[-2] == 0:
-        word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er before a final y
+    nuclei = [k for k, ph in enumerate(full[0][0]) if is_vowel(ph)]
+    if (
+        word.drop is None
+        and len(vowels) >= 3
+        and vowels[-2:] == ["ER", "IY"]
+        and marks[-2] == 0
+        and nuclei[-1] == nuclei[-2] + 1  # not lib-er-ty, ten-der-ly: a consonant between
+    ):
+        word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er right before a final y
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
     if word.drop is None and _smoothed(*full[0]):
         word.drop = len(vowels) - 1
