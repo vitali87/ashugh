@@ -224,3 +224,21 @@ def test_a_compound_with_a_droppable_part_keeps_its_drop():
 )  # fmt: skip
 def test_split_display_negatives_and_neighbours(word, split):
     assert pieces(word) == split
+
+
+def test_a_partner_ending_in_a_leaning_pronoun_is_asked_for_as_the_line_sings_it():
+    from ashugh.fit import requests_for
+
+    text = "My heart is broke in two\nI need a brand new tune\nI think I'm over you\n"
+    reqs = {r.id: r for r in requests_for(text, from_dict({"language": "en", "rhyme": "AAA"}))}
+    assert reqs["L1"].ending == "masculine"
+    assert reqs["L1"].rhyme_with == ["you"] and reqs["L1"].rhyme_sound == "u"
+    assert "over you" not in reqs["L2"].rhyme_with
+
+
+def test_a_partner_with_one_reading_is_asked_for_as_before():
+    from ashugh.fit import requests_for
+
+    text = "My heart is broke in two\nI need a brand new tune\n"
+    reqs = {r.id: r for r in requests_for(text, from_dict({"language": "en", "rhyme": "AA"}))}
+    assert reqs["L2"].rhyme_with == ["two"] and reqs["L2"].ending == "masculine"

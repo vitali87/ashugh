@@ -639,7 +639,7 @@ def _request(
             anchors = [head]
         for k in anchors:
             current = _current(variables.get(k), lines[k] if partners_from_lines else None)
-            t = current.tail if current else None
+            t = _sung_tail(current) if current else None
             if t is not None:
                 rhyme_with.append(t.word)
                 sound = sound or t.rime
@@ -747,6 +747,12 @@ def _near_misses(var: _Var) -> list[tuple[str, str]]:
     return [
         (c.text, "fits the line, but no partner rhymes with it") for c in var.pool if not c.original
     ]
+
+
+def _sung_tail(lr: LineReport) -> rhyme.Tail | None:
+    """The partner's rhyme as its line sings it: you on the beat in I'm over you,
+    not the over you its pronoun may lean into."""
+    return next((t for t in lr.tails if t.post == lr.fit.ending), lr.tail)
 
 
 def _current(var: _Var | None, original: LineReport | None) -> LineReport | None:
