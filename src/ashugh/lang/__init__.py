@@ -140,6 +140,7 @@ def analyze(
         ru.prefer_names(words, _sentence_starts(tokens, text))
         ru.vocables(words)
         ru.after_prepositions(words)
+        ru.after_genitive(words)
         ru.second_locatives(words)
         ru.marked_leans(words)
         ru.ne_with_pronoun(words)

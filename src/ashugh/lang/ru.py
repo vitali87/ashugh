@@ -1148,6 +1148,44 @@ def second_locatives(words: list[Word]) -> None:
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
 
 
+# Masculine nouns whose end-stressed form in -а or -я is the nominative plural
+# (дома́, леса́), the stem-stressed one the genitive singular a preposition such as у
+# or из asks: у до́ма, из ле́са, never у дома́.
+PLURAL_IN_A = frozenset(
+    """дома леса берега города снега голоса острова луга рога глаза паруса вечера
+    поезда тополя номера адреса колокола края века цвета мастера облака бока хлеба
+    сорта повара катера доктора профессора директора якоря хутора купола жемчуга""".split()
+)
+# Feminine nouns the other way round: the genitive singular is stressed on the
+# ending (у реки́, из воды́), the plural that is spelt alike on the stem.
+GENITIVE_IN_END = frozenset(
+    """реки руки ноги горы стены зимы весны воды души земли звезды травы слезы
+    головы бороды сестры жены трубы губы доски щеки норы дыры""".split()
+)
+GENITIVE_PREPOSITIONS = frozenset(
+    "у из от до без для около возле после вокруг среди мимо из-за из-под".split()
+)
+
+
+def after_genitive(words: list[Word]) -> None:
+    """у до́ма, из ле́са, у реки́, из воды́: no plural after a preposition of the
+    genitive, where a genitive singular is spelt like it."""
+    for prev, w in zip(words, words[1:]):
+        if w.lang != CODE or prev.norm not in GENITIVE_PREPOSITIONS:
+            continue
+        if w.readings and w.readings[0].source in ("mark", "user"):
+            continue
+        last = w.size - 1
+        if w.norm in PLURAL_IN_A:
+            kept = [r for r in w.readings if r.stress != last]
+        elif w.norm.replace("ё", "е") in GENITIVE_IN_END:
+            kept = [r for r in w.readings if r.stress == last]
+        else:
+            continue
+        if kept:
+            w.readings = tuple(replace(r, penalty=0.0) if k == 0 else r for k, r in enumerate(kept))
+
+
 # The locative singular of an adjective or pronoun before a noun: э́том, на́шем, моём.
 LOCATIVE_ADJECTIVE = ("ом", "ем", "ём")
 

@@ -131,3 +131,40 @@ def test_the_second_locative_is_end_stressed_after_an_adjective_too(phrase):
 def test_a_noun_after_a_noun_in_om_is_left_alone():
     (ln,) = analyze_lines("в доме саду", Spec(language="ru"))
     assert len(ln.words[-1].readings) >= 1 and ln.words[-1].readings[0].source != "rule"
+
+
+@pytest.mark.parametrize("phrase", ["у дома", "из леса", "до города", "для голоса", "от берега"])
+def test_after_a_genitive_preposition_a_plural_in_a_is_no_reading(phrase):
+    (ln,) = analyze_lines(phrase, Spec(language="ru"))
+    w = ln.words[-1]
+    assert w.size - 1 not in {r.stress for r in w.readings}
+
+
+@pytest.mark.parametrize("phrase", ["из окна", "у моря"])
+def test_other_words_after_a_genitive_preposition_keep_their_readings(phrase):
+    (ln,) = analyze_lines(phrase, Spec(language="ru"))
+    assert ln.words[-1].readings[0].stress == ru.analyze_word(ln.words[-1].text).readings[0].stress
+
+
+def test_suno_hints_no_stress_the_line_still_fails_with():
+    out = suno.format_song(
+        "Сижу у дома на скамейке\n",
+        tags=False,
+        spec=from_dict({"language": "ru", "meter": "trochee"}),
+    ).text
+    assert "домА" not in out
+
+
+@pytest.mark.parametrize(
+    "phrase", ["у реки", "из воды", "до горы", "для души", "без головы", "от весны"]
+)
+def test_after_a_genitive_preposition_a_feminine_is_its_genitive(phrase):
+    (ln,) = analyze_lines(phrase, Spec(language="ru"))
+    w = ln.words[-1]
+    assert {r.stress for r in w.readings} == {w.size - 1}
+
+
+def test_suno_hints_the_usual_reading_in_a_line_that_fails_its_meter():
+    spec = from_dict({"language": "ru", "meter": "iamb"})
+    out = suno.format_song("Небо синее над рекой\n", tags=False, spec=spec).text
+    assert "синЕе" not in out

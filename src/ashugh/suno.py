@@ -293,7 +293,10 @@ def _render(
             new = "-".join(names)
             notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))
             return new
-        new = _russian(w, token, chosen.get(i), stress, n, notes)
+        st = chosen.get(i)
+        if lr.fit.off_beat and w.ambiguous and w.readings:
+            st = w.readings[0].stress  # the line fails its meter anyway: the usual reading
+        new = _russian(w, token, st, stress, n, notes)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy" and w.spelled:  # ԱՄՆ as Ա-Մե-Նե, A-Me-Ne
         if mode == "latin":
