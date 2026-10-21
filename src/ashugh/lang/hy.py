@@ -281,6 +281,11 @@ def root_points(norm: str, roots: frozenset[str] | set[str]) -> list[int]:
             norm[k:j] in roots for j in range(k + MIN_ROOT, len(norm) + 1)
         ):
             out.add(len(segments(norm[: k + 1])))
+    # the negative ան- keeps its root's schwa too: ան-շը-նորհք, ան-սը-խալ, ան-խը-ռով
+    if norm.startswith("ան") and any(
+        norm[2:j] in roots for j in range(2 + MIN_ROOT, len(norm) + 1)
+    ):
+        out.add(len(segments(norm[:3])))
     return sorted(out)
 
 
@@ -306,7 +311,15 @@ def stem_final(norm: str) -> bool:
         return True
     return any(
         norm[k:] in words for k in range(MIN_HEAD, len(norm) - 2) if norm[k - 1 : k] in LINKERS
-    )
+    ) or any(norm.startswith(h) and norm[len(h) :] in words for h in COMPOUND_HEADS)
+
+
+# Heads of compounds with no linker: the tens of քսանչորս, երեսունչորս, and գեր- of
+# գերմարդ, before a stem whose final ս or դ is its own.
+COMPOUND_HEADS = (
+    "քսան", "երեսուն", "քառասուն", "հիսուն", "վաթսուն", "յոթանասուն", "ութսուն", "իննսուն",
+    "տասն", "գեր",
+)  # fmt: skip
 
 
 def _onsets(cs: list[Seg]) -> list[int]:
@@ -514,7 +527,7 @@ def override_error(word: str, value: str) -> str | None:
     def bare(text: str) -> str:  # և as the ե and վ it is drawn for: Ե-րե-վան is Երևան
         return normalize(text).replace("-", "").replace("ը", "").replace("և", "եվ")
 
-    if bare(value) != bare(word):
+    if bare(value) not in (bare(word), bare(reformed(word))):  # Աստուած as Աստ-ված
         return f"{value!r} spells a different word"
     return None
 
@@ -660,7 +673,8 @@ def read_es(word: Word, auxiliary: bool) -> None:
 VERB_ENDINGS = tuple(
     sorted(
         "ել ալ եմ ես ենք եք են ամ աս անք աք ան ի իր ինք իք ին եի եիր եր եինք եիք եին ա "
-        "ացի եցի ում ած այի այիր ար այինք այիք ային".split(),
+        "ացի եցի ում ած այի այիր ար այինք այիք ային "
+        "աց եց ավ ացիր եցիր ացինք եցինք ացիք եցիք ացին եցին ալու ելու".split(),
         key=len,
         reverse=True,
     )
@@ -671,17 +685,21 @@ NOT_PREFIXED = ("չնչին", "կծծի")  # roots that only look like չ- or կ
 def _stem_schwas(norm: str, segs: list[Seg]) -> list[int]:
     """Where a word keeps schwas its sounds alone would not give it: after the
     negative չ- or the future կ- before a stem that opens on two consonants
-    (չը-գը-նամ, կը-գը-նամ, as գը-նալ), and in a reduplicated root (բըլ-բը-լալ)."""
+    (չը-գը-նամ, կը-գը-նամ, as գը-նալ) or on a consonant, a stop and another
+    (կը-գըտ-նեմ, as գըտ-նել), and in a reduplicated root (բըլ-բը-լալ)."""
     if len(segs) < 5 or any(s.vowel for s in segs[:4]):
         return [] if len(segs) < 4 or any(s.vowel for s in segs[:3]) else _prefixed(norm, segs)
     same = [s.ph.replace("ɾ", "r") for s in segs[:4]]  # թրթռ- repeats with ր and ռ
     if same[0] == same[2] and same[1] == same[3]:
         return [1, 3]
+    if segs[4].vowel and is_stop(segs[2].ph) and norm[:1] in "չկ":
+        return _prefixed(norm, segs)
     return []
 
 
 def _prefixed(norm: str, segs: list[Seg]) -> list[int]:
-    if not segs[3].vowel or norm.startswith(NOT_PREFIXED):
+    long_stem = not segs[3].vowel and len(segs) > 4 and segs[4].vowel and is_stop(segs[2].ph)
+    if not (segs[3].vowel or long_stem) or norm.startswith(NOT_PREFIXED):
         return []
     if segs[1].ph in PROTHESIS_FIRST and is_stop(segs[2].ph):
         return []  # չ- before ըս-պա-սել: the prothesis stays
@@ -695,9 +713,15 @@ def _prefixed(norm: str, segs: list[Seg]) -> list[int]:
     # կգնամ, կգնա of գնալ, կքնեմ, կքնի of քնել; not a root like կթխա or կշռել.
     base = stem[: -len(ending)]
     for infinitive, endings in FUTURE_ENDINGS:
-        if ending in endings and base + infinitive in cluster_roots():
+        verb = base + infinitive
+        if ending in endings and (verb in cluster_roots() or verb in FUTURE_VERBS):
             return [1, 2]
     return []
+
+
+# Verbs that open on two consonants with a schwa between which the compound roots
+# leave out (they would break a compound), so the future still knows them: կգրեմ.
+FUTURE_VERBS = frozenset({"գրել", "կրել", "գտնել", "մտնել", "կտրել", "կպնել"})
 
 
 FUTURE_ENDINGS = (
@@ -843,23 +867,55 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
     )
 
 
-# Classical spellings the 1922 reform replaced, read as their reformed ones: իւ is
-# յու (ձիւն, իւր), ոյ before a consonant ույ (լոյս), եա before ն or յ յա (կեանք,
-# Թումանեան); never a loan's եա (ռեալ) or a final ոյ (Նոյ).
+# Classical spellings the 1922 reform replaced, read as their reformed ones, in
+# order: ու before a vowel is վ (Աստուած, արուեստ: OU_VOWEL); եաւ is և (սեաւ); a
+# final իւ is իվ (թիւ, հաշիւ), any other իւ յու (ձիւն, իւր); յեա and եա before a classical
+# ending are յա (հայեացք, կեանք, անցեալ, Թումանեան, ուրախութեամբ, մանեակ); ոյ
+# before a consonant is ույ (լոյս); a polysyllable's final -այ or -ոյ drops its յ
+# (հիմայ, հետոյ, and կայ); and then a յ that opens the word is հ (յոյս, յետոյ).
+# Never a loan's: եա before another consonant or an ending (սեանս, Կորեայում,
+# ռեալ), ոյ before ֆ (բոյֆրենդ), ու before a vowel in a loan (դուետ), a final ոյ
+# of one syllable (Նոյ), or a name's (Նիկոլայ, Տոլստոյ).
+_C = "բգդզթժլխծկհձղճմյնշչպջռսվտրցփք"
 CLASSICAL = (
+    (re.compile("եաւ"), "և"),
+    (re.compile("իւ$"), "իվ"),
     (re.compile("իւ"), "յու"),
-    (re.compile("ոյ(?=[^\u0561-\u0587]*[բգդզթժլխծկհձղճմյնշչպջռսվտրցփքֆ])"), "ույ"),
-    (re.compile("եա(?=[նյ])"), "յա"),
-    (re.compile("եօ"), "յո"),
+    (re.compile("յեա(?=[" + _C + "])"), "յա"),
+    (re.compile("եա(?=ն(?:$|[քցիըեաո])|լ(?:$|ի|ն|ը)|կ(?:$|ը|ն|ի)|մբ|ց|յ(?:$|[" + _C + "]))"), "յա"),
+    (re.compile("ոյ(?=[^\u0561-\u0587]*[" + _C + "])"), "ույ"),
 )
+FINAL_YOD = re.compile("(?<=[աո])յ$")  # հիմայ, հետոյ: the յ unsung, so unwritten
+LOAN_CLASSICAL = ("ռեալ", "իդեալ", "դուետ", "սիլուետ", "լուիզ", "ռուանդ", "կորեա", "սեանս")
+# Common classical forms with a final silent յ, whose reformed spelling drops it; a
+# reformed word may end in -այ too (ամերիկահայ, դերբայ, սամուրայ), so another word
+# drops it only beside another classical sign.
+FINAL_YOD_WORDS = {
+    **{w: w[:-1] for w in "կայ չկայ հիմայ վրայ տղայ ապագայ հետոյ աստծոյ".split()},
+    "աստուծոյ": "աստծո", "յետոյ": "հետո",
+}  # fmt: skip
+# ու before a vowel is վ in a classical stem (Աստուած, արուեստ, տուի), or beside
+# another classical sign; not in a reformed word or a name (այնուամենայնիվ, Էդուարդ).
+OU_VOWEL = re.compile("(?<=[" + _C + "])ու(?=[աեէիո])")
+OU_STEMS = ("աստուած", "արուեստ", "տուի", "տուեց", "տուել", "տուող")
 
 
 def reformed(token: str) -> str:
     """token in the reformed spelling, its letter case kept: կեանք as կյանք."""
     low = token.lower()
-    new = low
+    if low.startswith(LOAN_CLASSICAL) or "ֆ" in low:
+        return token
+    new = FINAL_YOD_WORDS.get(low, low)
     for pattern, repl in CLASSICAL:
         new = pattern.sub(repl, new)
+    classical = new != low  # a sign the word is in the old spelling
+    if low.startswith(OU_STEMS) or (classical and not token[:1].isupper()):
+        new = OU_VOWEL.sub("վ", new)
+    vowels = sum(seg.vowel for seg in segments(new))
+    if classical and vowels > 1 and not token[:1].isupper() and FINAL_YOD.search(new):
+        new = FINAL_YOD.sub("", new)  # յոյսայ, but մակբայ, Նիկոլայ, Տոլստոյ
+    if new != low and new[:1] == "յ" and new[1:2] in "աեէիոու":
+        new = "հ" + new[1:]  # յոյս, յետոյ: with another classical sign, a յ that opens is հ
     if new == low:
         return token
     if len(token) > 1 and token.isupper():

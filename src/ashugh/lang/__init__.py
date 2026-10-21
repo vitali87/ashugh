@@ -144,6 +144,7 @@ def analyze(
     in_latin = lang == hy.CODE and latin_armenian(tokens)
     armenian = latin_words_in_armenian(tokens, in_latin) if lang == hy.CODE else []
     glued = _glued_to_ampersand(tokens, text)
+    seen: dict[str, Word] = {}
     for k, token in enumerate(tokens):
         if k in glued:  # AT&T, R&B: letters, whatever word they spell
             words.append(en.analyze_word(token, lexicon, capitals, letters=True))
@@ -162,17 +163,22 @@ def analyze(
             and_.text = token
             words.append(and_)
             continue
+        if token in seen:  # a word the line repeats (la la la): analyzed once, copied
+            words.append(replace(seen[token], notes=list(seen[token].notes)))
+            continue
         script = script_of(token)
         if script == en.CODE:
-            words.append(en.analyze_word(token, lexicon, capitals))
+            word = en.analyze_word(token, lexicon, capitals)
         elif script == ru.CODE:
-            words.append(ru.analyze_word(token, lexicon, capitals))
+            word = ru.analyze_word(token, lexicon, capitals)
         elif script == hy.CODE:
-            words.append(hy.analyze_word(token, lexicon, capitals))
+            word = hy.analyze_word(token, lexicon, capitals)
         elif script in ANALYZERS:
-            words.append(ANALYZERS[script].analyze_word(token, lexicon))
+            word = ANALYZERS[script].analyze_word(token, lexicon)
         else:
-            words.append(foreign_word(token))
+            word = foreign_word(token)
+        seen[token] = replace(word, notes=list(word.notes))
+        words.append(word)
     if lang == "hy" or any(w.lang == "hy" for w in words):
         _armenian_elision(words)
     if any(w.lang == "ru" for w in words):
