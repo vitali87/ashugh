@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Callable
 
 from .model import Line
 
@@ -17,7 +18,6 @@ from .model import Line
 TAG_RE = re.compile(r"^\ufeff?\s*(?:\([^)]*\)\s*)*\[[^\]]*\](?:\s*(?:\[[^\]]*\]|\([^)]*\)))*\s*$")
 BRACKET_RE = re.compile(r"\[([^\]]*)\]")
 NOTE_RE = re.compile(r":|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Verse 2 - Rap]
-PAREN_RE = re.compile(r"\([^)]*\)")
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
     r"(?<![^\W_])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
@@ -238,9 +238,35 @@ def word_spans(text: str) -> list[tuple[int, int, str]]:
     return [(m.start(), m.end(), m.group(0)) for m in WORD_RE.finditer(text)]
 
 
+def aside_spans(text: str) -> list[tuple[int, int]]:
+    """(start, end) of each backing vocal: text in parentheses, with any that sit
+    inside it ((and twinkle (on the) milky way) is one); a ( never closed, or a )
+    never opened, is no aside."""
+    opened, spans = [], []
+    for k, ch in enumerate(text):
+        if ch == "(":
+            opened.append(k)
+        elif ch == ")" and opened:
+            spans.append((opened.pop(), k + 1))
+    out: list[tuple[int, int]] = []
+    for a, b in sorted(spans):
+        if not out or a >= out[-1][1]:  # not inside the one before
+            out.append((a, b))
+    return out
+
+
+def sub_asides(text: str, fn: Callable[[str], str]) -> str:
+    """text with each backing vocal, parentheses and all, replaced by fn of it."""
+    out, last = [], 0
+    for a, b in aside_spans(text):
+        out += [text[last:a], fn(text[a:b])]
+        last = b
+    return "".join(out) + text[last:]
+
+
 def token_spans(text: str) -> list[tuple[int, int, str]]:
     """(start, end, token) of every word outside parentheses, as tokenize sees them."""
-    masked = PAREN_RE.sub(lambda m: " " * len(m.group(0)), text)
+    masked = sub_asides(text, lambda aside: " " * len(aside))
     spans = []
     for m in WORD_RE.finditer(masked):
         parts = m.group(0).split("-")
@@ -257,7 +283,7 @@ def token_spans(text: str) -> list[tuple[int, int, str]]:
 
 
 def has_digits(text: str) -> bool:
-    return bool(DIGIT_RE.search(PAREN_RE.sub(" ", text)))
+    return bool(DIGIT_RE.search(sub_asides(text, lambda _: " ")))
 
 
 def parse(text: str) -> list[Line]:

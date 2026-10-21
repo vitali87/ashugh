@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -195,8 +194,7 @@ def _armenian_asides(
     line of their own (ո՞ւր ես is you are, not I) with the spec's lexicon, and in
     Latin letters the Armenian full stop and pause as . and ,."""
 
-    def aside(m: re.Match) -> str:
-        inner = m.group(0)
+    def aside(inner: str) -> str:
         spans = lyrics.word_spans(inner)
         words = languages.analyze("hy", [t for _, _, t in spans], lexicon, inner[1:-1])
         if len(words) != len(spans):  # a token the analysis split or joined: word by word
@@ -211,7 +209,7 @@ def _armenian_asides(
             last = b
         return _place_marks("".join(out) + inner[last:], aside=True)
 
-    line = lyrics.PAREN_RE.sub(aside, line)
+    line = lyrics.sub_asides(line, aside)
     if mode == "latin":
         line = line.translate(ARMENIAN_STOPS)
     return line
@@ -221,8 +219,7 @@ def _russian_asides(line: str, n: int, notes: list[Note]) -> str:
     """The backing vocals in parentheses with the ё the line would get: моё (моё),
     where only one spelling is a word; no stress marks, which want a meter."""
 
-    def aside(m: re.Match) -> str:
-        inner = m.group(0)
+    def aside(inner: str) -> str:
         out, last = [], 0
         for a, b, token in lyrics.word_spans(inner):
             if not any(ru.is_cyrillic(ch) for ch in token):
@@ -231,7 +228,7 @@ def _russian_asides(line: str, n: int, notes: list[Note]) -> str:
             last = b
         return "".join(out) + inner[last:]
 
-    return lyrics.PAREN_RE.sub(aside, line)
+    return lyrics.sub_asides(line, aside)
 
 
 def _split_ending(line: str) -> tuple[str, str]:

@@ -645,8 +645,13 @@ def _trailing_asides(body: str) -> tuple[int, str, str] | None:
     j = back(k, ASIDE_PUNCT)
     after, close, start = body[j:k], j, None
     while j > 0 and body[j - 1] == ")":
-        o = body.rfind("(", 0, j - 1)
-        if o < 0 or ")" in body[o + 1 : j - 1]:
+        o, depth = j - 1, 0
+        while o >= 0:  # the ( that closes at j, past any nested pairs: (and (oh) yeah)
+            depth += {")": 1, "(": -1}.get(body[o], 0)
+            if depth == 0:
+                break
+            o -= 1
+        if o < 0:
             break
         start = o
         j = back(back(o, None), ASIDE_PUNCT)  # (oh), (yeah): the comma between

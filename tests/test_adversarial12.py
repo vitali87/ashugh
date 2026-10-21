@@ -422,3 +422,35 @@ def test_suno_marks_an_ambiguous_stress_in_capitals_with_an_acute():
 
 def test_suno_leaves_a_writers_capital_mark_as_it_is():
     assert "́" not in suno.format_song("Я вижу замОк\n", tags=False).text
+
+
+@pytest.mark.parametrize(
+    "line, words",
+    [
+        ("I see (and twinkle (on the) milky way) the stars", ["I", "see", "the", "stars"]),
+        ("I see ((oh)) the stars", ["I", "see", "the", "stars"]),
+        ("I see (oh) (and (yeah)) stars", ["I", "see", "stars"]),
+        ("I see (oh stars", ["I", "see", "oh", "stars"]),
+        ("I see oh) stars", ["I", "see", "oh", "stars"]),
+    ],
+)
+def test_a_backing_vocal_may_hold_parentheses_of_its_own(line, words):
+    assert lyrics.tokenize(line) == words
+
+
+def test_digits_inside_a_nested_backing_vocal_are_not_flagged():
+    assert not lyrics.has_digits("I see (and (x2) twinkle 4 you) the stars")
+
+
+def test_a_replaced_line_keeps_a_nested_backing_vocal():
+    from ashugh.fit import replace_lines
+
+    old = "I walked the long river side (and (oh) yeah)\n"
+    assert replace_lines(old, {1: "I walked the riverside"}) == (
+        "I walked the riverside (and (oh) yeah)\n"
+    )
+
+
+def test_suno_reads_a_nested_backing_vocal_as_one():
+    out = suno.format_song("Я жду тебя (моё (моё) моё)\n", tags=False).text
+    assert out.endswith("(моё (моё) моё)\n")
