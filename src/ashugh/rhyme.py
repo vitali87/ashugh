@@ -126,7 +126,9 @@ def _as_sung(word, reading, elided: bool):
     if word.drop >= len(vs):
         return reading
     cut = vs[word.drop]
-    return replace(reading, phones=reading.phones[:cut] + reading.phones[cut + 1 :])
+    # fire sung in one syllable is [faɪɹ], not [faɪ]: an r-colored vowel leaves its r
+    kept = ("ɹ",) if reading.phones[cut] == "ɚ" else ()
+    return replace(reading, phones=reading.phones[:cut] + kept + reading.phones[cut + 1 :])
 
 
 def _shifted_tail(words, w: int) -> Tail | None:

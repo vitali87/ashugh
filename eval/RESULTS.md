@@ -225,12 +225,12 @@ separate worktree while later work went on.
 | Claude alone | 985 / 1,000 (98.5%) | 42 / 48 |
 | Claude with ashugh | **1,000 / 1,000** | **48 / 48** |
 
-Read one by one, the 15 flagged lines were 3 real errors and 12 false
-alarms:
+Read one by one, the 15 flagged lines were 2 real errors and 13 false
+alarms (a later round moved the first row from the one column to the other):
 
 | flagged | real? | after fit |
 |---|---|---|
-| hy-mother: Ոչ ոք չի սիրում ինձ քեզ պես, against …անցել ես | yes: the rhyme falls on an unstressed auxiliary | Ինձ ամենից շատ սիրել ես |
+| hy-mother: Ոչ ոք չի սիրում ինձ քեզ պես, against …եմ անցել ես | no: after եմ (I have) the closing ես is the pronoun I, stressed, and rhymes with պես | Ինձ ամենից շատ սիրել ես |
 | en-waltz: One final waltz, and the evening is done | yes: *fi-* on a weak beat of the dactyl | Last of the waltzes, the evening is done |
 | ru-troika: Рядом ты, моя милая, нежная | yes, by the strict standard: an adverb stressed on the anacrusis | Ты со мной, моя милая, нежная |
 | ru-troika: Только сердце навеки с тобой | no: только is a particle, metrically weak | Но лишь сердце навеки с тобой |
@@ -239,8 +239,8 @@ alarms:
 | ru-grid-call: …номер искрится | no: the table has и́скрится for искри́тся | …номер лучится |
 
 The false alarms were fixed afterwards. As a regression check, not a
-measurement: with the fixed analyzer the same drafts raise only two of the
-three real flags. The troika line now passes: a later round found that the
+measurement: with the fixed analyzer the same drafts raise only one of the
+two real flags. The troika line now passes: a later round found that the
 canonical anapests of Fet and Nekrasov stress a whole word before the first
 beat (Утро дышит у ней на груди), and ashugh took that licence, so the
 strict standard this line broke is no longer the one it checks. One false alarm did harm: the hy-lullaby line was right, and the
