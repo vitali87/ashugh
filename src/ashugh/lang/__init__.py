@@ -152,7 +152,12 @@ def analyze(
             # need it, hold me, missing yóu on a beat; but all I want is yóu
             end.enclitic = end.free_end = True
         content = words[-3] if len(words) > 2 else None
-        if (
+        if end.norm in en.UNSTRESSED_OBJECTS and before.norm in en.PREPOSITIONS:
+            # put a ring ón it, I'm ón it: the preposition takes the stress and the
+            # rhyme, and it, which is all but never stressed, leans on it
+            before.clitic = before.weak = False
+            end.enclitic, end.free_end = True, False
+        elif (
             end.norm in en.OBJECTS
             and before.norm in en.PREPOSITIONS
             and content is not None

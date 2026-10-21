@@ -76,6 +76,7 @@ CONSONANTS_ARPA = {
 # Object pronouns: ending a line after a verb or a noun they lean on it (néed it,
 # hóld me) and rhyme with it, though a song may still rhyme on them (love yóu / true).
 OBJECTS = {"it", "me", "you", "him", "her", "them", "us", "ya", "em"}  # find ya, need 'em
+UNSTRESSED_OBJECTS = {"it", "them", "em"}  # all but never stressed: put a ring ón it
 PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
     "a",

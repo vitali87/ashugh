@@ -4,7 +4,7 @@ import pytest
 
 from ashugh import suno
 from ashugh.lang import en
-from ashugh.scan import analyze_lines
+from ashugh.scan import analyze_lines, scan
 from ashugh.spec import Spec, from_dict
 
 
@@ -96,3 +96,25 @@ def test_a_partner_rhymes_with_a_line_that_has_no_fix_as_it_is_written():
     assert [c.line for c in res.changes] == [5]
     assert res.text.splitlines()[4] == "We close up shop at nine"
     assert [u.line for u in res.unresolved] == [3]
+
+
+@pytest.mark.parametrize("line", ["put a ring on it", "I'm on it", "look at it"])
+def test_a_preposition_before_a_final_it_takes_the_stress(line):
+    rep = scan(line + "\n", from_dict({"language": "en"}))
+    assert rep.lines[0].fit.grid[-2:] == "/x"  # ón it
+
+
+@pytest.mark.parametrize(
+    "a, b", [("I'm on it", "you're on it"), ("put a ring on it", "go on and on it")]
+)
+def test_lines_ending_on_a_preposition_and_it_rhyme_on_the_preposition(a, b):
+    from ashugh import meter, rhyme
+
+    lines = analyze_lines(f"{a}\n{b}", Spec(language="en"))
+    tails = [rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines]
+    assert rhyme.match(*tails)[0] >= rhyme.THRESHOLD["near"]
+
+
+def test_a_final_me_after_a_preposition_may_still_take_the_beat():
+    rep = scan("come with me\n", from_dict({"language": "en", "meter": "trochee2"}))
+    assert rep.ok
