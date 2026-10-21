@@ -180,3 +180,22 @@ def test_an_english_line_in_an_armenian_song_stays_english():
 
     rep = scan("Ես քեզ սիրում եմ ամեն օր\nI love you more than words can say\n")
     assert rep.lines[1].line.lang == "en"
+
+
+LATIN_LINE = "Mtnem qo srtin u karotum\n"
+
+
+def test_script_mode_keeps_a_latin_typed_line_as_written():
+    out = suno.format_song(LATIN_LINE, tags=False, armenian="script", lang="hy").text
+    assert out.startswith("Mtnem qo srtin u karotum")
+
+
+def test_script_mode_still_splits_a_latin_typed_line():
+    out = suno.format_song(LATIN_LINE, tags=False, armenian="script", split="all", lang="hy").text
+    assert "ka-ro-tum" in out and "qo" in out
+
+
+def test_schwa_mode_writes_a_latin_typed_line_as_latin_mode_does():
+    schwa = suno.format_song(LATIN_LINE, tags=False, armenian="schwa", lang="hy").text
+    latin = suno.format_song(LATIN_LINE, tags=False, armenian="latin", lang="hy").text
+    assert schwa == latin

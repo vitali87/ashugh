@@ -423,6 +423,8 @@ def _armenian(
     after_link: bool = False,
 ) -> str:
     drop = w.drop if dropped else None
+    if mode == "script" and token[:1].isascii():  # Mtnem qo: Armenian typed in Latin
+        return _latin_typed(w, token, hold, n, notes)
     if mode == "latin":
         parts = [_latin(s.phones, k == drop, schwa) for k, s in enumerate(w.syllables)]
         if after_link and parts and parts[0].startswith("y"):
@@ -519,6 +521,20 @@ def _by_part(w: Word, token: str, parts: list[str]) -> list[tuple[str, list[str]
                 current, bound = [], bound_here
     groups.append((pieces[len(groups)], current))
     return groups if len(groups) == len(pieces) and all(g for _, g in groups) else [(token, parts)]
+
+
+def _latin_typed(w: Word, token: str, hold: bool, n: int, notes: list[Note]) -> str:
+    """A word of Armenian typed in Latin, in script mode: as the writer typed it
+    (qo, kyanqs), cut into its syllables when asked (ka-ro-tum)."""
+    sizes = [len(s.text.replace("ə", "")) for s in w.syllables]  # the schwas unwritten
+    if not hold or sum(sizes) != len(token):
+        return token
+    cuts = [sum(sizes[:k]) for k in range(len(sizes) + 1)]
+    pieces = _merge_vowelless([token[a:b] for a, b in zip(cuts, cuts[1:])], "latin")
+    new = "-".join(pieces)
+    if new != token:
+        notes.append(Note(n, "split", token, new, "script"))
+    return new
 
 
 def _ligatures(token: str, new: str) -> str:
