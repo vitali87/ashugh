@@ -132,3 +132,22 @@ def test_a_final_secondary_may_take_the_last_beat_of_an_english_anapest():
         "When the blue wave rolls nightly on deep Galilee.\n"
     )
     assert errors(text, language="en", meter="anapest4", rhyme="AA") == []
+
+
+@pytest.mark.parametrize("word, stress", [("саней", 1), ("саням", 1), ("санями", 1), ("санях", 1)])
+def test_the_sleigh_is_stressed_on_its_ending(word, stress):
+    assert ru.analyze_word(word).stress_options() == [stress]  # сане́й, as аэросане́й
+
+
+def test_a_troika_line_with_the_sleigh_is_a_clean_anapest():
+    assert errors("Не вернуть ни саней, ни коней,\n", language="ru", meter="anapest3") == []
+
+
+def test_a_broken_rhyme_names_the_best_reading_either_line_could_take():
+    text = (
+        "Кофе остыл на краю стола,\nТени ползут по белой стене,\n"
+        "Ты в эту ночь от меня ушла,\nИ тишина звенит в голове.\n"
+    )
+    rep = scan(text, from_dict({"syllables": 9, "rhyme": "ABAB", "tolerance": 1, "language": "ru"}))
+    (issue,) = [i for i in rep.issues if i.code == "rhyme"]
+    assert "slant 0.66" in issue.detail  # стене́ / голове́, not the rare сте́не's none

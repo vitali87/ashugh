@@ -625,6 +625,9 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
             partner = max(sorted(kept), key=lambda m: pair(m, k)[0])
             s, ta, tb = pair(partner, k)
             other = members[partner]
+            near = rhyme.match(_any_reading(other), _any_reading(lr))
+            if s < near[0] < rhyme.THRESHOLD[lr.min_rhyme]:
+                s, ta, tb = near  # стене́ / голове́ slant, not a rare сте́не's none
             a, b = (ta.word if ta else other.line.text), (tb.word if tb else lr.line.text)
             if partner > k:
                 a, b = b, a
@@ -643,6 +646,11 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
                     },
                 )
             )
+
+
+def _any_reading(lr: LineReport) -> list[rhyme.Tail]:
+    """The tails of every reading of a line's rhyme words, whatever the meter says."""
+    return rhyme.tails(lr.line, meter.free_fit(lr.line.words))
 
 
 def _same_word(members: list[LineReport], k: int, pair) -> None:
