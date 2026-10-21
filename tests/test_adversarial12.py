@@ -392,3 +392,20 @@ def test_a_long_armenian_cluster_is_cut_in_time_linear_in_its_length():
     assert w.size == 46
     short = hy.analyze_word("բժշկ" * 6 + "ել")
     assert "-".join(s.text for s in short.syllables).startswith("բըժ-շըկբ-ժըշկ")
+
+
+@pytest.mark.parametrize("a, b", [("我爱你", "中国"), ("κόσμε", "σου"), ("שלום", "עולם")])
+def test_words_of_a_script_not_read_do_not_rhyme(a, b):
+    from ashugh import meter, rhyme
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    lines = analyze_lines(f"{a}\n{b}", Spec())
+    assert all(rhyme.tails(ln, meter.fit(ln.words, "free")) == [] for ln in lines)
+
+
+def test_a_line_in_a_script_not_read_is_left_out_of_the_rhyme_check():
+    rep = scan("Γεια σου κόσμε\nI love you\nשלום עולם\nand I do\n", from_dict({"rhyme": "ABAB"}))
+    assert not [i for i in rep.issues if i.severity == "error"]
+    assert [lr.letter for lr in rep.lines] == ["-", "A", "-", "A"]
+    assert all("rhyme unknown" in i.detail for i in rep.issues if i.code == "script")

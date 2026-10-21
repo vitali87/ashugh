@@ -76,6 +76,8 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
         return []
     w = ss[k].word
     word = words[w]
+    if word.lang == "xx":  # a script ashugh cannot read: its sounds are unknown
+        return []
     chosen = fit.stresses.get(w)
     shifted = _shifted_tail(words, w) if ss[k].lead and w > 0 else None
     if chosen is None and shifted is not None:  # по́ лесу: the preposition took the stress

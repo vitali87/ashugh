@@ -502,7 +502,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 "script",
                 "warning",
                 "not Armenian, Russian or English",
-                f"{names}: syllables counted by vowel groups, stress unknown",
+                f"{names}: syllables counted by vowel groups, stress and rhyme unknown",
             )
         )
     if lyrics.has_digits(ln.text):
@@ -679,7 +679,8 @@ def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]
     out: dict[str, list[LineReport]] = {}
     for lr in reports:
         g = rule.rhyme_at(lr.line.index)
-        if g is not None:
+        words = lr.line.words
+        if g is not None and not (words and words[-1].lang == "xx"):  # a script not read
             out.setdefault(g, []).append(lr)
     return out
 
