@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -589,6 +590,15 @@ def _more_commands(sub) -> None:
     tr.set_defaults(func=cmd_translate)
 
 
+def _quiet_stdout() -> None:
+    """Point stdout at nothing, so the exit's flush does not fail on the closed pipe."""
+    try:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+    except OSError, ValueError, io.UnsupportedOperation:
+        pass
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if isinstance(sys.stdout, io.TextIOWrapper):
@@ -598,6 +608,9 @@ def main(argv: list[str] | None = None) -> int:
     except (SpecError, ProposerError, probe.ProbeError) as e:
         print(f"ashugh: {e}", file=sys.stderr)
         return 2
+    except BrokenPipeError:  # scan song | head: the reader has all it wanted
+        _quiet_stdout()
+        return 0
     except (OSError, ValueError) as e:
         print(f"ashugh: {e}", file=sys.stderr)
         return 2

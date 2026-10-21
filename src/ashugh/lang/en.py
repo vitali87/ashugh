@@ -515,6 +515,19 @@ ONSETS = {
 }  # fmt: skip
 
 
+def _diaeresis(token: str, groups: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """The vowel groups with a new one begun at a vowel written with a diaeresis,
+    which is sung apart from the vowel before it: na-ïve, co-öp-er-ate."""
+    marks = [k for k, ch in enumerate(token) if "\u0308" in unicodedata.normalize("NFD", ch)]
+    out = []
+    for a, b in groups:
+        for k in (k for k in marks if a < k < b):
+            out.append((a, k))
+            a = k
+        out.append((a, b))
+    return out
+
+
 def _silent_e(low: str, groups: list[tuple[int, int]]) -> int | None:
     """The first inner e that only lengthens the vowel before it: love-ly, some-time
     (not the e of every, dropped before an r)."""
@@ -611,7 +624,7 @@ def split_spelling(
         return split_spelling(token[:k], left, head, parted) + split_spelling(
             token[k:], n - left, tail, parted
         )  # ev-er-more, riv-er-side: each part keeps its short vowels
-    groups = _counted_groups(low)
+    groups = _diaeresis(token, _counted_groups(low))
     # a silent-looking vowel sung after all (fi-re, learn-ed), unless a vowel run
     # holds two (sci-ence, vi-o-lence)
     if len(groups) < n:
@@ -1248,6 +1261,8 @@ def analyze_word(
         variants = list(dict.fromkeys(_sung_ed(v) for v in variants))
     elif variants and token.lower().endswith("é"):  # résumé: the reading that sings its é
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
+        if not voiced:  # touché, not the fencer's touche: the é sung, and stressed
+            voiced = [re.sub("1", "2", variants[0]) + " EY1"]
         variants = voiced + [v for v in variants if v not in voiced]
     word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
     word.assumed = assumed

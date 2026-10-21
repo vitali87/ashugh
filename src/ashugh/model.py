@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass, field
 
 from .phon import is_vowel
@@ -140,10 +141,14 @@ def mark_stress(text: str) -> str:
     for i, ch in enumerate(text):
         if ch.lower() == "y" and text[i + 1 : i + 2].lower() in VOWEL_LETTERS - {"y"}:
             continue  # yes, be-yond, kyan: a y before a vowel is a glide
-        if ch.lower() in VOWEL_LETTERS:
-            if ch.lower() == "ё":
-                return text
-            return text[: i + 1] + ACUTE + text[i + 1 :]
+        # a Latin vowel under a diacritic (ï, é), not й, whose breve makes no vowel
+        parts = unicodedata.normalize("NFD", ch.lower()) if ord(ch) < 0x250 else ch.lower()
+        if parts[0] in VOWEL_LETTERS and ch.lower() != "ё":
+            if ACUTE in parts:
+                return text  # fé: written with its acute already
+            return text[: i + 1] + ACUTE + text[i + 1 :]  # na-ḯve keeps its diaeresis
+        if ch.lower() == "ё":
+            return text
     return text
 
 

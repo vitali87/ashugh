@@ -1,5 +1,7 @@
 """Round 15 of dogfooding, English: what a songwriter found wrong."""
 
+import unicodedata
+
 import pytest
 
 from ashugh import meter, rhyme
@@ -329,3 +331,40 @@ def test_a_word_still_unknown_is_still_named():
         "glorped",
         "zibber",
     }
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("touché", "tou-ché"), ("naïve", "na-ḯve"), ("café", "ca-fé"),
+        ("Zoë", "Zó-ë"), ("coöperate", "co-ö́p-e-rate"), ("touche", "touche"),
+    ],
+)  # fmt: skip
+def test_an_accented_vowel_is_sung_and_marked_where_written(word, shown):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert unicodedata.normalize("NFD", w.sung(w.readings[0].stress, mark=True)) == (
+        unicodedata.normalize("NFD", shown)
+    )
+
+
+def test_a_russian_short_i_is_never_marked_as_a_vowel():
+    from ashugh.model import mark_stress
+
+    assert mark_stress("йод") == "йо́д"
+
+
+def test_a_reader_that_stops_early_is_no_error(tmp_path):
+    import subprocess
+    import sys
+
+    song = tmp_path / "big.txt"
+    song.write_text("I walk along the river side\n" * 100, encoding="utf-8")
+    cmd = [sys.executable, "-m", "ashugh", "scan", str(song), "--json"]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert proc.stdout is not None and proc.stderr is not None
+    proc.stdout.readline()
+    proc.stdout.close()  # head -1
+    err = proc.stderr.read().decode()
+    assert proc.wait(timeout=60) == 0 and "Broken pipe" not in err, err
