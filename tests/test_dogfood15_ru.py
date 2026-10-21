@@ -275,3 +275,17 @@ def test_poets_and_rivers_are_known(line, stress):
 @pytest.mark.parametrize("word", ["по-над", "по-за"])
 def test_a_compound_preposition_is_unstressed(word):
     assert line_words(word + " лесом")[0].clitic
+
+
+@pytest.mark.parametrize("text,keep", [(None, {"syllables", "rhyme"}), ("", set()), (",", set())])
+def test_an_empty_keep_keeps_nothing_like_a_bare_comma(text, keep):
+    from ashugh.translate import parse_keep
+
+    assert parse_keep(text) == keep
+
+
+def test_a_bad_candidate_is_named_in_the_error():
+    from ashugh.proposers import ProposerError, parse_candidates
+
+    with pytest.raises(ProposerError, match=r"line 17: candidate 2 is null"):
+        parse_candidates({"17": ["Я иду домой", None]})

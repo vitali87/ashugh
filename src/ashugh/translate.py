@@ -23,7 +23,9 @@ ENDING_CODES = {0: "m", 1: "f", 2: "d"}
 
 
 def parse_keep(text: str | None) -> set[str]:
-    if not text:
+    """The parts of the source's grid to keep: syllables,rhyme when not given;
+    nothing for "" as for "," (a translation free of the source's form)."""
+    if text is None:
         return set(DEFAULT_KEEP)
     keep = {k.strip() for k in text.split(",") if k.strip()}
     unknown = keep - set(KEEP)

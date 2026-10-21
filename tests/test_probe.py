@@ -302,3 +302,7 @@ def test_russian_probe_marks_build_on_the_suno_spelling():
     shown = _shown(probe.make_probes(["звезды"], "ru"))
     assert set(shown.values()) == {"звёзды"}  # ё is its own mark: one clip
     assert _shown(probe.make_probes(["iPhone"], "ru")) == {"plain": "iPhone"}
+
+
+def test_a_one_syllable_russian_word_is_probed_plain_only():
+    assert [p.mode for p in probe.make_probes(["лес"], "ru")] == ["plain"]

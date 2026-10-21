@@ -163,9 +163,15 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
         number = _line_number(key)
         if number is None:
             raise ProposerError(f"{path}: {key!r} is not a line number")
-        if not isinstance(cands, list) or not all(_candidate(c) for c in cands):
+        if not isinstance(cands, list):
             raise ProposerError(
                 f'{path}: line {number} needs a list of lines or {{"text": ...}} objects'
+            )
+        bad = next((k for k, c in enumerate(cands, 1) if not _candidate(c)), None)
+        if bad is not None:
+            shown = json.dumps(cands[bad - 1], ensure_ascii=False)[:40]
+            raise ProposerError(
+                f'{path}: line {number}: candidate {bad} is {shown}, not a line or {{"text": ...}}'
             )
         out.setdefault(number, []).extend(cands)
     return out

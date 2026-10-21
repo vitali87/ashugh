@@ -129,8 +129,8 @@ def _russian_variant(w, token: str, reading, mode: str) -> str:
     if w.lang != "ru":
         return token  # iPhone: Suno reads a Latin word as written
     base = _russian(w, ru.unmarked(token), reading.stress, "none", 0, [], reading.spelling)
-    if how == "none" or reading.stress is None:
-        return base
+    if how == "none" or reading.stress is None or w.size < 2:
+        return base  # лес: suno marks no stress in a word of one syllable
     return _mark_vowel(base, reading.stress, how)
 
 
