@@ -109,6 +109,44 @@ _CLOSE_VOWELS = {
 }
 
 
+# English sounds as Russian and Armenian hear them, in a borrowed name or in a
+# rhyme across the languages: star as стар, okay as окей, sky as скай.
+ENGLISH_AS = {
+    "ɑ": "a",
+    "æ": "e",
+    "ʌ": "a",
+    "ɛ": "e",
+    "ɔ": "o",
+    "oʊ": "o",
+    "ʊ": "u",
+    "eɪ": "e j",
+    "aɪ": "a j",
+    "ɔɪ": "o j",
+    "ɝ": "o r",
+    "ɚ": "ə r",
+    "ɹ": "r",
+    "w": "v",
+    "θ": "s",
+    "ð": "z",
+    "ŋ": "n",
+    "h": "x",
+    "tʃ": "tʃʲ",
+    "dʒ": "d ʒ",
+}
+ENGLISH_AS_LANG = {
+    "ru": ENGLISH_AS,
+    "hy": ENGLISH_AS | {"ɝ": "o ɾ", "ɚ": "ə ɾ", "ɹ": "ɾ", "h": "h", "tʃ": "tʃ", "dʒ": "dʒ"},
+}
+
+
+def adapt_english(phones: tuple[str, ...] | list[str], lang: str) -> tuple[str, ...]:
+    """English phones in the sounds of lang (ru or hy); unchanged for any other."""
+    table = ENGLISH_AS_LANG.get(lang)
+    if table is None:
+        return tuple(phones)
+    return tuple(q for p in phones for q in table.get(p, p).split())
+
+
 def vowel_distance(a: str, b: str) -> float:
     if a == b:
         return 0.0

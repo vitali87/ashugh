@@ -261,3 +261,75 @@ def test_suno_rhymed_spelling_with_two_equal_partners():
     text = "Ты так красиво поешь,\nТы всё равно найдёшь,\nИ ты меня поймёшь.\n"
     out = suno.format_song(text, stress="none", tags=False)
     assert out.text.splitlines()[0] == "Ты так красиво поёшь,"
+
+
+@pytest.mark.parametrize(
+    "line,size,stress",
+    [
+        ("в TikTok'е", 3, 1),  # тик-то́-ке
+        ("в Instagram'е", 4, 2),  # ин-ста-гра́-ме
+        ("в iPhone'а", 3, 1),  # ай-фо́-на
+        ("на YouTube'е", 3, 1),  # ю-ту́-бе
+        ("в TikTok-е", 3, 1),
+        ("Instagram-ы", 4, 2),
+        ("Instagram-ами", 5, 2),
+        ("в Google'е", 2, 0),  # гу́г-ле: the English syllabic l is no syllable before a vowel
+        ("в Netflix'е", 3, 0),  # не́т-флик-се
+    ],
+)
+def test_latin_brand_with_a_russian_ending(line, size, stress):
+    w = line_words(line)[-1]
+    assert w.lang == "ru"
+    assert w.size == size
+    assert w.readings[0].stress == stress
+
+
+def test_latin_brand_with_a_russian_ending_scans_in_a_russian_line():
+    report = scan("Мы танцуем в TikTok-е до утра\n", Spec(language="ru"))
+    (lr,) = report.lines
+    assert lr.line.lang == "ru"
+    assert sum(w.size for w in lr.line.words) == 10
+
+
+def test_latin_brand_with_a_russian_ending_survives_suno():
+    out = suno.format_song("Я листаю Instagram'е ночами\n", tags=False)
+    assert "Instagram'е" in out.text
+    out = suno.format_song("Я листаю Instagram'е ночами\n", tags=False, split="all")
+    assert "In-sta-gram-'е" in out.text
+
+
+def test_a_latin_word_with_an_apostrophe_s_is_still_english():
+    w = line_words("Mary's")[-1]
+    assert w.lang == "en"
+
+
+@pytest.mark.parametrize(
+    "a,b,floor",
+    [
+        ("ты мой star", "гитар", 0.9),
+        ("okay", "окей", 0.9),
+        ("baby", "бейби", 0.7),
+        ("in the sky", "дай", 0.9),
+        ("go", "далеко", 0.7),
+        ("my love", "кровь", 0.0),  # ʌ is а: no rhyme with о
+    ],
+)
+def test_rhymes_across_english_and_russian(a, b, floor):
+    s = rhymes(a, b)
+    assert s >= floor
+    if floor == 0.0:
+        assert s < 0.45
+
+
+def test_go_and_daleko_score_as_russian_go_and_ko_would():
+    assert rhymes("go", "далеко") == rhymes("ого", "далеко")
+
+
+def test_latin_brand_with_a_russian_ending_rhymes_in_russian():
+    assert rhymes("в TikTok'е", "в потоке") >= 0.7
+    assert rhymes("в Instagram'е", "в программе") >= 0.7
+
+
+def test_english_rhymes_are_unchanged_by_the_adaptation():
+    assert rhymes("star", "far") >= 0.9
+    assert rhymes("sky", "die") >= 0.9

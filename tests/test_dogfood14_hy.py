@@ -261,3 +261,19 @@ def test_latin_marks_land_where_their_sentence_ends(line, out):
 
     text = suno.format_song(line, tags=False, armenian="latin").text
     assert unicodedata.normalize("NFC", out) in unicodedata.normalize("NFC", text)
+
+
+def hy_rhyme(a: str, b: str) -> float:
+    from ashugh import meter, rhyme
+
+    lines = analyze_lines(f"{a}\n{b}", Spec(language="hy"))
+    return rhyme.match(*(rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines))[0]
+
+
+def test_english_love_rhymes_with_armenian_lav():
+    assert hy_rhyme("my love", "շատ լավ") >= 0.9
+
+
+def test_an_open_rhyme_across_languages_wants_its_consonant_too():
+    assert hy_rhyme("I miss you", "միայն դու") < 0.9  # ju / du: Armenian norms
+    assert hy_rhyme("okay", "օքեյ") >= 0.9

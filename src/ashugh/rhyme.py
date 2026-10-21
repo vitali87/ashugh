@@ -18,7 +18,7 @@ from .lang import ru
 from .lang.en import OBJECTS, PREPOSITIONS
 from .meter import Fit, _anchor, slots
 from .model import Line, nuclei
-from .phon import align_cost, distance, is_vowel, vowel_distance
+from .phon import ENGLISH_AS_LANG, adapt_english, align_cost, distance, is_vowel, vowel_distance
 
 LEVELS = (("perfect", 0.9), ("near", 0.7), ("slant", 0.45), ("assonance", 0.25), ("none", 0.0))
 THRESHOLD = dict(LEVELS)
@@ -198,6 +198,7 @@ def match(xs: list[Tail], ys: list[Tail]) -> tuple[float, Tail | None, Tail | No
 def score(a: Tail | None, b: Tail | None) -> float:
     if a is None or b is None:
         return 0.0
+    a, b = _heard_in(a, b.lang), _heard_in(b, a.lang)  # star / гитар
     if a.spelling == b.spelling and (a.vowel, a.rest) == (b.vowel, b.rest):
         # The same object pronoun on both lines is no rhyme: need it / want it rhymes
         # on need and want, or not at all. A homograph stressed apart (за́мок, замо́к)
@@ -234,6 +235,23 @@ REDUCED = {"ɐ": "ə", "ɪ": "ə"}  # reduced vowels after the stress: one class
 def _vowels(t: Tail) -> tuple[str, ...]:
     """The vowels after the stress, the reduced ones by their class."""
     return tuple(REDUCED.get(p, p) for p in t.rest if is_vowel(p))
+
+
+def _heard_in(t: Tail, lang: str) -> Tail:
+    """An English tail as a Russian or Armenian partner's language hears it: star as
+    стар, sky as скай; then judged by that language's rules, open rhymes too."""
+    if t.lang != "en" or lang not in ENGLISH_AS_LANG:
+        return t
+    vowel, *extra = adapt_english((t.vowel,), lang)
+    rest = (*extra, *adapt_english(t.rest, lang))
+    return replace(
+        t,
+        onset=adapt_english(t.onset, lang),
+        vowel="i" if vowel == "ɪ" else vowel,  # stressed, kiss is кис
+        rest=rest,
+        post=sum(is_vowel(p) for p in rest),
+        lang=lang,
+    )
 
 
 def _english_merger(a: Tail, b: Tail) -> bool:

@@ -8,8 +8,8 @@ from dataclasses import replace
 from types import ModuleType
 
 from .. import lyrics
-from ..model import Reading, Syllable, Word
-from ..phon import is_vowel
+from ..model import Reading, Syllable, Word, nuclei
+from ..phon import adapt_english, is_vowel
 from . import en, hy, ru
 
 ANALYZERS: dict[str, ModuleType] = {"hy": hy, "ru": ru, "en": en}
@@ -52,7 +52,11 @@ def override_error(word: str, value: str) -> str | None:
 def detect(tokens: list[str]) -> str:
     counts: dict[str, int] = {}
     for t in tokens:
-        s = hy.CODE if LATIN_WITH_ENDING.fullmatch(t) else script_of(t)  # TikTok-ում
+        s = script_of(t)
+        if LATIN_WITH_ENDING.fullmatch(t):  # TikTok-ում
+            s = hy.CODE
+        elif LATIN_WITH_RU_ENDING.fullmatch(t):  # TikTok'е
+            s = ru.CODE
         if s and s != "xx":
             counts[s] = counts.get(s, 0) + 1
     if not counts:
@@ -121,6 +125,9 @@ def analyze(
             continue
         if armenian and armenian[k]:
             words.append(_from_latin(token, lexicon))
+            continue
+        if LATIN_WITH_RU_ENDING.fullmatch(token):
+            words.append(_latin_with_russian_ending(token, lexicon))
             continue
         if token == "&":  # rock & roll: the line's own and
             and_ = analyze_word_as(AMPERSAND.get(lang, "and"), lexicon)
@@ -328,6 +335,48 @@ def _latin_with_ending(token: str, lexicon: dict[str, str]) -> Word:
     stress = len(syllables) + full[-1] if full else len(syllables) - 1
     reading = Reading(stress, phones + tuple(s.ph for s in segs), token.lower(), "rule")
     return Word(token, token.lower(), hy.CODE, (*syllables, *tail), (reading,))
+
+
+# A name in Latin letters with a Russian case ending: TikTok'е, iPhone-а, Instagram'ами.
+LATIN_WITH_RU_ENDING = re.compile(r"([A-Za-z][A-Za-z.]*)['’-]([а-яё]+)")
+
+
+def _latin_with_russian_ending(token: str, lexicon: dict[str, str]) -> Word:
+    """A Latin name with a Russian ending, a Russian word: the name as English says
+    it, the ending's vowels sung after it (тик-то́-ке, ин-ста-гра́-ме); the stress
+    on the name's last full vowel, as Russian takes English names (айфо́н,
+    инстагра́м, but гу́гл, не́тфликс). An English syllabic l is no syllable before
+    the ending's vowel: в гу́гле."""
+    name, ending = LATIN_WITH_RU_ENDING.fullmatch(token).groups()  # type: ignore[union-attr]
+    head = en.analyze_word(name, lexicon)
+    first = head.readings[0]
+    syllables = list(head.syllables)
+    phones = list(first.phones)
+    for k, at in enumerate(nuclei(phones)[: len(syllables)]):  # TikTok is тикток, not тиктак
+        letters = syllables[k].text.lower()
+        if phones[at] in ("ɑ", "ɔ") and "o" in letters:
+            phones[at] = "o"
+        elif phones[at] in ("æ", "ɑ") and "a" in letters:
+            phones[at] = "a"  # Instagram is инстаграм
+    phones = list(adapt_english(phones, ru.CODE))
+    voweled = ru.vowel_count(ending) > 0
+    if voweled and phones[-2:] == ["ə", "l"] and len(syllables) > 1:  # Google: гугл-е
+        del phones[-2]
+        last = syllables.pop()
+        syllables[-1] = replace(syllables[-1], text=syllables[-1].text + last.text)
+    sep = token[len(name)]
+    tail = [] if not voweled else ru.split_syllables(ending)
+    if tail:
+        tail[0] = (sep if sep != "-" else "") + tail[0]
+        syllables.extend(Syllable(t) for t in tail)
+    else:
+        syllables[-1] = replace(syllables[-1], text=syllables[-1].text + token[len(name) :])
+    phones.extend(ru.transcribe("т" + ending, -1)[1:])  # unstressed, never word-initial [j]
+    stress = max(
+        k for k in (first.stress, *first.secondary) if k is not None and k < len(syllables)
+    )
+    reading = Reading(stress, tuple(phones), token.lower(), "rule")
+    return Word(token, token.lower(), ru.CODE, tuple(syllables), (reading,))
 
 
 def _swallow_head(w: Word) -> None:
