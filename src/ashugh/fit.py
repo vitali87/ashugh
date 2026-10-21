@@ -73,7 +73,7 @@ class FitResult:
     unresolved: list[Unresolved]
     rounds: int
     requests: int
-    warnings: list[str] = field(default_factory=list)  # about the input, not the result
+    warnings: list[str] = field(default_factory=list)  # not failures: asides left out
 
     @property
     def ok(self) -> bool:
@@ -187,8 +187,24 @@ def fit_song(
                 Change(k, var.lr.line.text, var.chosen.text, round(var.chosen.weight, 3))
             )
     new_text = replace_lines(text, {c.line: c.new for c in changes})
+    warnings += _asides_left_out(text, changes)
     final = scan(new_text, spec, lang=lang) if changes else report
     return FitResult(new_text, final, changes, unresolved, used, asked, warnings)
+
+
+def _asides_left_out(text: str, changes: list[Change]) -> list[str]:
+    """The backing vocals inside a replaced line, which the new line has no place
+    for: those that end it are carried, these are named to put back by hand."""
+    raw = lyrics.split_lines(text)
+    out = []
+    for c in changes:
+        body = raw[c.line - 1] if c.line <= len(raw) else ""
+        tail = _trailing_asides(body)
+        end = tail[0] if tail else len(body)
+        inner = [body[a:b] for a, b in lyrics.aside_spans(body) if b <= end]
+        if inner and "(" not in c.new:
+            out.append(f"L{c.line}: {' '.join(inner)} inside the line is left out of the new one")
+    return out
 
 
 def requests_for(

@@ -599,3 +599,24 @@ def test_syl_reads_stdin_as_scan_does(monkeypatch, capsys):
     monkeypatch.setattr("sys.stdin", io.TextIOWrapper(raw, encoding="utf-8", errors="ignore"))
     assert main(["syl"]) == 2
     assert "not UTF-8" in capsys.readouterr().err
+
+
+def test_pick_says_when_a_backing_vocal_inside_a_line_is_left_out():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "I walked (oh) along the long river side\n"
+    proposer = StaticProposer({1: ["I walked along the riverside"]})
+    res = fit_song(text, from_dict({"language": "en", "syllables": 8}), proposer, rounds=1)
+    assert res.text == "I walked along the riverside\n"
+    assert any("L1" in w and "(oh)" in w for w in res.warnings)
+
+
+def test_pick_says_nothing_of_a_backing_vocal_it_keeps():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "I walked along the long river side (oh)\n"
+    proposer = StaticProposer({1: ["I walked along the riverside"]})
+    res = fit_song(text, from_dict({"language": "en", "syllables": 8}), proposer, rounds=1)
+    assert res.text.endswith("(oh)\n") and res.warnings == []
