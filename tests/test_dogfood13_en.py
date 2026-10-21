@@ -66,7 +66,7 @@ def test_written_words_are_cut_where_they_are_sung(word, pieces):
     [
         ("Come on baby light my fire", "fi-er"),
         ("We will dance until the hour", "hou-er"),
-        ("I feel the power of desire", "de-si-er"),
+        ("I burn with all of my desire", "de-si-er"),
     ],
 )
 def test_suno_writes_a_long_sung_ire_or_our_as_it_sounds(line, out):

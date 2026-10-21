@@ -759,19 +759,47 @@ def _reading_cost(ln: Line, f: Fit) -> float:
     return sum(ln.words[i].reading(st).penalty for i, st in f.stresses.items() if st is not None)
 
 
+# English words of one syllable a line says lightly: a beat on one, or none on a
+# word that means something, is a rhythm the line is not said in.
+FUNCTION_WORDS = frozenset(
+    "a an the and or but nor of to in on at by for from with as if than so not no "
+    "i you he she we they it me him her us them my your his its our their this that "
+    "is am are was were be been do does did don't won't can't will would can could "
+    "shall should may might must have has had it's i'm you're we're they're oh till like "
+    "when where what who how why there then all some each hath doth thy thou thee ye art "
+    "'tis 'twas o o'er".split()
+)
+PROMINENCE_COST = 0.1  # per English monosyllable a meter puts against its weight
+
+
+def _prominence(ln: Line, f: Fit) -> int:
+    """English monosyllables a fit sets against their weight: a function word on a
+    beat, a content word off one. Don't let gó, don't let gó of the níght is an
+    anapest, though a trochee on Dón't and lét costs the meter no more."""
+    out = 0
+    for s in slots(ln.words, f.elided):
+        w = ln.words[s.word]
+        if s.size != 1 or s.lead or w.lang != "en" or s.start >= len(f.beats):
+            continue
+        light = w.clitic or w.norm in FUNCTION_WORDS
+        out += f.beats[s.start] == light
+    return out
+
+
 def detect(lines: list[Line]) -> str:
     """The meter that fits a stanza best, or "free" if none fits well."""
     usable = [ln for ln in lines if ln.words]
     if not usable or any(sum(w.size for w in ln.words) > MAX_SUNG_LINE for ln in usable):
         return "free"
-    totals, lexical = {}, {}
+    totals, ranked, lexical = {}, {}, {}
     for m in METERS:
         fits = [(ln, fit(ln.words, m)) for ln in usable]
         totals[m] = round(sum(f.cost for _, f in fits), 6)
+        ranked[m] = round(totals[m] + PROMINENCE_COST * sum(_prominence(*x) for x in fits), 6)
         lexical[m] = sum(_reading_cost(ln, f) for ln, f in fits)
     # two meters that fit as well: the one that reads each word as it is usually
     # said (Мне в душе́ так светло, an anapest, not the iamb ду́ше would make)
-    best = min(METERS, key=lambda m: (totals[m], lexical[m], METERS.index(m)))
+    best = min(METERS, key=lambda m: (ranked[m], lexical[m], METERS.index(m)))
     if totals[best] / len(usable) > 1.0:
         return "free"
     return best

@@ -293,3 +293,33 @@ def test_a_label_for_who_sings_is_warned(line, name):
 @pytest.mark.parametrize("line", ["OK: let it go", "I said: come home", "Time: it flies"])
 def test_a_colon_after_a_word_is_no_label(line):
     assert not any("who sings" in i.message for i in scan(line + "\n").issues)
+
+
+@pytest.mark.parametrize(
+    "text,meter_name",
+    [
+        (
+            "Don't let go, don't let go of the night\n"
+            "Don't you know, don't you know it's alright\n",
+            "anapest",
+        ),
+        ("Stay, oh stay till the morning\n", "dactyl"),
+        (
+            "Once in this ballroom the lovers were turning,\n"
+            "Round as the moon while the music would flow,\n",
+            "dactyl",
+        ),
+        ("The harbor lights are burning low\nAnd all the boats are coming home\n", "iamb"),
+        ("Tiger, tiger, burning bright\nIn the forests of the night\n", "trochee"),
+    ],
+)
+def test_monosyllables_are_set_by_their_weight(text, meter_name):
+    assert scan(text).units[0].meter == meter_name
+
+
+def test_an_anapest_spec_is_derived_from_monosyllabic_anapests():
+    from ashugh.translate import derive_spec
+
+    text = "Don't let go, don't let go of the night\nDon't you know, don't you know it's alright\n"
+    data = derive_spec(scan(text), {"syllables", "meter"})["stanza"]["1"]
+    assert data["meter"] == "anapest" and data["feet"] == [3, 3]
