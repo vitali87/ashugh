@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import install_hint, lyrics
-from .lang import analyze
+from .lang import analyze, detect
 from .phon import align_cost, indel_cost
 
 MODES = {"hy": ("script", "schwa", "latin"), "ru": ("plain", "caps", "acute")}
@@ -73,6 +73,10 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
     words = [w.strip() for w in words if w.strip()]
     if not words:
         raise ValueError("give at least one word to probe")
+    for token in words:
+        written = detect(lyrics.tokenize(token))
+        if written != lang and written in MODES:  # Մկրտիչ is no Russian word; iPhone may be
+            raise ValueError(f"«{token}» is written in {written}, not {lang}: use --lang {written}")
     modes = list(modes or MODES[lang])
     bad = [m for m in modes if m not in MODES[lang]]
     if bad:

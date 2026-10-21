@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from . import lyrics
 from .fit import Change, FitResult, Unresolved, _variables, replace_lines, run
-from .lang import ANALYZERS
+from .lang import ANALYZERS, detect
 from .proposers import Proposer
 from .scan import Issue, Report, UnitReport, later_endings, scan
 from .spec import Spec, from_dict
@@ -122,6 +122,12 @@ def translate_song(
     spec = from_dict(data)
     result = translate_with_spec(src, spec, proposer, rounds, n, solver)
     result.warnings = source_warnings(src)
+    tokens = [t for lr in src.lines for t in lyrics.tokenize(lr.line.text)]
+    written = detect(tokens)
+    if source_lang and written in ANALYZERS and written != source_lang:
+        result.warnings.insert(
+            0, f"the source is written in {written}, but was read as {source_lang} (--source-lang)"
+        )
     return result
 
 

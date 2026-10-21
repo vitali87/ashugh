@@ -469,3 +469,36 @@ def test_a_separate_n_is_an_unstressed_and(text):
 def test_n_inside_a_hyphenated_word_still_reads_as_and():
     words = scan("rock-'n'-roll\n", from_dict({"language": "en"})).lines[0].line.words
     assert [w.text for w in words] == ["rock", "n", "roll"] and words[1].clitic
+
+
+@pytest.mark.parametrize(
+    "word,lang,message",
+    [
+        ("Մկրտիչ", "ru", "written in hy, not ru: use --lang hy"),
+        ("облако", "hy", "written in ru, not hy: use --lang ru"),
+    ],
+)
+def test_probe_make_refuses_a_word_in_another_language(word, lang, message):
+    from ashugh.probe import make_probes
+
+    with pytest.raises(ValueError) as e:
+        make_probes([word], lang)
+    assert message in str(e.value)
+
+
+def test_probe_make_still_takes_words_in_its_language():
+    from ashugh.probe import make_probes
+
+    assert make_probes(["облака"], "ru") and make_probes(["Մկրտիչ"], "hy")
+    assert make_probes(["iPhone"], "ru")  # a brand in a Russian song
+
+
+def test_translate_warns_when_the_source_language_given_is_not_the_one_written():
+    from ashugh.proposers import StaticProposer
+    from ashugh.translate import translate_song
+
+    source = "Hush now my baby\nThe night is so deep\n"
+    result = translate_song(source, "hy", StaticProposer({}), rounds=1, source_lang="ru")
+    assert result.warnings and "written in en, but was read as ru" in result.warnings[0]
+    result = translate_song(source, "hy", StaticProposer({}), rounds=1, source_lang="en")
+    assert not any("was read as" in w for w in result.warnings)
