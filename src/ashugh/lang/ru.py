@@ -427,6 +427,11 @@ def vowel_count(word: str) -> int:
     return sum(ch in VOWELS for ch in word)
 
 
+def _yo_only_mark(token: str) -> bool:
+    """Whether the only stress mark in token is a written ё (no acute, no capital)."""
+    return read_marks(token.replace("ё", "е").replace("Ё", "Е"))[1] is None
+
+
 def read_marks(token: str) -> tuple[str, int | None]:
     """Normalized spelling and the stressed vowel index a mark in token gives, if any."""
     stress = None
@@ -761,7 +766,7 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     options = _yo_plural_first(options)
     readings = []
     for spelling, stress, source in options:
-        stress = _with_last_part(spelling, stress)
+        stress = _past_numeral(spelling, _with_last_part(spelling, stress))
         if "-" in spelling and len(stress) > 1 and len({_part_of(spelling, p) for p in stress}) > 1:
             # давны́м-давно́ is stressed in both parts, not in one or the other
             main = max(stress)
@@ -772,6 +777,28 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             cost = ALTERNATIVE_COST if readings else 0.0  # the usual reading wins a tie
             readings.append(Reading(p, transcribe(spelling, p), spelling, source, penalty=cost))
     return readings
+
+
+# Numeral prefixes whose ё the dictionary sometimes gives as the only stress of a
+# compound (трЁхцветный): the stem keeps its own (трёхцве́тный, четырёхэта́жный).
+NUMERAL_PREFIXES = ("четырёх", "трёх")
+
+
+def _past_numeral(spelling: str, stress: tuple[int, ...]) -> tuple[int, ...]:
+    for prefix in NUMERAL_PREFIXES:
+        rest = spelling[len(prefix) :]
+        if not spelling.startswith(prefix) or vowel_count(rest) < 1 or "-" in rest[:1]:
+            continue
+        before = vowel_count(prefix)
+        later = tuple(p for p in stress if p >= before)
+        if later or not stress:
+            return later or stress
+        own = TABLE.variants(rest)
+        if own:
+            return (before + own[0][1][0],)
+        guessed = SUFFIXES.order(rest, vowel_count(rest))
+        return (before + guessed[0][0],) if guessed else stress
+    return stress
 
 
 # Meter cost of a dictionary reading after the first: enough to settle a tie the
@@ -961,10 +988,17 @@ def analyze_word(
     )
     user = (overrides or {}).get(norm) or (overrides or {}).get(norm.replace("ё", "е"))
     readings: list[Reading] = []
+    if marked is not None and not user and _yo_only_mark(token) and n > 1:
+        # чёрно-бе́лый, трёхэта́жный: a written ё marks the stress unless the dictionary
+        # puts it elsewhere in that very spelling, the ё then a secondary stress
+        readings = [r for r in _lexicon_readings(norm) if r.spelling == norm]
+        if not readings and "-" in norm.strip("-"):
+            readings = _hyphenated(norm)
+        marked = None if readings else marked
     if marked is not None:
         readings = [Reading(marked, transcribe(norm, marked), norm, "mark")]
         word.clitic = False
-    elif user:
+    elif user and not readings:
         readings = _user_readings(user)
     if not readings and n == 0:
         readings = [Reading(None, transcribe(norm, None), norm, "clitic")]
