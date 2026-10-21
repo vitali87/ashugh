@@ -1154,8 +1154,9 @@ def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Wor
         low = normalize(p)
         if before is not None and not lookup(low) and before.norm.endswith(low) and before.readings:
             parts.append(_echo(p, low, before))  # hey-ey-ey, yeah-eah: the vowel sung again
-        else:
-            parts.append(analyze_word(p, overrides))
+        else:  # A-list, K-pop: a capital alone is its letter, not the article
+            letter = not parts and len(p) == 1 and p.isupper()
+            parts.append(analyze_word(p, overrides, letters=letter))
     offsets = [sum(p.size for p in parts[:k]) for k in range(len(parts))]
     stressed = [k for k, p in enumerate(parts) if not p.clitic and p.size]
     last = stressed[-1] if stressed else len(parts) - 1
@@ -1188,6 +1189,13 @@ def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Wor
         )
         phones = readings[0].phones if readings else ()
         readings.append(Reading(stress, phones, word.norm, "shift", secondary, STRESS_SHIFT))
+    if parts[0].spelled and parts[0].size == 1 and len(readings) > 1:
+        # a letter compound says its letter loudest: Á-list, K-pop, X-factor
+        lead = [replace(r, source="rule", penalty=0.0) for r in readings if r.stress == 0]
+        rest = [
+            replace(r, penalty=max(r.penalty, ALTERNATIVE_COST)) for r in readings if r.stress != 0
+        ]
+        readings = lead + rest
     word.readings = tuple(readings)
     word.syllables = tuple(s for p in parts for s in p.syllables)
     dropping = next((k for k, p in enumerate(parts) if p.drop is not None), None)

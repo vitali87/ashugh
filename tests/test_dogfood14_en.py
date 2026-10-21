@@ -593,3 +593,16 @@ def test_an_echo_syllable_leaves_the_stress_on_the_word():
 
     w = en.analyze_word("Hey-ey-ey")
     assert w.readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "token,size", [("A-list", 2), ("B-side", 2), ("K-pop", 2), ("X-factor", 3)]
+)
+def test_a_letter_compound_is_stressed_on_its_letter(token, size):
+    from ashugh.lang import en
+
+    w = en.analyze_word(token)
+    assert w.size == size and w.readings[0].stress == 0
+    assert (
+        any(r.stress == size - 1 or r.stress != 0 for r in w.readings[1:]) or len(w.readings) == 1
+    )
