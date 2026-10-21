@@ -88,3 +88,34 @@ def test_a_latin_line_of_names_with_endings_keeps_them():
 )
 def test_suno_keeps_the_name_and_writes_the_ending(line, mode, out):
     assert out in suno.format_song(line, tags=False, armenian=mode).text
+
+
+@pytest.mark.parametrize(
+    "latin, script",
+    [("sirum em", "սիրում եմ"), ("spasum es", "սպասում ես"), ("gnum enq", "գնում ենք")],
+)
+def test_a_latin_typed_auxiliary_is_the_auxiliary(latin, script):
+    def stresses(line):
+        return [w.readings[0].stress for w in words(line)]
+
+    assert stresses(latin) == stresses(script)
+    assert words(latin)[1].clitic
+
+
+def test_a_latin_typed_auxiliary_is_no_rhyme_word():
+    from ashugh import meter, rhyme
+
+    lines = analyze_lines("sirum em\ntem chem", Spec(language="hy"))
+    ts = [rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines]
+    assert rhyme.match(*ts)[0] < rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize(
+    "word, armenian", [("em", "եմ"), ("es", "ես"), ("enq", "ենք"), ("eq", "եք"), ("en", "են")]
+)
+def test_from_latin_reads_the_auxiliaries_whole(word, armenian):
+    assert hy.from_latin(word) == armenian
+
+
+def test_other_latin_words_in_e_keep_their_e():
+    assert hy.from_latin("ergum") == "էրգում"

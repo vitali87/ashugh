@@ -630,6 +630,10 @@ FROM_LATIN = (
 LATIN_VOWELS = set("aeiouəy")
 
 
+# The auxiliaries as Latin typing spells them, with the e that is ե.
+LATIN_AUXILIARIES = {"em": "եմ", "es": "ես", "enq": "ենք", "eq": "եք", "en": "են"}
+
+
 def from_latin(word: str) -> str:
     """Latin-letter Armenian in Armenian letters: mtnem մտնեմ, kyanq կյանք, vor որ,
     yes ես, Yerevan Երևան. y is յ after or before a vowel and ը between
@@ -637,6 +641,8 @@ def from_latin(word: str) -> str:
     low = word.lower().replace("’", "'")
     if low in ("ev", "yev"):
         return "և"
+    if low in LATIN_AUXILIARIES:  # sirum em: the auxiliary եմ, not էմ
+        return LATIN_AUXILIARIES[low]
     out, k = [], 0
     if low.startswith("ye"):
         out, k = ["ե"], 2
