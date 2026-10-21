@@ -461,3 +461,19 @@ def test_an_armenian_vowel_written_long_is_one_held_note():
 
 def test_suno_keeps_a_held_note_as_written():
     assert suno.format_song("Ооо, моя любовь\n", tags=False).text.startswith("Ооо,")
+
+
+@pytest.mark.parametrize(
+    "tag, out",
+    [
+        ("[Куплет 2 - Рэп]", "[Verse 2 - Rap]"),
+        ("[Бридж: соло]", "[Bridge: Solo]"),
+        ("[Припев (рэп)]", "[Chorus (Rap)]"),
+        ("[Куплет 1 (тихо)]", "[Verse 1 (тихо)]"),  # a free note stays as written
+        ("[Куплет 2 - тише и медленнее]", "[Verse 2 - тише и медленнее]"),
+    ],
+)
+def test_a_note_that_names_a_section_is_named_as_suno_names_it(tag, out):
+    from ashugh import lyrics
+
+    assert lyrics.retag(tag) == out

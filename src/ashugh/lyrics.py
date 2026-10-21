@@ -143,6 +143,12 @@ def section_key(tag: str) -> str:
     return known.lower() if known else name
 
 
+def _note(text: str) -> str:
+    """A note in a tag as Suno names it when it names a section (Рэп -> Rap), else
+    as written (тихо)."""
+    return SECTION_NAMES.get(text.strip().lower(), text)
+
+
 def suno_tag(tag: str) -> str | None:
     """A tag's text as Suno names the section: Финальный припев -> Final Chorus,
     Куплет 1 (тихо) -> Verse 1 (тихо), Կրկներգ (x2) -> Chorus x2; None for a
@@ -157,7 +163,7 @@ def suno_tag(tag: str) -> str | None:
         if r:
             repeat = _repeat(r)
         else:
-            notes.append(m.group(0))
+            notes.append(f"({_note(m.group(1))})")
         return " "
 
     name = re.sub(r"\(([^)]*)\)", aside, head)
@@ -174,7 +180,13 @@ def suno_tag(tag: str) -> str | None:
         return None
     parts = ["Final"] if "Final" in ordinals else []
     parts += [known, *numbers[:1], *([repeat] if repeat else []), *notes]
-    return " ".join(parts) + rest.rstrip()
+    if rest:  # [Куплет 2 - Рэп] -> [Verse 2 - Rap]
+        sep = NOTE_RE.match(rest)
+        head = rest[: sep.end()] if sep else ""
+        body = rest[len(head) :].rstrip()
+        note = body.lstrip()
+        rest = head + body[: len(body) - len(note)] + _note(note)
+    return " ".join(parts) + rest
 
 
 def is_tag(line: str) -> bool:
