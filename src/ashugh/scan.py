@@ -612,7 +612,10 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         _elision_notes(ln, f, add, source)  # the meter dropped it: Eve-ry heartbeat
 
     if source == "spec" and meter_name != "free" and (f.off_beat or f.ending_off):
-        names = [_quote(ln.words[i].sung(f.stresses.get(i), mark=True)) for i in f.off_beat]
+        names = [  # as the line sings them: ev-ry when its note says so
+            _quote(ln.words[i].sung(f.stresses.get(i), mark=True, dropped=i in f.elided))
+            for i in f.off_beat
+        ]
         if names:
             what = f"{', '.join(names[:3])}{' ...' if len(names) > 3 else ''} off the beat"
         else:

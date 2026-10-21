@@ -411,3 +411,47 @@ def test_o_apostrophe_does_not_swallow_other_quotes():
 def test_capitals_glued_to_an_ampersand_are_letters(line, size):
     (ln,) = analyze_lines(line, Spec(language="en"))
     assert sum(w.size for w in ln.words) == size
+
+
+@pytest.mark.parametrize("sep", ["\n", "\r", " ", " ", "\x0b", "\x0c", "\x85"])
+def test_a_candidate_with_any_line_break_is_more_than_one_line(sep):
+    from ashugh import fit
+
+    assert fit._clean(f"I walk along the river{sep}side") == "more than one line"
+
+
+def test_candidates_for_a_repeated_line_are_used_and_not_called_passing():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    line = "We sing all through the long dark night\n"
+    text = "[Chorus]\n" + line + line
+    spec = from_dict({"language": "en", "syllables": 6})
+    proposer = StaticProposer({3: ["We sing the whole night through"]})
+    result = fit_song(text, spec, proposer, rounds=1)
+    assert result.text.count("We sing the whole night through") == 2
+    assert proposer.unused({2, 3}) == []
+
+
+def test_forbid_final_takes_a_comma_list_like_syllables(tmp_path, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "s.txt"
+    song.write_text("I keep on running\nAnd I keep on jumpin'\n", encoding="utf-8")
+    main(["scan", str(song), "--forbid-final", "ing,in'", "--json"])
+    import json
+
+    data = json.loads(capsys.readouterr().out)
+    finals = [i for i in data["issues"] if i["code"] == "final"]
+    assert {i["line"] for i in finals} == {1, 2}
+
+
+def test_an_off_beat_word_is_quoted_as_the_line_sings_it():
+    limerick = (
+        "[Verse]\nA baker who lived by the bay\nMade muffins and scones every day;\n"
+        "When the oven caught fire,\nHe just climbed a bit higher,\n"
+        "And frosted the flames anyway.\n"
+    )
+    report = scan(limerick, from_dict({"language": "en", "meter": "anapest"}))
+    (beat,) = [i for i in report.issues if "off the beat" in i.message]
+    assert "e\u0301ve-ry" in beat.message and "-e-ry" not in beat.message

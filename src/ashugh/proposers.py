@@ -109,8 +109,13 @@ class StaticProposer:
         self.asked: set[int] = set()  # the lines a request named
 
     def propose(self, requests: list[Request]) -> dict[str, list]:
-        self.asked |= {r.line for r in requests}
-        return {r.id: list(self.candidates.get(r.line, [])) for r in requests}
+        """Each request's own candidates, then those given for its later copies (a
+        chorus line answered at its second time is one repair for both)."""
+        self.asked |= {k for r in requests for k in (r.line, *r.copies)}
+        return {
+            r.id: [c for k in (r.line, *r.copies) for c in self.candidates.get(k, [])]
+            for r in requests
+        }
 
     def unused(self, lyric_lines: set[int]) -> list[str]:
         """Why the candidates of lines no request named went unused."""

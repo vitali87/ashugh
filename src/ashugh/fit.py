@@ -403,7 +403,7 @@ def _clean(raw) -> tuple[str, float | None] | str:
     if not isinstance(raw, str):
         return "not text"
     text = raw.strip()
-    if "\n" in text or "\r" in text:
+    if len(text.splitlines()) > 1:  # \n, \r, U+2028 and every other break
         return "more than one line"
     if len(text) > MAX_LINE:
         return f"longer than {MAX_LINE} characters"

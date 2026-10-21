@@ -64,6 +64,8 @@ def _inline_rule(args: argparse.Namespace) -> dict:
     table: dict = {}
     for key in ("syllables", "meter", "feet", "rhyme", "endings", "min_rhyme", "forbid_final"):
         value = getattr(args, key, None)
+        if key == "forbid_final" and value is not None:  # ing,in' as --syllables 8,6 lists
+            value = [part.strip() for v in value for part in v.split(",") if part.strip()]
         if value is not None:  # --rhyme= is a mistake to name, not a rule to drop
             table[key] = value
     if getattr(args, "tolerance", None) is not None:
@@ -447,7 +449,7 @@ def _song_args(s: argparse.ArgumentParser) -> None:
     g.add_argument("--tolerance", type=int, help="allowed miss in syllables")
     g.add_argument("--min-rhyme", choices=["perfect", "near", "slant", "assonance"])
     g.add_argument(
-        "--forbid-final", action="append", help="a line may not end in this (repeatable)"
+        "--forbid-final", action="append", help="a line may not end in this (repeatable, or a,b)"
     )
 
 

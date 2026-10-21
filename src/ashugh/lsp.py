@@ -21,7 +21,7 @@ from urllib.parse import unquote, urlparse
 
 from . import lyrics
 from .model import ACUTE
-from .scan import Report, scan
+from .scan import DIGITS, Report, scan
 from .spec import Spec, SpecError, load
 
 SEVERITY = {"error": 1, "warning": 2, "info": 3}
@@ -231,6 +231,10 @@ class Server:
         lr = next((lr for lr in rep.lines if lr.line.number == number), None)
         if lr is None:
             return None
+        if not lr.line.words:  # 1, 2, 3, 4: nothing ashugh can count
+            digits = any(ch.isdigit() for ch in lr.line.text)
+            value = "**no words** · " + (DIGITS if digits else "nothing to sing")
+            return {"contents": {"kind": "markdown", "value": value}}
         rhyme = f" · rhyme {lr.letter}" if lr.letter and lr.letter != "-" else ""
         value = f"**{lr.fit.count} syllables** · `{lr.fit.grid}` · {lr.ending}{rhyme}\n\n{lr.sung}"
         return {"contents": {"kind": "markdown", "value": value}}

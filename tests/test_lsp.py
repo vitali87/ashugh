@@ -275,3 +275,19 @@ def test_a_note_whose_word_is_not_on_the_line_spans_the_line(tmp_path):
     assert rhyme and rhyme[0]["range"]["start"]["line"] == 1
     r = rhyme[0]["range"]
     assert (r["start"]["character"], r["end"]["character"]) == (8, 12)  # снег, this line's word
+
+
+def test_hover_on_a_line_of_digits_says_they_are_not_counted(tmp_path):
+    uri = (tmp_path / "s.txt").as_uri()
+    server = Server()
+    open_doc(server, uri, "[Verse]\n1, 2, 3, 4\n")
+    reply = server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "textDocument/hover",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 1, "character": 1}},
+        }
+    )
+    value = reply["result"]["contents"]["value"]
+    assert "digits are not counted" in value and "masculine" not in value
