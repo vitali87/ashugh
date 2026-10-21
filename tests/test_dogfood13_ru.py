@@ -117,3 +117,17 @@ def test_forms_the_dictionary_lacks(word, stress):
 def test_perfume_and_spirits_are_both_readings_of_duhov():
     assert {r.stress for r in ru.analyze_word("духов").readings} == {0, 1}
     assert rhymes("твоих духов", "моих стихов") >= rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize(
+    "phrase", ["в этом дыму", "в нашем саду", "на том берегу", "в густом лесу", "в моём саду"]
+)
+def test_the_second_locative_is_end_stressed_after_an_adjective_too(phrase):
+    (ln,) = analyze_lines(phrase, Spec(language="ru"))
+    w = ln.words[-1]
+    assert [r.stress for r in w.readings] == [w.size - 1]
+
+
+def test_a_noun_after_a_noun_in_om_is_left_alone():
+    (ln,) = analyze_lines("в доме саду", Spec(language="ru"))
+    assert len(ln.words[-1].readings) >= 1 and ln.words[-1].readings[0].source != "rule"

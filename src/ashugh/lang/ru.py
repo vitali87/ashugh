@@ -1134,6 +1134,22 @@ def second_locatives(words: list[Word]) -> None:
             continue
         last = w.size - 1
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+    for k, w in enumerate(words):  # в э́том дыму́, на то́м берегу́: past the adjectives
+        if w.lang != CODE or w.norm not in SECOND_LOCATIVE or w.size < 2:
+            continue
+        j = k - 1
+        while j >= 0 and k - j <= 2 and words[j].norm.endswith(LOCATIVE_ADJECTIVE):
+            j -= 1
+        if j == k - 1 or j < 0 or words[j].norm not in LOCATIVE_PREPOSITIONS:
+            continue  # nothing between (done above), or no в or на before them
+        if w.readings and w.readings[0].source in ("mark", "user"):
+            continue
+        last = w.size - 1
+        w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+
+
+# The locative singular of an adjective or pronoun before a noun: э́том, на́шем, моём.
+LOCATIVE_ADJECTIVE = ("ом", "ем", "ём")
 
 
 def marked_leans(words: list[Word]) -> None:
