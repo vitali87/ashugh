@@ -167,6 +167,11 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
         for k in (v, v.replace("ё", "е"))
     },
     "дождалась": ("дождалась", (2,)),  # the dictionary dump's row is garbled
+    # The dump's colloquial све́рлит and ма́стерски for the norm сверли́т, мастерски́; and
+    # зна́чимость beside значи́мость, which dictionaries give too.
+    **{f: (f, (1,)) for f in "сверлю сверлишь сверлит сверлим сверлите сверлят".split()},
+    "мастерски": ("мастерски", (2,)),
+    **{f: (f, (0, 1)) for f in "значимость значимости значимостью".split()},
     "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
     "баюшки": ("баюшки", (0,)),
     "кого": ("кого", (1,)),
@@ -559,6 +564,8 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
             twin(norm[2:], lambda p: p + 1)
     if not found:
+        found += [(norm, stress) for stress in participle_stresses(norm)]
+    if not found:
         size = vowel_count(norm)
         for form in verb_twins(norm):
             stress = TABLE.stresses(form)
@@ -585,6 +592,32 @@ LABIALS = set("бпвмф")
 PARTICIPLE_ENDINGS = (
     "ий", "ая", "ее", "ие", "его", "ей", "ему", "им", "их", "ими", "ую", "ем", "ою", "ее",
 )  # fmt: skip
+
+
+# A present participle of the second conjugation is stressed as its infinitive
+# (кормя́щий as корми́ть, though ко́рмят), but for a few stressed as the 3rd plural
+# (лю́бящий, ле́чащий, ды́шащий) and слу́жащий, the noun beside служа́щий.
+PARTICIPLE_LIKE_PLURAL = {"люб": False, "леч": False, "дыш": False, "служ": True}
+
+
+def participle_stresses(norm: str) -> list[tuple[int, ...]]:
+    """The stresses of a second-conjugation participle in -ящ-/-ащ- the table lacks."""
+    reflexive = norm.endswith(("ся", "сь"))
+    word, tail = (norm[:-2], "ся") if reflexive else (norm, "")
+    for marker, plural, infinitives in (("ящ", "ят", "ить еть ять"), ("ащ", "ат", "ать ить еть")):
+        ending = next((e for e in PARTICIPLE_ENDINGS if word.endswith(marker + e)), None)
+        if ending is None or len(word) == len(marker + ending):
+            continue
+        stem = word[: -len(marker + ending)]
+        forms = [stem + i + tail for i in infinitives.split()]
+        infinitive = next((st for f in forms if (st := TABLE.stresses(f))), None)
+        third = TABLE.stresses(stem + plural + tail)
+        kept = next((v for root, v in PARTICIPLE_LIKE_PLURAL.items() if stem.endswith(root)), None)
+        if kept is None and infinitive:
+            return [infinitive]
+        out = [s for s in (third, infinitive if kept else None) if s]
+        return list(dict.fromkeys(out))
+    return []
 
 
 def verb_twins(norm: str) -> list[str]:

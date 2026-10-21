@@ -518,12 +518,15 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         reading = Reading(stress, phones, norm, source, secondary)
         if all((r.stress, r.phones) != (stress, phones) for r in readings):
             readings.append(reading)  # again keeps both /əˈɡɛn/ and /əˈɡeɪn/
-    # A compound may move its stress onto its second part in verse (sometíme), and a
-    # word stressed late onto an earlier secondary before a stressed word (the
-    # rhythm rule: Ténnessee whiskey, a Jápanese garden); the meter takes that one
-    # only where such a word follows.
+    # A compound may move its stress onto its second part in verse (sometíme), but no
+    # other word may (pró-gram, áth-lete); and a word stressed late may move it onto an
+    # earlier secondary before a stressed word (the rhythm rule: Ténnessee whiskey, a
+    # Jápanese garden), which the meter takes only where such a word follows.
+    compound = _compound_parts(norm) is not None
     for r in list(readings):
         for k in r.secondary:
+            if r.stress is not None and k > r.stress and not compound:
+                continue
             if r.stress is not None and k != r.stress and all(x.stress != k for x in readings):
                 rest = tuple(sorted({r.stress, *r.secondary} - {k}))
                 kind = "shift" if k > r.stress else "clash"

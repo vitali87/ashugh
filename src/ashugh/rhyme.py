@@ -162,12 +162,14 @@ def match(xs: list[Tail], ys: list[Tail]) -> tuple[float, Tail | None, Tail | No
 def score(a: Tail | None, b: Tail | None) -> float:
     if a is None or b is None:
         return 0.0
-    if a.spelling == b.spelling:
+    if a.spelling == b.spelling and (a.vowel, a.rest) == (b.vowel, b.rest):
         # The same object pronoun on both lines is no rhyme: need it / want it rhymes
-        # on need and want, or not at all.
+        # on need and want, or not at all. A homograph stressed apart (за́мок, замо́к)
+        # is compared by sound below.
         return 0.0 if a.lang == "en" and a.spelling in OBJECTS else 1.0
-    vd = vowel_distance(a.vowel, b.vowel)
-    if vd > 0.3:
+    merged = _english_merger(a, b)
+    vd = 0.0 if merged else vowel_distance(a.vowel, b.vowel)
+    if vd > 0.3 or (not merged and _english_contrast(a, b)):
         return 0.1
     s = 1.0 - vd
     if a.post != b.post:
@@ -181,6 +183,27 @@ def score(a: Tail | None, b: Tail | None) -> float:
     elif not a.rest or not b.rest:
         s -= 0.2  # open against closed: ду / сум
     return max(0.0, min(1.0, round(s, 3)))
+
+
+def _english_merger(a: Tail, b: Tail) -> bool:
+    """Vowels English does not tell apart before r, however CMUdict writes them:
+    here / year (NEAR) and tour / poor (CURE)."""
+    pair = {a.vowel, b.vowel}
+    return (
+        "en" in (a.lang, b.lang)
+        and pair in ({"i", "ɪ"}, {"u", "ʊ"})
+        and a.rest[:1] == b.rest[:1] == ("ɹ",)
+    )
+
+
+def _english_contrast(a: Tail, b: Tail) -> bool:
+    """Stressed vowels English keeps apart though they sound close: still / feel (KIT
+    and FLEECE), and far / war (START and NORTH) before r, where no accent merges them
+    as cot and caught merge."""
+    if "en" not in (a.lang, b.lang):
+        return False
+    pair = {a.vowel, b.vowel}
+    return pair == {"i", "ɪ"} or (pair == {"ɑ", "ɔ"} and a.rest[:1] == b.rest[:1] == ("ɹ",))
 
 
 def scheme(lines: list[list[Tail]], floor: float = THRESHOLD["near"]) -> str:

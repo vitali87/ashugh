@@ -175,18 +175,14 @@ def test_a_prefixed_feminine_past_may_keep_the_stem_stress_of_verse():
 
 
 @pytest.mark.parametrize(
-    "word, sung", [("ևս", "ևս"), ("այլևս", "այ-լևս"), ("դեռևս", "դե-ռևս"), ("Այլևս", "Այ-լևս")]
+    "word, sung",
+    [("ևս", "ե-վըս"), ("այլևս", "այ-լե-վըս"), ("դեռևս", "դե-ռե-վըս"), ("Այլևս", "Այ-լե-վըս")],
 )
-def test_evs_ends_in_a_cluster_not_a_possessive(word, sung):
+def test_evs_keeps_the_schwa_wiktionary_writes(word, sung):
     from ashugh.lang import hy
 
-    w = hy.analyze_word(word)
-    assert w.sung() == sung and w.readings[0].stress == w.size - 1
-
-
-def test_evs_in_latin_letters():
-    text = suno_text("Ես քեզ այլևս չեմ սիրում\n", armenian="latin")
-    assert "aylevs" in text.lower()
+    w = hy.analyze_word(word)  # [jevəs], [ɑjlevəs], [derevəs]
+    assert w.sung() == sung and w.readings[0].stress == w.size - 2
 
 
 SONG = (
@@ -268,3 +264,14 @@ def test_no_prefix_is_split_off_a_noun_or_with_one_letter(word):
     from ashugh.lang import ru
 
     assert ru.analyze_word(word).guessed
+
+
+def test_no_possessive_exception_contradicts_wiktionary():
+    from pathlib import Path
+
+    from ashugh.lang.hy import NOT_POSSESSIVE
+
+    data = Path(__file__).resolve().parent.parent / "eval" / "data" / "hye_armn_e_broad.tsv"
+    ipa = dict(line.split("\t", 1) for line in data.read_text(encoding="utf-8").splitlines())
+    wrong = [w for w in NOT_POSSESSIVE if w in ipa and ipa[w].rstrip().endswith(("ə s", "ə d"))]
+    assert wrong == []

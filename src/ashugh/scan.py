@@ -638,30 +638,57 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
 
 
 def _same_word(members: list[LineReport], k: int, pair) -> None:
-    """A line rhyming only on the word an earlier one ends with: a refrain, which
-    may be meant, but no rhyme. A line repeated whole is a refrain and fine."""
+    """A line rhyming only on the word an earlier one ends with, or on another form
+    of it (сердце / сердца): a refrain, which may be meant, but no rhyme. A line
+    repeated whole is a refrain and fine."""
     lr = members[k]
+    itself = True
     for m in range(k):
         s, ta, tb = pair(m, k)
-        if ta is None or tb is None or ta.spelling != tb.spelling:
+        if ta is None or tb is None:
             return
         if _norm_text(members[m].line.text) == _norm_text(lr.line.text):
             return
+        same = ta.spelling == tb.spelling and (ta.vowel, ta.rest) == (tb.vowel, tb.rest)
+        if not same and not _one_word(members[m], lr):
+            return
+        itself = itself and same
     if k == 0:
         return
-    word = pair(0, k)[2]
-    if word is None:
+    first, word = pair(0, k)[1:]
+    if word is None or first is None:
         return
+    if itself:
+        message = f"rhymes {_quote(word.word)} with itself"
+    else:
+        message = f"rhymes {_quote(word.word)} with {_quote(first.word)}, a form of the same word"
     lr.issues.append(
         Issue(
             lr.line.number,
             "rhyme",
             "warning",
-            f"rhymes {_quote(word.word)} with itself",
+            message,
             "the same word is a refrain, not a rhyme; fine if meant",
             {"word": word.word},
         )
     )
+
+
+def _one_word(a: LineReport, b: LineReport) -> bool:
+    """Whether two lines end on forms of one word: the same syllables up to and with
+    the stressed one (сер-дце, сер-дца), not merely the same sound (луг, лук)."""
+    heads = []
+    for lr in (a, b):
+        w = rhyme.anchor_word(lr.line, lr.fit)
+        if w is None:
+            return False
+        word, stress = lr.line.words[w], lr.fit.stresses.get(w)
+        if stress is None:
+            return False
+        sung = [s.text.lower().replace("ё", "е") for s in word.syllables]
+        heads.append((word.lang, sung[: stress + 1], word.norm))
+    (la, ha, na), (lb, hb, nb) = heads
+    return la == lb and ha == hb and na != nb
 
 
 def _norm_text(text: str) -> str:
