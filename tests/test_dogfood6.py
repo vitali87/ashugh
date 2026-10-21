@@ -65,7 +65,9 @@ def test_a_meter_that_drops_a_syllable_says_so():
         "Every heartbeat pulls us under\n", from_dict({"language": "en", "meter": "trochee4"})
     )
     notes = [(i.message, i.detail) for i in rep.issues if i.code == "syllables"]
-    assert notes == [("fits if «Every» is sung with one syllable fewer", "sung Eve-ry")]
+    assert notes == [
+        ("fits if «Every» is sung with one syllable fewer", "sung Ev'-ry, 2 syllables")
+    ]
 
 
 def test_the_found_scheme_shows_endings_where_the_spec_asks_them():

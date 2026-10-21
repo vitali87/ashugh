@@ -49,7 +49,7 @@ class Request:
     meter: str | None = None
     feet: int | None = None
     template: str | None = None  # stress pattern to match, "/" stressed, "x" not
-    ending: str | None = None  # masculine | feminine | dactylic
+    ending: str | None = None  # masculine | feminine | dactylic | hyperdactylic
     rhyme_with: list[str] = field(default_factory=list)  # words the line must rhyme with
     rhyme_sound: str | None = None
     avoid_final: list[str] = field(default_factory=list)

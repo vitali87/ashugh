@@ -1021,3 +1021,33 @@ def heteronyms(words: list[Word]) -> None:
             if r.stress != want
         ]
         w.readings = tuple(first + rest)
+
+
+def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
+    """Sung pieces of an English word as Suno should read them. A syllable the line
+    drops is an apostrophe (ev'-ry, diff'-rent), or runs into the one before at the
+    end (fire, de-sire); one it sings that the spelling hides is written as it
+    sounds (fi-er, hou-er)."""
+    pieces = list(pieces)
+    last = len(pieces) - 1
+    if drop is None or not 0 <= drop <= last:
+        return pieces
+    if short and 0 < drop < last:
+        cut = pieces[drop]
+        at = next((k for k, ch in enumerate(cut) if ch.lower() in "aeiouy"), len(cut))
+        pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + cut[:at] + "'"]
+        pieces[drop] = cut[at:].lstrip("aeiouyAEIOUY") + pieces[drop]
+    elif short:
+        at = drop - 1 if drop > 0 else 0
+        pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
+    elif drop == last and pieces[last].lower() == "re":  # fi-re: fi-er
+        pieces[last] = _case_of(pieces[last], "er")
+    elif drop == last and pieces[last].lower() == "ur" and pieces[last - 1][-1:].lower() == "o":
+        pieces[last - 1] += pieces[last][0]  # ho-ur: hou-er
+        pieces[last] = _case_of(pieces[last], "er")
+    return pieces
+
+
+def _case_of(written: str, new: str) -> str:
+    """new in the case written is in: FIRE's RE is ER."""
+    return new.upper() if written.isupper() else new

@@ -226,3 +226,38 @@ def test_our_sung_as_are_rhymes_with_it(partner):
     lines = analyze_lines(f"our\n{partner}", Spec(language="en"))
     tails = [rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines]
     assert rhyme.match(*tails)[0] >= rhyme.THRESHOLD["near"]
+
+
+def test_a_note_on_a_word_sung_short_shows_the_short_form():
+    spec = {"language": "en", "syllables": 5, "meter": "trochee3"}
+    rep = scan("every day I wait\n", from_dict(spec))
+    (note,) = [i for i in rep.issues if i.severity == "info" and "fewer" in i.message]
+    assert note.detail == "sung ev'-ry, 2 syllables"
+
+
+def test_a_slot_no_line_can_fill_is_named_on_its_own_stanza():
+    text = "[Verse 1]\nThe sun is up\n\n[Verse 2]\nThe rain is down\n"
+    spec = {"language": "en", "stanza": {"2": {"syllables": 8, "meter": "iamb4", "endings": "f"}}}
+    rep = scan(text, from_dict(spec))
+    (warning,) = [i for i in rep.issues if "no line can pass" in i.detail]
+    assert warning.line == 5
+
+
+def test_requests_name_a_hyperdactylic_ending_as_scan_does():
+    from ashugh.fit import requests_for
+
+    text = "Я вижу небо ясное и видимое\nИ солнце светит\n"
+    spec = from_dict({"language": "ru", "rhyme": "AA"})
+    assert scan(text, spec).lines[0].ending == "hyperdactylic"
+    assert {r.line: r.ending for r in requests_for(text, spec)}[2] == "hyperdactylic"
+
+
+def test_an_unresolved_line_says_its_candidates_end_on_the_partners_word():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "I walk along the line\nAnd feel the morning rain\n"
+    proposer = StaticProposer({2: ["And feel it all the line"]})
+    res = fit_song(text, from_dict({"language": "en", "rhyme": "AA"}), proposer, rounds=1)
+    (u,) = [u for u in res.unresolved if u.line == 2]
+    assert u.rejected and "line" in u.rejected[0]["why"]

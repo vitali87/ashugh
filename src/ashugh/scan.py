@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
+from .lang import en
 from .meter import Fit
 from .model import Line, mark_stress
 from .spec import Rule, Spec, mixed_case
@@ -174,7 +175,8 @@ def _check_spec_tables(report: Report) -> None:
         for n in sorted(report.spec.stanza_tables)
         if n > count
     ]
-    found += _impossible_slots(report)
+    for message, detail, lr in _impossible_slots(report):  # on the stanza that asks it
+        lr.issues.append(Issue(lr.line.number, "spec", "warning", message, detail))
     tables = report.spec.stanza_tables
     if tables and report.spec.base.empty and not report.spec.sections:
         found += [
@@ -185,9 +187,10 @@ def _check_spec_tables(report: Report) -> None:
         first.issues.append(Issue(first.line.number, "spec", "warning", message, detail))
 
 
-def _impossible_slots(report: Report) -> list[tuple[str, str]]:
-    """Slots no line can fill: 8 syllables of iamb4 with a feminine ending (9)."""
-    out: list[tuple[str, str]] = []
+def _impossible_slots(report: Report) -> list[tuple[str, str, LineReport]]:
+    """Slots no line can fill (8 syllables of iamb4 with a feminine ending, which
+    has 9), each with the first line that has it."""
+    out: list[tuple[str, str, LineReport]] = []
     for unit in report.units:
         rule = unit.rule
         if not rule.meter or not rule.syllables:
@@ -210,8 +213,9 @@ def _impossible_slots(report: Report) -> list[tuple[str, str]]:
                 f"the spec asks {syllables} syllables of {name}{feet} with a "
                 f"{ENDING_NAMES[ending]} ending, which has {need}"
             )
-            if all(m != message for m, _ in out):
-                out.append((message, "no line can pass this slot; change the count or the ending"))
+            if all(m != message for m, _, _ in out):
+                detail = "no line can pass this slot; change the count or the ending"
+                out.append((message, detail, lr))
     return out
 
 
@@ -475,7 +479,8 @@ def _elision_notes(ln: Line, f, add, source: str = "spec") -> None:
             what, detail = "drops its ը", f"in connected speech the word {how}"
         else:
             what = "is sung with one syllable fewer"
-            detail = f"sung {w.sung(dropped=True)}"
+            short = "-".join(en.sung_pieces([x.text for x in w.syllables], w.drop, True))
+            detail = f"sung {short}, {_count(w.size - 1, 'syllable')}"
         add(Issue(ln.number, "syllables", "info", f"fits if {_quote(w.text)} {what}", detail))
 
 

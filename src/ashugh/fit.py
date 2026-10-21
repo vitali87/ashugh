@@ -489,12 +489,26 @@ def _settle(
                     var.blocked = ["no candidates given, and the line as written breaks the rhyme"]
                 else:
                     var.blocked = ["no combination of candidates kept the rhyme"]
+                    _same_word_rejections(var, [lines[j] for j in numbers if j != k])
             continue
         for k, c in zip(numbers, choice):
             if k in variables:
                 variables[k].chosen = variables[k].pool[c]
                 variables[k].blocked = []
     return pending
+
+
+def _same_word_rejections(var: _Var, partners: list[LineReport]) -> None:
+    """Name the candidates the solver could not take for ending on a partner's
+    own rhyme word, which no per-line check rejects."""
+    words = {p.tail.spelling: p.line.number for p in partners if p.tail is not None}
+    for c in var.pool:
+        tail = c.report.tail
+        if c.original or tail is None or tail.spelling not in words:
+            continue
+        why = f"ends on «{tail.word}», the word L{words[tail.spelling]} rhymes on"
+        if (c.text, why) not in var.rejected:
+            var.rejected.append((c.text, why))
 
 
 def _why_empty(var: _Var) -> str:
@@ -618,9 +632,9 @@ def _request(
     syllables = rule.syllables_at(idx)
     want_ending = rule.ending_at(idx)
     if want_ending is None and partner_ending is not None:
-        want_ending = min(partner_ending, 2)  # пустая asks тая: a feminine slot
+        want_ending = min(partner_ending, 3)  # пустая asks тая: a feminine slot
     elif want_ending is None and lr.tail is not None and not line_errors(lr):
-        want_ending = min(lr.tail.post, 2)  # a passing line keeps its own ending
+        want_ending = min(lr.tail.post, 3)  # a passing line keeps its own ending
     meter_name = var.unit.meter if var.unit.meter_source == "spec" else None
     feet = rule.feet_at(idx) if meter_name else None
     template = None
