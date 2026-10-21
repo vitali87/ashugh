@@ -43,6 +43,7 @@ from dataclasses import dataclass, replace
 from functools import cache
 from importlib import resources
 
+from .. import lyrics
 from ..model import Reading, Syllable, Word
 from ..phon import features, is_obstruent, is_stop, sonority
 
@@ -718,6 +719,11 @@ def analyze_word(
         spelled = abbreviation(token, capitals)
         if spelled is not None:
             return spelled
+    if lyrics.held_note(norm, "աեէըիոօ"):  # Օօօ: one held note
+        word = analyze_word(token[0], overrides, capitals)
+        word.text, word.norm = token, norm
+        word.syllables = tuple(replace(s, text=token) for s in word.syllables)
+        return word
     override = (overrides or {}).get(norm)
     optional, prefer_short = None, False
     if override:

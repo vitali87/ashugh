@@ -444,3 +444,20 @@ def test_a_short_word_in_capitals_is_a_word(line, k):
 @pytest.mark.parametrize("line, k", [("Работал на ЦРУ", 2), ("Я из США", 2)])
 def test_abbreviations_the_dictionary_lists_are_still_spelt(line, k):
     assert word_in(line, k).spelled
+
+
+@pytest.mark.parametrize(
+    "line, k, size",
+    [("Ооо", 0, 1), ("Аааа, моя любовь", 0, 1), ("О-о-о", 0, 3), ("ее", 0, 2)],  # её is two
+)
+def test_a_vowel_written_long_is_one_held_note(line, k, size):
+    assert word_in(line, k).size == size
+
+
+def test_an_armenian_vowel_written_long_is_one_held_note():
+    (ln,) = analyze_lines("Օօօ", Spec(language="hy"))
+    assert ln.words[0].size == 1
+
+
+def test_suno_keeps_a_held_note_as_written():
+    assert suno.format_song("Ооо, моя любовь\n", tags=False).text.startswith("Ооо,")

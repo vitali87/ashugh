@@ -22,6 +22,7 @@ from dataclasses import replace
 from functools import cache
 from importlib import resources
 
+from .. import lyrics
 from ..model import Reading, Syllable, Word
 from ..table import SuffixPrior
 from . import ru_names, ru_slang
@@ -1076,6 +1077,16 @@ def analyze_word(
         spelled = abbreviation(token, capitals)
         if spelled is not None:
             return spelled
+    if lyrics.held_note(token, VOWELS):
+        v = token[0].lower()
+        return Word(
+            text=token,
+            norm=token.lower(),
+            lang=CODE,
+            syllables=(Syllable(token),),
+            readings=(Reading(0, transcribe(v, 0), v, "rule"),),
+            weak=True,
+        )
     norm, marked = read_marks(token)
     shown = token.replace(ACUTE, "")
     syllables = tuple(Syllable(s) for s in split_syllables(shown)) if vowel_count(norm) else ()

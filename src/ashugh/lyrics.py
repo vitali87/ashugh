@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 
 from .model import Line
 
@@ -349,3 +349,9 @@ def parse(text: str) -> list[Line]:
         open_unit, tagged = True, False
         index += 1
     return lines
+
+
+def held_note(token: str, vowels: Collection[str]) -> bool:
+    """Ооо, Аааа, Օօօ: one vowel letter written three times or more is one held note."""
+    low = token.lower()
+    return len(low) >= 3 and len(set(low)) == 1 and low[0] in vowels
