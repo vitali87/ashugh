@@ -121,3 +121,17 @@ def test_the_fallback_keeps_every_pair_and_misses_no_solution(seed, too_big, mon
 def test_auto_hands_big_instances_to_cpsat(too_big):
     pytest.importorskip("ortools")
     assert solve(TRAP) == [1, 1, 0]
+
+
+def test_an_impossible_group_is_proved_so_without_walking_it():
+    import time
+
+    lines = 6
+    weights = [[1.0 - c / 100 for c in range(25)] for _ in range(lines)]
+    every = {(i, j) for i in range(25) for j in range(25)}
+    pairs = {(a, b): set(every) for a in range(lines - 1) for b in range(a + 1, lines - 1)}
+    pairs |= {(a, lines - 1): set() for a in range(lines - 1)}  # the last rhymes apart
+    start = time.perf_counter()
+    assert solve(Problem(weights, pairs), method="exact") is None
+    assert solve(Problem(weights, pairs)) is None
+    assert time.perf_counter() - start < 1  # the search walked 25^5 choices: 43 s
