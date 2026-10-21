@@ -172,3 +172,42 @@ def test_a_prefixed_feminine_past_may_keep_the_stem_stress_of_verse():
     text = "Меня к тебе душа моя призвала,\nТы стала, словно светлое начало,\n"
     rep = scan(text, from_dict({"language": "ru", "meter": "iamb5", "rhyme": "AA"}))
     assert rep.ok  # призва́ла / нача́ло, as the poet has it
+
+
+@pytest.mark.parametrize(
+    "word, sung", [("ևս", "ևս"), ("այլևս", "այ-լևս"), ("դեռևս", "դե-ռևս"), ("Այլևս", "Այ-լևս")]
+)
+def test_evs_ends_in_a_cluster_not_a_possessive(word, sung):
+    from ashugh.lang import hy
+
+    w = hy.analyze_word(word)
+    assert w.sung() == sung and w.readings[0].stress == w.size - 1
+
+
+def test_evs_in_latin_letters():
+    text = suno_text("Ես քեզ այլևս չեմ սիրում\n", armenian="latin")
+    assert "aylevs" in text.lower()
+
+
+SONG = (
+    "[Verse]\nThe harbor lights are burning low,\nThe boats are sleeping in the bay.\n\n"
+    "[Chorus]\nOver the hills and away,\nFollow me home through the day.\n"
+)
+
+
+def test_a_sections_meter_does_not_inherit_the_feet_of_another():
+    from ashugh.scan import scan
+    from ashugh.spec import loads
+
+    spec = loads('meter = "iamb4"\n[section.chorus]\nmeter = "dactyl"\n')
+    rep = scan(SONG, spec)
+    assert rep.ok, [i.message for i in rep.issues]
+
+
+def test_a_section_that_names_its_feet_still_checks_them():
+    from ashugh.scan import scan
+    from ashugh.spec import loads
+
+    spec = loads('meter = "iamb4"\n[section.chorus]\nmeter = "dactyl"\nfeet = [4]\n')
+    rep = scan(SONG, spec)
+    assert {i.code for i in rep.issues if i.severity == "error"} == {"feet"}

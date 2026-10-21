@@ -116,7 +116,9 @@ by hyphens, one vowel each, and every entry must spell its word.
 
 Top-level keys apply everywhere; `[section.<name>]` overrides them for its
 sections, and `[stanza.<n>]` overrides its stanza's section in turn, so a
-chorus stanza's table changes only what it sets. Command-line flags (`--syllables`, `--meter`, `--feet`,
+chorus stanza's table changes only what it sets, except that a table's
+`meter` brings its own feet (`dactyl` in a chorus is any number of dactyls,
+not the `iamb4` above's four). Command-line flags (`--syllables`, `--meter`, `--feet`,
 `--rhyme`, `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
 `.A.A`.

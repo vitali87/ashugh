@@ -181,6 +181,7 @@ def apply(table: dict, base: Rule, where: str) -> Rule:
         except ValueError as e:
             raise SpecError(f"{where}: {e}") from None
         changes["meter"] = name
+        changes["feet"] = ()  # a new meter brings its own feet, not the table's above
         if feet is not None:
             if feet < 1:
                 raise SpecError(f"{where}: a meter has 1 or more feet, got {table['meter']!r}")
