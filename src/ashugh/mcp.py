@@ -7,7 +7,9 @@ speaks JSON-RPC 2.0, one message per line, and offers these tools:
 * scan         check lyrics against a spec (TOML text); the full report
 * syllables    how lines are sung: syllables, stress grid
 * rhyme        the rhyme level of two words or lines
+* requests     what each failing line must be, for the agent to write candidates
 * pick         choose among candidate lines the agent wrote so the song passes
+* translate    a song into another language on the same grid: requests, then picks
 * suno         rewrite lyrics for Suno
 * derive_spec  the spec that reproduces a song's form (for translations)
 * spec_template a starter spec
@@ -26,13 +28,13 @@ import sys
 from collections.abc import Callable
 
 from . import __version__, meter, report, rhyme
-from .fit import fit_song
+from .fit import fit_song, requests_for
 from .lang import ANALYZERS
 from .proposers import ProposerError, StaticProposer, parse_candidates
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, dumps, loads, template
 from .suno import format_song
-from .translate import derive_spec, parse_keep, source_warnings
+from .translate import derive_spec, parse_keep, source_warnings, translate_song
 
 VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
 
@@ -79,12 +81,18 @@ def t_syllables(args: dict) -> dict:
     lines = []
     for ln in analyze_lines(_str(args, "text"), _spec(args), _lang(args)):
         f = meter.fit(ln.words, meter.parse_meter(_opt(args, "meter") or "free")[0])
-        sung = " ".join(w.sung(f.stresses.get(i), mark=True) for i, w in enumerate(ln.words))
+        sung = " ".join(
+            w.sung(f.stresses.get(i), mark=True, dropped=i in f.elided)
+            for i, w in enumerate(ln.words)
+        )
         ambiguous = [w.text for w in ln.words if w.ambiguous and w.size > 1]
+        fewest, most = meter.syllable_range(ln.words, f)
         lines.append(
             {
                 "text": ln.text,
                 "syllables": f.count,
+                "fewest": fewest,  # a line counts anywhere from fewest to most
+                "most": most,
                 "grid": f.grid,
                 "sung": sung,
                 "ambiguous": ambiguous,
@@ -114,7 +122,49 @@ def t_pick(args: dict) -> dict:
     proposer = StaticProposer(candidates)
     result = fit_song(_str(args, "lyrics"), _spec(args), proposer, rounds=1)
     data = result.as_dict()
-    data["warnings"] = proposer.unused({lr.line.number for lr in result.report.lines})
+    data["ignored"] = proposer.unused({lr.line.number for lr in result.report.lines})
+    return data
+
+
+def t_requests(args: dict) -> dict:
+    n = args.get("n", 6)
+    if not isinstance(n, int) or n < 1:
+        raise ToolError("n must be a whole number of 1 or more")
+    reqs = requests_for(_str(args, "lyrics"), _spec(args), n, _lang(args))
+    return {"requests": [r.as_dict() for r in reqs]}
+
+
+class _Recorder:
+    """A proposer that writes nothing: it keeps the requests it is sent."""
+
+    name = "requests"
+
+    def __init__(self) -> None:
+        self.requests: list = []
+
+    def propose(self, requests: list) -> dict:
+        self.requests += requests
+        return {}
+
+
+def t_translate(args: dict) -> dict:
+    target = _str(args, "to")
+    if target not in ANALYZERS:
+        raise ToolError(f"to must be one of {', '.join(sorted(ANALYZERS))}, not {target!r}")
+    lyrics, source_lang = _str(args, "lyrics"), _lang(args)
+    raw = args.get("candidates")
+    if raw is None:  # the first step: what each line must be
+        recorder = _Recorder()
+        translate_song(lyrics, target, recorder, rounds=1, source_lang=source_lang)
+        return {"requests": [r.as_dict() for r in recorder.requests]}
+    try:
+        candidates = parse_candidates(raw)
+    except ProposerError as e:
+        raise ToolError(str(e)) from None
+    proposer = StaticProposer(candidates)
+    result = translate_song(lyrics, target, proposer, rounds=1, source_lang=source_lang)
+    data = result.as_dict()
+    data["ignored"] = proposer.unused({lr.line.number for lr in result.report.lines})
     return data
 
 
@@ -211,6 +261,28 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             lang=LANG_DOC,
         ),
         t_pick,
+    ),
+    "requests": (
+        "What each failing line of a song must be, before you write candidates: its "
+        "syllables, meter template, ending, the words it must rhyme with, its problems "
+        "and the lines around it. A chorus written twice is asked once (see copies). "
+        "Write candidates for each request, then call pick.",
+        _schema(["lyrics"], lyrics="the lyrics", spec=SPEC_DOC, lang=LANG_DOC),
+        t_requests,
+    ),
+    "translate": (
+        "Translate a song into another language on the same syllable grid and rhymes. "
+        "Call it first without candidates: it returns a request per line (the source "
+        "line and the slot it must fill). Then call it again with candidates, line "
+        "number -> translations, to get the song that fits.",
+        _schema(
+            ["lyrics", "to"],
+            lyrics="the source lyrics",
+            to="the target language: hy, ru or en",
+            candidates="line number -> candidate translations (omit to get requests)",
+            lang="the source language, detected when omitted",
+        ),
+        t_translate,
     ),
     "suno": (
         "Rewrite lyrics for Suno: restore ё, mark ambiguous Russian stress, spell out or "

@@ -113,9 +113,9 @@ def analyze(
     words: list[Word] = []
     letters = "".join(ch for t in tokens for ch in t if ch.isalpha())
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
-    latin_armenian = lang == hy.CODE and _latin_armenian(tokens)
+    in_latin = lang == hy.CODE and latin_armenian(tokens)
     for token in tokens:
-        if latin_armenian and script_of(token) == en.CODE:
+        if in_latin and script_of(token) == en.CODE:
             words.append(_from_latin(token, lexicon))
             continue
         if token == "&":  # rock & roll: the line's own and
@@ -221,7 +221,7 @@ COMMON_ENGLISH = set(
 ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz")
 
 
-def _latin_armenian(tokens: list[str]) -> bool:
+def latin_armenian(tokens: list[str]) -> bool:
     """A line of an Armenian song written in Latin letters (Mtnem aygin, qaghem
     vard) rather than an English line within it (I love you, baby): no Armenian
     letter, and more words English lacks or Armenian spells (q, gh, kh) than

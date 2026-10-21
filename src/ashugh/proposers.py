@@ -77,14 +77,27 @@ def parse_lines(data, requests: list[Request]) -> dict[str, list]:
     wanted = {r.id for r in requests}
     out: dict[str, list] = {r.id: [] for r in requests}
     for entry in data["lines"]:
-        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+        if not isinstance(entry, dict):
             continue
-        if entry["id"] not in wanted:
+        key = _request_id(entry.get("id", entry.get("line")))
+        if key not in wanted:
             continue
         candidates = entry.get("candidates")
         if isinstance(candidates, list):
-            out[entry["id"]].extend(candidates)
+            out[key].extend(candidates)
     return out
+
+
+def _request_id(value) -> str | None:
+    """A request id as a proposer may write it: "L5", "5" or 5 are all L5."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return f"L{value}"
+    if isinstance(value, str):
+        text = value.strip()
+        return f"L{text}" if text.isdigit() else text.upper() if text[:1] in "lL" else text
+    return None
 
 
 class StaticProposer:

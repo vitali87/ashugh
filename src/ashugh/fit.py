@@ -364,7 +364,10 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
         return
     var.seen.add(key)
     want = lang or var.lr.line.lang
-    written = languages.detect(lyrics.tokenize(text))
+    tokens = lyrics.tokenize(text)
+    written = languages.detect(tokens)
+    if want == "hy" and written == "en" and languages.latin_armenian(tokens):
+        written = "hy"  # Ari u el mi gna: Armenian typed in Latin letters
     if want in languages.ANALYZERS and written and written != want:
         name = languages.NAMES.get(want, want)
         var.rejected.append((text, f"not in {name}"))  # a translation left in its source
@@ -508,14 +511,14 @@ def _request(
     moving: list[int] = []  # partners whose rhyme word must change too
     if var.group is not None:
         members = groups[var.group]
-        settled = [  # partners that may stay: kept, chosen, or passing their own checks
+        settled = [  # partners that may stay: kept, chosen, or passing every check
             k
             for k in members
             if k != ln.number
             and (
                 k not in variables
                 or variables[k].chosen is not None
-                or not line_errors(variables[k].lr)
+                or not (line_errors(variables[k].lr) or _breaks_rhyme(variables[k].lr))
             )
         ]
         # When every partner must change, all aim at the first line's rhyme, not at
@@ -598,6 +601,11 @@ def _request(
     if extra is not None:
         extra(var, req)
     return req
+
+
+def _breaks_rhyme(lr: LineReport) -> bool:
+    """Whether the line is one its rhyme group leaves out (day among night, light)."""
+    return any(i.code == "rhyme" for i in lr.issues)
 
 
 def _rhyme_word_stays(lr: LineReport) -> bool:

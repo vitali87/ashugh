@@ -63,6 +63,14 @@ DOLNIK_SKIP = 0.6
 MAX_ELIDABLE = 4
 
 
+def syllable_range(words: list[Word], f: Fit) -> tuple[int, int]:
+    """The fewest and the most syllables a line may be sung in: every droppable
+    syllable sung (Գի-շե-րըն, 5) or as many left out as may be (նա ստացավ: 3-4)."""
+    most = f.count + len(f.elided)
+    fewest = most - max(len(r) for r in realizations(words))
+    return fewest, most
+
+
 def length(meter: str, feet: int, ending: int) -> int | None:
     """Syllables in a line of a classical meter with this many feet and this ending."""
     if meter not in CLASSICAL:

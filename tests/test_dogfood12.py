@@ -173,3 +173,70 @@ def test_the_documented_spec_can_be_met(path):
     song = "Я шёл домой\n\n[Припев]\nЯ шёл домой\nЯ шёл домой\nЯ шёл домой\nЯ шёл домой\n"
     rep = scan(song, spec)
     assert not [i for i in rep.issues if i.code == "spec" and "no line can pass" in i.detail]
+
+
+def test_requests_aim_at_the_partners_that_stay():
+    from ashugh.fit import requests_for
+
+    text = (
+        "I walk alone into the night\n"
+        "And see the stars give off their light\n"
+        "I think of you the whole long day\n"
+        "And wish that I were back at home\n"
+    )
+    reqs = {r.line: r for r in requests_for(text, from_dict({"language": "en", "rhyme": "AAAA"}))}
+    assert set(reqs[3].rhyme_with) == {"night", "light"}
+    assert set(reqs[4].rhyme_with) == {"night", "light"}
+
+
+def _mcp(name, args):
+    from ashugh import mcp
+
+    return mcp.TOOLS[name][2](args)
+
+
+def test_mcp_syllables_gives_the_range_syl_gives():
+    out = _mcp("syllables", {"text": "Ու մութն է իջել մեր ճամփին", "lang": "hy"})["lines"][0]
+    assert (out["fewest"], out["most"]) == (8, 9)
+
+
+def test_mcp_pick_keeps_warnings_and_reports_ignored_apart():
+    out = _mcp(
+        "pick", {"lyrics": "Я шёл домой\n", "candidates": {"5": ["x"]}, "spec": "syllables = 4"}
+    )
+    assert "ignored" in out and isinstance(out["warnings"], list)
+
+
+def test_mcp_requests_and_translate():
+    out = _mcp("requests", {"lyrics": "I walked along the road all day\n", "spec": "syllables = 6"})
+    assert out["requests"][0]["syllables"] == 6
+    asked = _mcp("translate", {"lyrics": "Я шёл домой\n", "to": "en"})
+    assert asked["requests"][0]["source"] == "Я шёл домой"
+    done = _mcp(
+        "translate",
+        {"lyrics": "Я шёл домой\n", "to": "en", "candidates": {"1": ["I walked back home"]}},
+    )
+    assert "I walked back home" in done["text"]
+
+
+@pytest.mark.parametrize("ident", ["L5", "5", 5, "l5"])
+def test_a_proposer_answer_names_its_line_any_usual_way(ident):
+    from ashugh.proposers import Request, parse_lines
+
+    req = Request(id="L5", line=5, lang="en", original="x")
+    out = parse_lines({"lines": [{"id": ident, "candidates": ["a line"]}]}, [req])
+    assert out == {"L5": ["a line"]}
+
+
+def test_a_latin_armenian_candidate_is_accepted_for_an_armenian_line():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "Արի ու էլի մի գնա ինձնից հեռու\n"
+    res = fit_song(
+        text,
+        from_dict({"language": "hy", "syllables": 6}),
+        StaticProposer({1: ["Ari u el mi gna"]}),
+        rounds=1,
+    )
+    assert not any("not in Armenian" in r["why"] for u in res.unresolved for r in u.rejected)

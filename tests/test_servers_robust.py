@@ -60,9 +60,9 @@ def tool(name: str, **arguments):
 
 def test_mcp_pick_names_what_it_ignored():
     failed, data = tool("pick", lyrics="I walk the way\n", candidates={"999": ["x y z"]})
-    assert not failed and data["warnings"] == [
+    assert not failed and data["ignored"] == [
         "line 999 is no lyric line (lines count from the file's first)"
-    ]
+    ]  # as the CLI's --json has it; warnings stay for the input's own
 
 
 def test_mcp_suno_takes_tags_as_a_boolean_only():
