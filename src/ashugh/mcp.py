@@ -32,7 +32,7 @@ from .fit import fit_song, requests_for
 from .lang import ANALYZERS
 from .lyrics import has_digits
 from .proposers import ProposerError, StaticProposer, parse_candidates
-from .scan import analyze_lines, scan
+from .scan import analyze_lines, lean_marked, scan
 from .spec import Spec, SpecError, dumps, loads, template
 from .suno import format_song
 from .translate import derive_spec, parse_keep, source_warnings, translate_song
@@ -83,7 +83,9 @@ def t_syllables(args: dict) -> dict:
     for ln in analyze_lines(_str(args, "text"), _spec(args), _lang(args)):
         f = meter.fit(ln.words, meter.parse_meter(_opt(args, "meter") or "free")[0])
         sung = " ".join(
-            w.sung(f.stresses.get(i), mark=True, dropped=i in f.elided)
+            lean_marked(
+                ln.words, f.stresses, i, w.sung(f.stresses.get(i), mark=True, dropped=i in f.elided)
+            )
             for i, w in enumerate(ln.words)
         )
         ambiguous = [w.text for w in ln.words if w.ambiguous and w.size > 1]

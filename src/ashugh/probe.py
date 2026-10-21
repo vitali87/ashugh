@@ -82,6 +82,7 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
     if bad:
         raise ValueError(f"{lang} probe modes are {', '.join(MODES[lang])}, not {bad[0]!r}")
     plan = []
+    made: set[str] = set()  # замо́к and замОк are one word: its clips once
     for k, token in enumerate(words):
         w = _word(token, lang)
         reading = w.readings[0]
@@ -91,9 +92,10 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
                 shown = format_song(token, armenian=mode, tags=False).text
             else:
                 shown = _russian_variant(w, token, reading, mode)
-            if shown in seen:
+            if shown in seen or shown in made:
                 continue  # о́блака: caps on the first letter is the acute, one clip is enough
             seen.add(shown)
+            made.add(shown)
             line = f"{shown}, {shown}, {shown}"
             plan.append(
                 Probe(
@@ -112,6 +114,8 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
 
 
 def _sung(w, token: str, lang: str, stress: int | None) -> str:
+    if lang == "ru" and not token.isupper():
+        return w.sung(stress).lower()  # замОк: the writer's capital is a mark, not case
     if lang != "hy":
         return w.sung(stress)
     sung = w.sung()  # analysed as written: ԱՄՆ-ից is spelled out, ամն-ից is not

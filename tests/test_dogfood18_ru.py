@@ -176,3 +176,167 @@ def test_surnames_take_their_own_stress(line, norm, shown):
 @pytest.mark.parametrize("line,norm,shown", [("Он толстой книгой", "толстой", "то́л-стой")])
 def test_a_common_word_written_small_keeps_its_own(line, norm, shown):
     assert first(line, norm) == shown
+
+
+@pytest.mark.parametrize(
+    "line,norm,shown",
+    [
+        ("Звездою севера явись", "севера", "се́-ве-ра"),
+        ("Увяданья золотом охваченный", "золотом", "зо́-ло-том"),
+        ("Я иду по тропе одна", "тропе", "тро-пе́"),
+        ("Взмах крыла", "крыла", "кры-ла́"),
+    ],
+)
+def test_the_everyday_reading_comes_first(line, norm, shown):
+    assert first(line, norm) == shown
+
+
+def test_v_pole_has_no_rare_pole():
+    assert stresses("Белая в поле стоишь", "поле") == {0}
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Это было в сорок первом году",
+        "в двадцать первом веку",
+        "в тысяча девятьсот сорок пятом году",
+    ],
+)
+def test_a_second_locative_past_a_numeral(line):
+    w = line_words(line)[-1]
+    assert {r.stress for r in w.readings} == {1}
+
+
+def test_a_repeated_line_gets_its_first_copys_best_attempt():
+    from ashugh import translate
+
+    class Bank:
+        name = "bank"
+
+        def propose(self, requests):
+            return {r.id: ["Lyuli, lyuli, standing"] for r in requests if r.line == 1}
+
+    text = "Люли, люли, стояла,\nЛюли, люли, стояла,\n"
+    result = translate.translate_song(text, "en", Bank(), keep={"syllables"}, rounds=1)
+    assert "Люли" not in result.text
+    assert result.text.count("Lyuli, lyuli, standing") == 2
+
+
+@pytest.mark.parametrize(
+    "line,norm,shown",
+    [
+        ("Иван Иванович", "иванович", "И-ва́-но-вич"),
+        ("Мария Ивановна", "ивановна", "И-ва́-но-вна"),
+        ("Юрий Юрьевич", "юрьевич", "Ю́-рье-вич"),
+        ("Наталья Павловна", "павловна", "Па́-вло-вна"),
+        ("Иван Михайлович", "михайлович", "Ми-ха́й-ло-вич"),
+        ("Сергей Дмитриевич", "дмитриевич", "Дми́-три-е-вич"),
+        ("Владимир Ильич", "ильич", "И-льи́ч"),
+        ("Владимира Ильича", "ильича", "И-льи-ча́"),
+        ("Пётр Петрович", "петрович", "Пе-тро́-вич"),
+    ],
+)
+def test_patronymics_keep_their_names_stress(line, norm, shown):
+    assert first(line, norm) == shown
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [("заломати", "за-ло-ма́-ти"), ("гуляти", "гу-ля́-ти"), ("кудряву", "ку-дря́-ву")],
+)
+def test_folk_forms_take_their_words_stress(word, shown):
+    assert first(word, word) == shown
+    assert not word_guessed(word)
+
+
+def word_guessed(norm: str) -> bool:
+    return word(norm, norm).guessed
+
+
+def test_the_folk_song_derives_feminine_endings():
+    from ashugh import translate
+
+    text = (
+        "Во поле берёза стояла,\nНекому берёзу заломати,\n"
+        "Некому кудряву заломати,\nЛюли, люли, заломати.\n"
+    )
+    data = translate.derive_spec(scan(text, Spec(language="ru")), keep={"endings"})
+    assert data["stanza"]["1"]["endings"] == "ffff"
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("пятидесяти", "пя-ти́-де-ся-ти"),
+        ("шестьюдесятью", "шес-тью́-де-ся-тью"),
+        ("пятистам", "пя-ти-ста́м"),
+        ("тремястами", "тре-мя-ста́-ми"),
+        ("двухсот", "двух-со́т"),
+        ("обе", "о́-бе"),
+        ("езды", "е-зды́"),
+    ],
+)
+def test_numeral_cases_and_missing_words(word, shown):
+    assert first(word, word) == shown and not word_guessed(word)
+
+
+@pytest.mark.parametrize("name,shown", [("Маруся", "Ма-ру́-ся"), ("Катюша", "Ка-тю́-ша")])
+def test_folk_diminutive_names(name, shown):
+    assert first(f"Я люблю {name}", name.lower()) == shown
+
+
+@pytest.mark.parametrize(
+    "line,out",
+    [("Темным-темно в лесу ночном", "Тёмным-темно"), ("Желто-зеленый лист", "Жёлто-зелёный")],
+)
+def test_a_hyphenated_compound_keeps_each_parts_yo(line, out):
+    assert sung(line).startswith(out)
+
+
+def test_spec_from_warns_of_guessed_stresses():
+    from ashugh import translate
+
+    report = scan("Мы пели о кшвыре\nИ шли домой\n", Spec(language="ru"))
+    warnings = translate.source_warnings(report)
+    assert any("guessed stress" in w and "кшвыре" in w for w in warnings)
+
+
+def test_syl_marks_a_stress_moved_onto_the_preposition(capsys):
+    from ashugh.cli import main
+
+    main(["syl", "--meter", "dactyl", "Взял меня за руку вывел за дверь"])
+    assert "за́ ру-ку" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("line,out", [("Не был я там", "Не́ был"), ("По полю гуляю", "По")])
+def test_suno_never_writes_a_short_word_in_capitals(line, out):
+    text = sung(line)
+    assert text.startswith(out) and not text.split()[0].isupper()
+
+
+def test_probe_makes_one_set_for_one_word_written_two_ways():
+    from ashugh import probe
+
+    plan = probe.make_probes(["замо́к", "замОк"], "ru")
+    assert len({p.lyrics for p in plan}) == len(plan) == 3
+    assert all(p.sung == p.sung.lower() for p in plan)
+
+
+@pytest.mark.parametrize("a,b", [("голландцы", "танцы"), ("агентство", "блаженство")])
+def test_silent_consonants_of_ndts_and_ntstv(a, b):
+    assert rhyme.score(*_tails(a, b)) >= rhyme.THRESHOLD["perfect"]
+
+
+def _tails(a: str, b: str):
+    from ashugh import meter
+
+    lines = analyze_lines(f"{a}\n{b}", Spec(language="ru"))
+    return [rhyme.tails(ln, meter.fit(ln.words, "free"))[0] for ln in lines]
+
+
+@pytest.mark.parametrize(
+    "word,shown", [("изи", "и́-зи"), ("лайкни", "лай-кни́"), ("аккаунт", "ак-ка́-унт")]
+)
+def test_slang_of_todays_songs(word, shown):
+    assert first(word, word) == shown

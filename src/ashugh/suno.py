@@ -483,8 +483,9 @@ def _mark_vowel(token: str, syllable: int, stress: str) -> str:
             if count == syllable:
                 if ch.lower() == "ё":
                     return token
-                if stress == "caps" and k > 0 and not token.isupper():
-                    return token[:k] + ch.upper() + token[k + 1 :]
+                capped = token[:k] + ch.upper() + token[k + 1 :]
+                if stress == "caps" and k > 0 and not token.isupper() and not capped.isupper():
+                    return capped  # not По as ПО, a word in capitals: По́
                 # a capital first letter reads as case, and in a word in capitals a
                 # capital marks nothing: the acute does (ЗАМО́К)
                 return token[: k + 1] + ACUTE + token[k + 1 :]

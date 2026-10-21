@@ -14,7 +14,7 @@ from . import __version__, lyrics, meter, probe, report, rhyme
 from . import lang as languages
 from .fit import FitResult, fit_song
 from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candidates, make_proposer
-from .scan import analyze_lines, scan
+from .scan import analyze_lines, lean_marked, scan
 from .spec import Spec, SpecError, apply, dumps, load, template
 from .suno import format_song, load_policy
 from .translate import derive_spec, parse_keep, source_warnings, translate_song
@@ -192,7 +192,9 @@ def cmd_syl(args: argparse.Namespace) -> int:
         parts = []
         for i, w in enumerate(ln.words):
             st = f.stresses.get(i)
-            sung = w.sung(st, mark=True, dropped=i in f.elided)
+            sung = lean_marked(
+                ln.words, f.stresses, i, w.sung(st, mark=True, dropped=i in f.elided)
+            )
             note = ""
             if w.guessed and w.size > 1:
                 note = "?"

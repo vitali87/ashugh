@@ -238,10 +238,43 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # verbs), стре́лки (not стрелки́, shooters), мир по́лон, по провода́м, стра́стной.
     **{f: (f, (0, 1)) for f in "полке пору лета рода морю солью стрелки полон страстной".split()},
     "проводам": ("проводам", (2, 0)),
+    # The everyday reading before a rarer one the table ranks first: Звездою се́вера
+    # (not севера́), зо́лотом, по тропе́ (not the trope's тро́пе), по́лю (not I weed),
+    # крыла́ (not she covered); по́ле alone (поле́ is of пола́, a coat's flap).
+    "севера": ("севера", (0, 2)),
+    "золотом": ("золотом", (0, 2)),
+    "тропе": ("тропе", (1, 0)),
+    "полю": ("полю", (0, 1)),
+    "крыла": ("крыла", (1, 0)),
+    "поле": ("поле", (0,)),
+    "люли": ("люли", (0,)),  # Люли, люли, the folk refrain
     # Second readings no one says, which the table keeps from rare words: вто́рой,
     # во́лна (wool), голу́бой, смо́гу.
     **{f: (f, (1,)) for f in "второй волна волне волну волной смогу".split()},
     "голубой": ("голубой", (2,)),
+    # The numerals' cases the table lacks: пяти́десяти, пятью́десятью, пятисо́т, пятиста́м
+    **{
+        f: (f, (k,))
+        for k, forms in (
+            (0, "обе"),
+            (
+                1,
+                "двухсот трехсот трёхсот пятидесяти шестидесяти семидесяти восьмидесяти "
+                "пятьюдесятью "
+                "шестьюдесятью семьюдесятью восьмьюдесятью двумстам тремстам пятисот "
+                "шестисот семисот восьмисот девятисот двухстах трехстах трёхстах езды обеих "
+                "обоих",
+            ),
+            (
+                2,
+                "четыремстам пятистам шестистам семистам восьмистам девятистам "
+                "тремястами двумястами пятистах шестистах семистах восьмистах девятистах "
+                "пятьюстами шестьюстами семьюстами восьмьюстами девятьюстами",
+            ),
+            (3, "четырьмястами четырехсот четырёхсот"),
+        )
+        for f in forms.split()
+    },
     # Forms the table lacks: цветки́ (the plural of цветок beside цветы), встать с коле́н,
     # сбросить око́в, в полно́чный час.
     **{
@@ -461,6 +494,9 @@ REWRITES = (
     ("рдц", "рц"),
     ("лнц", "нц"),
     ("вств", "ств"),
+    ("нтств", "нств"),  # аге́нство
+    ("ндц", "нц"),  # голла́нцы
+    ("стск", "ск"),
     ("стл", "сл"),
     ("нтск", "нск"),
     ("ндск", "нск"),
@@ -764,6 +800,17 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
         if norm.endswith(suffix) and not found and not gerund and bare not in CLITICS:
             if vowel_count(bare) > 1 or TABLE.variants(bare) or bare[-1:] not in VOWELS:
                 twin(bare, lambda p: p)
+    # Folk infinitives in -ти after a vowel (залома́ти, гуля́ти): the verb's -ть
+    if not found and norm.endswith("ти") and norm[-3:-2] in "аяеиу" and vowel_count(norm) > 2:
+        verb = norm[:-2] + "ть"
+        if TABLE.variants(verb):
+            twin(verb, lambda p: p)
+        else:  # заломать, which the table lacks, as its base: залома́ть
+            found += [(norm, (r.stress,)) for r in _lexicon_readings(verb) if r.stress is not None]
+    # The folk short accusative of an adjective: кудря́ву for кудря́вую, бе́лу for бе́лую
+    if not found and norm.endswith("у") and vowel_count(norm) > 1:
+        if TABLE.variants(norm[:-1] + "ую"):
+            twin(norm[:-1] + "ую", lambda p: p)
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
             twin(norm[2:], lambda p: p + 1)
@@ -990,6 +1037,25 @@ def _short_plural_twin(norm: str, options: list) -> list:
     return []
 
 
+def _yo_parts(spelling: str) -> str:
+    """A hyphenated spelling with the ё its parts have where the table writes е:
+    тёмным-темно (of тёмный), жёлто-зелёный (жёлто of жёлтый)."""
+    parts = spelling.split("-")
+    for k, part in enumerate(parts[:-1]):  # the last part is the word the table stresses
+        if "ё" in part or "е" not in part:
+            continue
+        stems = [part] + ([part[:-1] + e for e in ("ый", "ий")] if part.endswith("о") else [])
+        for stem in stems:
+            yo = next((v for v, _ in TABLE.variants(stem) if "ё" in v), None)
+            plain = TABLE.stresses(stem) is not None
+            if yo is not None and not plain:
+                at = yo.index("ё")
+                if at < len(part) and part[at] == "е":
+                    parts[k] = part[:at] + "ё" + part[at + 1 :]
+                break
+    return "-".join(parts)
+
+
 def _lexicon_readings(norm: str) -> list[Reading]:
     options: list[tuple[str, tuple[int, ...], str]] = []
     if norm in CORE:
@@ -1028,6 +1094,8 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             if stress == (comparative - 1,) and stress not in known:
                 options.append((norm, stress, "lexicon"))
     options = _yo_plural_first(options)
+    if "-" in norm.strip("-"):  # тёмным-темно́, жёлто-зелёный: each part its own ё
+        options = [(_yo_parts(spelling), stress, source) for spelling, stress, source in options]
     readings = []
     for spelling, stress, source in options:
         stress = _past_numeral(spelling, _with_last_part(spelling, stress))
@@ -1251,7 +1319,7 @@ def _hyphenated(norm: str) -> list[Reading]:
     stressed = [k for k, options in enumerate(stresses) if options]
     if not stressed:
         return []
-    spelling = "-".join(spellings)
+    spelling = _yo_parts("-".join(spellings))
     if len(stressed) > 1 and all(vowel_count(parts[k]) == 1 for k in stressed):
         # жи́л-был, тя́п-ляп: words of one syllable each, any may take the beat
         return [
@@ -1666,12 +1734,23 @@ def second_locatives(words: list[Word]) -> None:
         endings = FEMININE_LOCATIVE_ADJECTIVE if w.norm.endswith("и") else LOCATIVE_ADJECTIVE
         while j >= 0 and k - j <= 2 and words[j].norm.endswith(endings):
             j -= 1
+        if j < k - 1:  # в со́рок пе́рвом году́, в ты́сяча девятьсо́т со́рок пя́том году́
+            while j >= 0 and k - j <= 6 and words[j].norm in CARDINALS:
+                j -= 1
         if j == k - 1 or j < 0 or words[j].norm not in LOCATIVE_PREPOSITIONS:
             continue  # nothing between (done above), or no в or на before them
         if w.readings and w.readings[0].source in ("mark", "user"):
             continue
         last = w.size - 1
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+
+
+# Cardinal numerals that may stand before an ordinal: в со́рок пе́рвом году́.
+CARDINALS = frozenset(
+    """два три четыре пять шесть семь восемь девять десять двадцать тридцать сорок
+    пятьдесят шестьдесят семьдесят восемьдесят девяносто сто двести триста четыреста
+    пятьсот шестьсот семьсот восемьсот девятьсот тысяча тысячи две""".split()
+)
 
 
 # Masculine nouns whose end-stressed form in -а or -я is the nominative plural

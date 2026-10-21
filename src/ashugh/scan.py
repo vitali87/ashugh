@@ -63,16 +63,22 @@ class LineReport:
         for i, w in enumerate(words):
             stress = self.fit.stresses.get(i, w.stress_options()[0])
             part = w.sung(stress, mark=w.lang == "ru", dropped=i in self.fit.elided)
-            nxt = i + 1
-            if w.lang == "ru" and nxt < len(words) and words[nxt].leans:
-                if self.fit.stresses.get(nxt, 0) is None:  # за́ город: the noun gave it
-                    part = mark_stress(part)
-            parts.append(part)
+            parts.append(lean_marked(words, self.fit.stresses, i, part))
         return " ".join(p for p in parts if p)
 
     @property
     def ending(self) -> str:
         return ENDING_NAMES.get(self.fit.ending, f"{self.fit.ending} after stress")
+
+
+def lean_marked(words: list, stresses: dict, i: int, part: str) -> str:
+    """A Russian word's syllables with the stress the word after it gave it, marked:
+    за́ руку, и́з лесу, where the noun leans on its preposition."""
+    nxt = i + 1
+    if words[i].lang == "ru" and nxt < len(words) and words[nxt].leans:
+        if stresses.get(nxt, 0) is None:  # за́ город: the noun gave it
+            return mark_stress(part)
+    return part
 
 
 @dataclass

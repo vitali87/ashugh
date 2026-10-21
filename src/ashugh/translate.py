@@ -116,12 +116,23 @@ def _endings(unit) -> str:
 
 
 def source_warnings(report: Report) -> list[str]:
-    """What makes a source line's slot unreliable: digits or words ashugh cannot count."""
-    return [
+    """What makes a source line's slot unreliable: digits or words ashugh cannot count,
+    and stresses it only guessed, which the meter and endings then rest on."""
+    out = [
         f"L{i.line}: {i.message} ({i.detail}); its slot counts only the words"
         for i in report.issues
         if i.code == "script"
     ]
+    guessed: dict[int, list[str]] = {}
+    for i in report.issues:
+        if i.code == "stress" and i.severity == "warning" and (i.data or {}).get("word"):
+            guessed.setdefault(i.line, []).append(i.data["word"])
+    out += [
+        f"L{k}: its meter and ending rest on a guessed stress ({', '.join(ws)}); "
+        "mark it or add it to [lexicon]"
+        for k, ws in sorted(guessed.items())
+    ]
+    return out
 
 
 def _faithful(original: str, text: str, faithfulness: float | None) -> float:
@@ -208,6 +219,8 @@ def translate_with_spec(
             unresolved.append(Unresolved(k, var.blocked or ["no candidate fit"], rejected))
             best = max(var.pool, key=lambda c: c.weight, default=None)
             text = best.text if best else _first_attempt(var.rejected, var.foreign)
+            if not text and var.copy_of is not None:
+                text = new.get(var.copy_of)  # a chorus line again: its first copy's attempt
         else:
             text = chosen.text
         if text:
