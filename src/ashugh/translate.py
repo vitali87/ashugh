@@ -135,6 +135,7 @@ def translate_with_spec(
         req.original, req.lang = "", target
         req.problems = list(var.blocked)
 
+    warnings: list[str] = []
     used, asked = run(
         variables,
         groups,
@@ -148,13 +149,15 @@ def translate_with_spec(
         _faithful,
         as_translation,
         partners_from_lines=False,
+        warnings=warnings,
     )
     new, changes, unresolved = {}, [], []
     for k in sorted(variables):
         var = variables[k]
         chosen = var.chosen
         if chosen is None:
-            unresolved.append(Unresolved(k, var.blocked or ["no candidate fit"]))
+            rejected = [{"text": t, "why": why} for t, why in var.rejected]
+            unresolved.append(Unresolved(k, var.blocked or ["no candidate fit"], rejected))
             best = max(var.pool, key=lambda c: c.weight, default=None)
             text = best.text if best else _first_attempt(var.rejected)
         else:
@@ -177,7 +180,7 @@ def translate_with_spec(
         else:
             continue
         lr.issues.append(issue)
-    return FitResult(out, report, changes, unresolved, used, asked)
+    return FitResult(out, report, changes, unresolved, used, asked, warnings)
 
 
 def _first_attempt(rejected: list[tuple[str, str]]) -> str | None:

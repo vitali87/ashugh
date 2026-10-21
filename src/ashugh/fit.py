@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
-from .proposers import Proposer, Request
+from .proposers import Proposer, ProposerError, Request
 from .scan import (
     ENDING_NAMES,
     LineReport,
@@ -157,8 +157,20 @@ def fit_song(
         raise ValueError("fit needs a proposer for the lines that fail")
 
     lines_by_number = {lr.line.number: lr for lr in report.lines}
+    warnings: list[str] = []
     used, asked = run(
-        variables, groups, lines_by_number, spec, proposer, rounds, n, solver, lang, weigh, extra
+        variables,
+        groups,
+        lines_by_number,
+        spec,
+        proposer,
+        rounds,
+        n,
+        solver,
+        lang,
+        weigh,
+        extra,
+        warnings=warnings,
     )
     changes, unresolved = [], []
     for k in sorted(variables):
@@ -175,7 +187,7 @@ def fit_song(
             )
     new_text = replace_lines(text, {c.line: c.new for c in changes})
     final = scan(new_text, spec, lang=lang) if changes else report
-    return FitResult(new_text, final, changes, unresolved, used, asked)
+    return FitResult(new_text, final, changes, unresolved, used, asked, warnings)
 
 
 def requests_for(
@@ -207,8 +219,11 @@ def run(
     weigh: Weigh,
     extra=None,
     partners_from_lines: bool = True,
+    warnings: list[str] | None = None,
 ) -> tuple[int, int]:
-    """The propose, check and solve loop; returns (rounds used, requests sent)."""
+    """The propose, check and solve loop; returns (rounds used, requests sent). A
+    proposer failing after the first round ends the loop with what it has, and
+    says so in warnings; failing in the first, it raises."""
     pending = set(variables)
     later = _later_copies(variables)
     used = asked = 0
@@ -219,7 +234,14 @@ def run(
             _request(variables[k], variables, groups, lines, n, extra, partners_from_lines)
             for k in sorted(pending - set(later))
         ]
-        answers = proposer.propose(requests)
+        try:
+            answers = proposer.propose(requests)
+        except ProposerError as e:
+            if not used:
+                raise
+            if warnings is not None:
+                warnings.append(f"round {used + 1} failed ({e}); kept the earlier rounds' results")
+            break
         used += 1
         asked += len(requests)
         for req in requests:

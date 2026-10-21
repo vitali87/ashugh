@@ -88,3 +88,88 @@ def test_one_set_of_candidates_repairs_every_copy():
     )
     new = {c.line: c.new for c in res.changes}
     assert new.get(8) == new.get(2) == "We keep a candle in the halls"
+
+
+class _Flaky:
+    """Answers the first round, then fails."""
+
+    name = "flaky"
+
+    def __init__(self, answers):
+        self.answers, self.calls = answers, 0
+
+    def propose(self, requests):
+        from ashugh.proposers import ProposerError
+
+        self.calls += 1
+        if self.calls > 1:
+            raise ProposerError("proposer command exited 1")
+        return {r.id: list(self.answers.get(r.line, [])) for r in requests}
+
+
+def test_a_later_proposer_failure_keeps_the_earlier_rounds():
+    from ashugh.fit import fit_song
+
+    text = "I walked along the road all day\nAnd sang into the night so long\n"
+    flaky = _Flaky({1: ["I walked the road all day"]})
+    res = fit_song(text, from_dict({"language": "en", "syllables": 6}), flaky, rounds=3)
+    assert [c.new for c in res.changes] == ["I walked the road all day"]
+    assert any("round 2 failed" in w for w in res.warnings)
+
+
+def test_a_first_round_failure_still_raises():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import ProposerError
+
+    class Broken:
+        name = "broken"
+
+        def propose(self, requests):
+            raise ProposerError("no")
+
+    with pytest.raises(ProposerError):
+        fit_song(
+            "I walked along the road all day\n",
+            from_dict({"language": "en", "syllables": 6}),
+            Broken(),
+        )
+
+
+def test_a_spec_that_cannot_be_met_is_warned_about():
+    spec = from_dict(
+        {"language": "en", "syllables": 8, "meter": "iamb4", "rhyme": "AbAb", "endings": "fmfm"}
+    )
+    rep = scan("I walked along the road all day\nAnd sang into the night\n", spec)
+    warnings = [i.message for i in rep.issues if i.code == "spec"]
+    assert any("iamb4 with a feminine ending, which has 9" in w for w in warnings)
+
+
+def test_a_consistent_spec_is_not_warned_about():
+    spec = from_dict({"language": "en", "syllables": [9, 8], "meter": "iamb4", "endings": "fm"})
+    rep = scan("I walked along the road all day\nAnd sang into the night\n", spec)
+    assert not [i for i in rep.issues if i.code == "spec"]
+
+
+def test_a_stanza_past_the_spec_tables_is_warned_about():
+    spec = from_dict({"language": "ru", "stanza": {"1": {"syllables": 4}}})
+    rep = scan("Я шёл домой\n\nИ пел о том, что вижу я\n", spec)
+    assert any("stanza 2 has no rules" in i.message for i in rep.issues if i.code == "spec")
+
+
+@pytest.mark.parametrize("path", ["README.md", "skill/SKILL.md"])
+def test_the_documented_spec_can_be_met(path):
+    import re
+    from pathlib import Path
+
+    from ashugh.spec import loads
+
+    doc = Path(__file__).resolve().parent.parent / path
+    block = re.search(
+        r"### The spec\n\n```toml\n(.*?)```|## The spec\n\n```toml\n(.*?)```", doc.read_text(), re.S
+    )
+    assert block is not None
+    toml = next(g for g in block.groups() if g)
+    spec = loads(toml)
+    song = "Я шёл домой\n\n[Припев]\nЯ шёл домой\nЯ шёл домой\nЯ шёл домой\nЯ шёл домой\n"
+    rep = scan(song, spec)
+    assert not [i for i in rep.issues if i.code == "spec" and "no line can pass" in i.detail]

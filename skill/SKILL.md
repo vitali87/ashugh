@@ -130,18 +130,22 @@ assonance, none.
 
 ```toml
 language = "hy"            # hy | ru | en (detected per line if omitted)
-syllables = 8              # or [8, 8, 8, 6]; lists repeat over the stanza
+syllables = [9, 8, 9, 8]   # or 8 for every line; lists repeat over the stanza
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
 rhyme = "ABAB"             # "-" or "." = free line; AbAb also asks endings:
                            # a capital letter feminine, a small one masculine
                            # "ABBA ABBA CDC DCD": one part per stanza, letters shared
 endings = "fmfm"           # m masculine, f feminine, d dactylic, h 3+ after, - any
+                           # (iamb4 is 8 syllables masculine, 9 feminine)
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]
 
 [section.chorus]           # overrides for [Chorus], [Припев], [Կրկներգ]; [Verse 2] is section.verse
 syllables = [7, 7, 7, 5]
+meter = "trochee"
+feet = [4, 4, 4, 3]        # trochee: 7 syllables in four feet, masculine; 5 in three
+endings = "m"
 rhyme = "AABB"
 
 [stanza.3]                 # overrides for the third stanza only

@@ -173,8 +173,41 @@ def _check_spec_tables(report: Report) -> None:
         for n in sorted(report.spec.stanza_tables)
         if n > count
     ]
+    found += _impossible_slots(report)
+    tables = report.spec.stanza_tables
+    if tables and report.spec.base.empty and not report.spec.sections:
+        found += [
+            (f"stanza {n} has no rules", f"the spec's [stanza.N] tables stop at {max(tables)}")
+            for n in range(max(tables) + 1, count + 1)
+        ]
     for message, detail in found:
         first.issues.append(Issue(first.line.number, "spec", "warning", message, detail))
+
+
+def _impossible_slots(report: Report) -> list[tuple[str, str]]:
+    """Slots no line can fill: 8 syllables of iamb4 with a feminine ending (9)."""
+    out: list[tuple[str, str]] = []
+    for unit in report.units:
+        rule = unit.rule
+        if not rule.meter or not rule.syllables:
+            continue
+        name, meter_feet = meter.parse_meter(rule.meter)
+        for lr in unit.lines:
+            i = lr.line.index
+            feet = rule.feet_at(i) or meter_feet
+            ending, syllables = rule.ending_at(i), rule.syllables_at(i)
+            if feet is None or ending is None or syllables is None:
+                continue
+            need = meter.length(name, feet, ending)
+            if need is None or abs(need - syllables) <= rule.tolerance:
+                continue
+            message = (
+                f"the spec asks {syllables} syllables of {name}{feet} with a "
+                f"{ENDING_NAMES[ending]} ending, which has {need}"
+            )
+            if all(m != message for m, _ in out):
+                out.append((message, "no line can pass this slot; change the count or the ending"))
+    return out
 
 
 def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):

@@ -86,18 +86,22 @@ stanza, and text in parentheses is a backing vocal left out of the count.
 
 ```toml
 language = "ru"            # hy | ru | en; detected per line if omitted
-syllables = 8              # or [8, 8, 8, 6]; lists repeat over the stanza
+syllables = [9, 8, 9, 8]   # or 8 for every line; lists repeat over the stanza
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
 # feet = [4, 3]            # or feet per line, repeating over the stanza (a ballad)
 rhyme = "AbAb"             # "-" or "." = free line; mixed case also asks endings:
                            # a capital letter feminine, a small one masculine
 endings = "fmfm"           # m masculine, f feminine, d dactylic, h 3+ after, - any
+                           # (iamb4 is 8 syllables masculine, 9 feminine)
 min_rhyme = "near"         # perfect | near | slant | assonance
 forbid_final = ["ը"]       # a line may not end in these letters
 
 [section.chorus]           # [Chorus x2], [Припев], [Կրկներգ]; [Verse 2] is section.verse
 syllables = [7, 7, 7, 5]
+meter = "trochee"
+feet = [4, 4, 4, 3]        # trochee: 7 syllables in four feet, masculine; 5 in three
+endings = "m"
 rhyme = "AABB"
 
 [stanza.3]                 # one stanza of the file, counted from 1
