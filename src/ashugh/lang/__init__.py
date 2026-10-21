@@ -352,5 +352,7 @@ def _swallow_head(w: Word) -> None:
 
 
 def _vowel_initial(w: Word, first) -> bool:
-    # The auxiliary ես is [ɛs], not the pronoun [jɛs], when a linking -ն precedes it.
-    return is_vowel(first(w)) or w.norm in hy.AUXILIARIES
+    # The auxiliary ես is [ɛs], not the pronoun [jɛs], when a linking -ն precedes it;
+    # and a word in ե is said [jɛ] but written with a vowel, which the article -ն is
+    # written before to link onto: աղջիկն եկավ
+    return is_vowel(first(w)) or w.norm in hy.AUXILIARIES or w.norm.startswith(("ե", "և"))

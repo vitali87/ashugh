@@ -110,3 +110,26 @@ def test_a_request_for_a_line_with_digits_says_to_spell_them_out():
     )
     assert any("digits" in p for p in req.problems)
     assert not any("syllables, slot" in p for p in req.problems)  # its count leaves them out
+
+
+def syllable_range(line: str) -> tuple[int, int]:
+    from ashugh import meter
+
+    ws = words(line)
+    return meter.syllable_range(ws, meter.fit(ws, "free"))
+
+
+@pytest.mark.parametrize("line, fewest", [("Աղջիկն եկավ", 4), ("Արևն ելավ", 4), ("Աղջիկն իջավ", 4)])
+def test_the_article_n_links_onto_a_word_in_e_as_onto_any_vowel(line, fewest):
+    assert syllable_range(line)[0] == fewest
+
+
+def test_an_iamb_line_with_a_linking_n_before_e_fits_eight():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    rep = scan(
+        "Մեր ժողովուրդն ելավ կռվին\n",
+        from_dict({"language": "hy", "syllables": 8, "meter": "iamb4"}),
+    )
+    assert rep.ok, [i.message for i in rep.issues if i.severity == "error"]
