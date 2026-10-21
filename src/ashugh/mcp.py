@@ -163,6 +163,9 @@ def t_translate(args: dict) -> dict:
     if isinstance(tolerance, bool) or not isinstance(tolerance, int) or tolerance < 0:
         raise ToolError("tolerance must be a whole number of syllables, 0 or more")
     keep, min_rhyme = parse_keep(_opt(args, "keep")), _opt(args, "min_rhyme") or "near"
+    if min_rhyme not in rhyme.THRESHOLD:
+        levels = ", ".join(rhyme.THRESHOLD)
+        raise ToolError(f"min_rhyme must be one of {levels}, not {min_rhyme!r}")
 
     def run(proposer):
         return translate_song(

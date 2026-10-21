@@ -395,3 +395,77 @@ def test_an_unresolved_chorus_copy_names_the_line_it_follows():
     result = fit_song(text, spec, StaticProposer({3: ["We will dance all through the day"]}))
     why = {u.line: u.reasons for u in result.unresolved}
     assert why[7][0].startswith("repeats L3") and "no candidates given" not in why[7][0]
+
+
+@pytest.mark.parametrize(
+    "data,message",
+    [
+        ({"lines": "nope"}, '"lines" must be a list'),
+        ({"lines": [{"candidates": ["Hold on"]}]}, 'has no "id"'),
+        ({"3": [{"text": "Hold on", "faithfulness": "high"}]}, 'faithfulness "high"'),
+        ({"3": [{"text": "Hold on", "faithfulness": float("nan")}]}, "faithfulness NaN"),
+        ({"3": [{"text": "Hold on", "faithfulness": float("-inf")}]}, "faithfulness -Infinity"),
+        ({"3": [{"text": "Hold on", "faithfulness": 1.5}]}, "faithfulness 1.5"),
+    ],
+)  # fmt: skip
+def test_a_malformed_candidates_file_is_named_plainly(data, message):
+    from ashugh.proposers import ProposerError, parse_candidates
+
+    with pytest.raises(ProposerError) as e:
+        parse_candidates(data, "c.json")
+    assert message in str(e.value) and "None" not in str(e.value)
+
+
+def test_good_candidates_files_still_load():
+    from ashugh.proposers import parse_candidates
+
+    data = {"lines": [{"id": "L3", "candidates": [{"text": "Hold on", "faithfulness": 0.7}]}]}
+    assert parse_candidates(data) == {3: [{"text": "Hold on", "faithfulness": 0.7}]}
+    assert parse_candidates({"3": ["Hold on", {"text": "Hold tight"}]}) == {
+        3: ["Hold on", {"text": "Hold tight"}]
+    }
+
+
+def test_a_proposer_answering_a_line_nobody_asked_about_is_warned(tmp_path):
+    import json
+    import sys
+
+    from ashugh.fit import fit_song
+    from ashugh.proposers import CommandProposer
+
+    script = tmp_path / "p.py"
+    answer = {"lines": [{"id": "L77", "candidates": ["Something new"]}]}
+    script.write_text(f"import sys; sys.stdin.read(); print({json.dumps(json.dumps(answer))})")
+    spec = from_dict({"language": "en", "syllables": 3})
+    result = fit_song("Hold on to me tight\n", spec, CommandProposer([sys.executable, str(script)]))
+    assert any("L77" in w and "no request" in w for w in result.warnings)
+
+
+def test_mcp_translate_names_a_bad_min_rhyme_without_a_spec():
+    import json
+
+    from ashugh.mcp import Server
+
+    server = Server()
+    msg = {"jsonrpc": "2.0", "id": 1, "method": "tools/call"}
+    args = {"lyrics": "Hold on tight\n", "to": "ru", "min_rhyme": "great"}
+    msg["params"] = {"name": "translate", "arguments": args}
+    response = server.handle(msg)
+    assert response is not None
+    result = response["result"]
+    text = json.loads(result["content"][0]["text"])["error"]
+    assert result["isError"] and "min_rhyme must be one of" in text and "spec" not in text
+
+
+@pytest.mark.parametrize(
+    "text", ["rock 'n' roll", "fish ’n’ chips", "salt n pepper", "rock 'n roll"]
+)
+def test_a_separate_n_is_an_unstressed_and(text):
+    words = scan(text + "\n", from_dict({"language": "en"})).lines[0].line.words
+    n = words[1]
+    assert n.clitic and n.readings[0].phones == ("ə", "n")
+
+
+def test_n_inside_a_hyphenated_word_still_reads_as_and():
+    words = scan("rock-'n'-roll\n", from_dict({"language": "en"})).lines[0].line.words
+    assert [w.text for w in words] == ["rock", "n", "roll"] and words[1].clitic

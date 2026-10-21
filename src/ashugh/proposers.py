@@ -70,8 +70,9 @@ class Proposer(Protocol):
     def propose(self, requests: list[Request]) -> dict[str, list]: ...
 
 
-def parse_lines(data, requests: list[Request]) -> dict[str, list]:
-    """Candidates per request id from a proposer's JSON answer."""
+def parse_lines(data, requests: list[Request], stray: list[str] | None = None) -> dict[str, list]:
+    """Candidates per request id from a proposer's JSON answer; the ids it answers
+    that no request asked for go to stray."""
     if not isinstance(data, dict) or not isinstance(data.get("lines"), list):
         raise ProposerError('the answer must be an object with a "lines" list')
     wanted = {r.id for r in requests}
@@ -81,6 +82,8 @@ def parse_lines(data, requests: list[Request]) -> dict[str, list]:
             continue
         key = _request_id(entry.get("id", entry.get("line")))
         if key not in wanted:
+            if stray is not None and entry.get("candidates"):
+                stray.append(str(key) if key is not None else "an entry with no id")
             continue
         candidates = entry.get("candidates")
         if isinstance(candidates, list):
@@ -141,6 +144,8 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
     """Candidates by line number from {"3": [...]}, {"L3": [...]}, [{"line": 3,
     "candidates": [...]}] or a proposer's answer, {"lines": [{"id": "L3", ...}]}.
     A candidate is a string or {"text": ..., "faithfulness": ...}."""
+    if isinstance(data, dict) and "lines" in data and not isinstance(data["lines"], list):
+        raise ProposerError(f'{path}: "lines" must be a list of {{"id", "candidates"}} entries')
     if isinstance(data, dict) and isinstance(data.get("lines"), list):
         data = [
             {"line": e.get("line", e.get("id")), "candidates": e.get("candidates")}
@@ -161,6 +166,8 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
     out: dict[int, list] = {}
     for key, cands in pairs:
         number = _line_number(key)
+        if key is None:
+            raise ProposerError(f'{path}: an entry has no "id" (the line it is for, as L3)')
         if number is None:
             raise ProposerError(f"{path}: {key!r} is not a line number")
         if not isinstance(cands, list):
@@ -172,6 +179,13 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
             shown = json.dumps(cands[bad - 1], ensure_ascii=False)[:40]
             raise ProposerError(
                 f'{path}: line {number}: candidate {bad} is {shown}, not a line or {{"text": ...}}'
+            )
+        odd = next((k for k, c in enumerate(cands, 1) if not _faithfulness_ok(c)), None)
+        if odd is not None:
+            shown = json.dumps(cands[odd - 1].get("faithfulness"), ensure_ascii=False)[:20]
+            raise ProposerError(
+                f"{path}: line {number}: candidate {odd} has faithfulness {shown}, "
+                "not a number from 0 to 1"
             )
         out.setdefault(number, []).extend(cands)
     return out
@@ -192,6 +206,20 @@ def _line_number(key) -> int | None:
 
 def _candidate(c) -> bool:
     return isinstance(c, str) or (isinstance(c, dict) and isinstance(c.get("text"), str))
+
+
+def _faithfulness_ok(c) -> bool:
+    """A faithfulness, where given, is a number from 0 to 1 (not "high", not NaN)."""
+    if not isinstance(c, dict) or "faithfulness" not in c:
+        return True
+    return faithfulness(c["faithfulness"]) is not None
+
+
+def faithfulness(value) -> float | None:
+    """value as a faithfulness from 0 to 1, or None when it is no such number."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value) if 0 <= value <= 1 else None  # NaN fails both
 
 
 class CommandProposer:
@@ -225,7 +253,8 @@ class CommandProposer:
             data = json.loads(done.stdout)
         except json.JSONDecodeError:
             raise ProposerError("proposer command did not print JSON") from None
-        return parse_lines(data, requests)
+        self.stray: list[str] = []
+        return parse_lines(data, requests, self.stray)
 
 
 SYSTEM = """\
@@ -356,7 +385,8 @@ class ClaudeProposer:
             data = json.loads(text)
         except json.JSONDecodeError:
             raise ProposerError("Claude did not return JSON") from None
-        return parse_lines(data, requests)
+        self.stray: list[str] = []
+        return parse_lines(data, requests, self.stray)
 
 
 def no_credentials(e: TypeError, instead: str) -> str:

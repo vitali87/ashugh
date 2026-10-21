@@ -83,6 +83,7 @@ PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
     "a",
     "an",
+    "n",  # rock 'n' roll: and
     "the",
     "of",
     "to",
@@ -940,6 +941,7 @@ REPLACED = {
     "hmmm": ["HH AH1 M"],
     "mhm": ["AH0 M HH AH1 M"],
     "o'": ["AH0"],  # of, as a cup o' tea and will-o'-the-wisp say it
+    "n": ["AH0 N"],  # and, as rock 'n' roll and fish 'n' chips say it, not the letter
     "e'en": ["IY1 N"],
     "e'er": ["EH1 R"],
     "shoulda": ["SH UH1 D AH0"],

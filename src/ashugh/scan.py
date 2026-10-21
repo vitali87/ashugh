@@ -643,6 +643,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 )
             )
 
+    # a line that fails its spec's meter gets no note that a drop makes it fit
+    meter_fails = source == "spec" and meter_name != "free" and bool(f.off_beat or f.ending_off)
     if lr.target is not None:
         miss = f.count - lr.target
         if abs(miss) > rule.tolerance:
@@ -659,7 +661,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
         else:
             _elision_notes(ln, f, add)  # the spec's count asks for it
-    elif f.elided and not (f.off_beat or f.ending_off):
+    elif f.elided and not meter_fails:
         _elision_notes(ln, f, add, source)  # the meter dropped it: Eve-ry heartbeat
 
     if source == "spec" and meter_name != "free" and (f.off_beat or f.ending_off):

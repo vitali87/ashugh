@@ -21,7 +21,7 @@ from functools import cached_property
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
-from .proposers import Proposer, ProposerError, Request
+from .proposers import Proposer, ProposerError, Request, faithfulness
 from .scan import (
     DIGITS,
     ENDING_NAMES,
@@ -301,6 +301,9 @@ def run(
             if warnings is not None:
                 warnings.append(f"round {used + 1} failed ({e}); kept the earlier rounds' results")
             break
+        stray = getattr(proposer, "stray", None)
+        if stray and warnings is not None:  # an answer for a line nobody asked about
+            warnings.append(f"the proposer answered {', '.join(stray)}, which no request named")
         used += 1
         asked += len(requests)
         for req in requests:
@@ -396,12 +399,7 @@ def _clean(raw) -> tuple[str, float | None] | str:
     """The candidate's line and faithfulness, or why it is no line to check."""
     faith = None
     if isinstance(raw, dict):
-        faith = raw.get("faithfulness")
-        faith = (
-            float(faith)
-            if isinstance(faith, (int, float)) and not isinstance(faith, bool)
-            else None
-        )
+        faith = faithfulness(raw.get("faithfulness"))  # "high", NaN: none given
         raw = raw.get("text")
     if not isinstance(raw, str):
         return "not text"
