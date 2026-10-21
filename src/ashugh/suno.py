@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import lang as languages
-from . import lyrics
+from . import lyrics, rhyme
 from .lang import en, hy, ru
 from .model import ACUTE, LICENCES, Word
 from .scan import LineReport, Report, scan
@@ -148,6 +148,7 @@ def format_song(
     raw = lyrics.split_lines(text, keepends=True)
     notes: list[Note] = []
     by_meter = {lr.line.number for u in report.units if u.meter_source == "spec" for lr in u.lines}
+    rhymed = _rhymed_spellings(report)
     for lr in report.lines:
         line_raw = raw[lr.line.number - 1]
         body, ending = _split_ending(line_raw)
@@ -159,7 +160,8 @@ def format_song(
             hold = split == "all" or (split == "last" and i == len(spans) - 1)
             mode = words_policy.get(word.norm, default_mode)
             how = ru_words.get(word.norm, stress)
-            new = _render(word, token, lr, i, i in elided, how, mode, hold, schwa, notes)
+            prefer = rhymed.get((lr.line.number, i))
+            new = _render(word, token, lr, i, i in elided, how, mode, hold, schwa, notes, prefer)
             pieces.append(new)
             last = b
         pieces.append(body[last:])
@@ -272,6 +274,7 @@ def _render(
     hold: bool,
     schwa: str,
     notes: list[Note],
+    prefer: str | None = None,
 ) -> str:
     n = lr.line.number
     if w.lang == "ru":
@@ -297,7 +300,7 @@ def _render(
         st = chosen.get(i)
         if lr.fit.off_beat and w.ambiguous and w.readings:
             st = w.readings[0].stress  # the line fails its meter anyway: the usual reading
-        new = _russian(w, token, st, stress, n, notes)
+        new = _russian(w, token, st, stress, n, notes, prefer)
         return _hyphenate(new, [len(s.text) for s in w.syllables]) if hold and w.size > 1 else new
     if w.lang == "hy" and languages.LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում
         if mode != "latin":
@@ -340,8 +343,32 @@ def _render(
     return token
 
 
+def _rhymed_spellings(report: Report) -> dict[tuple[int, int], str]:
+    """(line, word) -> the spelling of the reading a line's rhyme word rhymes in:
+    поёшь, not поешь, where its partner is найдёшь."""
+    out = {}
+    for unit in report.units:
+        for lr in unit.lines:
+            partners = [
+                o for o in unit.lines if o is not lr and lr.letter and o.letter == lr.letter
+            ]
+            w = rhyme.anchor_word(lr.line, lr.fit)
+            if not partners or w is None or len(lr.tails) < 2:
+                continue
+            s, tail, _ = max((rhyme.match(lr.tails, o.tails) for o in partners), key=lambda m: m[0])
+            if s > 0 and tail is not None:
+                out[lr.line.number, w] = tail.spelling.split(" ")[0]
+    return out
+
+
 def _russian(
-    w: Word, token: str, chosen: int | None, stress: str, n: int, notes: list[Note]
+    w: Word,
+    token: str,
+    chosen: int | None,
+    stress: str,
+    n: int,
+    notes: list[Note],
+    prefer: str | None = None,
 ) -> str:
     token = ru.APOSTROPHE_MARK.sub("\\1" + ACUTE, token)  # замо'к: the writer's mark
     if ACUTE in token and stress == "none":
@@ -349,6 +376,7 @@ def _russian(
     letters = token.replace(ACUTE, "")
     marked_by_writer = letters != token
     candidates = [r for r in w.readings if r.stress == chosen] or list(w.readings)
+    candidates = [r for r in candidates if r.spelling == prefer] or candidates  # the rhyme's
     # The readings of the stress the line chose: звёзды, not звезды́, is the one
     # sung on the first syllable, so its ё goes back even though both are words.
     spellings = {r.spelling for r in candidates if r.source not in LICENCES}

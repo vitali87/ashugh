@@ -237,3 +237,27 @@ def test_a_grave_on_a_vowel_is_the_writers_stress():
 )
 def test_s_and_a_stop_begin_the_syllable_after_a_consonant(word, pieces):
     assert "-".join(ru.split_syllables(word)) == pieces
+
+
+def test_suno_writes_the_yo_the_rhyme_chose():
+    out = suno.format_song(
+        "Ты так красиво поешь,\nЧто сердце моё найдёшь.\n", stress="none", tags=False
+    )
+    assert out.text.splitlines()[0] == "Ты так красиво поёшь,"
+    assert any(n.kind == "yo" and n.new == "поёшь" for n in out.notes)
+
+
+def test_suno_keeps_the_e_when_the_rhyme_wants_it():
+    out = suno.format_song("Ты так красиво поешь,\nА я пою: ешь!\n", stress="none", tags=False)
+    assert out.text.splitlines()[0] == "Ты так красиво поешь,"
+
+
+def test_suno_leaves_an_unrhymed_homograph_alone():
+    out = suno.format_song("Ты так красиво поешь\n", stress="none", tags=False)
+    assert out.text.splitlines()[0] == "Ты так красиво поешь"
+
+
+def test_suno_rhymed_spelling_with_two_equal_partners():
+    text = "Ты так красиво поешь,\nТы всё равно найдёшь,\nИ ты меня поймёшь.\n"
+    out = suno.format_song(text, stress="none", tags=False)
+    assert out.text.splitlines()[0] == "Ты так красиво поёшь,"
