@@ -77,7 +77,18 @@ CONSONANTS_ARPA = {
 # hold on, come in, what is it for. Not articles or conjunctions.
 # Object pronouns: ending a line after a verb or a noun they lean on it (néed it,
 # hóld me) and rhyme with it, though a song may still rhyme on them (love yóu / true).
-OBJECTS = {"it", "me", "you", "him", "her", "them", "us", "ya", "em"}  # find ya, need 'em
+OBJECTS = {
+    "it",
+    "me",
+    "you",
+    "him",
+    "her",
+    "them",
+    "us",
+    "ya",
+    "em",
+    "thee",
+}  # need 'em, praise thee
 UNSTRESSED_OBJECTS = {"it", "them", "em"}  # all but never stressed: put a ring ón it
 PARTICLES = {"of", "to", "in", "on", "at", "by", "for", "from", "with", "o'er"}
 CLITICS = {
@@ -107,7 +118,8 @@ CLITICS = {
 # Prepositions an object pronoun may lean past onto a content word: cáll to me.
 PREPOSITIONS = set(
     "to with for at on in by from of about over after like without beside behind "
-    "around into onto upon near toward towards".split()
+    "around into onto upon near toward towards before between within under until unto "
+    "beneath beyond above below among across against along through inside outside".split()
 )
 # Forms of be: an object pronoun after one is the predicate, stressed (it was yóu).
 COPULAS = {"is", "was", "were", "are", "am", "be", "been", "being", "'s", "'re", "'m"}
@@ -349,14 +361,50 @@ def _elided(norm: str) -> list[str] | None:
     k = norm.find("'")
     if k <= 0 or k + 1 >= len(norm) or not (norm[k - 1].isalpha() and norm[k + 1].isalpha()):
         return None
+    if norm[k - 1] in "aeiou" and norm[k + 1] in "aeiou":  # e'er, whate'er: the v of ever
+        full = lookup(norm[:k] + "v" + norm[k + 1 :])
+        out = [v for v in (_drop_v(v) for v in full or []) if v]
+        return list(dict.fromkeys(out)) or None
     words = [norm[:k] + vowel + norm[k + 1 :] for vowel in "eoiau"]
     # a listed word first: fam'ly is family, not fame-ly
     listed = (raw.split("|") for raw in (TABLE.get(w) for w in words) if raw)
     full = next(listed, None) or next((f for f in map(lookup, words) if f), None)
     if not full:
         return None
-    out = [v for v in (_drop_after_stress(v) for v in full) if v]
+    # one vowel fewer than the full word spells, never two: ev'ry is ev-ry, as CMUdict's
+    # own short every already is, not a drop from that short one (ev'ning, sov'reign)
+    spelled = _spelled_vowels(next(w for w in words if TABLE.get(w) or lookup(w)))
+    out = [v for v in full if _vowels(v) == spelled - 1]
+    out += [v for v in (_drop_after_stress(v) for v in full if _vowels(v) == spelled) if v]
+    if not out:
+        most = max(map(_vowels, full))
+        out = [v for v in (_drop_after_stress(v) for v in full if _vowels(v) == most) if v]
     return list(dict.fromkeys(out)) or None
+
+
+def _spelled_vowels(word: str) -> int:
+    """Vowels a word spells, each a syllable when said in full: e-ve-ry-one, cho-co-late
+    (a final e after a consonant silent, but not in -le), wan-de-ring."""
+    groups = re.findall(r"[aeiou]+|(?<=[^aeiou])y", word[:1] + re.sub(r"^y", "", word[1:]))
+    if (
+        word.endswith("e")
+        and len(word) > 2
+        and word[-2] not in "aeiouy"
+        and not word.endswith("le")
+    ):
+        return max(1, len(groups) - 1)
+    return len(groups)
+
+
+def _drop_v(pron: str) -> str | None:
+    """ever as e'er, even as e'en: the v after the stress and the vowel after it go,
+    an r-colored one leaving its r (whate'er rhymes with there)."""
+    phones = pron.split()
+    for k in range(len(phones) - 2):
+        if phones[k].endswith("1") and phones[k + 1] == "V" and phones[k + 2].endswith("0"):
+            kept = ["R"] if phones[k + 2] == "ER0" else []
+            return " ".join(phones[: k + 1] + kept + phones[k + 3 :])
+    return None
 
 
 def _drop_after_stress(pron: str) -> str | None:
@@ -617,6 +665,9 @@ def split_spelling(
     if low.endswith(("'s", "’s")) and n >= 2 and len(_counted_groups(low[:-2])) == n:
         out = split_spelling(token[:-2], n, short, parted, ly)
         return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
+    elided = re.search(r"e['’][ae][rn]$", low)  # what-e'er, how-e'er: e'er is one syllable
+    if elided and n >= 2 and elided.start() > 0:
+        return split_spelling(token[: elided.start()], n - 1) + [token[elided.start() :]]
     seam = _compound_seam(low, n)
     if seam is not None:
         k, left = seam
@@ -909,6 +960,8 @@ EXTRA = {
 # reading in two syllables, its bae is a surname, its email stresses -mail, its Dr.
 # reads drive.
 REPLACED = {
+    "prob'ly": ["P R AA1 B L IY0"],  # probably, two letters left out
+    "wi'": ["W IH1"],  # Scots with: wi' bickering brattle
     "spring": ["S P R IH1 NG"],
     "springs": ["S P R IH1 NG Z"],
     "bae": ["B EY1"],
@@ -1084,7 +1137,11 @@ def _compound_seam(low: str, n: int) -> tuple[int, int] | None:
         if len(low) - k < MIN_COMPOUND_PART and not _short_part_ok(low, k):
             continue
         left, right = TABLE.get(low[:k]), TABLE.get(low[k:])
-        if not left or not right or not low[:k].isalpha() or not low[k:].isalpha():
+        if not left and "'" in low[:k] and low[:k].replace("'", "").isalpha():
+            left = "|".join(_elided(low[:k]) or ()) or None  # ev'ry-one, ev'ry-where
+        elif not low[:k].isalpha():
+            continue
+        if not left or not right or not low[k:].isalpha():
             continue
         counts = {  # ev-ery-one: any reading of a part, every said in two or three
             (_vowels(x), _vowels(y)) for x in left.split("|") for y in right.split("|")
@@ -1595,6 +1652,31 @@ NEAR = set(
 )
 
 
+# A word before a noun that describes it: a bróken récord, the hówling wind, my
+# swéetest présent, the old désert.
+MODIFIER_RE = re.compile(r"[a-z]{2,}(?:ing|en|ed|est|y|ful|less|ous|al|ive|ic|ish|ble)")
+MODIFIERS = set(
+    "old new big small little last first next same whole own cold hot dark bright wild "
+    "sweet red blue green black white long short deep great true lost vast dry".split()
+)
+
+
+def _before(words: list[Word], k: int) -> str:
+    """The word that tells a noun from a verb: the one before it, or the determiner
+    past one or two words that describe it (a broken record, the burning desert)."""
+    if not k:
+        return ""
+    j = k - 1
+    while j >= 0 and k - j <= 2 and words[j].norm not in VERBAL | NOMINAL:
+        norm = words[j].norm
+        if not (norm in MODIFIERS or MODIFIER_RE.fullmatch(norm)):
+            break
+        j -= 1
+    if 0 <= j < k - 1 and words[j].norm in NOMINAL:
+        return words[j].norm
+    return words[k - 1].norm
+
+
 def _vowel_pairs(words: list[Word]) -> None:
     """A word in VOWEL_PAIRS read by the word before it, its other sound dropped
     so it rhymes only as said: we live / give, not five; the wind / sinned; hold
@@ -1604,7 +1686,7 @@ def _vowel_pairs(words: list[Word]) -> None:
         if w.lang != CODE or pair is None or len(w.readings) < 2:
             continue
         verb, other = pair
-        before = words[k - 1].norm if k else ""
+        before = _before(words, k)
         if w.norm == "close" and (before in OBJECTS or before in NEAR):
             want, sure = other, True  # hold me close, so close
         elif before in VERBAL or _auxiliary(words, k - 1):
@@ -1629,7 +1711,7 @@ def heteronyms(words: list[Word]) -> None:
     for k, w in enumerate(words):
         if w.lang != CODE or w.norm not in HETERONYMS or len(w.readings) < 2:
             continue
-        before = words[k - 1].norm if k else ""
+        before = _before(words, k)
         if before in VERBAL or _auxiliary(words, k - 1):
             want = 1
         elif before in NOMINAL or w.norm in NOUN_FIRST:

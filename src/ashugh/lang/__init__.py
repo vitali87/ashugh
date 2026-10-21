@@ -280,6 +280,9 @@ COMMON_ENGLISH = set(
 ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz|[@ə]")
 
 
+# An apostrophe where English verse leaves a letter out (wi', an', tim'rous), not the
+# one Latin-typed Armenian writes after an aspirate (t'agavor, ch'em, p'ok'r).
+ELISION = re.compile(r"[aeioun]['’]$|[^tpkhs'’]['’](?=[a-z])")
 # English words an Armenian line in Latin letters borrows (sirum em qez, baby),
 # long enough that no Armenian word is spelt like them: not a (ա), am or in.
 BORROWED_ENGLISH = {w for w in COMMON_ENGLISH if len(w) >= 4} | {"oh", "yeah", "hey"}
@@ -320,8 +323,15 @@ def latin_armenian(tokens: list[str]) -> bool:
     if any(script_of(t) == hy.CODE for t in tokens):
         return False
     latin = [t.lower() for t in tokens if script_of(t) == en.CODE]
-    armenian = sum(1 for t in latin if ARMENIAN_LATIN.search(t) or not en.known(t))
-    english = sum(1 for t in latin if t in COMMON_ENGLISH)
+    elided = [bool(ELISION.search(t)) for t in latin]  # wi', an', cow'rin: not t' or k'
+    armenian = sum(
+        1 for t, e in zip(latin, elided) if not e and (ARMENIAN_LATIN.search(t) or not en.known(t))
+    )
+    english = sum(
+        1.0 if t in COMMON_ENGLISH or e else 0.5 if len(t) > 2 and en.known(t) else 0.0
+        for t, e in zip(latin, elided)
+        if not ARMENIAN_LATIN.search(t)
+    )  # Burns's thou, start, hasty count for half: Armenian names fill the dictionary too
     return bool(latin) and armenian > english
 
 
