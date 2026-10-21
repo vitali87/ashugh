@@ -293,33 +293,50 @@ COMMON_ENGLISH = set(
     way one heart life world never always now here there then again back still only
     more ever every tonight dance dream""".split()
 )
-# Spellings English hardly has: q without u (kyanq), gh between vowels or before a
-# consonant other than t (qaghaq, aghjik; not night), kh, zh, dz.
-ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz|[@ə]")
 
 
 # An apostrophe where English verse leaves a letter out (wi', an', tim'rous), not the
 # one Latin-typed Armenian writes after an aspirate (t'agavor, ch'em, p'ok'r).
 ELISION = re.compile(r"[aeioun]['’]$|[^tpkhs'’]['’](?=[a-z])")
-# English words an Armenian line in Latin letters borrows (sirum em qez, baby),
-# long enough that no Armenian word is spelt like them: not a (ա), am or in.
-BORROWED_ENGLISH = {w for w in COMMON_ENGLISH if len(w) >= 4} | {"oh", "yeah", "hey"}
-# Endings of Armenian verbs and nouns typed in Latin: sirum, gnal, sirel, tanov.
-ARMENIAN_LATIN_ENDINGS = ("um", "el", "al", "ov", "its", "ic")
+# English words an Armenian line in Latin letters borrows (sirum em qez, baby, Du
+# sexy es), long enough that no Armenian word is spelt like them: not a (ա), am,
+# in, or boy (բոյ).
+BORROWED_ENGLISH = (
+    {w for w in COMMON_ENGLISH if len(w) >= 4}
+    | {"oh", "yeah", "hey"}
+    | set(
+        """sexy party next crazy money girl girls forever together music feeling body lady
+        honey sugar sweet shine high higher world light lights alright okay cool style flow
+        beat vibe mood crush sorry please thanks kiss call phone club drink champagne darling
+        beautiful pretty smile happy goodbye hello welcome fashion queen king boss cash game
+        play player team wanna gonna gotta everybody somebody nobody alone lonely dancing
+        party crazy fire rain stars star sunshine summer weekend tonight""".split()
+    )
+)
+# Spellings no English word has: q without u (kyanq, qez), @ and ə for ը.
+STRONG_ARMENIAN = re.compile(r"q(?!u)|[@ə]")
+
+
+def _armenian_word(low: str, shortest: int = 3) -> bool:
+    """A Latin-typed word that spells a listed Armenian one: ari արի, bari բարի, jan
+    ջան, mej մեջ; two letters with shortest=2 (du, im, es)."""
+    return len(low) >= shortest and hy.from_latin(low) in hy.short_words()
 
 
 def _looks_armenian(token: str) -> bool:
+    """A Latin word of an Armenian song's English-looking line that is Armenian: one
+    spelt as no English word is (kyanqs, qez), or one English lacks (srtis, gna);
+    higher, laughing and highway are English, gh and all."""
     low = token.lower()
-    if ARMENIAN_LATIN.search(low):
-        return True
-    return not en.known(low) and low.endswith(ARMENIAN_LATIN_ENDINGS)
+    return bool(STRONG_ARMENIAN.search(low)) or not en.known(low)
 
 
 def latin_words_in_armenian(tokens: list[str], in_latin: bool) -> list[bool]:
     """Which Latin-letter words of an Armenian song's line are Armenian: in a line
-    of Armenian typed in Latin every one but an English word it borrows (baby);
-    in an English line those spelt as Armenian (kyanqs, sirum) and an auxiliary
-    after one (sirum em)."""
+    of Armenian typed in Latin every one but an English word it borrows (baby,
+    party); in an English line those spelt as Armenian (kyanqs, sirum), an
+    auxiliary after one (sirum em), and a short Armenian word beside one (Du im
+    srtis mej es, my love)."""
     out: list[bool] = []
     for token in tokens:
         low = token.lower().strip("'")
@@ -330,26 +347,40 @@ def latin_words_in_armenian(tokens: list[str], in_latin: bool) -> list[bool]:
         else:
             after = bool(out) and out[-1] and low in hy.LATIN_AUXILIARIES
             out.append(after or _looks_armenian(low))
+    if not in_latin:  # du, im, es beside an Armenian word, read both ways along the line
+        for order in (range(len(tokens)), range(len(tokens) - 1, -1, -1)):
+            for k in order:
+                low = tokens[k].lower().strip("'")
+                near = [j for j in (k - 1, k + 1) if 0 <= j < len(tokens) and out[j]]
+                if (
+                    not out[k]
+                    and near
+                    and script_of(tokens[k]) == en.CODE
+                    and len(low) <= 3
+                    and low not in COMMON_ENGLISH
+                    and _armenian_word(low, shortest=2)
+                ):
+                    out[k] = True
     return out
 
 
 def latin_armenian(tokens: list[str]) -> bool:
     """A line of an Armenian song written in Latin letters (Mtnem aygin, qaghem
     vard) rather than an English line within it (I love you, baby): no Armenian
-    letter, and more words English lacks or Armenian spells (q, gh, kh) than
-    common English ones."""
+    letter, and, each word once, more Armenian ones (spelt as Armenian, listed as
+    Armenian, or not English) than English ones (a common word, an elision like
+    wi', or half for another the dictionary has: Burns's thou, start, hasty)."""
     if any(script_of(t) == hy.CODE for t in tokens):
         return False
-    latin = [t.lower() for t in tokens if script_of(t) == en.CODE]
-    elided = [bool(ELISION.search(t)) for t in latin]  # wi', an', cow'rin: not t' or k'
-    armenian = sum(
-        1 for t, e in zip(latin, elided) if not e and (ARMENIAN_LATIN.search(t) or not en.known(t))
-    )
-    english = sum(
-        1.0 if t in COMMON_ENGLISH or e else 0.5 if len(t) > 2 and en.known(t) else 0.0
-        for t, e in zip(latin, elided)
-        if not ARMENIAN_LATIN.search(t)
-    )  # Burns's thou, start, hasty count for half: Armenian names fill the dictionary too
+    latin = list(dict.fromkeys(t.lower() for t in tokens if script_of(t) == en.CODE))
+    armenian = english = 0.0
+    for t in latin:
+        if t in COMMON_ENGLISH or ELISION.search(t):  # wi', an', cow'rin: not t' or k'
+            english += 1
+        elif STRONG_ARMENIAN.search(t) or _armenian_word(t) or not en.known(t):
+            armenian += 1  # qez, ari, bari, jan, gna: Armenian names fill the dictionary
+        elif len(t) > 2:
+            english += 0.5
     return bool(latin) and armenian > english
 
 

@@ -227,7 +227,7 @@ def is_tag(line: str) -> bool:
 # A section named in plain text: Chorus:, Verse 1:, Repeat Chorus, CHORUS x2, Припев:
 LABEL_RE = re.compile(
     r"\ufeff?\s*(repeat\s+|повтор(?:ить)?\s+)?([^\W\d_][^\[\]():\u055d\u0589]{0,30}?)"
-    r"\s*([:\u055d\u0589])?\s*",
+    r"\s*([:\u055d])?\s*",  # not ։, the Armenian full stop: Վերջ։ is a sung line
     re.IGNORECASE,
 )
 # Names a line may give alone, with no colon, number or Repeat, and be no lyric: not
@@ -239,14 +239,20 @@ BARE_LABELS = {
 }  # fmt: skip
 
 
+# Section names that are words a line may sing alone, even before a colon (Վերջ:,
+# typed for Վերջ։ "It's over"; Տուն: "Home"): a label only with a number or Repeat.
+SUNG_NAMES = {"վերջ", "տուն", "end", "конец", "home"}
+
+
 def plain_label(line: str) -> str | None:
     """The bracketed tag a plain-text section label stands for ([Chorus] for Chorus:),
     or None for a line that is no section's name."""
     m = LABEL_RE.fullmatch(line.rstrip("\r\n"))
     if m is None or suno_tag(m.group(2)) is None:
         return None
-    bare = not m.group(1) and not m.group(3) and not DIGIT_RE.search(m.group(2))
-    if bare and m.group(2).lower() not in BARE_LABELS:
+    numbered = bool(m.group(1)) or bool(DIGIT_RE.search(m.group(2)))
+    name = m.group(2).lower()
+    if not numbered and (name in SUNG_NAMES or not m.group(3) and name not in BARE_LABELS):
         return None
     return f"[{m.group(2)}]"
 
