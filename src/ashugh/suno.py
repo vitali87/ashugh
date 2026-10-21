@@ -720,15 +720,35 @@ def _retag(text: str, report: Report, notes: list[Note]) -> str:
         if new != line:
             notes.append(Note(k + 1, "tag", line.strip(), new.strip()))
             raw[k] = new
-    if tagged or not report.lines:
+    if not report.lines:
         return "".join(raw)
+    if tagged:
+        # an [Intro] or [Outro] alone names no verse or chorus: the stanzas no tag
+        # opens are still told apart
+        keys = {lyrics.section_key(line) for line in raw if lyrics.is_tag(line)}
+        if not keys <= FRAME_SECTIONS:
+            return "".join(raw)
     return _infer_tags(raw, report, notes)
+
+
+# Sections that frame a song rather than hold its verses: an [Intro] tag alone leaves
+# the stanzas after it to be told apart as verses and choruses.
+FRAME_SECTIONS = {"intro", "outro", "instrumental", "break", "solo", "interlude", "end"}
+
+
+def _opened_by_tag(raw: list[str], number: int) -> bool:
+    """Whether the stanza starting at line number comes under a tag line."""
+    k = number - 2
+    while k >= 0 and not raw[k].strip():
+        k -= 1
+    return k >= 0 and lyrics.is_tag(raw[k])
 
 
 def _infer_tags(raw: list[str], report: Report, notes: list[Note]) -> str:
     stanzas: dict[int, list[LineReport]] = {}
     for lr in report.lines:
         stanzas.setdefault(lr.line.unit, []).append(lr)
+    stanzas = {u: lrs for u, lrs in stanzas.items() if not _opened_by_tag(raw, lrs[0].line.number)}
     texts = {u: tuple(lyrics.same_words(lr.line.text) for lr in lrs) for u, lrs in stanzas.items()}
     repeated = {t for t in texts.values() if list(texts.values()).count(t) > 1}
     verses = sum(1 for t in texts.values() if t not in repeated)

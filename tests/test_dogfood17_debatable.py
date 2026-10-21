@@ -63,3 +63,33 @@ def test_okey_is_no_stress_mark(line):
 def test_an_apostrophe_after_an_inner_vowel_is_still_a_stress_mark():
     w = _ru_words("Замо'к стоит на горе")[0]
     assert w.readings[0].stress == 1 and w.readings[0].source == "mark"
+
+
+INTRO_SONG = (
+    "[Intro]\nOh oh oh\n\nI walk the road alone\nThe night is cold as stone\n\n"
+    "Stay with me, stay with me\nTill the morning sets us free\n\n"
+    "I walk the road again\nThe sky is full of rain\n\n"
+    "Stay with me, stay with me\nTill the morning sets us free\n"
+)
+
+
+def test_an_intro_tag_alone_still_lets_suno_tell_verses_from_choruses():
+    from ashugh import suno
+
+    out = suno.format_song(INTRO_SONG).text
+    assert out.startswith("[Intro]\nOh oh oh\n\n[Verse 1]\n")
+    assert out.count("[Chorus]") == 2 and "[Verse 2]" in out
+
+
+def test_a_tagged_verse_of_two_stanzas_gets_no_tag_inferred():
+    from ashugh import suno
+
+    text = "[Verse]\nI walk the road alone\n\nThe night is cold as stone\n"
+    assert suno.format_song(text).text == text
+
+
+def test_a_song_with_verse_and_chorus_tags_is_left_as_tagged():
+    from ashugh import suno
+
+    text = "[Verse]\nI walk the road alone\n\n[Chorus]\nStay with me\n\nThe night is cold\n"
+    assert "[Verse 2]" not in suno.format_song(text).text
