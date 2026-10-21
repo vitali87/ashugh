@@ -703,10 +703,7 @@ def _infer_tags(raw: list[str], report: Report, notes: list[Note]) -> str:
     stanzas: dict[int, list[LineReport]] = {}
     for lr in report.lines:
         stanzas.setdefault(lr.line.unit, []).append(lr)
-    texts = {  # the words alone: a last chorus may end on ! or spell вернется for вернётся
-        u: tuple(" ".join(lyrics.tokenize(lr.line.text.lower().replace("ё", "е"))) for lr in lrs)
-        for u, lrs in stanzas.items()
-    }
+    texts = {u: tuple(lyrics.same_words(lr.line.text) for lr in lrs) for u, lrs in stanzas.items()}
     repeated = {t for t in texts.values() if list(texts.values()).count(t) > 1}
     verses = sum(1 for t in texts.values() if t not in repeated)
     if repeated:

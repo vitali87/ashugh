@@ -417,3 +417,50 @@ def held_note(token: str, vowels: Collection[str]) -> bool:
     """Ооо, Аааа, Օօօ: one vowel letter written three times or more is one held note."""
     low = token.lower()
     return len(low) >= 3 and len(set(low)) == 1 and low[0] in vowels
+
+
+def squeeze(token: str, run: re.Pattern[str]) -> tuple[str, list[tuple[int, int]]] | None:
+    """Ջաաաան as Ջան, Дааа as Да: each run of a vowel written three times or more,
+    kept once, with the span of the token each kept letter stands for (the last
+    letter of the run holds the rest); None if the token has no run. run's first
+    group is the letters written once: ու for ուուու."""
+    runs = list(run.finditer(token))
+    if not runs:
+        return None
+    spans: list[tuple[int, int]] = []
+    last = 0
+    for m in runs:
+        spans += [(k, k + 1) for k in range(last, m.start())]
+        unit = len(m.group(1))
+        spans += [(m.start() + j, m.start() + j + 1) for j in range(unit - 1)]
+        spans.append((m.start() + unit - 1, m.end()))
+        last = m.end()
+    spans += [(k, k + 1) for k in range(last, len(token))]
+    return "".join(token[a] for a, _ in spans), spans
+
+
+def unsqueeze(texts: list[str], token: str, spans: list[tuple[int, int]]) -> list[str]:
+    """Syllable texts of a squeezed word written with the token's letters again
+    (Ջաաաան, Սի-րուուում); a letter the word is sung with but not written, as an
+    Armenian schwa, stays."""
+    out, at = [], 0
+    for text in texts:
+        piece = ""
+        for ch in text:
+            if at < len(spans) and token[spans[at][0]].lower() == ch.lower():
+                piece += token[spans[at][0] : spans[at][1]]
+                at += 1
+            else:
+                piece += ch
+        out.append(piece)
+    return out
+
+
+MARKS = str.maketrans("", "", "́՛՜՞")  # an acute, ՛ ՜ ՞
+
+
+def same_words(text: str) -> str:
+    """A line as its words alone, to tell a copy: a last chorus may end on ! or ։,
+    mark a stress (Արի՛, замо́к) or spell вернется for вернётся."""
+    plain = text.lower().replace("ё", "е").translate(MARKS)
+    return " ".join(re.sub(r"[^\w\s]", " ", plain).split())

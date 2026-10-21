@@ -392,7 +392,7 @@ def _variables(report: Report, keep_original: bool, everything: bool = False):
 
 
 def _norm(text: str) -> str:
-    return " ".join(text.split()).lower()
+    return lyrics.same_words(text) or " ".join(text.split()).lower()
 
 
 def _clean(raw) -> tuple[str, float | None] | str:

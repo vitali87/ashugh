@@ -309,3 +309,105 @@ def test_suno_latin_writes_the_v_of_inch_vor():
 def test_a_capital_opening_a_hyphen_part_is_kept_in_syl():
     (w,) = words("Փարիզ-Երևան")
     assert w.sung(w.readings[0].stress, mark=True) == "Փա-րիզ-Ե-րե-վա́ն"
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("Ջաաաան", "Ջաաաան"), ("Յաաար", "Յաաար"), ("Վաաայ", "Վաաայ"), ("Արիիի", "Ա-րիիի"),
+        ("Սիրուուում", "Սի-րուուում"), ("ՋԱԱԱԱՆ", "ՋԱԱԱԱՆ"),
+    ],
+)  # fmt: skip
+def test_an_elongated_word_is_one_held_syllable(word, shown):
+    assert sung(word) == shown
+
+
+@pytest.mark.parametrize("word,size", [("Զոոպարկ", 3), ("Օօօ", 1), ("կոոպերատիվ", 5)])
+def test_a_doubled_vowel_is_no_elongation(word, size):
+    assert words(word)[0].size == size
+
+
+def test_an_elongated_word_counts_and_rhymes_as_itself():
+    report = scan("Ախ, իմ յար, ջաաաան,\n", from_dict({"language": "hy", "syllables": 4}))
+    assert report.lines[0].ok
+    assert hy_rhyme("Իմ ջաաաան", "Իմ բան") >= rhyme.THRESHOLD["perfect"]
+
+
+@pytest.mark.parametrize("word,size", [("Дааа", 1), ("Любоооовь", 2), ("Нееет", 1), ("ДАААА", 1)])
+def test_an_elongated_russian_word_is_one_held_syllable(word, size):
+    assert words(word, "ru")[0].size == size and not words(word, "ru")[0].guessed
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Du im kyanqn es\nԴու իմ կյանքն ես\nqez em sirum\nմեզ եմ սիրում\n",
+        "Դու իմ կյանքն ես\nDu im kyanqn es\nմեզ եմ սիրում\nqez em sirum\n",
+        "Իմ յար,\nԻմ սար,\nԻմ ջան,\nAri mot, yars, chem karogh aranc qez aprel\n",
+    ],
+)
+def test_latin_typed_lines_of_a_mixed_song_are_armenian_whatever_the_order(text):
+    report = scan(text)
+    assert all(lr.line.lang == "hy" for lr in report.lines)
+
+
+def test_an_english_song_with_one_armenian_line_stays_english():
+    report = scan("Hold me close tonight\nNever let me go\nԻմ յար\n")
+    assert [lr.line.lang for lr in report.lines] == ["en", "en", "hy"]
+
+
+COPIES = (
+    "[Կրկներգ]\nԱրի, արի, իմ անուշ յար,\nԱրի մոտս, ախ, իմ սար։\n\n"
+    "[Տուն 2]\nԳետն է խշշում, քամին է ասում,\nՈր դու իմ սիրտն ու հոգին ես։\n\n"
+    "[Կրկներգ]\nԱրի, արի, իմ անուշ յար։\nԱրի՛ մոտս, ա՜խ, իմ սար։\n"
+)
+
+
+def test_a_copy_differing_in_punctuation_or_marks_is_asked_once():
+    from ashugh.fit import requests_for
+
+    reqs = requests_for(COPIES, from_dict({"language": "hy", "syllables": 9}))
+    assert [(r.line, r.copies) for r in reqs] == [(2, [10]), (3, [11])]
+
+
+def test_a_copy_differing_in_punctuation_gets_the_same_repair():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    cands = {
+        2: ["Արի, արի, իմ անուշ յար ջան,"],
+        3: ["Արի մոտս, ախ, իմ կանաչ սար։"],
+        10: ["Արի, արի, դու իմ անուշ յար։"],
+        11: ["Արի մոտս, ախ, իմ կանաչ սար։"],
+    }
+    spec = from_dict({"language": "hy", "syllables": 9})
+    new = {c.line: c.new for c in fit_song(COPIES, spec, StaticProposer(cands), rounds=1).changes}
+    assert new[2] == new[10]
+
+
+def test_suno_tags_a_marked_chorus_as_the_chorus():
+    from ashugh import suno
+
+    text = (
+        "Սարերի վրա ամպեր են իջել,\nՈւ ես քեզ այնքան կարոտել եմ։\n\n"
+        "Արի՛, արի՛, իմ անուշ յար,\nԱրի՛ մոտս, ա՜խ, իմ սար։\n\n"
+        "Գետն է խշշում, քամին է ասում,\nՈր դու իմ սիրտն ու հոգին ես։\n\n"
+        "Արի, արի, իմ անուշ յար,\nԱրի մոտս, ախ, իմ սար։\n"
+    )
+    out = suno.format_song(text, Spec(language="hy")).text
+    assert out.count("[Chorus]") == 2 and "[Verse 2]" in out
+
+
+@pytest.mark.parametrize(
+    "a,b,same",
+    [
+        ("Вернётся он!", "вернется он", True),
+        ("Открой замо́к", "Открой замок.", True),
+        ("I was 17", "I was 18", False),
+        ("Hold on", "Hold me", False),
+    ],
+)
+def test_copies_are_the_same_words(a, b, same):
+    from ashugh.lyrics import same_words
+
+    assert (same_words(a) == same_words(b)) is same

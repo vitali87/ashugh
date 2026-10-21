@@ -331,6 +331,8 @@ def stem_final(norm: str) -> bool:
     ) or any(norm.startswith(h) and norm[len(h) :] in words for h in COMPOUND_HEADS)
 
 
+# A vowel written three times or more, one held note: Ջաաաան, Սիրուուում
+HELD_RUN = re.compile(r"(ու|[աեէըիոօ])\1{2,}", re.IGNORECASE)
 # Names ending a longer one: Մակ-դոնալդ
 FOREIGN_NAMES = ("դոնալդ", "ռոնալդ", "արնոլդ", "հարոլդ", "ջերալդ", "էդմոնդ", "ռայմոնդ")
 # Heads of compounds with no linker: the tens of քսանչորս, երեսունչորս, and գեր- of
@@ -974,6 +976,13 @@ def analyze_word(
             word.clitic = word.enclitic = False
         word.text, word.norm, word.held = token, norm, True
         word.syllables = tuple(replace(s, text=token) for s in word.syllables)
+        return word
+    squeezed = None if (overrides or {}).get(norm) else lyrics.squeeze(token, HELD_RUN)
+    if squeezed is not None:  # Ջաաաան: one held syllable, sung as ջան
+        word = analyze_word(squeezed[0], overrides, capitals)
+        texts = lyrics.unsqueeze([s.text for s in word.syllables], token, squeezed[1])
+        word.syllables = tuple(replace(s, text=t) for s, t in zip(word.syllables, texts))
+        word.text = token
         return word
     override = (overrides or {}).get(norm)
     inflected = None if override else _inflected_override(norm, overrides or {})

@@ -1277,6 +1277,10 @@ def cyrillic(token: str) -> str:
     return unicodedata.normalize("NFC", decomposed)  # й and ё again; а + ́ has no single form
 
 
+# A vowel written three times or more, one held note: Дааа, Любоооовь
+HELD_RUN = re.compile(r"([аеёиоуыэюя])\1{2,}", re.IGNORECASE)
+
+
 def analyze_word(
     token: str, overrides: dict[str, str] | None = None, capitals: bool = False
 ) -> Word:
@@ -1296,6 +1300,15 @@ def analyze_word(
             weak=True,
             held=True,
         )
+    low = token.lower()
+    if not (overrides or {}).get(low) and TABLE.stresses(low) is None:
+        squeezed = lyrics.squeeze(token, HELD_RUN)
+        if squeezed is not None:  # Дааа, Любоооовь: one held syllable, sung as да, любовь
+            word = analyze_word(squeezed[0], overrides, capitals)
+            texts = lyrics.unsqueeze([s.text for s in word.syllables], token, squeezed[1])
+            word.syllables = tuple(replace(s, text=t) for s, t in zip(word.syllables, texts))
+            word.text = token
+            return word
     norm, marked = read_marks(token)
     shown = token.replace(ACUTE, "")
     syllables = tuple(Syllable(s) for s in split_syllables(shown)) if vowel_count(norm) else ()
