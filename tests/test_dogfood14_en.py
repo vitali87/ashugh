@@ -499,3 +499,44 @@ def test_suno_sings_a_glide_into_the_next_vowel(pieces, drop, sung):
     from ashugh.lang import en
 
     assert en.sung_pieces(pieces, drop, True) == sung
+
+
+def test_a_line_ending_in_digits_is_left_out_of_its_rhyme():
+    text = "I was born in '99,\nAnd I like to walk the line\n"
+    report = scan(text, from_dict({"language": "en", "rhyme": "AA"}))
+    assert not [i for i in report.issues if i.code == "rhyme"]
+    assert any("digits" in i.message for i in report.issues)
+
+
+def test_a_digit_inside_the_line_keeps_its_rhyme():
+    text = "Call me at 5 tonight\nAnd hold the morning light\n"
+    report = scan(text, from_dict({"language": "en", "rhyme": "AA"}))
+    assert [lr.letter for lr in report.lines] == ["A", "A"]
+    assert not [i for i in report.issues if i.code == "rhyme"]
+    text = "Call me at 5 tonight\nAnd hold the morning sun\n"
+    report = scan(text, from_dict({"language": "en", "rhyme": "AA"}))
+    assert [i for i in report.issues if i.code == "rhyme"]
+
+
+def test_requests_never_ask_to_rhyme_with_the_word_before_a_number():
+    from ashugh.fit import requests_for
+
+    text = "I was born in '99,\nAnd I like to walk the street\n"
+    reqs = requests_for(text, from_dict({"language": "en", "rhyme": "AA", "syllables": 7}))
+    for r in reqs:
+        assert "in" not in r.rhyme_with
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("born in '99,", True),
+        ("born in '99 (oh yeah)", True),
+        ("at 5 tonight", False),
+        ("24/7", True),
+    ],
+)
+def test_ends_in_number(text, expected):
+    from ashugh.scan import ends_in_number
+
+    assert ends_in_number(text) is expected

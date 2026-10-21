@@ -360,9 +360,18 @@ def check_line(
         short = meter.fit(ln.words, meter_name, f.count - 1, 0, force, feet, promote)
         if short.ending == want and short.count == f.count - 1:
             f = short
-    lr = LineReport(ln, f, rhyme.tails(ln, f), target=target, min_rhyme=rule.min_rhyme)
+    tails = [] if ends_in_number(ln.text) else rhyme.tails(ln, f)  # in '99: no rhyme on in
+    lr = LineReport(ln, f, tails, target=target, min_rhyme=rule.min_rhyme)
     _check_line(lr, rule, meter_name, source)
     return lr
+
+
+LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
+
+
+def ends_in_number(text: str) -> bool:
+    """Whether a line's last sung token is written in digits: born in '99."""
+    return bool(LAST_NUMBER_RE.search(lyrics.sub_asides(text, lambda _: "").rstrip()))
 
 
 DIGITS = "digits are not counted"  # a warning to a reader, an error to a repair
@@ -757,8 +766,11 @@ def _groups(reports: list[LineReport], rule: Rule) -> dict[str, list[LineReport]
     for lr in reports:
         g = rule.rhyme_at(lr.line.index)
         words = lr.line.words
-        if g is not None and not (words and words[-1].lang == "xx"):  # a script not read
-            out.setdefault(g, []).append(lr)
+        if g is None or (words and words[-1].lang == "xx"):  # a script not read
+            continue
+        if ends_in_number(lr.line.text):  # its rhyme is a number ashugh does not read
+            continue
+        out.setdefault(g, []).append(lr)
     return out
 
 
