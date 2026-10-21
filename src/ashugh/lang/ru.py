@@ -233,6 +233,11 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     "стоят": ("стоят", (1, 0)),
     "выходи": ("выходи", (2, 0)),
     "жила": ("жила", (1, 0)),
+    # Case forms of everyday nouns before a rarer word's form the table ranks first:
+    # на по́лке (not of полк), в ту по́ру, до ле́та, из ро́да, мо́рю and со́лью (not the
+    # verbs), стре́лки (not стрелки́, shooters), мир по́лон, по провода́м, стра́стной.
+    **{f: (f, (0, 1)) for f in "полке пору лета рода морю солью стрелки полон страстной".split()},
+    "проводам": ("проводам", (2, 0)),
     # Slang and loanwords of songs the dictionary lacks.
     **{
         f: (f, (k,))
@@ -741,8 +746,11 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     if not found:
         size = vowel_count(norm)
         for form in verb_twins(norm):
-            # ношу́, not the noun's но́шу: a stress only the verb has, where one is marked
-            stress = tuple(sorted(TABLE.verb_only(form))) or TABLE.stresses(form)
+            # ношу́, not the noun's но́шу: a stress only the verb has, where one is marked,
+            # in the table's usual-first order (избега́я of избега́ю before избе́гу)
+            only = TABLE.verb_only(form)
+            listed = TABLE.stresses(form) or ()
+            stress = tuple(p for p in listed if p in only) or listed
             if stress and all(p < size for p in stress):
                 found.append((norm, stress))
                 break
@@ -985,9 +993,14 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     elif norm.endswith("ей") and norm not in CORE and TABLE.get(norm[:-2] + "ее") is not None:
         # the short comparative keeps the stress of its -ее form even where the same
         # spelling is another word: миле́й (милее), not only ми́лей (of miles); a
-        # comparative the dictionary lists, not one derived (соловей is no соловее)
+        # comparative the dictionary lists, not one derived (соловей is no соловее);
+        # a comparative's stress is on the first е of -ее, so колее́ (of колея) and
+        # ве́щее give колей and вещей nothing
+        comparative = vowel_count(norm)  # миле́е: the vowel before the last
+        known = {s for _, s, _ in options}
         for _, stress in TABLE.variants(norm[:-2] + "ее"):
-            options.append((norm, stress, "lexicon"))
+            if stress == (comparative - 1,) and stress not in known:
+                options.append((norm, stress, "lexicon"))
     options = _yo_plural_first(options)
     readings = []
     for spelling, stress, source in options:
@@ -1422,16 +1435,29 @@ SMALL_NUMBERS = frozenset("два две три четыре оба обе по�
 
 # What all only all-of-it, всё, comes before: всё равно, всё время, всё это, всё ещё.
 BEFORE_VSYO = frozenset("равно время это же еще ещё".split())
+# Adverbs after все, which leave it to the verb: все уже спят, всё уже прошло.
+VSYO_ADVERBS = frozenset(
+    "уже тоже также вместе снова опять сразу всегда только просто вдруг скоро "
+    "тихо давно наконец здесь тут там когда-то".split()
+)
+PLURAL_PRONOUNS = frozenset("мы вы они нас вас их нам вам".split())
 
 
-def _vsyo_context(prev: Word, w: Word) -> bool:
-    """Whether все before w can only be всё: before a fixed word (всё равно), a
-    neuter past (всё прошло, всё было) or a neuter singular in -о or -е (всё лето,
-    всё моё), not a plural (все новые, все люди) or a pronoun (все её подруги)."""
+def _vsyo_context(words: list[Word], k: int) -> bool:
+    """Whether все at k can only be всё: before a fixed word (всё равно), a neuter
+    past (всё прошло, всё было) or a neuter singular in -о or -е (всё лето, всё
+    моё), not a plural (все новые, все люди), a pronoun (все её подруги), an
+    adverb before a plural verb (все уже спят, все вместе) or after мы, вы, они."""
+    prev, w = words[k], words[k + 1]
     if prev.norm != "все" or w.lang != CODE:
+        return False
+    if k and words[k - 1].norm in PLURAL_PRONOUNS:  # мы все, они все
         return False
     if w.norm in BEFORE_VSYO:
         return True
+    if w.norm in VSYO_ADVERBS:  # всё уже прошло, but все уже спят
+        after = words[k + 2] if k + 2 < len(words) else None
+        return after is not None and after.norm.endswith(("ло", "лось"))
     if w.norm in ("ее", "её", "его", "мое", "твое", "свое") or vowel_count(w.norm) < 2:
         return w.norm in ("мое", "твое", "свое")
     return w.norm.endswith(("ло", "ось")) or (
@@ -1443,8 +1469,8 @@ def second_locatives(words: list[Word]) -> None:
     """End-stress the second locative after в, во, на: на берегу́, в крови́; and not
     after a preposition that asks another case: без кра́ю. And the count form after
     a small number: три часа́, четыре шага́."""
-    for prev, w in zip(words, words[1:]):
-        if _vsyo_context(prev, w):  # всё равно: its ё restored
+    for k, (prev, w) in enumerate(zip(words, words[1:])):
+        if _vsyo_context(words, k):  # всё равно: its ё restored
             yo = tuple(r for r in prev.readings if r.spelling == "всё")
             prev.readings = yo or prev.readings
         if w.lang == CODE and prev.norm in SMALL_NUMBERS and w.norm in COUNT_FORMS:
@@ -1518,6 +1544,8 @@ GENITIVE_IN_END = frozenset(
 # Genitives stressed on the end whose stem-stressed form verse uses too: с утра́, but
 # гуляли до у́тра; от вина́. The end comes first, the other stays.
 GENITIVE_END_FIRST = frozenset({"утра", "вина"})
+# Prepositions of the accusative, instrumental and prepositional, never of the genitive.
+NOT_GENITIVE_PREPOSITIONS = frozenset("в во на за под подо через про сквозь о об".split())
 GENITIVE_PREPOSITIONS = frozenset(
     """у из от до без для около возле после вокруг среди мимо из-за из-под с со ни
     кроме вместо вдоль внутри вне ради против напротив близ""".split()
@@ -1529,11 +1557,17 @@ def after_genitive(words: list[Word]) -> None:
     accusative plural after a preposition of the genitive, where a genitive
     singular is spelt like it."""
     for prev, w in zip(words, words[1:]):
-        if w.lang != CODE or prev.norm not in GENITIVE_PREPOSITIONS:
-            continue
-        if w.readings and w.readings[0].source in ("mark", "user"):
+        if w.readings and w.readings[0].source in ("mark", "user") or w.lang != CODE:
             continue
         last = w.size - 1
+        if prev.norm in NOT_GENITIVE_PREPOSITIONS and w.norm.replace("ё", "е") in GENITIVE_IN_END:
+            # на ру́ки, под но́ги, в го́ры: no genitive after a preposition that takes none
+            kept = [r for r in w.readings if r.stress != last]
+            if kept and len(kept) < len(w.readings):
+                w.readings = tuple(kept)
+            continue
+        if prev.norm not in GENITIVE_PREPOSITIONS:
+            continue
         if w.norm in PLURAL_IN_A:
             kept = [r for r in w.readings if r.stress != last]
         elif w.norm.replace("ё", "е") in GENITIVE_IN_END:
