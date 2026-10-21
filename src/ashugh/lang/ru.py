@@ -171,6 +171,9 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # зна́чимость beside значи́мость, which dictionaries give too.
     **{f: (f, (1,)) for f in "сверлю сверлишь сверлит сверлим сверлите сверлят".split()},
     "мастерски": ("мастерски", (2,)),
+    # the norm first, and the stem stress verse uses too: бледна́ / бле́дна, тонки́ / то́нки
+    "бледна": ("бледна", (1, 0)),
+    "тонки": ("тонки", (1, 0)),
     **{f: (f, (0, 1)) for f in "значимость значимости значимостью".split()},
     "баю": ("баю", (1,)),  # the lullaby's баю́-ба́юшки-баю́, not ба́ю of ба́ять
     "баюшки": ("баюшки", (0,)),
@@ -270,6 +273,8 @@ SECOND_LOCATIVE = frozenset(
     """.split()
 )
 LOCATIVE_PREPOSITIONS = frozenset({"в", "во", "на"})
+# After these the noun is in the genitive or dative, stressed on its stem: без кра́ю, к кра́ю.
+CASE_PREPOSITIONS = frozenset({"без", "до", "из", "от", "у", "для", "к", "ко", "по"})
 # Nouns whose stressed locative (на двери́, в сети́, на цепи́) is spelt like their plural,
 # which follows в and на as often (стучать в две́ри, попасть в се́ти): both stay
 # possible, the locative first.
@@ -821,8 +826,14 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
 
 
 def second_locatives(words: list[Word]) -> None:
-    """End-stress the second locative after в, во, на: на берегу́, в крови́."""
+    """End-stress the second locative after в, во, на: на берегу́, в крови́; and not
+    after a preposition that asks another case: без кра́ю."""
     for prev, w in zip(words, words[1:]):
+        if w.lang == CODE and prev.norm in CASE_PREPOSITIONS and w.norm in SECOND_LOCATIVE:
+            stem = tuple(r for r in w.readings if r.stress != w.size - 1)
+            if stem and w.readings[0].source not in ("mark", "user"):
+                w.readings = stem
+            continue
         if w.lang != CODE or prev.norm not in LOCATIVE_PREPOSITIONS:
             continue
         if w.norm in LOCATIVE_OR_PLURAL and w.readings[0].source not in ("mark", "user"):

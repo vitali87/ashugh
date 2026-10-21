@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .lang.en import OBJECTS
+from .lang.en import OBJECTS, PREPOSITIONS
 from .meter import Fit, _anchor, slots
 from .model import Line, nuclei
 from .phon import align_cost, distance, is_vowel, vowel_distance
@@ -97,8 +97,9 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
             if t is not None and t not in out:
                 out.append(t)
     last = words[-1]
-    if w == len(words) - 2 and last.lang == "en" and last.enclitic:
-        own = _tail(last, last.readings[0], 0, [])  # love yóu / true
+    leaning = w == len(words) - 3 and words[-2].norm in PREPOSITIONS
+    if (w == len(words) - 2 or leaning) and last.lang == "en" and last.enclitic:
+        own = _tail(last, last.readings[0], 0, [])  # love yóu / true, walk with mé / free
         if own is not None and own not in out:
             out.append(own)
     return out

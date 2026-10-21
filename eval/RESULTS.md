@@ -12,8 +12,8 @@ benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json` and `oov.json`.
 |---|---|
 | stress of polysyllabic words (60,854) | 97.2% |
 | each word's first reading, without meter or rhyme | 92.5% |
-| words the dictionary lists (50,152) | 98.3% |
-| ambiguous words resolved by meter and rhyme (3,698) | 95.3% |
+| words the dictionary lists (50,167) | 98.3% |
+| ambiguous words resolved by meter and rhyme (3,683) | 95.4% |
 | unknown words guessed from the ending, meter and rhyme (5,327) | 88.5% |
 | "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.878, F1 0.909 |
 
@@ -92,7 +92,7 @@ draft scores the same. The roots match one word in the drafts, the same
 |---|---|---|
 | Russian stress (55,417 words) | 75.6% | 40.8% |
 | English stress (9,405) | 77.0% | 66.7% |
-| English syllables from spelling (11,748) | 88.0% | |
+| English syllables from spelling (11,748) | 88.4% | |
 
 ## Claude alone and Claude with ashugh
 
@@ -225,8 +225,11 @@ alarms:
 | ru-grid-call: …номер искрится | no: the table has и́скрится for искри́тся | …номер лучится |
 
 The false alarms were fixed afterwards. As a regression check, not a
-measurement: with the fixed analyzer the same drafts raise only the three
-real flags. One false alarm did harm: the hy-lullaby line was right, and the
+measurement: with the fixed analyzer the same drafts raise only two of the
+three real flags. The troika line now passes: a later round found that the
+canonical anapests of Fet and Nekrasov stress a whole word before the first
+beat (Утро дышит у ней на груди), and ashugh took that licence, so the
+strict standard this line broke is no longer the one it checks. One false alarm did harm: the hy-lullaby line was right, and the
 repair Դու աչուկներդ փակիր sings seven syllables in a slot of six, so the
 repaired songs, rescored today, meet 997 / 1,000 lines and 47 / 48 songs.
 

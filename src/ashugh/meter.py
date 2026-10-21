@@ -55,6 +55,10 @@ CLAUSULA = 1.5
 INVERSION = 0.3  # an English line may open on a stressed syllable: "Sometime too hot"
 PROMOTION = 0.3  # an English line may put its last beat two syllables after the stress
 DOLNIK_PENALTY = 0.3
+# English ternary verse lets a foot lose one weak syllable (that hóst with their bánners;
+# and there láy the stéed): at the line's start, and once more inside it.
+SUBSTITUTION = 0.2
+MAX_INNER_SUBSTITUTIONS = 1
 DOLNIK_SKIP = 0.6
 MAX_ELIDABLE = 4
 
@@ -91,6 +95,7 @@ class Slot:
     penalties: tuple[tuple[int | None, float], ...] = ()  # extra cost of a stress option
     lang: str = ""
     lead: int = 0  # syllables at the start borrowed from a preposition (по́ лесу)
+    free_end: bool = False  # see Word.free_end
 
     def penalty(self, stress: int | None) -> float:
         return next((c for s, c in self.penalties if s == stress), 0.0)
@@ -185,6 +190,7 @@ def slots(words: list[Word], elided: frozenset[int], force: dict | None = None) 
                 penalties,
                 w.lang,
                 lead,
+                w.free_end,
             )
         )
         pos = start + size
@@ -233,12 +239,18 @@ def _beat_cost(s: Slot, stress: int | None, strong, period: int) -> tuple[float,
                     cost += WEAK_WORD_OFF_BEAT
                 elif s.lang == "en" and s.start == 0 and k == 0:
                     cost += INVERSION
+                elif period == 3 and s.start == 0 and s.size <= _first_beat(strong, period):
+                    cost += INVERSION  # У́тро ды́шит: a word wholly before the first beat
                 else:
                     cost += STRESS_OFF_BEAT
                     off = True
         elif on and k not in s.secondary:
             cost += PYRRHIC[period]
     return cost, off
+
+
+def _first_beat(strong, period: int) -> int:
+    return next((p for p in range(period) if strong(p)), 0)
 
 
 def _stressed_grid(ss: list[Slot], choice: dict[int, int | None], strong, count: int) -> tuple:
@@ -308,6 +320,9 @@ def fit_classical(
         s = ss[anchor]  # a secondary stress on a beat after the main one ends the line: bútterflỳ
         later = [s.start + k for k in s.secondary if k > main and strong(s.start + k)]
         last_pos = max([last_pos, *later])
+    end = ss[-1] if ss else None
+    if anchor is not None and end is not None and end.free_end and strong(end.start):
+        last_pos = max(last_pos, end.start)  # back to mé: the pronoun takes the last beat
     promoted = False
     if promote and anchor == len(ss) - 1 and not ending_off:
         s = ss[anchor]
@@ -369,8 +384,9 @@ def fit_dolnik(
     return best
 
 
-def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fit | None:
-    # S stressed polysyllable, W stressed function word, m monosyllable, c clitic, u unstressed
+def _kinds(ss: list[Slot], choice: dict, count: int) -> list[str]:
+    """S stressed polysyllable, W stressed function word, m monosyllable, c clitic,
+    u unstressed, for each sung syllable."""
     kind = ["u"] * count
     for s in ss:
         st = choice[s.word]
@@ -380,6 +396,102 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
             for k in range(s.lead):
                 kind[s.start + k] = "c"
             kind[s.start + st] = "m" if st < s.lead else ("W" if (s.weak or s.clitic) else "S")
+    return kind
+
+
+def fit_loose(
+    words: list[Word],
+    meter: str,
+    elided: frozenset[int] = frozenset(),
+    force: dict | None = None,
+    feet: int | None = None,
+) -> Fit | None:
+    """English ternary verse with its usual substitutions: a foot one weak syllable
+    short at the start of the line, and once inside it."""
+    period, phase = CLASSICAL[meter]
+    ss = slots(words, elided, force)
+    count = sum(s.size for s in ss)
+    ambiguous = [s for s in ss if len(s.options) > 1][:5]
+    best: Fit | None = None
+    for combo in product(*(s.options for s in ambiguous)):
+        picked = {s.word: st for s, st in zip(ambiguous, combo)}
+        choice = {s.word: picked.get(s.word, s.options[0]) for s in ss}
+        f = _loose_one(words, ss, choice, count, elided, meter, period, phase, feet)
+        if f is not None and (
+            best is None or (f.feet != feet, f.cost) < (best.feet != feet, best.cost)
+        ):
+            best = f
+    return best
+
+
+def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> Fit | None:
+    kind = _kinds(ss, choice, count)
+    anchor = _anchor(ss)
+    if anchor is None:
+        return None
+    a = ss[anchor]
+    last = a.start + (choice[a.word] or 0)
+
+    def on(i: int) -> float:
+        return {"u": PYRRHIC[period], "c": CLITIC_ON_BEAT}.get(kind[i], 0.0)
+
+    def off(i: int) -> float:
+        return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind[i], 0.0)
+
+    # dp[i][(n, subs)]: cheapest beats ending on i, with n beats and subs short feet inside
+    dp: list[dict[tuple[int, int], tuple[float, int]]] = [{} for _ in range(count)]
+    for i, extra in ((phase, 0.0), (phase - 1, SUBSTITUTION)):
+        if 0 <= i <= last:
+            dp[i][(1, 0)] = (on(i) + extra + sum(off(j) for j in range(i)), -1)
+    for i in range(1, last + 1):
+        for gap, extra in ((period, 0.0), (period - 1, SUBSTITUTION)):
+            j = i - gap
+            if j < 0:
+                continue
+            for (n, subs), (c0, _) in dp[j].items():
+                subs2 = subs + (gap < period)
+                if subs2 > MAX_INNER_SUBSTITUTIONS:
+                    continue
+                c = c0 + extra + on(i) + sum(off(t) for t in range(j + 1, i))
+                k = (n + 1, subs2)
+                if k not in dp[i] or c < dp[i][k][0]:
+                    dp[i][k] = (c, j)
+    ends = dp[last]
+    if not ends:
+        return None
+    key = min(ends, key=lambda k: (feet is not None and k[0] != feet, ends[k][0]))
+    cost = ends[key][0]
+    beats = [False] * count
+    i, state = last, key
+    while i >= 0:
+        beats[i] = True
+        j = dp[i][state][1]
+        state = (state[0] - 1, state[1] - (j >= 0 and i - j < period))
+        i = j
+    off_words = [
+        s.word
+        for s in ss
+        if s.size > 1
+        and choice[s.word] is not None
+        and not beats[s.start + choice[s.word]]
+        and not (s.weak or s.clitic)
+    ]
+    tail = sum(off(t) for t in range(last + 1, count))
+    return Fit(
+        meter=meter,
+        cost=round(cost + tail + sum(s.penalty(choice[s.word]) for s in ss), 3),
+        feet=key[0],
+        count=count,
+        elided=elided,
+        stresses=_own(choice, words, elided, ss),
+        beats=tuple(beats),
+        stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
+        off_beat=off_words,
+    )
+
+
+def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fit | None:
+    kind = _kinds(ss, choice, count)
     anchor = _anchor(ss)
     if anchor is None:
         return None
@@ -392,10 +504,20 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
     def off(i: int) -> float:
         return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind[i], 0.0)
 
+    ends = [0] * count  # where the word of each syllable ends
+    for s in ss:
+        for k in range(s.start, s.start + s.size):
+            ends[k] = s.start + s.size
+
+    def lead_in(i: int) -> float:
+        """The syllables before a first beat on i: a word wholly among them may keep
+        its stress (Сму́глый о́трок бродил по аллеям)."""
+        return sum(INVERSION if kind[j] == "S" and ends[j] <= i else off(j) for j in range(i))
+
     # dp[i][n]: cheapest beats ending on syllable i with n ictuses, and the beat before
     dp: list[dict[int, tuple[float, int]]] = [{} for _ in range(count)]
     for i in range(min(3, last + 1)):
-        dp[i][1] = (on(i) + sum(off(j) for j in range(i)), -1)
+        dp[i][1] = (on(i) + lead_in(i), -1)
     for i in range(2, last + 1):
         for gap in (2, 3):
             j = i - gap
@@ -417,6 +539,7 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
         i = dp[i][ictuses][1]
         ictuses -= 1
     tail = sum(off(t) for t in range(last + 1, count))
+    first = beats.index(True)
     off_words = [
         s.word
         for s in ss
@@ -424,6 +547,7 @@ def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fi
         and choice[s.word] is not None
         and not beats[s.start + choice[s.word]]
         and not (s.weak or s.clitic)
+        and s.start + s.size > first
     ]
     return Fit(
         meter="dolnik",
@@ -497,6 +621,10 @@ def _fit(words, meter, count, tolerance, force, feet, promote) -> tuple[tuple, F
             fits = [] if promote and english else [fit_classical(words, meter, elided, force)]
             if english and promote is not False:
                 fits.append(fit_classical(words, meter, elided, force, promote=True))
+            if english and not promote and CLASSICAL[meter][0] == 3:
+                loose = fit_loose(words, meter, elided, force, feet)
+                if loose is not None:
+                    fits.append(loose)
         for f in fits:
             miss = 0 if count is None else max(0, abs(f.count - count) - tolerance)
             off_feet = feet is not None and f.feet != feet

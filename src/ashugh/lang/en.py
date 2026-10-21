@@ -99,6 +99,11 @@ CLITICS = {
     "than",
     "o'er",
 }
+# Prepositions an object pronoun may lean past onto a content word: cáll to me.
+PREPOSITIONS = set(
+    "to with for at on in by from of about over after like without beside behind "
+    "around into onto upon near toward towards".split()
+)
 WEAK = {
     "into",
     "onto",
@@ -211,6 +216,12 @@ def lookup(norm: str) -> list[str] | None:
         base = lookup(norm[:-3])
         if base:
             return [v + " AH0 V" for v in base]
+    if norm.endswith("s") and not norm.endswith(("ss", "'s")) and len(norm) > 3:
+        # lances, besieges, rhapsodies: a plural the dictionary lacks, its singular's
+        for stem in (norm[:-1], norm[:-2], norm[:-3] + "y" if norm.endswith("ies") else ""):
+            raw = TABLE.get(stem) if len(stem) > 1 else None
+            if raw and (stem + "s" == norm or stem.endswith(("s", "x", "z", "ch", "sh", "y"))):
+                return [v + _s_ending(v) for v in raw.split("|")]
     parts = _compound_parts(norm)
     if parts:  # lovestruck, facetime: two words, stressed on the first
         left, right = ((TABLE.get(p) or "").split("|")[0] for p in parts)
@@ -279,7 +290,7 @@ def _counted_groups(w: str) -> list[tuple[int, int]]:
         silent_es = (
             w.endswith("es")
             and last == "e"
-            and not before.endswith(("s", "z", "x", "ch", "sh", "ge", "ce"))
+            and not before.endswith(("s", "z", "x", "ch", "sh", "g", "c"))  # fa-ces, pa-ges
             and not (w.endswith("les") and len(w) > 3 and w[-4] not in LETTER_VOWELS)
         )
         if silent_e or silent_ed or silent_es:

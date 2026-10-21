@@ -464,7 +464,11 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                     {"word": w.text, "assumed": st},
                 )
             )
-        elif w.ambiguous and meter_name != "free" and w.size > 1:
+        elif (
+            meter_name != "free"
+            and w.size > 1
+            and (w.ambiguous or (f.stresses.get(i) is None and w.leans))
+        ):
             st = f.stresses.get(i)
             shown = _quote(w.text), w.sung(st, mark=True)
             if st is None and w.leans and i > 0:  # the preposition took the stress

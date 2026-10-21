@@ -275,7 +275,7 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 | stress of polysyllabic words (60,854) | **97.2%** correct |
 | each word's first reading, without meter or rhyme | 92.5% |
 | words the dictionary lists | 98.3% |
-| ambiguous words, resolved by meter and rhyme | 95.3% |
+| ambiguous words, resolved by meter and rhyme | 95.4% |
 | unknown words (9%), guessed from the ending, meter and rhyme | 88.5% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.88, F1 0.91 |
 
@@ -304,7 +304,7 @@ not write (ա-բըստ-րա-հել).
 **Words outside the dictionaries**, held out (`uv run eval/oov.py`): the
 stress-by-ending prior gets 75.6% of Russian words right (always guessing the
 commonest position: 40.8%) and 77.0% of English words (66.7%). The English
-syllable count from spelling is right for 88.0% of words.
+syllable count from spelling is right for 88.4% of words.
 
 ## How it works
 
@@ -385,10 +385,13 @@ secondary stress, for the meter and the rhyme (ém-pìre / fire, bírd-hòuse /
 mouse), whether or not the dictionary marks it. An object pronoun that ends a
 line after a verb or a noun leans on it (néed it, hóld me), and the rhyme may
 fall on either (need it / read it, love you / true), though never on the same
-pronoun twice (need it / want it). A grave sings an -ed (blessèd), an old -est
+pronoun twice (need it / want it). After a verb and a preposition the pronoun
+may stay weak or take the beat (cáll to me / áll to me, walk with mé / free). A
+grave sings an -ed (blessèd), an old -est
 or -eth after a vowel is its own syllable (go-est), & is sung as and, and a
-word glued to digits ('80s) is left to the digits warning. Unknown words are counted from
-their spelling and stressed by the ending prior. A preposition that ends a
+word glued to digits ('80s) is left to the digits warning. A plural the
+dictionary lacks is its singular and an ending (lán-ces, be-síe-ges); other
+unknown words are counted from their spelling and stressed by the ending prior. A preposition that ends a
 line takes the stress (ships gone by / sky).
 
 **Meter** (`meter.py`). Each syllable position is a strong or a weak beat.
@@ -399,9 +402,14 @@ mismatches:
 - a skipped beat (pyrrhic) is cheap in binary meters;
 - monosyllables, function words, pronouns and secondary stresses may take
   either beat;
-- the last stress must land on a beat.
+- the last stress must land on a beat;
+- in a ternary meter or the dolnik, a word wholly before the first beat may
+  keep its stress (У́тро ды́шит у ней на груди, Сму́глый о́трок бродил).
 
-English verse licences cost a little: a line may open on an inverted foot
+English verse licences cost a little: in a ternary meter a foot may lose one
+weak syllable, at the line's start and once inside it (That hóst with their
+bánners at súnset were séen; And there láy the stéed), as English anapests
+and dactyls do; a line may open on an inverted foot
 (Sometime too hot the eye of heaven shines), a compound may move its stress
 to its second part (sometíme, but not prógram or áthlete), a late stress may move back onto a secondary
 one when a stressed word follows (Ténnessee whiskey, but not a line that ends

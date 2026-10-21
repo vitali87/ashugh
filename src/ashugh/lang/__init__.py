@@ -121,6 +121,15 @@ def analyze(
     if end is not None and before is not None and end.lang == before.lang == "en":
         if end.norm in en.OBJECTS and not (before.clitic or before.norm in en.WEAK):
             end.enclitic = True  # need it, hold me; but for you, with me
+        content = words[-3] if len(words) > 2 else None
+        if (
+            end.norm in en.OBJECTS
+            and before.norm in en.PREPOSITIONS
+            and content is not None
+            and content.lang == "en"
+            and not (content.clitic or content.norm in en.WEAK)
+        ):
+            end.enclitic = end.free_end = True  # cáll to me; or back to mé on a beat
     ends = [False] * len(words)
     if text is not None:
         spans = lyrics.token_spans(text)
