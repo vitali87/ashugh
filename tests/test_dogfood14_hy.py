@@ -145,3 +145,18 @@ def test_a_latin_abbreviation_with_an_armenian_ending_is_spelt(token, size):
 
 def test_a_latin_word_with_an_ending_is_still_read_as_a_word():
     assert words("Տեսա TikTok-ում")[1].size == 3
+
+
+@pytest.mark.parametrize(
+    "line, mode, split, out",
+    [
+        ("Երևան, արևն ելավ, Սևան\n", "schwa", "none", "Երևան, արև"),
+        ("Երևան, Սևան\n", "schwa", "none", "Սևան"),
+        ("Երևանում արևը նաև ևս\n", "script", "all", "ևս"),
+        ("Երևանում\n", "script", "all", "Ե-րե-վա-նում"),  # split at the hyphen: correct
+        ("Եվրոպա\n", "schwa", "none", "Եվրոպա"),  # an եվ written as such stays
+    ],
+)
+def test_suno_keeps_the_ligature_ev(line, mode, split, out):
+    text = suno.format_song(line, tags=False, armenian=mode, split=split).text
+    assert out in text and "Երեվան" not in text

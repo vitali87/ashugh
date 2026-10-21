@@ -440,6 +440,8 @@ def _armenian(
         joined = ("-" if hold else "").join(_merge_vowelless(group, mode))
         groups.append(_case_like(piece, joined) if mode == "latin" else joined)
     new = "-".join(groups)
+    if mode != "latin" and "և" in token.lower():
+        new = _ligatures(token, new)
     if mode == "latin":
         if mark in LATIN_MARKS:
             new += SENTENCE_MARKS[mark]  # ո՞ւր: its sentence is a question
@@ -517,6 +519,24 @@ def _by_part(w: Word, token: str, parts: list[str]) -> list[tuple[str, list[str]
                 current, bound = [], bound_here
     groups.append((pieces[len(groups)], current))
     return groups if len(groups) == len(pieces) and all(g for _, g in groups) else [(token, parts)]
+
+
+def _ligatures(token: str, new: str) -> str:
+    """The written word's և back where its halves ե and վ meet unbroken in the
+    rewritten one (արեվըն is արևըն; Ե-րե-վան, split at a hyphen, stays)."""
+    out, i, j = [], 0, 0
+    while j < len(new):
+        ch = token[i] if i < len(token) else ""
+        if ch.lower() == "և" and new[j : j + 2].lower() == "եվ":
+            out.append(ch)
+            i, j = i + 1, j + 2
+        elif new[j] == ch:
+            out.append(ch)
+            i, j = i + 1, j + 1
+        else:  # a schwa written out, a hyphen
+            out.append(new[j])
+            j += 1
+    return "".join(out)
 
 
 def _letters(text: str) -> int:
