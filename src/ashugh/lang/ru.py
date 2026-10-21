@@ -920,33 +920,80 @@ LETTER_NAMES = dict(
 )
 
 
-# Abbreviations said with their own letter names by custom: США is сэ-шэ-а́.
-SPOKEN_ABBREVIATIONS = {"сша": "сэшэа"}
+# Abbreviations said by custom, by the letters each syllable stands for: США is
+# сэ-шэ-а́, ЦСКА цэ-эс-ка́.
+SPOKEN_ABBREVIATIONS = {"сша": ("сэ", "шэ", "а"), "цска": ("цэ", "эс", "ка")}
 # Words with no vowel letter that are sounds, not letters: ХМ, ТСС, БРР.
 INTERJECTIONS = set("хм хмм гм мм ммм тс тсс брр бррр шш шшш пс пст псс кх кхм".split())
+
+
+# Words of one syllable spelt like an abbreviation (two letters, or consonants then a
+# vowel), which the stress table, holding words of two syllables and more, lacks.
+SHORT_WORDS = frozenset(
+    """
+    да не ни но на по за до во со ко же ли бы то ты вы мы он их им ем ел ах ох эх ух уж
+    уф ус ум юг яд ад ил из от об ну ля ре ми фа си ша щи
+    где все вся всю кто что сто мне вне два две три сна сну дна дну зла злу зло дно пса
+    псу рта рту лба лбу мха мху пня пню дня дню тля вша ржи лжи зря жгу лгу мну гну жму
+    тку чту мщу рву жну шлю злю сплю мгла мглу мглы мзда мзду
+    """.split()
+)
+
+
+def letter_names(low: str) -> tuple[str, ...]:
+    """What an abbreviation is sung as, syllable by syllable: эс-пэ-бэ́, цэ-эс-ка́."""
+    return SPOKEN_ABBREVIATIONS.get(low) or tuple(LETTER_NAMES[ch] for ch in low)
+
+
+def _a_word(low: str) -> bool:
+    """Whether a token in capitals spells a word: СТРАНА, ГДЕ, ВО are no abbreviations."""
+    return (
+        low in SHORT_WORDS
+        or low in CLITICS
+        or low in CORE
+        or bool(TABLE.variants(low))
+        or bool(ru_names.readings(low))
+        or bool(ru_slang.readings(low))
+    )
+
+
+def _unsayable(low: str) -> bool:
+    """No Russian word ends on three consonants the last of them doubled: ГИБДД."""
+    run = len(low) - len(low.rstrip("".join(c for c in LETTER_NAMES if c not in VOWELS)))
+    return run >= 3 and low[-1] == low[-2]
 
 
 def abbreviation(token: str, capitals: bool = False) -> Word | None:
     """An abbreviation in capitals sung letter by letter, stressed on the last: СПб,
     МСК, США. One with no vowel letter is always spelt, even in a line all in
-    capitals (СССР), unless it is an interjection (ХМ, ТСС); one with a vowel only
-    when it ends on it and has more consonants (США, МГУ, but ЗАГС, ВУЗ and НАТО
-    are words), and not in a line all in capitals."""
+    capitals (СССР), unless it is an interjection (ХМ, ТСС); one with a vowel
+    when it spells no word and cannot be said as one: it ends on its vowel with
+    more consonants (США, МГУ, but ЗАГС, ВУЗ and НАТО are words), has two letters
+    (ИП), or ends on a doubled consonant after another (ГИБДД). A line all in
+    capitals spells only the last kind and the customary ones (ЦСКА)."""
     if not 2 <= len(token) <= 6 or not token[:2].isupper():
         return None
     low = token.lower()
     if not all(ch in LETTER_NAMES for ch in low) or low in INTERJECTIONS:
         return None
     vowels = vowel_count(low)
-    if vowels and (capitals or not (low[-1] in VOWELS and vowels < len(low) - vowels)):
-        return None
-    spelling = SPOKEN_ABBREVIATIONS.get(low) or "".join(LETTER_NAMES[ch] for ch in low)
-    last = len(low) - 1
+    if low not in SPOKEN_ABBREVIATIONS and vowels:
+        if _a_word(low):
+            return None
+        said = low[-1] in VOWELS and vowels < len(low) - vowels or len(low) == 2
+        if not _unsayable(low) and (capitals or not said):
+            return None
+    names = letter_names(low)
+    # the letters each syllable stands for: the last takes what is left (Ц-С-КА)
+    cuts = [*range(len(names)), len(low)]
+    pieces = [token[a:b] for a, b in zip(cuts, cuts[1:])]
+    spelling = "".join(names)
+    last = len(names) - 1
     return Word(
         text=token,
         norm=low,
         lang=CODE,
-        syllables=tuple(Syllable(ch) for ch in token),
+        syllables=tuple(Syllable(p) for p in pieces),
         readings=(Reading(last, transcribe(spelling, last), spelling, "lexicon"),),
         spelled=True,
     )
@@ -1070,6 +1117,9 @@ def analyze_word(
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
     elif not readings:
         readings = _lexicon_readings(norm)
+    if not readings and token.isupper() and not capitals and len(token) <= 6:
+        # an abbreviation said as a word is stressed on its end: ЕГЭ́, like ОМО́Н
+        readings = [Reading(n - 1, transcribe(norm, n - 1), norm, "rule")]
     if not readings:
         readings = [
             Reading(p, transcribe(norm, p), norm, "guess", penalty=cost)

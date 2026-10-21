@@ -307,3 +307,57 @@ def test_the_dictionary_still_wins_over_the_slang_table():
 def test_suno_marks_a_loanword_where_it_is_said():
     out = suno.format_song("Бейби, ты мой единственный свет\n", tags=False).text
     assert "БейбИ" not in out
+
+
+def word_in(line: str, k: int):
+    (ln,) = analyze_lines(line, Spec(language="ru"))
+    return ln.words[k]
+
+
+@pytest.mark.parametrize(
+    "line, k, size, stress",
+    [
+        ("Меня остановили из ГИБДД", 3, 5, 4),  # гэ-и-бэ-дэ-дэ́: no word ends on бдд
+        ("Сдал ЕГЭ на сто", 1, 2, 1),  # е-гэ́: said as a word, stressed on the end
+        ("Болею за ЦСКА", 2, 3, 2),  # цэ-эс-ка́
+        ("ЦСКА", 0, 3, 2),
+        ("Открыл ИП в июне", 1, 2, 1),  # и-пэ́
+        ("ВСЕ ДОРОГИ ВЕДУТ В ГИБДД", 4, 5, 4),
+    ],
+)
+def test_abbreviations_are_said_as_russians_say_them(line, k, size, stress):
+    w = word_in(line, k)
+    assert (w.size, w.readings[0].stress) == (size, stress)
+
+
+@pytest.mark.parametrize(
+    "line, k, size",
+    [
+        ("Моя СТРАНА", 1, 2),  # a word in capitals for emphasis is no abbreviation
+        ("Это ГДЕ", 1, 1),
+        ("ВО ПОЛЕ БЕРЁЗА", 0, 1),
+        ("ОН ушёл", 0, 1),
+        ("Пошли в ЗАГС", 2, 1),
+        ("Поступил в ВУЗ", 2, 1),
+        ("Блок НАТО", 1, 2),
+    ],
+)
+def test_words_in_capitals_stay_words(line, k, size):
+    assert word_in(line, k).size == size
+
+
+def test_nato_keeps_its_own_stress():
+    assert word_in("Блок НАТО", 1).readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "line, out",
+    [
+        ("Болею за ЦСКА", "цэ-эс-кА"),
+        ("Улетаю в США", "сэ-шэ-а́"),  # a lone vowel takes an acute, not a capital
+        ("Меня остановили из ГИБДД", "гэ-и-бэ-дэ-дЭ"),
+        ("Открыл ИП в июне", "и-пЭ"),
+    ],
+)
+def test_suno_writes_an_abbreviation_as_it_is_said(line, out):
+    assert out in suno.format_song(line + "\n", tags=False).text

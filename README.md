@@ -412,12 +412,16 @@ names, diminutives and places is that name (Ма́шу, Ко́лю, Со́чи, 
 not машу́, колю́, сочи́); one that opens a sentence keeps the dictionary's
 reading first and gains the name's. A name written without its ё gets it
 (Лёха, Алёна), and a first name gives its possessive and diminutives
-(Та́нин, Та́нечка, Ни́ночка). An abbreviation in capitals with no vowel
-letter (СПб, МСК), or one that ends on a vowel and has more consonants (США,
-МГУ), is sung letter by letter and stressed on the last (эс-пэ-бэ́, which
-`suno` writes out for the singer); ЗАГС and НАТО stay words, a line in
-capitals spells only the ones with no vowel (ВСЁ В СССР), and ХМ and ТСС are
-sounds, not letters. A preposition or conjunction said twice in a
+(Та́нин, Та́нечка, Ни́ночка). An abbreviation in capitals that spells no
+word is sung letter by letter and stressed on the last (эс-пэ-бэ́, which
+`suno` writes out for the singer) when it has no vowel letter (СПб, МСК),
+ends on a vowel and has more consonants (США, МГУ), has two letters (ИП,
+и-пэ́) or ends on a doubled consonant after another (ГИБДД, гэ-и-бэ-дэ-дэ́);
+США and ЦСКА are said as custom has it (сэ-шэ-а́, цэ-эс-ка́). One said as a
+word is stressed on its end (ЕГЭ́) unless the dictionary knows it (НА́ТО);
+a word in capitals for emphasis stays a word (СТРАНА, ГДЕ), ЗАГС and ВУЗ stay
+words, a line in capitals spells only the ones with no vowel or a doubled
+end (ВСЁ В СССР), and ХМ and ТСС are sounds, not letters. A preposition or conjunction said twice in a
 row is a vocable, not a clitic (на-на-на, да-да-да), and тя leans on its
 verb like бы. A hyphenated word the dictionary stresses only before its last
 part takes the last part's stress too (чёрно-бе́лый), and a compound's
