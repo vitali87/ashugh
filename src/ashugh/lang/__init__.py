@@ -114,11 +114,12 @@ def analyze(
     letters = "".join(ch for t in tokens for ch in t if ch.isalpha())
     capitals = len(letters) > 3 and letters.isupper()  # I AM HERE: am, not A.M.
     in_latin = lang == hy.CODE and latin_armenian(tokens)
-    for token in tokens:
+    armenian = latin_words_in_armenian(tokens, in_latin) if lang == hy.CODE else []
+    for k, token in enumerate(tokens):
         if LATIN_WITH_ENDING.fullmatch(token) and (lang == hy.CODE or in_latin):
             words.append(_latin_with_ending(token, lexicon))
             continue
-        if in_latin and script_of(token) == en.CODE:
+        if armenian and armenian[k]:
             words.append(_from_latin(token, lexicon))
             continue
         if token == "&":  # rock & roll: the line's own and
@@ -233,6 +234,38 @@ COMMON_ENGLISH = set(
 # Spellings English hardly has: q without u (kyanq), gh between vowels or before a
 # consonant other than t (qaghaq, aghjik; not night), kh, zh, dz.
 ARMENIAN_LATIN = re.compile(r"q(?!u)|[aeiou]gh[aeiou]|gh[^taeiou]|kh|zh|dz")
+
+
+# English words an Armenian line in Latin letters borrows (sirum em qez, baby),
+# long enough that no Armenian word is spelt like them: not a (ա), am or in.
+BORROWED_ENGLISH = {w for w in COMMON_ENGLISH if len(w) >= 4} | {"oh", "yeah", "hey"}
+# Endings of Armenian verbs and nouns typed in Latin: sirum, gnal, sirel, tanov.
+ARMENIAN_LATIN_ENDINGS = ("um", "el", "al", "ov", "its", "ic")
+
+
+def _looks_armenian(token: str) -> bool:
+    low = token.lower()
+    if ARMENIAN_LATIN.search(low):
+        return True
+    return not en.known(low) and low.endswith(ARMENIAN_LATIN_ENDINGS)
+
+
+def latin_words_in_armenian(tokens: list[str], in_latin: bool) -> list[bool]:
+    """Which Latin-letter words of an Armenian song's line are Armenian: in a line
+    of Armenian typed in Latin every one but an English word it borrows (baby);
+    in an English line those spelt as Armenian (kyanqs, sirum) and an auxiliary
+    after one (sirum em)."""
+    out: list[bool] = []
+    for token in tokens:
+        low = token.lower().strip("'")
+        if script_of(token) != en.CODE:
+            out.append(False)
+        elif in_latin:
+            out.append(low not in BORROWED_ENGLISH)
+        else:
+            after = bool(out) and out[-1] and low in hy.LATIN_AUXILIARIES
+            out.append(after or _looks_armenian(low))
+    return out
 
 
 def latin_armenian(tokens: list[str]) -> bool:
