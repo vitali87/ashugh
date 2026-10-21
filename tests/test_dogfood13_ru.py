@@ -238,3 +238,29 @@ def test_dactylic_words_with_the_same_vowels_are_at_least_assonant(a, b):
 @pytest.mark.parametrize("a, b", [("ласковый", "ветреный"), ("сказочный", "бешеный")])
 def test_dactylic_words_with_other_vowels_are_not(a, b):
     assert rhymes(a, b) < rhyme.THRESHOLD["assonance"]
+
+
+@pytest.mark.parametrize(
+    "word, pieces",
+    [
+        ("диджей", "ди-джей"),
+        ("бюджет", "бю-джет"),
+        ("менеджер", "ме-не-джер"),
+        ("аджика", "а-джи-ка"),
+        ("беззвучный", "без-зву-чный"),
+        ("рассвет", "рас-свет"),
+        ("касса", "кас-са"),
+        ("трёхцветный", "трёх-цве-тный"),
+        ("отцвела", "от-цве-ла"),
+        ("честных", "чест-ных"),
+        ("центра", "цен-тра"),
+        ("карта", "кар-та"),
+        # negative: под- is a prefix before ж, тв after a cluster stays, пк is no onset
+        ("поджечь", "под-жечь"),
+        ("надженный", "над-жен-ный"),
+        ("чувство", "чувст-во"),
+        ("группка", "групп-ка"),
+    ],
+)
+def test_russian_words_are_cut_where_they_are_sung(word, pieces):
+    assert "-".join(ru.split_syllables(word)) == pieces

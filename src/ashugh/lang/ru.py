@@ -475,6 +475,14 @@ def override_error(word: str, value: str) -> str | None:
     return None
 
 
+ONSETS_IN_V = frozenset("цв зв св кв дв гв шв хв чв жв".split())  # цвет, звук; not тв: чувст-во
+
+
+def _onset(cs: str) -> bool:
+    """Whether two consonants can begin a syllable: ст, св, гр, мн."""
+    return len(cs) == 2 and (cs[0] in "сзшж" or cs[1] in "рлвмнй")
+
+
 def split_syllables(word: str) -> list[str]:
     """Orthographic syllables for display: мо-ро-зы, толь-ко, се-мья, вой-на."""
     if "-" in word:
@@ -496,9 +504,14 @@ def split_syllables(word: str) -> list[str]:
             k = len(gap) if gap in ("й", "ь", "ъ") else 0
         elif gap[0] == "й":
             k = 1
+        elif gap.endswith("дж") and low[: b - 1] not in ("под", "над"):
+            k = len(gap) - 2  # ди-джей, бю-джет: дж is one sound; под-жечь is not
+        elif gap[0] == gap[1] and (len(gap) == 2 or _onset(gap[1:])):
+            k = 1  # кас-са, рас-свет, без-зву-чный; but групп-ка
         elif len(gap) >= 3:
             two = gap[-1] in "рл" and gap[-2] not in "рлмнйьъ"
-            k = len(gap) - (2 if two else 1)  # чест-ных, цен-тра
+            two = two or gap[-2:] in ONSETS_IN_V
+            k = len(gap) - (2 if two else 1)  # чест-ных, цен-тра, трёх-цве-тный
         elif gap[0] in "рлмн" and gap[1] not in "ьъ":
             k = 1  # кар-та
         elif gap[0] in "сзшж" or gap[1] in "рлвмнй" or gap[1] in "ьъ":
