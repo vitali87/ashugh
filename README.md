@@ -401,7 +401,10 @@ one the meter may use, the last part carrying the main stress and the rhyme
    the dump lacks (отжила́ like жила́);
 6. the verb forms that share a gerund's or participle's stress: теряя from
    теряю, начав from начать, создавший from создать;
-7. else a prior learned from word endings (from step 3's forms alone),
+7. about 30 slang words and loanwords of today's songs, newer than the
+   dump, with their forms (`lang/ru_slang.py`): дедла́йн, бе́йби, тре́нды,
+   фле́ксить and фле́кшу, ха́йповый, суперзвезда́ and суперзвёзды;
+8. else a prior learned from word endings (from step 3's forms alone),
    which the meter can overrule.
 
 A capitalized word inside a sentence that spells one of about 230 first

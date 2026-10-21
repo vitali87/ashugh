@@ -24,7 +24,7 @@ from importlib import resources
 
 from ..model import Reading, Syllable, Word
 from ..table import SuffixPrior
-from . import ru_names
+from . import ru_names, ru_slang
 from .ru_lexicon import TABLE
 
 SUFFIXES = SuffixPrior("data/ru_suffix.tsv")
@@ -811,6 +811,9 @@ def _lexicon_readings(norm: str) -> list[Reading]:
             options.append((spelling, stress, "lexicon"))
     if not options:
         for spelling, stress in _plural_oblique(norm):
+            options.append((spelling, stress, "lexicon"))
+    if not options:  # дедлайн, фле́ксить: words newer than the table
+        for spelling, stress in ru_slang.readings(norm):
             options.append((spelling, stress, "lexicon"))
     if not options:  # Ростова, Алёна: a name the table lacks
         for spelling, stress in ru_names.readings(norm):

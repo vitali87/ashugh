@@ -107,10 +107,10 @@ def test_suno_warns_which_stresses_are_guesses(capsys):
 
     from ashugh.cli import main
 
-    sys.stdin = io.StringIO("Хейтеры кипишуй опять\n")
+    sys.stdin = io.StringIO("Тиктокеры кипишуй опять\n")
     try:
         main(["suno", "-", "--lang", "ru"])
     finally:
         sys.stdin = sys.__stdin__
     err = capsys.readouterr().err
-    assert "stress guessed" in err and "ХейтЕры" in err
+    assert "stress guessed" in err and "ТиктокЕры" in err

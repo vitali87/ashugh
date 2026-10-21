@@ -264,3 +264,46 @@ def test_dactylic_words_with_other_vowels_are_not(a, b):
 )
 def test_russian_words_are_cut_where_they_are_sung(word, pieces):
     assert "-".join(ru.split_syllables(word)) == pieces
+
+
+@pytest.mark.parametrize(
+    "word, stress",
+    [
+        ("бейби", 0),
+        ("дедлайн", 1),
+        ("дедлайны", 1),
+        ("флексить", 0),
+        ("флексишь", 0),
+        ("флекшу", 0),
+        ("хайплю", 0),
+        ("хайповый", 0),
+        ("хайповая", 0),
+        ("суперзвезда", 3),
+        ("тренде", 0),
+        ("френды", 0),
+        ("звездопад", 2),
+        ("Китай", 1),
+        ("Китае", 1),
+        ("хейтеры", 0),
+        ("кринжем", 0),
+        ("зумеры", 0),
+    ],
+)
+def test_slang_and_loanwords_of_songs_are_known(word, stress):
+    w = ru.analyze_word(word)
+    assert w.readings[0].stress == stress and not w.guessed
+
+
+def test_a_slang_spelling_shared_by_two_forms_keeps_both():
+    w = ru.analyze_word("суперзвезды")
+    assert {r.stress for r in w.readings} == {2, 3}
+    assert "суперзвёзды" in {r.spelling for r in w.readings}
+
+
+def test_the_dictionary_still_wins_over_the_slang_table():
+    assert [r.stress for r in ru.analyze_word("треку").readings] == [0]  # the table's
+
+
+def test_suno_marks_a_loanword_where_it_is_said():
+    out = suno.format_song("Бейби, ты мой единственный свет\n", tags=False).text
+    assert "БейбИ" not in out
