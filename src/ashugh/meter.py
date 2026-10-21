@@ -79,6 +79,17 @@ def length(meter: str, feet: int, ending: int) -> int | None:
     return phase + period * (feet - 1) + 1 + ending
 
 
+def slot_template(meter: str, feet: int, ending: int) -> str | None:
+    """The beats a slot of a classical meter asks for: dactyl4 feminine is
+    /xx/xx/xx/x."""
+    n = length(meter, feet, ending)
+    if n is None:
+        return None
+    period, phase = CLASSICAL[meter]
+    last = phase + period * (feet - 1)
+    return "".join("/" if p % period == phase and p <= last else "x" for p in range(n))
+
+
 def shortest(meter: str, feet: int, ending: int, english: bool) -> int | None:
     """The fewest syllables such a line may have: English ternary verse may begin
     a foot short and drop one weak syllable inside (fit_loose)."""

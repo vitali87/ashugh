@@ -599,13 +599,32 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             what = f"{', '.join(names[:3])}{' ...' if len(names) > 3 else ''} off the beat"
         else:
             what = "last stress off the beat"
+        feet = rule.feet_at(ln.index)
+        own = min(lr.tail.post, 3) if lr.tail is not None else f.ending
+        slot = meter.slot_template(meter_name, feet, own) if feet is not None else None
+        if slot is not None and lr.target is None and f.feet == feet and len(slot) != f.count:
+            # the beats were forced onto the slot's feet: the line is the wrong length
+            english = any(w.lang == "en" for w in ln.words)
+            fewest = meter.shortest(meter_name, feet, own, english) or len(slot)
+            if not fewest <= f.count <= len(slot):
+                add(
+                    Issue(
+                        ln.number,
+                        "syllables",
+                        "error",
+                        f"{f.count} syllables, slot is {len(slot)}",
+                        f"{meter_name}{feet} with a {ENDING_NAMES[own]} ending has {len(slot)}",
+                        {"expected": len(slot), "actual": f.count},
+                    )
+                )
+        wants = f"{meter_name}{feet} wants {slot}" if slot else f"{meter_name} wants {f.template}"
         add(
             Issue(
                 ln.number,
                 "meter",
                 "error",
                 what,
-                f"stress {f.grid}, {meter_name} wants {f.template}",
+                f"stress {f.grid}, {wants}",
                 {
                     "words": [ln.words[i].text for i in f.off_beat],
                     "grid": f.grid,

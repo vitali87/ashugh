@@ -211,3 +211,18 @@ def test_pick_takes_a_candidate_that_ends_a_refrain():
     spec = from_dict({"language": "ru", "meter": "iamb4", "rhyme": "AbAb"})
     res = fit_song(REFRAIN, spec, proposer, rounds=1)
     assert res.text.splitlines()[2] == "Как ты, прильнув ко мне щекою,"
+
+
+def test_a_ternary_line_too_long_for_its_feet_says_so():
+    rep = scan(
+        "Солнце глядит на нас, как огромное око\n",
+        from_dict({"language": "ru", "meter": "dactyl4"}),
+    )
+    issues = {i.code: i for i in rep.issues if i.severity == "error"}
+    assert "syllables" in issues and "has 11" in issues["syllables"].detail
+    assert issues["meter"].detail.endswith("dactyl4 wants /xx/xx/xx/x")
+
+
+def test_a_line_that_fits_its_feet_gets_no_length_error():
+    rep = scan("Солнце глядит на огромное око\n", from_dict({"language": "ru", "meter": "dactyl4"}))
+    assert rep.ok
