@@ -80,19 +80,39 @@ def derive_spec(
             if scheme:
                 table["rhyme"] = scheme
         if "endings" in keep:  # a line of digits alone, counted 0, is left free
-            table["endings"] = "".join(_ending(lr) for lr in unit.lines)
+            table["endings"] = _endings(unit)
         stanzas[str(number)] = table
     return {"stanza": stanzas}
 
 
-def _ending(lr) -> str:
-    """A line's ending as the scan checks it, so the song passes its own spec: the
-    one its fit gives (what be-cóme of mé ends on me, the rhyme having moved its
-    last beat there); - for a line of digits alone."""
-    if not lr.fit.count:
-        return "-"
-    later = later_endings(lr.line, lr.fit)  # goodnight / bright: the rhyme's ending
-    return ENDING_CODES.get(min(later) if later else lr.fit.ending, "h")
+def _endings(unit) -> str:
+    """Each line's ending as the scan checks it, so the song passes its own spec:
+    the one its fit gives (what be-cóme of mé ends on me, the rhyme having moved
+    its last beat there), and a later one its rhyme word also has only where a
+    partner ends there and not on its own (goodnight / bright, melody / free; but
+    tenderly / slenderly stay dactylic, as does an unrhymed merrily); - for a line
+    of digits alone."""
+    letters = _scheme(unit.scheme) or "-" * len(unit.lines)
+    options = [
+        (lr.fit.ending, later_endings(lr.line, lr.fit)) if lr.fit.count else None
+        for lr in unit.lines
+    ]
+    out = []
+    for k, option in enumerate(options):
+        if option is None:
+            out.append("-")
+            continue
+        plain, later = option
+        partners = [
+            o
+            for j, o in enumerate(options)
+            if o is not None and j != k and letters[k] != "-" and letters[j : j + 1] == letters[k]
+        ]
+        shared = sorted(e for e in later if any(e == p or e in more for p, more in partners))
+        if shared and not any(plain == p or plain in more for p, more in partners):
+            plain = shared[0]
+        out.append(ENDING_CODES.get(plain, "h"))
+    return "".join(out)
 
 
 def source_warnings(report: Report) -> list[str]:

@@ -213,8 +213,10 @@ def _check_spec_tables(report: Report) -> None:
 
 def _impossible_slots(report: Report) -> list[tuple[str, str, LineReport]]:
     """Slots no line can fill (8 syllables of iamb4 with a feminine ending, which
-    has 9), each with the first line that has it."""
+    has 9), each with the first line that has it; not one a line passes, its rhyme
+    word ending on a later beat (e-ter-ni-ty with a masculine ending)."""
     out: list[tuple[str, str, LineReport]] = []
+    filled: set[str] = set()
     for unit in report.units:
         rule = unit.rule
         if not rule.meter or not rule.syllables:
@@ -237,10 +239,12 @@ def _impossible_slots(report: Report) -> list[tuple[str, str, LineReport]]:
                 f"the spec asks {syllables} syllables of {name}{feet} with a "
                 f"{ENDING_NAMES[ending]} ending, which has {need}"
             )
-            if all(m != message for m, _, _ in out):
+            if lr.ok:
+                filled.add(message)
+            elif all(m != message for m, _, _ in out):
                 detail = "no line can pass this slot; change the count or the ending"
                 out.append((message, detail, lr))
-    return out
+    return [slot for slot in out if slot[0] not in filled]
 
 
 def _shared_schemes(stanzas: list[list[Line]], spec: Spec, text: str):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass, field
 
@@ -119,6 +120,13 @@ class Word:
                 parts[d] = parts[d].replace("ə", "(ə)", 1)
             else:  # ev-ery, his-tory: a vowel dropped before an r goes with the r
                 ahead = d + 1 < len(parts) and parts[d + 1][:1] in ("r", "R")
+                # strug-gl-ing sung strug-gling: a syllable with no vowel letter goes
+                # into the vowel after it
+                ahead = ahead or (
+                    d + 1 < len(parts)
+                    and not re.search(r"(?i)[aeiouy]", parts[d])
+                    and parts[d + 1][:1].lower() in "aeiouy"
+                )
                 at = d if ahead or d == 0 else d - 1
                 parts[at : at + 2] = ["".join(parts[at : at + 2])]
         return "-".join(parts)

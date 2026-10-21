@@ -502,13 +502,17 @@ def _s_ending(variant: str) -> str:
     return " S" if last in ("P", "T", "K", "F", "TH") else " Z"
 
 
-def _drop_index(longer: list[str], shorter: list[str], merge: bool = False) -> int | None:
+def _drop_index(
+    longer: list[str], shorter: list[str], merge: bool = False, stresses: list[int] | None = None
+) -> int | None:
     """The vowel of longer that shorter goes without: dropped (every: EH V ER IY,
     EH V R IY), or with merge, merged into the one before it ahead of a vowel
-    both share (ourselves: AW ER EH, AA EH; but not us, AH, against U.S.)."""
-    for i in range(len(longer)):
-        if longer[:i] + longer[i + 1 :] == shorter:
-            return i
+    both share (ourselves: AW ER EH, AA EH; but not us, AH, against U.S.). Of two
+    alike, the unstressed one: strug-gling drops the AH of -gle, not STRUG's."""
+    dropped = [i for i in range(len(longer)) if longer[:i] + longer[i + 1 :] == shorter]
+    if dropped:
+        weak = [i for i in dropped if stresses is not None and not stresses[i]]
+        return (weak or dropped)[-1]
     if merge and len(shorter) == len(longer) - 1:
         for i in range(1, len(longer) - 1):
             if longer[: i - 1] == shorter[: i - 1] and longer[i + 1 :] == shorter[i:]:
@@ -687,7 +691,13 @@ def split_spelling(
     elided = re.search(r"e['’][ae][rn]$", low)  # what-e'er, how-e'er: e'er is one syllable
     if elided and n >= 2 and elided.start() > 0:
         return split_spelling(token[: elided.start()], n - 1) + [token[elided.start() :]]
+    head = ADVERB_COMPOUND_RE.match(low)
     seam = _compound_seam(low, n)
+    if seam is None and not head:
+        head = OUT_PREFIX_RE.match(low)
+    if head and n >= 2:  # where-on, there-in, here-of; out-ra-geous, not ou-tra-geous
+        k = head.end(1)
+        return [token[:k], *split_spelling(token[k:], n - 1)]
     if seam is not None:
         k, left = seam
         head = frozenset(j for j in short if j < left)
@@ -707,8 +717,10 @@ def split_spelling(
         stem = next((TABLE.get(x) for x in stems if TABLE.get(x)), None)
         if stem is not None:
             revive = sum(ch.isdigit() for ch in stem.split("|")[0]) < n
-        else:  # each hiatus holds one more (her-mi-o-ne has one and a final e)
-            revive = len(groups) + _hiatuses(low, groups) < n
+        else:  # each hiatus holds one more (her-mi-o-ne has one and a final e), and a
+            # y between vowels (voy-age, not voya-ge)
+            glides = sum(bool(re.search(r"[aou]y(?=[aeiou])", low[a:b])) for a, b in groups)
+            revive = len(groups) + _hiatuses(low, groups) + glides < n
         if revive:
             groups = _vowel_groups(low) or groups
     stem = TABLE.get(low[:-2]) or TABLE.get(low[:-1]) if low.endswith("ed") else None
@@ -814,6 +826,8 @@ def split_spelling(
         else c
         for c in cuts
     ]
+    if len(cuts) + 1 < n:
+        cuts = _hidden_syllable_cuts(low, cuts, n)
     bounds = list(zip([0, *cuts], [*cuts, len(token)]))
     pieces = [_piece(token[a:b], k, len(bounds)) for k, (a, b) in enumerate(bounds)]
     while len(pieces) < n:  # too few vowel letters to cut: split the longest piece
@@ -826,6 +840,38 @@ def split_spelling(
         pieces[k : k + 1] = [pieces[k][:half], pieces[k][half:]]
     return pieces
 
+
+# Syllables no vowel letter holds, each a piece of its own: a syllabic l (strug-gl-ing,
+# twin-kl-ing), the m of -sm and -thm (chas-m, rhyth-m), the er hidden in -iring
+# (de-si-r-ing).
+HIDDEN_SYLLABLE_RES = (
+    re.compile(r"(?<=[a-z])[bcdfgkptvz]l(?=[aeiouy])"),
+    re.compile(r"(?:(?<=[sz])|(?<=th))ms?$"),
+    re.compile(r"(?<=[iy])r(?=[aeiou])"),
+)
+
+
+def _hidden_syllable_cuts(low: str, cuts: list[int], n: int) -> list[int]:
+    """cuts with a piece made for each syllable no vowel letter holds, while the
+    word has fewer pieces than its n syllables."""
+    for pattern in HIDDEN_SYLLABLE_RES:
+        for m in pattern.finditer(low):
+            a, b = m.start(), m.end()
+            new = sorted({c for c in cuts if not a < c < b} | {a, b} - {0, len(low)})
+            if len(cuts) < len(new) < n:
+                cuts = new
+            if len(cuts) + 1 == n:
+                return cuts
+    return cuts
+
+
+def _vowelless(piece: str) -> bool:
+    return not re.search(r"(?i)[aeiouy]", piece)
+
+
+# where-in, there-on, here-of, where-up-on: the old adverbs, each part as it is said
+ADVERB_COMPOUND_RE = re.compile(r"(where|there|here)(?:in|on|of|at|by|to|upon|with|unto)$")
+OUT_PREFIX_RE = re.compile(r"(out)(?=[bcdfghjklmnpqrstvwxz][a-z]{2,})")  # out-ra-geous
 
 CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z])")  # LinkedIn, YouTube, iPhone, SpaceX
 
@@ -977,6 +1023,16 @@ MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
 # Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
 EXTRA = {
+    # the old adverbs of hymns and verse: where-on, here-of, there-with
+    "whereon": ["W EH0 R AA1 N"],
+    "whereof": ["W EH0 R AH1 V"],
+    "whereat": ["W EH0 R AE1 T"],
+    "whereto": ["W EH0 R T UW1"],
+    "wherewith": ["W EH0 R W IH1 DH"],
+    "therewith": ["DH EH0 R W IH1 DH"],
+    "hereof": ["HH IH0 R AH1 V"],
+    "hereon": ["HH IH0 R AA1 N"],
+    "hereto": ["HH IH0 R T UW1"],
     "yeah": ["Y EH1 R"],
     "real": ["R IY1 AH0 L"],
     "poem": ["P OW1 M"],
@@ -1401,10 +1457,10 @@ def analyze_word(
             short_reading = Reading(stresses.index(1), phones, norm, "lexicon")
             word.short_readings = (*word.short_readings, short_reading)
         if len(stresses) == longest - 1 and word.drop is None:
-            word.drop = _drop_index(full[0][2], bare, merge=True)
+            word.drop = _drop_index(full[0][2], bare, merge=True, stresses=full[0][1])
         for f in full if len(stresses) == longest - 1 else ():
             if word.drop is None:  # fa-vo-rite, fav-rite: a reduced vowel either way
-                word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare))
+                word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare), stresses=f[1])
     if word.drop is None and (k := _syncope(*full[0])) is not None:
         word.drop = k  # mem'ry, whisp'ring, glo-rious, op'ning
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
@@ -1694,10 +1750,15 @@ def _syncope(phones: tuple[str, ...], marks: list[int], bare: list[str]) -> int 
     or a y-like vowel right before another weak vowel (mem'ry, whisp'ring,
     dang'rous, glo-rious, pret-tiest), or a schwa before n and a weak vowel
     (op'ning, heav'nly, pers'nal); never across another consonant (lib-er-ty,
-    ten-der-ly) or before a full vowel (ra-di-o)."""
+    ten-der-ly) or before a full vowel (ra-di-o); and the schwa between v and a
+    final n (heav'n, giv'n, e'en), as hymns sing them."""
+    nuclei = [k for k, ph in enumerate(phones) if is_vowel(ph)]
+    if 1 in marks and len(bare) >= 2 and not marks[-1] and bare[-1] in ("AH", "IH"):
+        at = nuclei[-1]
+        if phones[at - 1 : at] == ("v",) and phones[at + 1 :] in (("n",), ("n", "z")):
+            return len(bare) - 1
     if 1 not in marks or len(bare) < 3:
         return None
-    nuclei = [k for k, ph in enumerate(phones) if is_vowel(ph)]
     for k in range(marks.index(1) + 1, len(bare) - 1):
         if marks[k] or marks[k + 1]:
             continue
@@ -1828,6 +1889,14 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
     sounds (fi-er, hou-er)."""
     pieces = list(pieces)
     last = len(pieces) - 1
+    if short and drop is not None and 0 <= drop <= last and _vowelless(pieces[drop]) and last:
+        # a syllable no vowel letter holds goes back into its word: strug-gling,
+        # in-spi-ring, chasm
+        vowel_next = drop < last and not _vowelless(pieces[drop + 1][:1])
+        at, to = (drop, drop + 1) if vowel_next or drop == 0 else (drop - 1, drop)
+        return [*pieces[:at], pieces[at] + pieces[to], *pieces[to + 1 :]]
+    if not short or drop is None or not 0 <= drop <= last:
+        pieces = [_as_sung(p, pieces[k - 1] if k else "") for k, p in enumerate(pieces)]
     if drop is None or not 0 <= drop <= last:
         return pieces
     after = pieces[drop + 1] if drop < last else ""
@@ -1841,6 +1910,8 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
         at = next((k for k, ch in enumerate(cut) if ch.lower() in "aeiouy"), len(cut))
         pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + cut[:at] + "'"]
         pieces[drop] = cut[at:].lstrip("aeiouyAEIOUY") + pieces[drop]
+    elif short and drop == last and (m := FINAL_SCHWA_N_RE.match(pieces[drop])):
+        pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + m.group(1) + "'" + m.group(2)]  # heav'n
     elif short:
         at = drop - 1 if drop > 0 else 0
         pieces[at : at + 2] = ["".join(pieces[at : at + 2])]
@@ -1848,6 +1919,24 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
         er = _case_of(pieces[drop], "er") + m.group(2)  # fi-re: fi-er, tir-ed: ti-erd
         pieces[drop - 1 : drop + 1] = [m.group(1), er]
     return pieces
+
+
+def _as_sung(piece: str, before: str) -> str:
+    """A piece no vowel letter holds, written as it is sung: twin-kle-ing for a
+    syllabic l, chas-um for an m, de-si-er-ing for the er of -iring."""
+    if len(before) < 1 or not _vowelless(piece) or len(piece) > 3:
+        return piece
+    if re.fullmatch(r"(?i)[bcdfgkptvz]l", piece):
+        return piece + _case_of(piece, "e")
+    if re.fullmatch(r"(?i)ms?", piece):
+        return _case_of(piece, "u") + piece
+    if piece.lower() == "r" and before[-1:].lower() in ("i", "y"):
+        return _case_of(piece, "e") + piece
+    return piece
+
+
+# The last piece of heaven, given, seven: its schwa sung away before the n (heav'n).
+FINAL_SCHWA_N_RE = re.compile(r"(?i)^([bcdfghjklmnpqrstvwxz]*)[aei](n(?:s|['’]s)?)$")
 
 
 # A syllable the spelling hides in -ire, -our and their endings, sung as er:
