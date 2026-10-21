@@ -186,3 +186,54 @@ def test_an_apostrophe_after_a_vowel_marks_the_stress(token, stress):
 def test_suno_reads_an_apostrophe_mark_as_the_writers_stress(stress, out):
     text = suno.format_song("Висит на воротах замо'к\n", tags=False, stress=stress).text
     assert out in text and "'" not in text
+
+
+@pytest.mark.parametrize(
+    "line, meter_name",
+    [("Жил-был у бабушки серенький козлик", "dactyl"), ("Жил-был ёжик у реки", "trochee4")],
+)
+def test_a_pair_of_one_syllable_words_may_lend_either_its_beat(line, meter_name):
+    rep = scan(line + "\n", from_dict({"language": "ru", "meter": meter_name}))
+    assert rep.ok, [i.message for i in rep.issues if i.severity == "error"]
+
+
+def test_zhil_byl_reads_zhil_first():
+    assert [r.stress for r in ru.analyze_word("жил-был").readings] == [0, 1]
+
+
+def test_longer_parts_keep_the_last_parts_stress():
+    assert ru.analyze_word("давным-давно").readings[0].stress == 3
+
+
+@pytest.mark.parametrize(
+    "text, size",
+    [
+        ("Ветер мѝлый, вѐтер", 6),
+        ("сѐверо-за́падный ветер", 8),
+        ("Висит на воротах за̀мок", 8),
+    ],
+)
+def test_a_grave_accent_marks_a_stress_and_loses_nothing(text, size):
+    (ln,) = analyze_lines(text, Spec(language="ru"))
+    assert sum(w.size for w in ln.words) == size
+
+
+def test_a_grave_on_a_vowel_is_the_writers_stress():
+    (ln,) = analyze_lines("Висит на воротах за̀мок", Spec(language="ru"))
+    w = ln.words[-1]
+    assert w.text.replace("́", "") == "замок" and w.readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "word, pieces",
+    [
+        ("Тверской", "Твер-ской"),
+        ("вёрсты", "вёр-сты"),
+        ("мартовский", "мар-тов-ский"),
+        ("членских", "член-ских"),
+        ("честных", "чест-ных"),  # тн begins no syllable
+        ("центра", "цен-тра"),
+    ],
+)
+def test_s_and_a_stop_begin_the_syllable_after_a_consonant(word, pieces):
+    assert "-".join(ru.split_syllables(word)) == pieces

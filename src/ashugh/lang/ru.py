@@ -536,6 +536,7 @@ def split_syllables(word: str) -> list[str]:
         elif len(gap) >= 3:
             two = gap[-1] in "рл" and gap[-2] not in "рлмнйьъ"
             two = two or gap[-2:] in ONSETS_IN_V
+            two = two or (gap[-2] in "сзш" and gap[-1] in "кптбдгмн")  # твер-ской, вёр-сты
             k = len(gap) - (2 if two else 1)  # чест-ных, цен-тра, трёх-цве-тный
         elif gap[0] in "рлмн" and gap[1] not in "ьъ":
             k = 1  # кар-та
@@ -1052,6 +1053,12 @@ def _hyphenated(norm: str) -> list[Reading]:
     if not stressed:
         return []
     spelling = "-".join(spellings)
+    if len(stressed) > 1 and all(vowel_count(parts[k]) == 1 for k in stressed):
+        # жи́л-был, тя́п-ляп: words of one syllable each, any may take the beat
+        return [
+            Reading(at, transcribe(spelling, at), spelling, "lexicon", penalty=ALTERNATIVE_COST * k)
+            for k, at in enumerate(offsets[j] for j in stressed)
+        ]
     last = stressed[-1]
     secondary = tuple(offsets[k] + stresses[k][0] for k in stressed[:-1])
     readings = []

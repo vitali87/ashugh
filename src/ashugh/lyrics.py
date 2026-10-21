@@ -261,6 +261,13 @@ def _twins(m: re.Match) -> str:
     return "".join(ch.translate(table) if k in few else ch for k, ch in enumerate(word))
 
 
+# A grave on a Cyrillic vowel, which dictionaries put on a secondary stress and
+# writers on any (мѝлый, за̀мок): a stress mark like the acute. е and и with it
+# compose into letters of their own (ѐ, ѝ), which are taken apart first.
+GRAVE_LETTERS = str.maketrans({"ѐ": "е\u0301", "ѝ": "и\u0301", "Ѐ": "Е\u0301", "Ѝ": "И\u0301"})
+GRAVE_RE = re.compile("([аеёиоуыэюяАЕЁИОУЫЭЮЯ])\u0300")
+
+
 def clean(text: str) -> str:
     """Text as the tools read it: letters composed (е with a combining diaeresis is
     ё, as an editor shows it), unseen characters gone, a stray letter of the
@@ -270,6 +277,7 @@ def clean(text: str) -> str:
     if text.isascii() and "`" not in text:
         return text
     text = INVISIBLE_RE.sub("", unicodedata.normalize("NFC", text))
+    text = GRAVE_RE.sub("\\1\u0301", text.translate(GRAVE_LETTERS))
     text = LETTERS_RE.sub(_twins, text)
     return HYPHEN_RE.sub("-", APOSTROPHE_RE.sub("'", text))
 
