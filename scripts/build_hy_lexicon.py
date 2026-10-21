@@ -31,6 +31,11 @@ unless after a linker ա or ե it would break an entry the rules read right
 զ or շ and a stop is left out: its schwa comes before it, and a linker's
 vowel swallows that one.
 
+A short word written in capitals for emphasis (ՔԵԶ, ԴՈՒ, ԻՆՁ) looks like an
+abbreviation, which is sung letter by letter (ԱՄՆ, ԵՊՀ). Every entry of two to
+five letters not itself in capitals goes into src/ashugh/data/hy_short.tsv, so
+such a word stays a word; the abbreviations Wiktionary lists are in capitals.
+
 eval/wikipron.py rebuilds the lists without every tenth word (hold_out=True)
 and scores ashugh on the words they left out.
 """
@@ -49,6 +54,7 @@ from ashugh.phon import is_stop  # noqa: E402
 OUT = ROOT / "src" / "ashugh" / "data" / "hy_lexical.tsv"
 COMPOUNDS = ROOT / "src" / "ashugh" / "data" / "hy_compound.tsv"
 ROOTS = ROOT / "src" / "ashugh" / "data" / "hy_roots.tsv"
+SHORT = ROOT / "src" / "ashugh" / "data" / "hy_short.tsv"
 VOWELS = set("ɑaeiouəɛɔ")
 HOLD_OUT = 10
 
@@ -202,6 +208,14 @@ def _roots_in(norm: str, roots: set[str]) -> set[str]:
     }
 
 
+def short_words(source: Path) -> list[str]:
+    """The entries of two to five letters, lowercase, abbreviations left out."""
+    found = {
+        w.lower() for w in words(source) if 2 <= len(w) <= 5 and w.isalpha() and not w.isupper()
+    }
+    return sorted(found, key=lambda w: w.encode())
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 1:
         print(__doc__, file=sys.stderr)
@@ -215,6 +229,9 @@ def main(argv: list[str]) -> int:
     found = roots(Path(argv[0]), frozenset(keys))
     ROOTS.write_text("".join(r + "\n" for r in found), encoding="utf-8")
     print(f"{len(found)} roots that open on a cluster -> {ROOTS}", file=sys.stderr)
+    short = short_words(Path(argv[0]))
+    SHORT.write_text("".join(w + "\n" for w in short), encoding="utf-8")
+    print(f"{len(short)} short words -> {SHORT}", file=sys.stderr)
     return 0
 
 

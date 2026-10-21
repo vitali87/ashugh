@@ -243,6 +243,14 @@ def _possessive(a: str, b: str) -> bool:
 
 
 @cache
+def short_words() -> frozenset[str]:
+    """Words of two to five letters, so one written in capitals for emphasis (ՔԵԶ,
+    ԻՆՁ) is no abbreviation."""
+    text = resources.files("ashugh").joinpath("data/hy_short.tsv").read_text(encoding="utf-8")
+    return frozenset(text.split())
+
+
+@cache
 def lexical_endings() -> frozenset[str]:
     """Words whose final ս or դ belongs to the stem."""
     text = resources.files("ashugh").joinpath("data/hy_lexical.tsv").read_text(encoding="utf-8")
@@ -791,6 +799,8 @@ def abbreviation(token: str, capitals: bool = False) -> Word | None:
     low = head.lower()
     if not all(ch in LETTERS or ch in LETTER_VOWELS for ch in low):
         return None
+    if "ու" in low or low in short_words():
+        return None  # ԴՈՒ, ՔԵԶ, ԻՆՁ: a word written in capitals for emphasis
     vowels = sum(ch in LETTER_VOWELS for ch in low)
     if vowels and (capitals or vowels > 1 or len(low) > 3):
         return None

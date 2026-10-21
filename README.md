@@ -377,7 +377,9 @@ auxiliary of I (սիրում եմ ես) or its clause has a verb of I (հիմա 
 with բերք). An abbreviation in capitals is said letter by letter (Ա-Մե-Նե,
 Հա-Հա), even in a line in capitals when it has no vowel letter, and a case
 ending after a hyphen follows the letters and takes the stress (ԱՄՆ-ից
-Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́). In an Armenian song, a line in Latin
+Ա-Մե-Նե-ի́ց, ՀՀ-ի Հա-Հա-յի́); a word of up to five letters that Wiktionary
+lists, or one with ու, stays a word when written in capitals for emphasis
+(ՔԵԶ, ԻՆՁ, ԴՈՒ). In an Armenian song, a line in Latin
 letters whose words are mostly not English is Armenian typed in Latin (Mtnem
 aygin, kyanq), read in Armenian letters: mət-nem, ay-gin; the English words
 it borrows stay English (sirum em qez, baby), and in an English line a word
