@@ -1301,10 +1301,51 @@ def _syncope(phones: tuple[str, ...], marks: list[int], bare: list[str]) -> int 
     return None
 
 
+# Words whose verb and noun or adjective differ in a sound, not the stress: the
+# verb's sound, then the other's (we lɪve, a laɪve show; to waɪnd, the wɪnd).
+VOWEL_PAIRS = {
+    "live": ("ɪ", "aɪ"),
+    "lives": ("ɪ", "aɪ"),
+    "wind": ("aɪ", "ɪ"),
+    "winds": ("aɪ", "ɪ"),
+    "close": ("z", "s"),
+}
+NEAR = set(
+    "so too very real more as up stay be is are was were get keep come draw hold held".split()
+)
+
+
+def _vowel_pairs(words: list[Word]) -> None:
+    """A word in VOWEL_PAIRS read by the word before it, its other sound dropped
+    so it rhymes only as said: we live / give, not five; the wind / sinned; hold
+    me close / dose. With no such word both stay, the wind's noun first."""
+    for k, w in enumerate(words):
+        pair = VOWEL_PAIRS.get(w.norm)
+        if w.lang != CODE or pair is None or len(w.readings) < 2:
+            continue
+        verb, other = pair
+        before = words[k - 1].norm if k else ""
+        if w.norm == "close" and (before in OBJECTS or before in NEAR):
+            want, sure = other, True  # hold me close, so close
+        elif before in VERBAL or _auxiliary(words, k - 1):
+            want, sure = verb, True
+        elif before in NOMINAL and w.norm != "close":
+            want, sure = other, True
+        elif w.norm.startswith("wind"):
+            want, sure = other, False  # a song's wind blows more than it winds
+        else:
+            continue
+        keep = [r for r in w.readings if want in r.phones]
+        if keep:
+            rest = [] if sure else [r for r in w.readings if r not in keep]
+            w.readings = tuple(keep + rest)
+
+
 def heteronyms(words: list[Word]) -> None:
     """A noun-verb pair read by the word before it: to recórd, I protést, but my
     récord, a présent; with no such word, the noun or adjective (you look
     pérfect). The other reading stays, at the meter's usual cost."""
+    _vowel_pairs(words)
     for k, w in enumerate(words):
         if w.lang != CODE or w.norm not in HETERONYMS or len(w.readings) < 2:
             continue

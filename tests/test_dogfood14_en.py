@@ -606,3 +606,23 @@ def test_a_letter_compound_is_stressed_on_its_letter(token, size):
     assert (
         any(r.stress == size - 1 or r.stress != 0 for r in w.readings[1:]) or len(w.readings) == 1
     )
+
+
+@pytest.mark.parametrize(
+    "a,b,rhyming",
+    [
+        ("and so we live", "five", False),
+        ("and so we live", "give", True),
+        ("lost in the wind", "find", False),
+        ("lost in the wind", "sinned", True),
+        ("I wanted to wind", "find", True),
+        ("so hold me close", "dose", True),
+        ("I close", "doze", True),
+        ("all of our lives", "knives", True),
+        ("he lives", "knives", False),
+        ("Live", "five", True),  # no context: either reading
+        ("Live", "give", True),
+    ],
+)
+def test_a_vowel_heteronym_rhymes_as_its_context_reads_it(a, b, rhyming):
+    assert (rhymes(a, b) >= 0.9) is rhyming
