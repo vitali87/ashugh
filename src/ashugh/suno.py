@@ -483,9 +483,18 @@ def _place_marks(text: str, aside: bool = False) -> str:
     keeps its mark inside its parentheses, and a line ending on one puts its own
     mark before it."""
     out, pending = [], ""
-    for ch in text:
+    for k, ch in enumerate(text):
         if ch in PENDING:
             pending = "?" if PENDING[ch] == "?" else (pending or PENDING[ch])
+            continue
+        rest = text[k + 1 :].lstrip(" ")
+        if pending and ch == "." and rest[:1] == ".":
+            out.append(pending + ch)  # yó!...: the dots keep their number
+            pending = ""
+            continue
+        if pending and ch == "," and rest[:1] in ("—", "–") and rest:
+            out.append(pending)  # Óv e mez pahum? — hartsnum: the quoted words end there
+            pending = ""
             continue
         if pending and ch in ".?!":
             out.append(pending if ch == "." else ch)

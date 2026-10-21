@@ -246,3 +246,18 @@ def test_english_capitals_are_no_roman_numerals(line):
 
     rep = scan(line + "\n", S(language="en"))
     assert not any("Roman numeral" in i.message for i in rep.issues)
+
+
+@pytest.mark.parametrize(
+    "line, out",
+    [
+        ("Ես դեռ այստեղ եմ, յո՜...\n", "yó!..."),
+        ("— Ո՞վ է մեզ պահում, — հարցնում ես դու։\n", "pahum? — hartsnum es du."),
+        ("Ո՞ւր ես։\n", "es?"),
+    ],
+)
+def test_latin_marks_land_where_their_sentence_ends(line, out):
+    import unicodedata
+
+    text = suno.format_song(line, tags=False, armenian="latin").text
+    assert unicodedata.normalize("NFC", out) in unicodedata.normalize("NFC", text)
