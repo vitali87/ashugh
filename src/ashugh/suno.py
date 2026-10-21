@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -170,6 +171,7 @@ def format_song(
         if armenian_line and default_mode != "script":
             line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, lexicon)
             line_out = _place_marks(line_out)
+            line_out = _initials_and_numerals(line_out, default_mode, schwa)
         line_out = _russian_asides(line_out, lr.line.number, notes)
         raw[lr.line.number - 1] = line_out + ending
     sung = {lr.line.number for lr in report.lines}
@@ -189,6 +191,24 @@ def format_song(
 
 
 ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
+
+
+INITIAL_RE = re.compile(r"(?<![^\W\d_])([Ա-Ֆ])ը\.|(?<![^\W\d_])([A-Z][a-z]?)ə\.")
+NUMERAL_ENDING_RE = re.compile(r"(\d[-'’]?)([\u0561-\u0587]+)")
+
+
+def _initials_and_numerals(line: str, mode: str, schwa: str) -> str:
+    """An initial stays a letter (Ս. Սարգիս, S. Sargis: no Սը., Sə.), and in Latin
+    letters a numeral's Armenian ending is romanized too (2024-in)."""
+    line = INITIAL_RE.sub(lambda m: (m.group(1) or m.group(2)) + ".", line)
+    if mode == "latin":
+
+        def ending(m: re.Match) -> str:
+            phones = tuple(seg.ph for seg in hy.segments("ա" + m.group(2))[1:])
+            return m.group(1) + _latin(phones, False, schwa)
+
+        line = NUMERAL_ENDING_RE.sub(ending, line)
+    return line
 
 
 def _armenian_asides(

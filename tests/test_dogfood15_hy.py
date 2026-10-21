@@ -180,3 +180,17 @@ def test_classical_lojs_rhymes_with_hujs():
 @pytest.mark.parametrize("token,size", [("ռեալ", 2), ("իդեալ", 3), ("Նոյ", 1)])
 def test_reformed_words_with_ea_or_oy_are_left_alone(token, size):
     assert words(token)[0].size == size
+
+
+def test_latin_mode_romanizes_a_numerals_ending_and_keeps_an_initial():
+    from ashugh import suno
+
+    out = suno.format_song("Մենք կանք 2024-ին, Ս. Սարգիս\n", armenian="latin", tags=False).text
+    assert "2024-in" in out and "S. Sargis" in out, out
+
+
+def test_schwa_mode_keeps_an_initial():
+    from ashugh import suno
+
+    out = suno.format_song("Ս. Սարգիս, իմ սեր\n", armenian="schwa", tags=False).text
+    assert out.startswith("Ս. Սարգիս"), out
