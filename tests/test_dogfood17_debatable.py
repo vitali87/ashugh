@@ -159,3 +159,21 @@ def test_i_will_eat_keeps_both():
 def test_we_sing_does_not_rhyme_with_sovsem():
     spec = from_dict({"language": "ru", "rhyme": "AA"})
     assert not scan("Мы поем с тобой\nНе забыв совсем\n", spec).ok
+
+
+@pytest.mark.parametrize(
+    "word,stressed",
+    [("իհարկե", 1), ("գուցե", 0), ("միգուցե", 1), ("մանավանդ", 1), ("նույնիսկ", 0), ("միթե", 0)],
+)
+def test_armenian_words_stressed_before_the_last(word, stressed):
+    from ashugh.lang import hy
+
+    assert hy.analyze_word(word).readings[0].stress == stressed
+
+
+@pytest.mark.parametrize("word", ["սիրում", "կարկուտ", "հարկ"])
+def test_other_armenian_words_keep_the_last(word):
+    from ashugh.lang import hy
+
+    w = hy.analyze_word(word)
+    assert w.readings[0].stress == len(w.syllables) - 1

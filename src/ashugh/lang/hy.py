@@ -547,14 +547,19 @@ def _display(syllables: list[list[Seg]], original: str, caps: bool = True) -> li
     return out
 
 
-def _stress(syllables: list[list[Seg]]) -> int:
+# Words standard Eastern Armenian stresses on the full vowel before the last:
+# իհա́րկե, գու́ցե, միգու́ցե, մանա́վանդ, նու́յնիսկ, մի́թե.
+PENULT_STRESS = frozenset("իհարկե գուցե միգուցե մանավանդ նույնիսկ միթե".split())
+
+
+def _stress(syllables: list[list[Seg]], penult: bool = False) -> int:
     for i, syl in enumerate(syllables):
         if any(s.stressed for s in syl):
             return i
-    for i in range(len(syllables) - 1, -1, -1):
-        if any(s.vowel and s.ph != "ə" for s in syllables[i]):
-            return i
-    return len(syllables) - 1
+    full = [i for i, syl in enumerate(syllables) if any(s.vowel and s.ph != "ə" for s in syl)]
+    if penult and len(full) > 1:
+        return full[-2]
+    return full[-1] if full else len(syllables) - 1
 
 
 def override_error(word: str, value: str) -> str | None:
@@ -1061,7 +1066,7 @@ def analyze_word(
         shown[0] = replace(shown[0], text=shown[0].text[:1].upper() + shown[0].text[1:])
     phones = _after_r(tuple(s.ph for syl in syllables for s in syl))
     clitic = norm in CLITICS
-    stress = None if clitic and len(syllables) > 1 else _stress(syllables)
+    stress = None if clitic and len(syllables) > 1 else _stress(syllables, norm in PENULT_STRESS)
     if any(s.stressed for syl in syllables for s in syl):
         source = "mark"
         stress = _stress(syllables)
