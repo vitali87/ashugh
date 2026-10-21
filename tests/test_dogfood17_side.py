@@ -62,3 +62,21 @@ def test_a_sung_section_still_is():
     text = SPOKEN.replace("[Spoken Word]", "[Bridge]")
     report = scan(text, from_dict({"language": "en", "syllables": 8}))
     assert not report.lines[1].ok
+
+
+@pytest.mark.parametrize(
+    "word,n",
+    [
+        ("Persephone", 4), ("Eurydice", 4), ("Niobe", 3), ("Circe", 2), ("Urania", 4),
+        ("Terpsichore", 4), ("Persephone's", 4),
+    ],
+)  # fmt: skip
+def test_greek_names_are_counted_in_full(word, n):
+    (ln,) = analyze_lines(word, Spec(language="en"))
+    (w,) = ln.words
+    assert w.size == n and not w.assumed and not w.guessed
+
+
+def test_a_possessive_after_a_vowel_adds_no_syllable():
+    (ln,) = analyze_lines("Persephone's", Spec(language="en"))
+    assert ln.words[0].sung() == "Per-seph-o-ne's"

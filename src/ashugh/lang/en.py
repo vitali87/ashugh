@@ -677,8 +677,8 @@ def split_spelling(
         if sum(counts) == n:  # T-shirt, a-goin', Linked-In: the writer's own parts
             return [piece for p, c in zip(parts, counts) for piece in split_spelling(p, c)]
     if low.endswith(("'s", "’s")) and n >= 2:
-        own = TABLE.get(low[:-2])
-        before = _vowels(own.split("|")[0]) if own else len(_counted_groups(low[:-2]))
+        own = lookup(low[:-2])
+        before = _vowels(own[0]) if own else len(_counted_groups(low[:-2]))
         if before == n:
             out = split_spelling(token[:-2], n, short, parted, ly)
             return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
@@ -992,6 +992,17 @@ REPLACED = {
     "prob'ly": ["P R AA1 B L IY0"],  # probably, two letters left out
     "wi'": ["W IH1"],  # Scots with: wi' bickering brattle
     "leant": ["L EH1 N T"],  # leaned, as British verse writes it: I leant upon a coppice gate
+    # Greek names verse sings that CMUdict lacks, each e and y a syllable
+    "persephone": ["P ER0 S EH1 F AH0 N IY0"],
+    "eurydice": ["Y UH0 R IH1 D AH0 S IY2"],
+    "niobe": ["N AY1 AH0 B IY0"],
+    "hecate": ["HH EH1 K AH0 T IY0", "HH EH1 K AH0 T"],
+    "euterpe": ["Y UW0 T ER1 P IY0"],
+    "terpsichore": ["T ER0 P S IH1 K AH0 R IY0"],
+    "melpomene": ["M EH0 L P AA1 M AH0 N IY0"],
+    "urania": ["Y UH0 R EY1 N IY0 AH0"],
+    "iphigenia": ["IH2 F AH0 JH AH0 N AY1 AH0"],
+    "circe": ["S ER1 S IY0"],
     "our": ["AW1 R", "AA1 R"],  # one syllable in song, though CMUdict lists ou-er first
     "ours": ["AW1 R Z", "AA1 R Z"],
     "spring": ["S P R IH1 NG"],

@@ -247,14 +247,14 @@ def test_a_partner_with_one_reading_is_asked_for_as_before():
 
 
 def test_a_capitalized_word_read_as_two_dictionary_words_is_named():
-    text = "Persephone in the underworld\nAnd Eurydice\n"
+    text = "Ravenshore in the underworld\nAnd Duskwalker\n"
     report = scan(text, from_dict({"language": "en"}))
     said = [i for i in report.issues if "read as" in i.message]
     assert [i.message for i in said] == [
-        "«Persephone» read as perse + phone",
-        "«Eurydice» read as eury + dice",
+        "«Ravenshore» read as raven + shore",
+        "«Duskwalker» read as dusk + walker",
     ]
-    assert "lexicon" in said[0].detail and said[0].data["parts"] == ["perse", "phone"]
+    assert "lexicon" in said[0].detail and said[0].data["parts"] == ["raven", "shore"]
 
 
 def test_a_lowercase_compound_or_a_known_name_draws_no_such_warning():
