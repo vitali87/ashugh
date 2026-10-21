@@ -10,7 +10,8 @@ none). A first name in -а or -я also gives its possessive (Та́нин) and i
 diminutives (Та́нечка, Ни́ночка, Ма́шенька). The forms follow from the ending:
 -а/-я decline as feminines (Маша, Машу; Коля, Колю), a consonant, -й and -ь as
 masculines (Иван, Ивана; Игорь, Игоря), with ":f" as feminines in -ь (Казань,
-Казани); ":0" does not decline (Сочи); "=" lists the oblique forms of a name
+Казани) and ":s" as surnames in -ов, -ёв (Королёв, Королёвым, Королёва,
+Королёвой); ":0" does not decline (Сочи); "=" lists the oblique forms of a name
 that drops a vowel (Па́вел, Па́вла).
 """
 
@@ -46,6 +47,8 @@ NAMES = """
 берли'н ве'на пра'га варша'ва ри'га та'ллин ви'льнюс кавка'з ура'л росси'я аме'рика
 евро'па арме'ния гру'зия украи'на ита'лия фра'нция герма'ния испа'ния во'лга нева'
 ока' енисе'й ту'ла кострома' во'логда чита' кита'й
+горбачёв:s королёв:s хрущёв:s пугачёв:s ковалёв:s соловьёв:s воробьёв:s журавлёв:s
+грачёв:s лихачёв:s ткачёв:s
 """
 
 
@@ -89,6 +92,9 @@ def _declined(lemma: str, at: int, kind: str) -> list[tuple[str, int]]:
             form = stem + e
             out.append((form, _count(stem) if on_end else at))
         return out
+    if kind == "s":  # Королёв, Королёвым; Королёва, Королёвой; Королёвы, Королёвых
+        endings = ("", "а", "у", "ым", "е", "ой", "ы", "ых", "ыми")
+        return [(lemma + e, at) for e in endings]
     if kind == "f":  # Каза́нь, Каза́ни, Каза́нью
         return [(lemma, at)] + [(stem + e, at) for e in ("и", "ью")]
     if lemma.endswith("ий"):

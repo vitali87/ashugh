@@ -411,7 +411,7 @@ A capitalized word inside a sentence that spells one of about 230 first
 names, diminutives and places is that name (Ма́шу, Ко́лю, Со́чи, Росто́ва,
 not машу́, колю́, сочи́); one that opens a sentence keeps the dictionary's
 reading first and gains the name's. A name written without its ё gets it
-(Лёха, Алёна), and a first name gives its possessive and diminutives
+(Лёха, Алёна, and surnames such as Горбачёв, Королёва), and a first name gives its possessive and diminutives
 (Та́нин, Та́нечка, Ни́ночка). An abbreviation in capitals that spells no
 word is sung letter by letter and stressed on the last (эс-пэ-бэ́, which
 `suno` writes out for the singer) when it has no vowel letter (СПб, МСК),
@@ -439,8 +439,12 @@ whichever reading fits, and a shifted line end rhymes from the preposition.
 At the end of a line, the rhyme partner picks between readings the meter
 allows equally: облака́ / издалека́. A phonetic transcription reduces
 unstressed vowels, devoices and assimilates obstruents, drops silent
-consonants (сердце, солнце, честный) and says a double consonant single
-before a consonant or at the end (класс rhymes with вас).
+consonants (сердце, солнце, честный), says г before к or ч as х (лёгкий,
+мягче) and a double consonant single before a consonant or at the end (класс
+rhymes with вас); a word after the line's last stress is said with its vowels
+reduced (он же rhymes with тоже, ты ли with пыли). надо, передо and подо
+before мной lean on it like над (надо мно́ю), and are stressed elsewhere
+(мне на́до).
 
 
 **English** (`lang/en.py`). Pronunciations come from CMUdict (126k words),

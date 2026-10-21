@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from .lang import ru
 from .lang.en import OBJECTS, PREPOSITIONS
 from .meter import Fit, _anchor, slots
 from .model import Line, nuclei
@@ -135,7 +136,7 @@ def _shifted_tail(words, w: int) -> Tail | None:
     t = _tail(prep, prep.readings[0], 0, [])
     if t is None:
         return None
-    rest = t.rest + lean.phones + tuple(p for x in words[w + 1 :] for p in x.readings[0].phones)
+    rest = t.rest + lean.phones + tuple(p for x in words[w + 1 :] for p in _unstressed(x))
     shown = " ".join(x.text for x in words[w - 1 :])
     spelled = " ".join([prep.norm, lean.spelling, *(x.norm for x in words[w + 1 :])])
     return Tail(t.onset, t.vowel, rest, sum(is_vowel(p) for p in rest), shown, spelled, word.lang)
@@ -154,7 +155,7 @@ def _tail(word, reading, stress, after) -> Tail | None:
     shown = [word.text]
     spelled = [reading.spelling]
     for later in after:
-        rest.extend(later.readings[0].phones)
+        rest.extend(_unstressed(later))
         shown.append(later.text)
         spelled.append(later.norm)
     return Tail(
@@ -166,6 +167,15 @@ def _tail(word, reading, stress, after) -> Tail | None:
         spelling=" ".join(spelled),
         lang=word.lang,
     )
+
+
+def _unstressed(word) -> tuple[str, ...]:
+    """A word after the line's last stress as it is said there: a Russian one with
+    its vowels reduced (он же [ʐə], ты ли [lʲɪ], пока я [jə])."""
+    reading = word.readings[0]
+    if word.lang != ru.CODE:
+        return reading.phones
+    return ru.transcribe(reading.spelling, -1)  # every vowel after the stress
 
 
 def match(xs: list[Tail], ys: list[Tail]) -> tuple[float, Tail | None, Tail | None]:

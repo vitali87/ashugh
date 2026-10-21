@@ -386,6 +386,8 @@ REWRITES = (
     ("сч", "щ"),
     ("зч", "щ"),
     ("жч", "щ"),
+    ("гк", "хк"),  # лёгкий, мягко
+    ("гч", "хч"),  # мягче
 )
 WORD_REWRITES = {
     "что": "што",
@@ -1293,6 +1295,22 @@ def ne_with_pronoun(words: list[Word]) -> None:
             pronoun.readings = (
                 Reading(None, transcribe(base.spelling, None), base.spelling, "clitic"),
             )
+
+
+# Prepositions in -о said before мной like над and перед, without a stress of their
+# own: надо мной, передо мною; надо elsewhere is the stressed на́до (one must).
+O_PREPOSITIONS = frozenset({"надо", "передо", "подо"})
+
+
+def prepositions_in_o(words: list[Word]) -> None:
+    """надо мной, передо мною: the preposition leans on the pronoun."""
+    for prev, w in zip(words, words[1:]):
+        if prev.lang != CODE or prev.norm not in O_PREPOSITIONS or w.norm not in ("мной", "мною"):
+            continue
+        if prev.readings and prev.readings[0].source in ("mark", "user"):
+            continue
+        prev.clitic = prev.weak = True
+        prev.readings = (Reading(None, transcribe(prev.norm, None), prev.norm, "clitic"),)
 
 
 def preposition_shift(words: list[Word]) -> None:

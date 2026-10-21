@@ -361,3 +361,53 @@ def test_nato_keeps_its_own_stress():
 )
 def test_suno_writes_an_abbreviation_as_it_is_said(line, out):
     assert out in suno.format_song(line + "\n", tags=False).text
+
+
+@pytest.mark.parametrize(
+    "a, b, sound",
+    [("он же", "тоже", "onʒə"), ("ты ли", "пыли", "ɨlʲɪ")],
+)
+def test_a_word_after_the_last_stress_is_said_reduced(a, b, sound):
+    lines = analyze_lines(f"{a}\n{b}", Spec(language="ru"))
+    ts = [rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines]
+    score, x, _ = rhyme.match(*ts)
+    assert x is not None and x.sound.endswith(sound)
+    assert score >= rhyme.THRESHOLD["near"]
+
+
+@pytest.mark.parametrize("word, sound", [("лёгкий", "xkʲ"), ("мягче", "xtʃ"), ("легко", "xk")])
+def test_g_before_k_is_said_kh(word, sound):
+    assert sound in "".join(ru.analyze_word(word).readings[0].phones)
+
+
+def test_other_g_is_left_alone():
+    assert "g" in "".join(ru.analyze_word("книга").readings[0].phones)
+
+
+@pytest.mark.parametrize(
+    "line", ["Надо мною небо", "Передо мной дорога", "Подо мною лёд", "Надо мной гроза"]
+)
+def test_a_preposition_in_o_before_me_is_unstressed(line):
+    (ln,) = analyze_lines(line, Spec(language="ru"))
+    assert [r.stress for r in ln.words[0].readings] == [None]
+
+
+def test_nado_meaning_need_keeps_its_stress():
+    (ln,) = analyze_lines("Мне надо идти", Spec(language="ru"))
+    assert ln.words[1].readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "word, spelling",
+    [
+        ("Горбачев", "горбачёв"),
+        ("Королев", "королёв"),
+        ("Хрущев", "хрущёв"),
+        ("Королева", "королёва"),
+        ("Горбачевым", "горбачёвым"),
+    ],
+)
+def test_surnames_written_without_their_yo_get_it(word, spelling):
+    (ln,) = analyze_lines(f"Вспомнил {word}", Spec(language="ru"))
+    r = ln.words[1].readings[0]
+    assert r.spelling == spelling and r.stress == ru.vowel_count(spelling.split("ё")[0])
