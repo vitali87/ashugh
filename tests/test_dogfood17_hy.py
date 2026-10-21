@@ -126,3 +126,142 @@ def test_a_latin_typed_candidate_is_accepted_for_a_latin_typed_song():
     result = fit_song(text, spec, StaticProposer({2: ["Ari, ari, im bari jan,"]}), rounds=1)
     rejected = [r["why"] for u in result.unresolved for r in u.rejected]
     assert not any("not in Armenian" in why for why in rejected)
+
+
+def sung(word: str) -> str:
+    return words(word)[0].sung()
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("բոյդ", "բոյդ"), ("շոյված", "շոյ-ված"), ("բոյկոտ", "բոյ-կոտ"), ("Դետրոյտ", "Դետ-րոյտ"),
+        ("Ջոյս", "Ջոյս"), ("հռոմեացի", "հը-ռո-մե-ա-ցի"),
+    ],
+)  # fmt: skip
+def test_a_modern_word_with_oy_or_eats_is_not_classical(word, shown):
+    w = words(word)[0]
+    assert w.sung() == shown and not any("classical" in n for n in w.notes)
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("յոյս", "հույս"), ("լոյսը", "լույ-սը"), ("քոյր", "քույր"), ("Իւր", "Իր"), ("իւղ", "յուղ"),
+        ("իւրաքանչիւր", "յու-րա-քան-չյուր"), ("եօթը", "յո-թը"), ("տեսայ", "տե-սա"),
+        ("հայեացք", "հա-յացք"),
+    ],
+)  # fmt: skip
+def test_classical_spelling_is_read_as_the_reform_spells_it(word, shown):
+    assert sung(word) == shown
+
+
+def test_classical_aorist_rhymes_with_vra():
+    assert hy_rhyme("Ես քեզ տեսայ", "Սարի վրայ") >= rhyme.THRESHOLD["near"]  # սա / րա
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [("բոլորդ", "բո-լո-րըդ"), ("ձորդ", "ձո-րըդ"), ("աղբյուրդ", "աղ-բյու-րըդ")],
+)
+def test_a_word_in_or_or_ur_takes_the_possessive(word, shown):
+    assert sung(word) == shown
+
+
+@pytest.mark.parametrize("word", ["վարորդ", "գնորդ", "երկրորդ", "ժողովուրդ", "խորդ", "առաջնորդ"])
+def test_a_stem_in_ord_or_urd_keeps_it(word):
+    assert "ըդ" not in sung(word)
+
+
+def test_an_english_i_in_an_armenian_line_is_no_numeral():
+    report = scan("Ես քեզ սիրում եմ, I love you\n", Spec(language="hy"))
+    assert not any("Roman" in i.message for i in report.issues)
+    report = scan("Եկավ XXI դարը\n", Spec(language="hy"))
+    assert any("Roman" in i.message for i in report.issues)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Արի ինձ մոտ, իմ յար x2\nՄնա ինձ հետ, իմ ցավ\n",
+        "Hold me tonight x2\nI'm feeling cold\n",
+        "Hold me tonight (x2)\nI'm feeling cold\n",
+    ],
+)
+def test_a_line_with_a_repeat_mark_keeps_its_rhyme(text):
+    report = scan(text, from_dict({"rhyme": "AA"}))
+    assert any(i.code == "rhyme" and i.severity == "error" for i in report.issues)
+
+
+def test_a_year_in_digits_still_leaves_the_rhyme():
+    report = scan("I was born in '99\nAnd still I shine\n", from_dict({"rhyme": "AA"}))
+    assert not any(i.code == "rhyme" and i.severity == "error" for i in report.issues)
+
+
+def test_suno_writes_a_repeated_line_out():
+    from ashugh import suno
+
+    out = suno.format_song("Hold me tonight x2\nArmy of 2\n", tags=False)
+    assert out.text == "Hold me tonight\nHold me tonight\nArmy of 2\n"
+    assert any(n.kind == "repeat" for n in out.notes)
+
+
+@pytest.mark.parametrize(
+    "tag,name,key",
+    [
+        ("Կրկներգ 2 անգամ", "Chorus x2", "chorus"), ("Припев 2 раза", "Chorus x2", "chorus"),
+        ("Chorus 3 times", "Chorus x3", "chorus"), ("Կրկնել կրկներգը", "Chorus", "chorus"),
+        ("Повтор припева", "Chorus", "chorus"),
+    ],
+)  # fmt: skip
+def test_repeat_words_in_a_tag(tag, name, key):
+    assert lyrics.suno_tag(tag) == name and lyrics.section_key(tag) == key
+
+
+@pytest.mark.parametrize(
+    "line,out",
+    [
+        ("[Կրկներգ] x2\n", "[Chorus x2]\n"), ("[Chorus] x2\n", "[Chorus x2]\n"),
+        ("Припев (х2)\n", "[Chorus x2]\n"), ("Chorus (2x)\n", "[Chorus 2x]\n"),
+        ("Повтор припева\n", "[Chorus]\n"),
+    ],
+)  # fmt: skip
+def test_a_repeat_mark_by_a_tag_goes_inside_it(line, out):
+    assert lyrics.is_tag(line) and lyrics.retag(line) == out
+
+
+def test_a_chorus_spec_reaches_a_chorus_twice():
+    text = "[Կրկներգ 2 անգամ]\nԱրի, արի, իմ յար,\nԱրի, արի, ջան\n"
+    spec = from_dict({"language": "hy", "section": {"chorus": {"syllables": 6}}})
+    report = scan(text, spec)
+    assert not report.lines[1].ok and not any(
+        "matches no section" in i.message for i in report.issues
+    )
+
+
+def test_ev_typed_as_two_letters_opens_a_clause():
+    a, b = words("Դու եւ ես"), words("Դու և ես")
+    assert [w.stress_options() for w in a] == [w.stress_options() for w in b]
+
+
+@pytest.mark.parametrize(
+    "tag,out",
+    [
+        ("[Կրկներգ - Արական ձայն]", "[Chorus - Male Vocal]"),
+        ("[Припев - мужской вокал]", "[Chorus - Male Vocal]"),
+    ],
+)
+def test_a_voice_name_in_a_tag_note_is_translated(tag, out):
+    assert lyrics.retag(tag) == out
+
+
+def test_a_passing_line_asked_for_its_partners_refrain_is_told_why():
+    from ashugh.fit import requests_for
+
+    text = (
+        "[Chorus]\nԱրի ինձ մոտ, իմ յար,\nՄնա ինձ հետ մինչև լույս,\n"
+        "Արի ինձ մոտ, իմ յար,\nԴու ես իմ միակ հույսը լույս։\n"
+    )
+    spec = from_dict({"language": "hy", "syllables": [6, 7, 6, 8], "rhyme": "ABAB"})
+    reqs = requests_for(text, spec)
+    assert reqs and all(r.problems for r in reqs)

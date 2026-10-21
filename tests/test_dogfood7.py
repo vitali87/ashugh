@@ -65,7 +65,7 @@ def test_russian_and_armenian_ordinals_name_the_same_section(tag, key):
 @pytest.mark.parametrize(
     "tag, suno_tag",
     [
-        ("[Припев (женский вокал)]", "[Chorus (женский вокал)]"),
+        ("[Припев (женский вокал)]", "[Chorus (Female Vocal)]"),
         ("[Куплет 1 (тихо)]", "[Verse 1 (тихо)]"),
         ("[Կրկներգ (x2)]", "[Chorus x2]"),
         ("[Припев (х3)]", "[Chorus x3]"),

@@ -75,7 +75,7 @@ LATIN = {
 @dataclass
 class Note:
     line: int
-    kind: str  # yo | stress | armenian | split | tag | spelled | emoji
+    kind: str  # yo | stress | armenian | split | tag | spelled | emoji | repeat
     word: str
     new: str
     why: str = ""
@@ -182,6 +182,16 @@ def format_song(
         if icons:  # 💔: Suno may read it out as broken heart
             line_out = " ".join(lyrics.EMOJI_RE.sub(" ", line_out).split())
             notes.append(Note(lr.line.number, "emoji", " ".join(icons), "", "no emoji is sung"))
+        repeat = REPEAT_MARK_RE.search(line_out)
+        if repeat and 2 <= int(repeat.group(1) or repeat.group(2)) <= MAX_REPEAT:
+            # Hold me tonight x2: Suno would sing the mark; the line is written out
+            times = int(repeat.group(1) or repeat.group(2))
+            line_out = line_out[: repeat.start()].rstrip()
+            mark = repeat.group(0).strip()
+            notes.append(
+                Note(lr.line.number, "repeat", mark, "", f"sung {times} times, written out")
+            )
+            line_out = (line_out + (ending or "\n")) * (times - 1) + line_out
         raw[lr.line.number - 1] = line_out + ending
     sung = {lr.line.number for lr in report.lines}
     for k, line_raw in enumerate(raw):  # a line that is only a backing vocal: (օ՜, օ՜)
@@ -200,6 +210,11 @@ def format_song(
 
 
 ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
+# A repeat mark at the end of a sung line, bare or in parentheses: x2, 2x, (х2), (2x)
+REPEAT_MARK_RE = re.compile(
+    r"\s*\(?\s*(?<!\w)(?:[xх×]\s*(\d+)|(\d+)\s*[xх×])(?!\w)\s*\)?[\s.!?,…]*$", re.I
+)
+MAX_REPEAT = 4
 
 
 INITIAL_RE = re.compile(r"(?<![^\W\d_])([Ա-Ֆ])ը\.|(?<![^\W\d_])([A-Z][a-z]?)ə\.")

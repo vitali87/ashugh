@@ -114,6 +114,8 @@ POSSESSIVE_AFTER = {"ɾ", "r", "n", "l", "ʁ", "m"}
 # Agent nouns and ordinals in -որդ (վարորդ, հինգերորդ), and nouns in -ուրդ
 # after a stem of three letters or more (ժողովուրդ, but հյուր-դ, ջուր-դ).
 LEXICAL_SUFFIXES = (("որդ", 3), ("ուրդ", 7), ("ենդ", 3), ("լդս", 4))
+# Longer listed words in -որ and -ուր, past the short word list: աղբյուրդ
+OWNED_STEMS = frozenset({"աղբյուր", "սառնաղբյուր", "ակունք"})
 # but -ենդ of a language's name is yours: քո հայերենդ, ռուսերենդ
 POSSESSIVE_SUFFIXES = ("երենդ",)
 # A compound joined by ա or ե ends in a listed stem: նորա-հարս, դափնե-վարդ;
@@ -265,6 +267,13 @@ def short_words() -> frozenset[str]:
 
 
 @cache
+def owned_stems() -> frozenset[str]:
+    """Words a final դ or ս after them makes yours, though their ending looks like
+    a stem's (-որդ, -ուրդ): բոլոր, ձոր, աղբյուր."""
+    return frozenset(w for w in short_words() if w.endswith(("որ", "ուր"))) | OWNED_STEMS
+
+
+@cache
 def lexical_endings() -> frozenset[str]:
     """Words whose final ս or դ belongs to the stem."""
     text = resources.files("ashugh").joinpath("data/hy_lexical.tsv").read_text(encoding="utf-8")
@@ -323,7 +332,9 @@ def stem_final(norm: str) -> bool:
     if norm in words:
         return True
     if any(norm.endswith(s) and len(norm) >= n for s, n in LEXICAL_SUFFIXES):
-        return not norm.endswith(POSSESSIVE_SUFFIXES)  # լեգենդ, Մակդոնալդս
+        # լեգենդ, Մակդոնալդս, վարորդ; but բոլորդ, ձորդ, աղբյուրդ: a word and your
+        owned = norm[:-1] in owned_stems() and norm not in short_words()  # but խորդ
+        return not norm.endswith(POSSESSIVE_SUFFIXES) and not owned
     if any(norm.endswith(name) for name in FOREIGN_NAMES if len(norm) > len(name)):
         return True  # Մակդոնալդ
     return any(
@@ -636,7 +647,7 @@ def _inflected_override(norm: str, overrides: dict[str, str]) -> list[list[Seg]]
 # Words that open a clause, so a ես after them is the pronoun: ու ես, որ ես.
 # Not էլ (դու էլ ես: you too are) nor երբ (ե՞րբ ես գալու): a verb of I in the
 # clause tells the pronoun after them (հետո էլ ես գնացի, երբ ես եկա).
-CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե եթե քանի մինչ ապա հետո".split())
+CLAUSE_OPENERS = set("ու և եվ եւ բայց իսկ որ թե եթե քանի մինչ ապա հետո".split())
 # After a negation, an or, or a focus word, ես is I: ոչ ես, կամ ես, նույնիսկ ես.
 BEFORE_PRONOUN = set("ոչ կամ նաև նաեւ նույնիսկ անգամ հենց միայն թեկուզ".split())
 FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
@@ -913,9 +924,24 @@ CLASSICAL = (
     (re.compile("իւ$"), "իվ"),
     (re.compile("իւ"), "յու"),
     (re.compile("յեա(?=[" + _C + "])"), "յա"),
-    (re.compile("եա(?=ն(?:$|[քցիըեաո])|լ(?:$|ի|ն|ը)|կ(?:$|ը|ն|ի)|մբ|ց|յ(?:$|[" + _C + "]))"), "յա"),
-    (re.compile("ոյ(?=[^\u0561-\u0587]*[" + _C + "])"), "ույ"),
+    # but not the եա of a people: հռոմեացի, արամեացի (հայեացք is classical)
+    (
+        re.compile(
+            "եա(?=ն(?:$|[քցիըեաո])|լ(?:$|ի|ն|ը)|կ(?:$|ը|ն|ի)|մբ|ց(?!ի)|յ(?:$|[" + _C + "]))"
+        ),
+        "յա",
+    ),
+    (re.compile("եօ"), "յո"),  # եօթը: յոթը
 )
+# ոյ before a consonant is ույ in the classical stems that keep it (յոյս, լոյս, քոյր),
+# or beside another classical sign; reformed words keep ոյ (բոյդ, շոյել, բոյկոտ, Ջոյս).
+OY = re.compile("ոյ(?=[^\u0561-\u0587]*[" + _C + "])")
+OY_STEMS = (
+    "յոյս", "լոյս", "կոյր", "քոյր", "բոյն", "թոյն", "գոյն", "բոյր", "ծոյլ", "կոյս", "սոյն",
+    "փոյթ", "ժոյժ", "հոյզ", "դոյզն", "խոյս", "զոյգ", "ճոյլ", "թոյլ", "յոյզ",
+)  # fmt: skip
+# Classical words whose reformed spelling is no rule's: իւր (his own) is իր.
+CLASSICAL_WORDS = {"իւր": "իր", "իւրեանց": "իրենց", "իւրը": "իրը"}
 FINAL_YOD = re.compile("(?<=[աո])յ$")  # հիմայ, հետոյ: the յ unsung, so unwritten
 LOAN_CLASSICAL = ("ռեալ", "իդեալ", "դուետ", "սիլուետ", "լուիզ", "ռուանդ", "կորեա", "սեանս")
 # Common classical forms with a final silent յ, whose reformed spelling drops it; a
@@ -923,6 +949,8 @@ LOAN_CLASSICAL = ("ռեալ", "իդեալ", "դուետ", "սիլուետ", "լ�
 # drops it only beside another classical sign.
 FINAL_YOD_WORDS = {
     **{w: w[:-1] for w in "կայ չկայ հիմայ վրայ տղայ ապագայ հետոյ աստծոյ".split()},
+    # aorists of I, which the reform spells -ա: տեսայ, եկայ
+    **{w: w[:-1] for w in "տեսայ եկայ կերայ ելայ դարձայ փախայ մտայ առայ տարայ գտայ մեռայ".split()},
     "աստուծոյ": "աստծո", "յետոյ": "հետո",
 }  # fmt: skip
 # ու before a vowel is վ in a classical stem (Աստուած, արուեստ, տուի), or beside
@@ -936,17 +964,20 @@ def reformed(token: str) -> str:
     low = token.lower()
     if low.startswith(LOAN_CLASSICAL) or "ֆ" in low:
         return token
-    new = FINAL_YOD_WORDS.get(low, low)
+    new = CLASSICAL_WORDS.get(low) or FINAL_YOD_WORDS.get(low, low)
     for pattern, repl in CLASSICAL:
         new = pattern.sub(repl, new)
+    if new != low or any(stem in low for stem in OY_STEMS):
+        new = OY.sub("ույ", new)
     classical = new != low  # a sign the word is in the old spelling
     if low.startswith(OU_STEMS) or (classical and not token[:1].isupper()):
         new = OU_VOWEL.sub("վ", new)
     vowels = sum(seg.vowel for seg in segments(new))
     if classical and vowels > 1 and not token[:1].isupper() and FINAL_YOD.search(new):
         new = FINAL_YOD.sub("", new)  # յոյսայ, but մակբայ, Նիկոլայ, Տոլստոյ
-    if new != low and new[:1] == "յ" and new[1:2] in "աեէիոու":
-        new = "հ" + new[1:]  # յոյս, յետոյ: with another classical sign, a յ that opens is հ
+    if new != low and low[:1] == "յ" and new[:1] == "յ" and new[1:2] in "աեէիոու":
+        new = "հ" + new[1:]  # յոյս, յետոյ: with another classical sign, a յ written to open
+        # is հ; not the յ of իւ (իւղ is յուղ)
     if new == low:
         return token
     if len(token) > 1 and token.isupper():

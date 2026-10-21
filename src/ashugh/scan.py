@@ -405,8 +405,10 @@ def later_endings(ln: Line, f: meter.Fit) -> set[int]:
 
 
 def ends_in_number(text: str) -> bool:
-    """Whether a line's last sung token is written in digits: born in '99."""
-    return bool(LAST_NUMBER_RE.search(lyrics.sub_asides(text, lambda _: "").rstrip()))
+    """Whether a line's last sung token is written in digits: born in '99; not a repeat
+    mark (… իմ յար x2), which no one sings, so the line rhymes on յար."""
+    sung = lyrics.REPEAT_END_RE.sub("", lyrics.sub_asides(text, lambda _: ""))
+    return bool(LAST_NUMBER_RE.search(sung.rstrip()))
 
 
 DIGITS = "digits are not counted"  # a warning to a reader, an error to a repair
@@ -599,7 +601,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     if dotted:  # и т.д., ул. Мира: sung in full, so counted as written they are short
         detail = f"{', '.join(dotted)}: write it as it is sung (и так далее, улица)"
         add(Issue(ln.number, "script", "warning", "an abbreviation is sung in full", detail))
-    roman = [w.text for w in ln.words if ROMAN_RE.fullmatch(w.text) and _numeral(w.text, ln.lang)]
+    # by the word's language: the English I of Ես քեզ սիրում եմ, I love you is no numeral
+    roman = [w.text for w in ln.words if ROMAN_RE.fullmatch(w.text) and _numeral(w.text, w.lang)]
     if roman:  # XXI դար, Пётр I, World War II: sung as letters, not as the number
         detail = f"{', '.join(roman)}: spell the number out"
         add(Issue(ln.number, "script", "warning", "a Roman numeral is sung as letters", detail))

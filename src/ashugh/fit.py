@@ -689,6 +689,11 @@ def _request(
         if not (digits and i.code in ("syllables", "feet", "meter"))
     ]
     problems.extend(b for b in var.blocked if b not in problems)
+    if not problems and var.group is not None:  # a passing line asked for its partner's sake
+        for k in groups[var.group]:
+            refrain = next((i for i in lines[k].issues if i.detail == REFRAIN), None)
+            if k != ln.number and refrain is not None:
+                problems.append(f"L{k} {refrain.message}: a new rhyme word on either line ends it")
     if moving and not sound:
         names = ", ".join(f"L{k}" for k in moving)
         problems.append(f"{names} must change as well: any rhyme you can share will do")

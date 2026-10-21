@@ -15,7 +15,10 @@ from .model import Line
 
 # A tag line: [Verse 1], with more tags or asides beside it if the writer likes
 # ([Verse 1] [Male Vocal], [Chorus] (softly)); a BOM may open the file.
-TAG_RE = re.compile(r"^\ufeff?\s*(?:\([^)]*\)\s*)*\[[^\]]*\](?:\s*(?:\[[^\]]*\]|\([^)]*\)))*\s*$")
+TAG_RE = re.compile(
+    r"^\ufeff?\s*(?:\([^)]*\)\s*)*\[[^\]]*\](?:\s*(?:\[[^\]]*\]|\([^)]*\)))*"
+    r"(?:\s*(?:[xх×]\s*\d+|\d+\s*[xх×]))?\s*$"  # [Chorus] x2
+)
 BRACKET_RE = re.compile(r"\[([^\]]*)\]")
 NOTE_RE = re.compile(r"[:\u055d\u0589]|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Տուն 2՝ ռեփ]
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
@@ -45,8 +48,10 @@ SECTION_NAMES = {
     "chorus": "Chorus",
     "refrain": "Chorus",
     "припев": "Chorus",
+    "припева": "Chorus",  # Повтор припева
     "рефрен": "Chorus",
     "կրկներգ": "Chorus",
+    "կրկներգը": "Chorus",  # Կրկնել կրկներգը
     "pre-chorus": "Pre-Chorus",
     "prechorus": "Pre-Chorus",
     "pre chorus": "Pre-Chorus",
@@ -138,7 +143,12 @@ ORDINALS = (
 ORDINAL_RE = re.compile(
     r"\b(?:(\d+)(?:st|nd|rd|th)|" + "|".join(f"({words})" for words, _ in ORDINALS) + r")\b"
 )
-REPEAT_RE = re.compile(r"(?<!\w)[xх×]\s*(\d+)\b|\b(\d+)\s*[xх×](?!\w)", re.I)  # x2, 2x, х2
+# x2, 2x, х2, and in words: 2 times, 2 раза, 2 անգամ
+REPEAT_RE = re.compile(
+    r"(?<!\w)[xх×]\s*(\d+)\b|\b(\d+)\s*[xх×](?!\w)|\b(\d+)\s*(?:times|раза?|անգամ)(?!\w)", re.I
+)
+# A tag's word for repeating the section: Repeat Chorus, Повтор припева, Կրկնել կրկներգը
+REPEAT_WORD_RE = re.compile(r"^\s*(?:repeat|повтор(?:ить)?|կրկնել)\s+", re.I)
 
 
 def _ordinal(m: re.Match) -> str:
@@ -148,6 +158,8 @@ def _ordinal(m: re.Match) -> str:
 
 
 def _repeat(m: re.Match) -> str:
+    if m.group(3):  # 2 раза, 2 անգամ: Suno's x2
+        return f"x{m.group(3)}"
     return re.sub("[хХ×]", "x", re.sub(r"\s+", "", m.group(0)))  # as written: x2 or 2x
 
 
@@ -162,7 +174,8 @@ def section_key(tag: str) -> str:
     """[Verse 2] -> verse, [Pre-Chorus] -> pre-chorus, [Припев x2: тише] -> chorus."""
     name = re.sub(r"\([^)]*\)", " ", _split_note(tag)[0].lower())  # (Female), (x2)
     name = ORDINAL_RE.sub(" ", name)
-    name = re.sub(r"(?<!\w)[xх×]\s*\d+\b|\b\d+\s*[xх×](?!\w)|\d+", " ", name)
+    name = REPEAT_WORD_RE.sub(" ", REPEAT_RE.sub(" ", name))  # 2 անգամ, Повтор припева
+    name = re.sub(r"\d+", " ", name)
     name = re.sub(r"[^\w\s-]", " ", name)
     name = re.sub(r"\s+", " ", name).strip() or "default"
     known = SECTION_NAMES.get(name)
@@ -170,9 +183,10 @@ def section_key(tag: str) -> str:
 
 
 def _note(text: str) -> str:
-    """A note in a tag as Suno names it when it names a section (Рэп -> Rap), else
-    as written (тихо)."""
-    return SECTION_NAMES.get(text.strip().lower(), text)
+    """A note in a tag as Suno names it when it names a section or a voice (Рэп ->
+    Rap, Արական ձայն -> Male Vocal), else as written (тихо)."""
+    low = text.strip().lower()
+    return SECTION_NAMES.get(low) or VOICE_NAMES.get(low) or text
 
 
 def suno_tag(tag: str) -> str | None:
@@ -192,7 +206,7 @@ def suno_tag(tag: str) -> str | None:
             notes.append(f"({_note(m.group(1))})")
         return " "
 
-    name = re.sub(r"\(([^)]*)\)", aside, head)
+    name = REPEAT_WORD_RE.sub(" ", re.sub(r"\(([^)]*)\)", aside, head))
     r = REPEAT_RE.search(name)
     if r:
         repeat = _repeat(r)
@@ -226,7 +240,8 @@ def is_tag(line: str) -> bool:
 
 # A section named in plain text: Chorus:, Verse 1:, Repeat Chorus, CHORUS x2, Припев:
 LABEL_RE = re.compile(
-    r"\ufeff?\s*(repeat\s+|повтор(?:ить)?\s+)?([^\W\d_][^\[\]():\u055d\u0589]{0,30}?)"
+    r"\ufeff?\s*(repeat\s+|повтор(?:ить)?\s+|կրկնել\s+)?([^\W\d_][^\[\]():\u055d\u0589]{0,30}?)"
+    r"(\s*\(\s*(?:[xх×]\s*\d+|\d+\s*[xх×]|\d+\s*(?:times|раза?|անգամ))\s*\))?"  # Припев (х2)
     r"\s*([:\u055d])?\s*",  # not ։, the Armenian full stop: Վերջ։ is a sung line
     re.IGNORECASE,
 )
@@ -250,11 +265,12 @@ def plain_label(line: str) -> str | None:
     m = LABEL_RE.fullmatch(line.rstrip("\r\n"))
     if m is None or suno_tag(m.group(2)) is None:
         return None
-    numbered = bool(m.group(1)) or bool(DIGIT_RE.search(m.group(2)))
+    numbered = bool(m.group(1)) or bool(m.group(3)) or bool(DIGIT_RE.search(m.group(2)))
     name = m.group(2).lower()
-    if not numbered and (name in SUNG_NAMES or not m.group(3) and name not in BARE_LABELS):
+    if not numbered and (name in SUNG_NAMES or not m.group(4) and name not in BARE_LABELS):
         return None
-    return f"[{m.group(2)}]"
+    repeat = REPEAT_RE.search(m.group(3) or "")
+    return f"[{m.group(2)}{' ' + _repeat(repeat) if repeat else ''}]"
 
 
 def section_tag(line: str, keep: bool = False) -> str | None:
@@ -271,6 +287,9 @@ def section_tag(line: str, keep: bool = False) -> str | None:
     return None if keep else names[0]
 
 
+TRAILING_REPEAT_RE = re.compile(r"(?<=\])\s*([xх×]\s*\d+|\d+\s*[xх×])\s*$")
+
+
 def retag(line: str) -> str:
     """A tag line with its sections named as Suno names them; any other line as it is."""
     body = line.rstrip("\r\n")
@@ -284,7 +303,14 @@ def retag(line: str) -> str:
         name = suno_tag(m.group(1))
         return m.group(0) if name is None else f"[{name}]"
 
-    return BRACKET_RE.sub(named, body) + line[len(body) :]
+    ending = line[len(body) :]
+    mark = TRAILING_REPEAT_RE.search(body)
+    if mark:  # [Chorus] x2 -> [Chorus x2]: a mark outside the brackets would be sung
+        repeat = REPEAT_RE.search(mark.group(1))
+        inner = body[: mark.start()]
+        k = inner.rindex("]")
+        body = f"{inner[:k]} {_repeat(repeat) if repeat else mark.group(1)}{inner[k:]}"
+    return BRACKET_RE.sub(named, body) + ending
 
 
 # Letters that look alike in Latin and Cyrillic: a stray one in a word of the
