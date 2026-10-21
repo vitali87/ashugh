@@ -45,7 +45,7 @@ def test_backing_vocals_get_their_yo_but_no_stress_marks():
 
 def test_armenian_schwas_written_out():
     out = fmt("Ես քեզ եմ սպասում,\nՄկրտիչն էլ է սպասում", armenian="schwa")
-    assert out == "Ես քեզ եմ ըսպասում,\nՄըկըրտիչն էլ է ըսպասում"
+    assert out == "Ես քեզ եմ ըսպասում,\nՄըկըրտիչն էլ է սպասում"  # է swallows the ը
 
 
 def test_armenian_capital_on_schwa():

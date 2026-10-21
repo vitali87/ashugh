@@ -239,7 +239,8 @@ def _elided(lr: LineReport, constrained: bool) -> set[int]:
     """Schwas to drop. Where a count or a meter holds the line, the ones the scan
     dropped, so Suno sings what the check passed (Մայրիկըն է at 8 syllables,
     Մայրիկն է at 7); with nothing to keep, speech's own forms: a compound's as
-    the meter left it, and every linking -ն (Մըկըրտիչն էլ)."""
+    the meter left it, every linking -ն (Մըկըրտիչն էլ) and every leading ը after
+    a vowel (Na statsav)."""
     if constrained:
         return set(lr.fit.elided)
     words = lr.line.words
@@ -253,6 +254,8 @@ def _elided(lr: LineReport, constrained: bool) -> set[int]:
         for i, w in enumerate(words)
         if w.lang == "hy" and w.drop is not None and w.drop == w.size - 1 and w.size > 1
     }
+    # and every leading ը a vowel before swallows (նա ստացավ: նաս-տա-ցավ)
+    out |= {i for i, w in enumerate(words) if w.lang == "hy" and w.head_schwa and w.drop == 0}
     return out
 
 

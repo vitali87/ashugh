@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from dataclasses import replace
 from types import ModuleType
 
 from .. import lyrics
@@ -184,10 +185,39 @@ def _armenian_elision(words: list[Word]) -> None:
         if w.lang != "hy":
             continue
         w.drop = w.optional
-        if w.head_schwa and i > 0 and is_vowel(last(words[i - 1])):
-            w.drop = 0
-        elif w.tail_schwa and i + 1 < len(words) and _vowel_initial(words[i + 1], first):
+        head = w.head_schwa and i > 0 and is_vowel(last(words[i - 1]))
+        tail = w.tail_schwa and i + 1 < len(words) and _vowel_initial(words[i + 1], first)
+        if head and tail:
+            # Both: speech swallows the leading ը outright and the final one may
+            # link (քո ստվերն է: kʰos-tə-ver-ne).
+            _swallow_head(w)
             w.drop = w.size - 1
+        elif head:
+            w.drop = 0
+        elif tail:
+            w.drop = w.size - 1
+
+
+def _swallow_head(w: Word) -> None:
+    """Drop a word's leading ը for good, its consonant joining the next syllable."""
+    first, second, *rest = w.syllables
+    joined = Syllable(
+        first.text.replace("ը", "", 1).replace("Ը", "", 1) + second.text,
+        second.epenthetic,
+        first.phones[1:] + second.phones,
+    )
+    w.syllables = (joined, *rest)
+    w.readings = tuple(
+        replace(
+            r,
+            stress=None if r.stress is None else max(0, r.stress - 1),
+            phones=r.phones[1:] if r.phones[:1] == ("ə",) else r.phones,
+            secondary=tuple(max(0, k - 1) for k in r.secondary),
+        )
+        for r in w.readings
+    )
+    w.optional = None if w.optional is None else max(0, w.optional - 1)
+    w.head_schwa = False
 
 
 def _vowel_initial(w: Word, first) -> bool:

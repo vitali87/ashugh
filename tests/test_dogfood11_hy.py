@@ -100,3 +100,27 @@ def test_suno_spells_an_armenian_abbreviation():
     assert "Ա-Մե-Նե" in suno.format_song("Գնաց ԱՄՆ\n", tags=False).text
     out = suno.format_song("Գնաց ԱՄՆ\n", tags=False, armenian="latin").text
     assert "A-Me-Ne" in out
+
+
+@pytest.mark.parametrize(
+    "line,low",
+    [("քո ստվերն է", 4), ("քո սպասումն է", 4)],
+)
+def test_a_word_may_lose_its_leading_schwa_and_link_its_last(line, low):
+    ws = words(line)
+    assert sum(w.size for w in ws) - 1 == low  # the linking ը may drop too
+
+
+def test_an_eight_syllable_line_with_both_schwas_fits_eight():
+    rep = scan("Քո ստվերն է մնում ինձ հետ\n", from_dict({"language": "hy", "syllables": 8}))
+    assert not [i for i in rep.issues if i.severity == "error"]
+
+
+def test_suno_without_a_spec_swallows_a_leading_schwa_after_a_vowel():
+    from ashugh import suno
+
+    assert "Na statsav" in suno.format_song("Նա ստացավ\n", tags=False, armenian="latin").text
+    assert (
+        "U spasum"
+        in suno.format_song("Ու սպասում է քեզ նորից\n", tags=False, armenian="latin").text
+    )
