@@ -79,6 +79,7 @@ SECTION_NAMES = {
     "интерлюдия": "Interlude",
     "post-chorus": "Post-Chorus",
     "постприпев": "Post-Chorus",
+    "пост-припев": "Post-Chorus",
     "пре-припев": "Pre-Chorus",
     "пред-припев": "Pre-Chorus",
     "переход": "Bridge",

@@ -256,6 +256,13 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     **{f: (f, (1,)) for f in "саней саням санями санях".split()},
     "бледна": ("бледна", (1, 0)),
     "тонки": ("тонки", (1, 0)),
+    # наводи́ть is наво́дит, like приво́дит; the dump has наводи́т
+    "навожу": ("навожу", (2,)),
+    **{f: (f, (1,)) for f in "наводишь наводит наводим наводите наводят".split()},
+    # о́браза of о́браз, and the icons, образа́, which the dump lacks (в ризах образа́)
+    "образа": ("образа", (0, 2)),
+    # the old pronouns of Pushkin and Tyutchev: оне́ (they), нея́ and ея́ (her)
+    **{f: (f, (1,)) for f in "оне нея ея".split()},
     # given: дана́, дано́, даны́, not the dump's да́на (Dan's, the judo grade)
     **{f: (f, (1,)) for f in "дана дано даны".split()},
     **{f: (f, (0, 1)) for f in "значимость значимости значимостью".split()},
@@ -355,18 +362,21 @@ SECOND_LOCATIVE = frozenset(
     льду лугу мелу меду меху миру мозгу мосту мху мысу носу песку пиру плену плоту
     полу порту посту поту пруду пуху раю роду рву рту ряду саду свету слою снегу
     сну соку строю тылу углу усу ходу холоду хмелю цвету чаду часу шагу шелку шкафу пылу
-    дону крыму
+    дону крыму духу корню
     глуби глуши горсти груди грязи крови мели ночи оси печи пыли руси степи
     тени тиши чести шерсти
     """.split()
 )
+# The -ушка of folk diminutives the table lacks (кручинушка, сторонушка, рябинушка),
+# after a consonant, in any case; the table's own (подушка, старушка) are read first.
+FOLK_DIMINUTIVE_RE = re.compile(r"(?<=[бвгдзклмнпрстфх])ушк(?:а|и|е|у|ой|ою|ам|ами|ах|)$")
 LOCATIVE_PREPOSITIONS = frozenset({"в", "во", "на"})
 # After these the noun is in the genitive or dative, stressed on its stem: без кра́ю, к кра́ю.
 CASE_PREPOSITIONS = frozenset({"без", "до", "из", "от", "у", "для", "к", "ко", "по"})
 # Nouns whose stressed locative (на двери́, в сети́, на цепи́) is spelt like their plural,
 # which follows в and на as often (стучать в две́ри, попасть в се́ти): both stay
 # possible, the locative first.
-LOCATIVE_OR_PLURAL = frozenset({"двери", "сети", "цепи"})
+LOCATIVE_OR_PLURAL = frozenset({"двери", "сети", "цепи", "тени"})  # смотрю на те́ни
 # Pairs where the stress may move from the noun onto the preposition: по́ лесу, на́ ночь,
 # за́ руку. Both readings stay possible; the shifted one costs the meter a little.
 PREPOSITION_SHIFT = {
@@ -502,7 +512,7 @@ def read_marks(token: str) -> tuple[str, int | None]:
     stress = None
     letters: list[str] = []
     vowel_no = -1
-    cap_mark = _cap_mark(token)
+    marked_at = cap_mark(token)
     for i, ch in enumerate(token):
         if ch == ACUTE:
             if vowel_no >= 0:
@@ -511,15 +521,20 @@ def read_marks(token: str) -> tuple[str, int | None]:
         low = ch.lower()
         if low in VOWELS:
             vowel_no += 1
-            if i == cap_mark or low == "ё":
+            if i == marked_at or low == "ё":
                 stress = vowel_no
         letters.append(low)
     return "".join(letters), stress
 
 
-def _cap_mark(token: str) -> int | None:
-    """Index of the one capital vowel inside a lowercase word: the stress замОк marks."""
-    caps = [i for i, ch in enumerate(token) if i > 0 and ch.isupper() and ch.lower() in VOWELS]
+def cap_mark(token: str) -> int | None:
+    """Index of the one capital vowel inside a lowercase word: the stress замОк marks;
+    not one that opens a part after a hyphen or apostrophe (Алма-Ата, Д'Артаньян)."""
+    caps = [
+        i
+        for i, ch in enumerate(token)
+        if i > 0 and ch.isupper() and ch.lower() in VOWELS and token[i - 1] not in "-'’"
+    ]
     rest_lower = all(not ch.isupper() for i, ch in enumerate(token) if i > 0 and i not in caps)
     return caps[0] if len(caps) == 1 and rest_lower and not token.isupper() else None
 
@@ -528,7 +543,7 @@ def unmarked(token: str) -> str:
     """token without the writer's stress marks, its letter case otherwise kept:
     замОк, замо́к and замо'к are замок, iPhone stays iPhone."""
     token = APOSTROPHE_MARK.sub("\\1", token).replace(ACUTE, "")
-    k = _cap_mark(token)
+    k = cap_mark(token)
     return token if k is None else token[:k] + token[k].lower() + token[k + 1 :]
 
 
@@ -916,6 +931,31 @@ def _short_participle(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     return [(norm, (prefix,))]
 
 
+def _short_plural_twin(norm: str, options: list) -> list:
+    """The other stress of a short plural adjective that has both, which the table
+    gives one of: an adjective stressed on its stem whose feminine short form is
+    stressed on its ending says its plural either way (по́лны and полны́, тёмны and
+    темны́, бле́дны and бледны́), as verse does (Полны свежей мглой); not one stressed
+    on its ending (больны́)."""
+    if not norm.endswith(("ы", "и")) or vowel_count(norm) < 2 or len(options) != 1:
+        return []
+    last = vowel_count(norm) - 1
+    feminine = CORE[norm[:-1] + "а"][1] if norm[:-1] + "а" in CORE else None
+    feminine = feminine or TABLE.stresses(norm[:-1] + "а") or ()
+    if last not in feminine:
+        return []
+    long = next(iter(TABLE.variants(norm[:-1] + ("ый" if norm[-1] == "ы" else "ий"))), None)
+    if long is None or not long[1] or long[1][0] >= last:
+        return []
+    spelling, stress = options[0][0], options[0][1]
+    stem = long[0][: len(norm) - 1] + norm[-1]  # тёмны, with the long form's ё
+    if set(stress) == {last}:
+        return [(stem, (long[1][0],), "lexicon")]
+    if set(stress) == {long[1][0]}:
+        return [(spelling, (last,), "lexicon")]
+    return []
+
+
 def _lexicon_readings(norm: str) -> list[Reading]:
     options: list[tuple[str, tuple[int, ...], str]] = []
     if norm in CORE:
@@ -924,6 +964,7 @@ def _lexicon_readings(norm: str) -> list[Reading]:
         for spelling, stress in TABLE.variants(norm):
             options.append((spelling, stress, "lexicon"))
         options = _common_twin_first(norm, options)  # моём for моем, небо not нёбо
+        options += _short_plural_twin(norm, options)  # по́лны beside полны́
     if not options and "-" in norm.strip("-"):
         return _hyphenated(norm)
     if not options:
@@ -1300,6 +1341,10 @@ def analyze_word(
     if not readings and token.isupper() and not capitals and len(token) <= 6:
         # an abbreviation said as a word is stressed on its end: ЕГЭ́, like ОМО́Н
         readings = [Reading(n - 1, transcribe(norm, n - 1), norm, "rule")]
+    if not readings and (m := FOLK_DIMINUTIVE_RE.search(norm)) and vowel_count(norm[: m.start()]):
+        # кручи́нушка, сторо́нушка: a folk diminutive is stressed before its -ушка
+        at = vowel_count(norm[: m.start()]) - 1
+        readings = [Reading(at, transcribe(norm, at), norm, "rule")]
     if not readings:
         readings = [
             Reading(p, transcribe(norm, p), norm, "guess", penalty=cost)
@@ -1356,10 +1401,44 @@ def prefer_names(words: list[Word], starts: list[bool]) -> None:
                 w.notes.remove("stress unknown")
 
 
+# Nouns with a count form after два, три, четыре and оба, stressed on its end where
+# the genitive is not: два шага́, три часа́ (but до ча́са), четыре ряда́, оба шара́.
+COUNT_FORMS = frozenset("шага часа ряда шара следа".split())
+SMALL_NUMBERS = frozenset("два две три четыре оба обе полтора".split())
+
+
+# What all only all-of-it, всё, comes before: всё равно, всё время, всё это, всё ещё.
+BEFORE_VSYO = frozenset("равно время это же еще ещё".split())
+
+
+def _vsyo_context(prev: Word, w: Word) -> bool:
+    """Whether все before w can only be всё: before a fixed word (всё равно), a
+    neuter past (всё прошло, всё было) or a neuter singular in -о or -е (всё лето,
+    всё моё), not a plural (все новые, все люди) or a pronoun (все её подруги)."""
+    if prev.norm != "все" or w.lang != CODE:
+        return False
+    if w.norm in BEFORE_VSYO:
+        return True
+    if w.norm in ("ее", "её", "его", "мое", "твое", "свое") or vowel_count(w.norm) < 2:
+        return w.norm in ("мое", "твое", "свое")
+    return w.norm.endswith(("ло", "ось")) or (
+        w.norm.endswith(("о", "е")) and not w.norm.endswith(("ые", "ие", "ее"))
+    )
+
+
 def second_locatives(words: list[Word]) -> None:
     """End-stress the second locative after в, во, на: на берегу́, в крови́; and not
-    after a preposition that asks another case: без кра́ю."""
+    after a preposition that asks another case: без кра́ю. And the count form after
+    a small number: три часа́, четыре шага́."""
     for prev, w in zip(words, words[1:]):
+        if _vsyo_context(prev, w):  # всё равно: its ё restored
+            yo = tuple(r for r in prev.readings if r.spelling == "всё")
+            prev.readings = yo or prev.readings
+        if w.lang == CODE and prev.norm in SMALL_NUMBERS and w.norm in COUNT_FORMS:
+            if w.readings and w.readings[0].source not in ("mark", "user"):
+                last = w.size - 1
+                w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
+            continue
         if w.lang == CODE and prev.norm in CASE_PREPOSITIONS and w.norm in SECOND_LOCATIVE:
             stem = tuple(r for r in w.readings if r.stress != w.size - 1)
             if stem and w.readings[0].source not in ("mark", "user"):

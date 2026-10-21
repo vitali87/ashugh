@@ -441,8 +441,10 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
     line = reanalyze(var.lr.line, text, spec, lang)
     lr = check_line(line, var.unit.rule, var.unit.meter, var.unit.meter_source)
     errors = line_errors(lr)
-    if errors:
-        var.rejected.append((text, errors[0].message))
+    if errors:  # the count first, the fix a proposer most needs: 7 syllables, slot is 8
+        ordered = sorted(errors, key=lambda i: i.code not in ("syllables", "feet"))
+        why = "; ".join(dict.fromkeys(i.message for i in ordered[:2]))
+        var.rejected.append((text, why))
         return
     if var.group is not None:
         lr.alt_tails = rhyme_alternatives(lr, var.unit.rule, var.unit.meter, var.unit.meter_source)

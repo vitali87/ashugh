@@ -467,7 +467,9 @@ Frequent words come before rarer homographs the table ranks higher (мою́,
 
 After в, во and на, about a hundred nouns take the stressed second locative
 (на берегу́, в саду́, в крови́), also past an adjective or pronoun before them
-(в э́том дыму́, в моей груди́). In about a hundred set pairs the stress may
+(в э́том дыму́, в моей груди́), and a noun after два, три, четыре or оба its
+count form (три часа́, четыре шага́); все before a neuter is всё (всё прошло́,
+всё равно́), its ё restored. In about a hundred set pairs the stress may
 move onto the preposition (по́ лесу, на́ ночь, за́ руку); the meter takes
 whichever reading fits, and a shifted line end rhymes from the preposition.
 At the end of a line, the rhyme partner picks between readings the meter

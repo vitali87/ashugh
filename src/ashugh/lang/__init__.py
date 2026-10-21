@@ -29,7 +29,13 @@ def analyze_word_as(token: str, lexicon: dict[str, str]) -> Word:
     )
 
 
+# Cyrillic letters no Russian word has: Ukrainian і, ї, є, ґ and Belarusian ў.
+NOT_RUSSIAN = frozenset("іїєґўІЇЄҐЎ")
+
+
 def script_of(token: str) -> str:
+    if NOT_RUSSIAN & set(token):
+        return "xx"  # ніч, їжак: Ukrainian, which no analyzer reads
     for ch in token:
         if hy.is_armenian(ch):
             return "hy"
@@ -66,7 +72,7 @@ def detect(tokens: list[str]) -> str:
 
 # Vowel letters of scripts ashugh does not analyze, by their base letter: Latin
 # (with any accent), Greek, Georgian.
-FOREIGN_VOWELS = frozenset("aeiouyæøœαεηιοωυაეიოუ")
+FOREIGN_VOWELS = frozenset("aeiouyæøœαεηιοωυაეიოუаеиоуяюєіїэы")
 
 
 def _vowel_groups(norm: str) -> list[re.Match]:

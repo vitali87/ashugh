@@ -223,8 +223,9 @@ def cmd_spec(args: argparse.Namespace) -> int:
         print(template(args.lang or "hy"), end="")
         return 0
     source = scan(_read(args.source), lang=args.source_lang)
-    data = derive_spec(source, parse_keep(args.keep))
-    for why in source_warnings(source):
+    notes: list[str] = []
+    data = derive_spec(source, parse_keep(args.keep), notes)
+    for why in source_warnings(source) + notes:
         print(f"warning: {why}", file=sys.stderr)
     if args.lang:
         data = {"language": args.lang, **data}

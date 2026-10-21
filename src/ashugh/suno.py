@@ -396,8 +396,11 @@ def _russian(
     prefer: str | None = None,
 ) -> str:
     token = ru.APOSTROPHE_MARK.sub("\\1" + ACUTE, token)  # замо'к: the writer's mark
-    if ACUTE in token and stress == "none":
+    cap = ru.cap_mark(token)
+    if (ACUTE in token or cap is not None) and stress == "none":
         return token  # the writer's own marks stay as written
+    if cap is not None:  # замОк is замо́к, so acute mode writes it with an acute
+        token = token[:cap] + token[cap].lower() + ACUTE + token[cap + 1 :]
     letters = token.replace(ACUTE, "")
     marked_by_writer = letters != token
     candidates = [r for r in w.readings if r.stress == chosen] or list(w.readings)

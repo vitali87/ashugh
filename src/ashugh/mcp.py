@@ -220,11 +220,12 @@ def t_derive_spec(args: dict) -> dict:
     if source_lang and source_lang not in ANALYZERS:
         raise ToolError(f"source_lang must be one of {', '.join(sorted(ANALYZERS))}")
     source = scan(_str(args, "lyrics"), lang=source_lang)
-    data = derive_spec(source, keep)
+    notes: list[str] = []
+    data = derive_spec(source, keep, notes)
     lang = _lang(args)
     if lang:
         data = {"language": lang, **data}
-    return {"toml": dumps(data), "warnings": source_warnings(source)}
+    return {"toml": dumps(data), "warnings": source_warnings(source) + notes}
 
 
 def t_spec_template(args: dict) -> dict:

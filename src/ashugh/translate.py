@@ -50,8 +50,11 @@ def _scheme(letters: str) -> str | None:
     return result if any(c.isalpha() for c in result) else None
 
 
-def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
-    """Per-stanza rules that reproduce the scanned song's form."""
+def derive_spec(
+    report: Report, keep: set[str] | frozenset[str], notes: list[str] | None = None
+) -> dict:
+    """Per-stanza rules that reproduce the scanned song's form; what it could not
+    keep goes to notes."""
     unknown = set(keep) - set(KEEP)
     if unknown:
         raise ValueError(f"cannot keep {', '.join(sorted(unknown))}; choose from {', '.join(KEEP)}")
@@ -62,10 +65,16 @@ def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
             table["syllables"] = [lr.fit.count for lr in unit.lines]
         # the stanza's meter only where every line keeps it: a spec its own song fails
         # would ask a translation for what the source never did
-        kept = not any(lr.fit.off_beat or lr.fit.ending_off for lr in unit.lines)
-        if "meter" in keep and unit.meter != "free" and kept:
+        off = [lr.line.number for lr in unit.lines if lr.fit.off_beat or lr.fit.ending_off]
+        if "meter" in keep and unit.meter != "free" and not off:
             table["meter"] = unit.meter
             table["feet"] = [lr.fit.feet for lr in unit.lines]
+        elif "meter" in keep and unit.meter != "free" and notes is not None:
+            lines = ", ".join(f"L{k}" for k in off)
+            notes.append(
+                f"stanza {number}: {unit.meter} not kept, as {lines} "
+                f"{'is' if len(off) == 1 else 'are'} off its beat; mark the stress or fix the line"
+            )
         if "rhyme" in keep:
             scheme = _scheme(unit.scheme)
             if scheme:

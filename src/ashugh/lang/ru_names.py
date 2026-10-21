@@ -10,7 +10,7 @@ none). A first name in -а or -я also gives its possessive (Та́нин) and i
 diminutives (Та́нечка, Ни́ночка, Ма́шенька). The forms follow from the ending:
 -а/-я decline as feminines (Маша, Машу; Коля, Колю), a consonant, -й and -ь as
 masculines (Иван, Ивана; Игорь, Игоря), with ":f" as feminines in -ь (Казань,
-Казани) and ":s" as surnames in -ов, -ёв (Королёв, Королёвым, Королёва,
+Казани) and ":s" as surnames in -ов, -ёв, -ин (Королёв, Королёвым, Королёва,
 Королёвой); ":0" does not decline (Сочи); "=" lists the oblique forms of a name
 that drops a vowel (Па́вел, Па́вла).
 """
@@ -50,6 +50,7 @@ NAMES = """
 горбачёв:s королёв:s хрущёв:s пугачёв:s ковалёв:s соловьёв:s воробьёв:s журавлёв:s
 грачёв:s лихачёв:s ткачёв:s
 ле'рмонтов:s цвета'ева кура'
+оне'гин:s гага'рин:s шаля'пин:s рахма'нинов:s пу'шкин:s есе'нин:s
 """
 
 

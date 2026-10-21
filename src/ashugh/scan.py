@@ -397,6 +397,13 @@ def ends_in_number(text: str) -> bool:
 
 
 DIGITS = "digits are not counted"  # a warning to a reader, an error to a repair
+# A dotted Russian abbreviation: т.д., т.е., пр., стр. (a run of dotted parts, or
+# consonants alone before a dot), ул., тыс., руб., which a singer says in full.
+ABBREVIATION_DOT_RE = re.compile(
+    r"(?<![а-яёА-ЯЁ])(?:(?:[а-яё]{1,4}\.){2,}|[бвгджзклмнпрстфхцчшщ]{2,4}\.|[тгп]\."
+    r"|(?:ул|просп|пер|обл|тыс|млн|млрд|руб|коп|св)\.)"
+    r"(?![а-яёА-ЯЁ])"
+)
 ROMAN_RE = re.compile(r"(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})")
 RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
 RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
@@ -563,6 +570,10 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
         )
     if lyrics.has_digits(ln.text):
         add(Issue(ln.number, "script", "warning", DIGITS, "spell numbers out"))
+    dotted = [m.group(0) for m in ABBREVIATION_DOT_RE.finditer(ln.text)]
+    if dotted:  # и т.д., ул. Мира: sung in full, so counted as written they are short
+        detail = f"{', '.join(dotted)}: write it as it is sung (и так далее, улица)"
+        add(Issue(ln.number, "script", "warning", "an abbreviation is sung in full", detail))
     roman = [w.text for w in ln.words if ln.lang != "en" and ROMAN_RE.fullmatch(w.text)]
     if roman:  # XXI դար, Пётр I: sung as letters, not as the number
         detail = f"{', '.join(roman)}: spell the number out"
