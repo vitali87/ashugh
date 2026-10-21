@@ -122,8 +122,7 @@ def test_the_owl_and_the_pussycat_scans():
     "text,note",
     [
         ("Я шёл\nИ ты пришёл\n", "rhymes «пришёл» with «шёл», one root"),
-        ("Он ушёл\nИ ты пришёл\n", "rhymes «пришёл» with «ушёл», one root"),
-        ("Приход\nУход\n", "rhymes «Уход» with «Приход», one root"),
+        ("Жар\nПожар\n", "rhymes «Пожар» with «Жар», one root"),
         ("I'll never do\nWhat you undo\n", "rhymes «undo» with «do», one root"),
     ],
 )
@@ -138,7 +137,13 @@ def test_a_rhyme_on_one_root_is_noted(text, note):
 
 @pytest.mark.parametrize(
     "text",
-    ["Вода\nДа\n", "Such delight\nIn the light\n", "Art\nHeart\n", "Return\nAnd burn\n"],
+    [
+        "Вода\nДа\n",
+        "На пороге\nПо дороге\n",
+        "Such delight\nIn the light\n",
+        "Art\nHeart\n",
+        "Return\nAnd burn\n",
+    ],
 )
 def test_words_that_only_end_alike_are_no_root(text):
     from ashugh.scan import scan

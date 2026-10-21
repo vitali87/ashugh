@@ -985,8 +985,8 @@ def _root(word: str, lang: str) -> str:
 
 
 def _same_root(members: list[LineReport], k: int, pair, kept) -> None:
-    """A line rhyming on an earlier rhyme word with a prefix (шёл / пришёл, do /
-    undo): one root, a poor rhyme though a sound one."""
+    """A line rhyming on an earlier rhyme word with a prefix (шёл / пришёл, жар /
+    пожар, do / undo): one root, a poor rhyme though a sound one."""
     lr = members[k]
     if any(i.detail == REFRAIN for i in lr.issues):
         return
@@ -997,7 +997,9 @@ def _same_root(members: list[LineReport], k: int, pair, kept) -> None:
         if ta is None or tb is None or ta.lang != tb.lang or ta.lang not in ROOT_PREFIXES:
             continue
         a, b = (t.word.lower().replace("ё", "е") for t in (ta, tb))
-        if a != b and _root(a, ta.lang) == _root(b, ta.lang):
+        # one word the other with a prefix; two prefixed words may share no root
+        # though they end alike (пороге / дороге), so they are left alone
+        if a != b and (_root(a, ta.lang) == b or _root(b, ta.lang) == a):
             detail = "the same root with a prefix is a poor rhyme; fine if meant"
             message = f"rhymes {_quote(tb.word)} with {_quote(ta.word)}, one root"
             lr.issues.append(Issue(lr.line.number, "rhyme", "info", message, detail))
