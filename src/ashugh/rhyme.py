@@ -96,9 +96,18 @@ def tails(line: Line, fit: Fit, chosen_only: bool = False) -> list[Tail]:
             continue  # no stressed word follows the rhyme to clash with
         # English also rhymes on a secondary stress after the main one (sunshine / mine).
         later = [k for k in reading.secondary if k > reading.stress]
-        if fit.promoted:  # the beat on the last syllable carries the rhyme: memory / free
-            dropped_last = w in fit.elided and word.drop == word.size - 1
-            later.append(word.size - (2 if dropped_last else 1))
+        dropped_last = w in fit.elided and word.drop == word.size - 1
+        last = word.size - (2 if dropped_last else 1)
+        nuclei_at = [i for i, ph in enumerate(reading.phones) if is_vowel(ph)]
+        final_y = (
+            word.lang == "en"
+            and reading.stress is not None
+            and last - reading.stress >= 2
+            and len(nuclei_at) > last
+            and reading.phones[nuclei_at[last]] == "i"
+        )
+        if fit.promoted or final_y:  # the last syllable carries the rhyme: memory / free
+            later.append(last)
         # Sung short (real in one syllable rhymes with feel), and as written (fire
         # in one syllable still rhymes with empire).
         sung = _as_sung(word, reading, w in fit.elided)

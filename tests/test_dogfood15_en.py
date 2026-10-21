@@ -130,3 +130,26 @@ def test_amazing_grace_rhymes_in_its_old_spelling():
         )
         >= 0.9
     )
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("melody", "free"),
+        ("Every night I am chasing a melody", "And the music is setting me free"),
+        ("destiny", "be"),
+        ("memory", "free"),
+    ],
+)
+def test_a_final_y_two_after_the_stress_rhymes_in_any_meter(a, b):
+    assert rhymes(a, b) >= 0.7
+
+
+def test_a_dolnik_song_rhymes_melody_and_free():
+    text = "Every night I am chasing a melody\nAnd the music is setting me free\n"
+    report = scan(text, from_dict({"language": "en", "rhyme": "AA"}))
+    assert not [i for i in report.issues if i.code == "rhyme" and i.severity == "error"]
+
+
+def test_a_final_y_next_to_the_stress_does_not_rhyme_on_it():
+    assert rhymes("happy", "free") < 0.45
