@@ -347,12 +347,15 @@ def _latin_with_russian_ending(token: str, lexicon: dict[str, str]) -> Word:
     on the name's last full vowel, as Russian takes English names (айфо́н,
     инстагра́м, but гу́гл, не́тфликс). An English syllabic l is no syllable before
     the ending's vowel: в гу́гле."""
-    name, ending = LATIN_WITH_RU_ENDING.fullmatch(token).groups()  # type: ignore[union-attr]
+    found = LATIN_WITH_RU_ENDING.fullmatch(token)
+    if found is None:
+        raise ValueError(f"{token!r} is no Latin name with a Russian ending")
+    name, ending = found.groups()
     head = en.analyze_word(name, lexicon)
     first = head.readings[0]
     syllables = list(head.syllables)
     phones = list(first.phones)
-    for k, at in enumerate(nuclei(phones)[: len(syllables)]):  # TikTok is тикток, not тиктак
+    for k, at in enumerate(nuclei(tuple(phones))[: len(syllables)]):  # TikTok is тикток, not тиктак
         letters = syllables[k].text.lower()
         if phones[at] in ("ɑ", "ɔ") and "o" in letters:
             phones[at] = "o"
