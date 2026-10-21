@@ -473,9 +473,7 @@ def read_marks(token: str) -> tuple[str, int | None]:
     stress = None
     letters: list[str] = []
     vowel_no = -1
-    caps = [i for i, ch in enumerate(token) if i > 0 and ch.isupper() and ch.lower() in VOWELS]
-    rest_lower = all(not ch.isupper() for i, ch in enumerate(token) if i > 0 and i not in caps)
-    cap_mark = caps[0] if len(caps) == 1 and rest_lower and not token.isupper() else None
+    cap_mark = _cap_mark(token)
     for i, ch in enumerate(token):
         if ch == ACUTE:
             if vowel_no >= 0:
@@ -488,6 +486,21 @@ def read_marks(token: str) -> tuple[str, int | None]:
                 stress = vowel_no
         letters.append(low)
     return "".join(letters), stress
+
+
+def _cap_mark(token: str) -> int | None:
+    """Index of the one capital vowel inside a lowercase word: the stress замОк marks."""
+    caps = [i for i, ch in enumerate(token) if i > 0 and ch.isupper() and ch.lower() in VOWELS]
+    rest_lower = all(not ch.isupper() for i, ch in enumerate(token) if i > 0 and i not in caps)
+    return caps[0] if len(caps) == 1 and rest_lower and not token.isupper() else None
+
+
+def unmarked(token: str) -> str:
+    """token without the writer's stress marks, its letter case otherwise kept:
+    замОк, замо́к and замо'к are замок, iPhone stays iPhone."""
+    token = APOSTROPHE_MARK.sub("\\1", token).replace(ACUTE, "")
+    k = _cap_mark(token)
+    return token if k is None else token[:k] + token[k].lower() + token[k + 1 :]
 
 
 def override_error(word: str, value: str) -> str | None:

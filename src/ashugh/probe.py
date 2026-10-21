@@ -25,7 +25,6 @@ from pathlib import Path
 
 from . import install_hint, lyrics
 from .lang import analyze
-from .model import ACUTE
 from .phon import align_cost, indel_cost
 
 MODES = {"hy": ("script", "schwa", "latin"), "ru": ("plain", "caps", "acute")}
@@ -87,7 +86,7 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
             if lang == "hy":
                 shown = format_song(token, armenian=mode, tags=False).text
             else:
-                shown = _russian_variant(token, reading.stress, mode)
+                shown = _russian_variant(w, token, reading, mode)
             if shown in seen:
                 continue  # о́блака: caps on the first letter is the acute, one clip is enough
             seen.add(shown)
@@ -115,13 +114,24 @@ def _sung(w, token: str, lang: str, stress: int | None) -> str:
     return sung if sum(ch.isupper() for ch in token) > 1 else sung.lower()
 
 
-def _russian_variant(token: str, stress: int | None, mode: str) -> str:
-    from .suno import _mark_vowel
+def _russian_variant(w, token: str, reading, mode: str) -> str:
+    """The word as suno writes it (ё restored, an abbreviation spelt out, letter
+    case kept), with the mode's stress mark on top."""
+    from .lang import ru
+    from .suno import _mark_vowel, _russian
 
-    plain = "".join(ch.lower() if k > 0 else ch for k, ch in enumerate(token.replace(ACUTE, "")))
-    if mode == "plain" or stress is None:
-        return plain
-    return _mark_vowel(plain, stress, "caps" if mode == "caps" else "acute")
+    how = "none" if mode == "plain" else mode
+    if w.spelled:  # МГУ as эм-гэ-у́
+        names = list(ru.letter_names(w.norm))
+        if how != "none":
+            names[-1] = _mark_vowel(names[-1], 0, how)
+        return "-".join(names)
+    if w.lang != "ru":
+        return token  # iPhone: Suno reads a Latin word as written
+    base = _russian(w, ru.unmarked(token), reading.stress, "none", 0, [], reading.spelling)
+    if how == "none" or reading.stress is None:
+        return base
+    return _mark_vowel(base, reading.stress, how)
 
 
 def save_plan(plan: list[Probe], path: str | Path) -> None:

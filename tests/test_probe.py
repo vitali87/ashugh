@@ -273,3 +273,32 @@ def test_probe_sung_keeps_an_abbreviation_spelled_out():
     plan = probe.make_probes(["ԱՄՆ-ից"], "hy", modes=["script"])
     assert plan[0].syllables == 4
     assert plan[0].sung == "Ա-Մե-Նե-ից"
+
+
+def _shown(plan):
+    return {p.mode: p.lyrics.split("\n")[1].split(",")[0] for p in plan}
+
+
+@pytest.mark.parametrize(
+    "word,plain",
+    [
+        ("звезды", "звёзды"),  # ё restored, as suno writes it
+        ("слезы", "слёзы"),
+        ("МГУ", "эм-гэ-у"),  # spelled out
+        ("ЦСКА", "цэ-эс-ка"),
+        ("iPhone", "iPhone"),  # letter case kept
+        ("замОк", "замок"),  # the writer's own marks go
+        ("за'мок", "замок"),
+    ],
+)
+def test_russian_probes_start_from_what_suno_writes(word, plain):
+    shown = _shown(probe.make_probes([word], "ru"))
+    assert shown.get("plain", next(iter(shown.values()))) == plain
+
+
+def test_russian_probe_marks_build_on_the_suno_spelling():
+    shown = _shown(probe.make_probes(["ЦСКА"], "ru"))
+    assert shown == {"plain": "цэ-эс-ка", "caps": "цэ-эс-кА", "acute": "цэ-эс-ка́"}
+    shown = _shown(probe.make_probes(["звезды"], "ru"))
+    assert set(shown.values()) == {"звёзды"}  # ё is its own mark: one clip
+    assert _shown(probe.make_probes(["iPhone"], "ru")) == {"plain": "iPhone"}
