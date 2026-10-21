@@ -70,11 +70,6 @@ LATIN = {
     "f": "f",
 }
 
-TAGS = lyrics.SECTION_NAMES
-TAG_RE = re.compile(
-    r"^(\s*)\[\s*([^\]:\d]*?)\s*((?:[xх×]\s*)?\d+(?:\s*[xх×])?|)\s*(:[^\]]*)?\]\s*$", re.I
-)
-
 
 @dataclass
 class Note:
@@ -487,19 +482,13 @@ def _retag(text: str, report: Report, notes: list[Note]) -> str:
     raw = lyrics.split_lines(text, keepends=True)
     tagged = False
     for k, line in enumerate(raw):
-        m = TAG_RE.match(line.rstrip("\r\n"))
-        if not m:
+        if not lyrics.TAG_RE.match(line.rstrip("\r\n")):
             continue
         tagged = True
-        lead, name, number, extra = m.group(1), m.group(2), m.group(3), m.group(4) or ""
-        number = re.sub("[хХ×]", "x", number)  # Suno's repeat mark: [Chorus x2]
-        known = TAGS.get(name.strip().lower())
-        if known:
-            new = f"{lead}[{known}{' ' + number if number else ''}{extra}]"
-            ending = line[len(line.rstrip("\r\n")) :]
-            if new != line.rstrip("\r\n"):
-                notes.append(Note(k + 1, "tag", line.strip(), new.strip()))
-            raw[k] = new + ending
+        new = lyrics.retag(line)  # Suno's names and repeat mark: [Chorus x2]
+        if new != line:
+            notes.append(Note(k + 1, "tag", line.strip(), new.strip()))
+            raw[k] = new
     if tagged or not report.lines:
         return "".join(raw)
     return _infer_tags(raw, report, notes)
@@ -509,8 +498,9 @@ def _infer_tags(raw: list[str], report: Report, notes: list[Note]) -> str:
     stanzas: dict[int, list[LineReport]] = {}
     for lr in report.lines:
         stanzas.setdefault(lr.line.unit, []).append(lr)
-    texts = {
-        u: tuple(" ".join(lr.line.text.lower().split()) for lr in lrs) for u, lrs in stanzas.items()
+    texts = {  # the words alone: a last chorus may end on ! or spell вернется for вернётся
+        u: tuple(" ".join(lyrics.tokenize(lr.line.text.lower().replace("ё", "е"))) for lr in lrs)
+        for u, lrs in stanzas.items()
     }
     repeated = {t for t in texts.values() if list(texts.values()).count(t) > 1}
     verses = sum(1 for t in texts.values() if t not in repeated)

@@ -32,7 +32,7 @@ from .proposers import ProposerError, StaticProposer, parse_candidates
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, dumps, loads, template
 from .suno import format_song
-from .translate import derive_spec, parse_keep
+from .translate import derive_spec, parse_keep, source_warnings
 
 VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
 
@@ -137,11 +137,12 @@ def t_suno(args: dict) -> dict:
 
 def t_derive_spec(args: dict) -> dict:
     keep = parse_keep(_opt(args, "keep"))
-    data = derive_spec(scan(_str(args, "lyrics")), keep)
+    source = scan(_str(args, "lyrics"))
+    data = derive_spec(source, keep)
     lang = _lang(args)
     if lang:
         data = {"language": lang, **data}
-    return {"toml": dumps(data)}
+    return {"toml": dumps(data), "warnings": source_warnings(source)}
 
 
 def t_spec_template(args: dict) -> dict:

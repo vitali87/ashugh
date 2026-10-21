@@ -72,6 +72,7 @@ class FitResult:
     unresolved: list[Unresolved]
     rounds: int
     requests: int
+    warnings: list[str] = field(default_factory=list)  # about the input, not the result
 
     @property
     def ok(self) -> bool:
@@ -86,6 +87,7 @@ class FitResult:
             "requests": self.requests,
             "changes": [vars(c) for c in self.changes],
             "unresolved": [vars(u) for u in self.unresolved],
+            "warnings": self.warnings,
             "text": self.text,
             "report": as_dict(self.report),
         }
@@ -122,6 +124,7 @@ class _Var:
     chosen: Candidate | None = None
     blocked: list[str] = field(default_factory=list)  # why the last round did not settle it
     offered: int = 0  # candidates the proposer gave
+    malformed: list[str] = field(default_factory=list)  # why unusable ones were dropped
 
     @property
     def number(self) -> int:
@@ -259,7 +262,8 @@ def _norm(text: str) -> str:
     return " ".join(text.split()).lower()
 
 
-def _clean(raw) -> tuple[str, float | None] | None:
+def _clean(raw) -> tuple[str, float | None] | str:
+    """The candidate's line and faithfulness, or why it is no line to check."""
     faith = None
     if isinstance(raw, dict):
         faith = raw.get("faithfulness")
@@ -270,18 +274,23 @@ def _clean(raw) -> tuple[str, float | None] | None:
         )
         raw = raw.get("text")
     if not isinstance(raw, str):
-        return None
+        return "not text"
     text = raw.strip()
-    if not text or "\n" in text or "\r" in text or len(text) > MAX_LINE:
-        return None
-    if "[" in text or "]" in text or not lyrics.tokenize(text):
-        return None  # a section tag, a backing vocal or punctuation: nothing to sing
+    if "\n" in text or "\r" in text:
+        return "more than one line"
+    if len(text) > MAX_LINE:
+        return f"longer than {MAX_LINE} characters"
+    if "[" in text or "]" in text:
+        return "a section tag or bracket, not a line"
+    if not lyrics.tokenize(text):
+        return "nothing to sing"
     return text, faith
 
 
 def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> None:
     cleaned = _clean(raw)
-    if cleaned is None:
+    if isinstance(cleaned, str):  # never a line to write into the song, so not rejected
+        var.malformed.append(cleaned)
         return
     text, faith = cleaned
     key = _norm(text)
@@ -348,6 +357,8 @@ def _settle(
 def _why_empty(var: _Var) -> str:
     if not var.offered:
         return "no candidates given"
+    if len(var.malformed) == var.offered:
+        return f"no usable candidate: {var.malformed[0]}"
     return "no candidate passed the line's own checks"
 
 

@@ -16,7 +16,7 @@ from .proposers import DEFAULT_MODEL, ProposerError, StaticProposer, load_candid
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, apply, dumps, load, template
 from .suno import format_song, load_policy
-from .translate import derive_spec, parse_keep, translate_song
+from .translate import derive_spec, parse_keep, source_warnings, translate_song
 
 
 def _positive(value: str) -> int:
@@ -89,7 +89,7 @@ def cmd_fit(args: argparse.Namespace) -> int:
         solver=args.solver,
         lang=args.lang,
     )
-    return _emit_fit(result, args)
+    return _emit_fit(result, args, _ignored(proposer, result, args))
 
 
 def cmd_requests(args: argparse.Namespace) -> int:
@@ -112,11 +112,18 @@ def cmd_pick(args: argparse.Namespace) -> int:
     result = fit_song(
         _read(args.file), spec, proposer, rounds=1, solver=args.solver, lang=args.lang
     )
+    return _emit_fit(result, args, _ignored(proposer, result, args))
+
+
+def _ignored(proposer, result: FitResult, args: argparse.Namespace) -> list[str] | None:
+    """For a candidates file, the lines whose candidates no request used, warned about."""
+    if not isinstance(proposer, StaticProposer):
+        return None
     ignored = proposer.unused({lr.line.number for lr in result.report.lines})
     if not args.json:
         for why in ignored:
             print(f"warning: {why}", file=sys.stderr)
-    return _emit_fit(result, args, ignored)
+    return ignored
 
 
 def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | None = None) -> int:
@@ -131,6 +138,8 @@ def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | 
         print(json.dumps(data, ensure_ascii=False, indent=2))
         return 0 if result.ok else 1
     log = sys.stderr if not args.output else sys.stdout
+    for why in result.warnings:
+        print(f"warning: {why}", file=sys.stderr)
     written = lyrics.split_lines(result.text)
     for c in result.changes:  # the line as written, its backing vocal and stop in place
         shown = written[c.line - 1].strip() if c.line <= len(written) else c.new
@@ -189,7 +198,10 @@ def cmd_spec(args: argparse.Namespace) -> int:
     if not args.source:
         print(template(args.lang or "hy"), end="")
         return 0
-    data = derive_spec(scan(_read(args.source), lang=args.source_lang), parse_keep(args.keep))
+    source = scan(_read(args.source), lang=args.source_lang)
+    data = derive_spec(source, parse_keep(args.keep))
+    for why in source_warnings(source):
+        print(f"warning: {why}", file=sys.stderr)
     if args.lang:
         data = {"language": args.lang, **data}
     print(dumps(data), end="")
@@ -355,7 +367,7 @@ def cmd_translate(args: argparse.Namespace) -> int:
         source_lang=args.source_lang,
         tolerance=args.tolerance or 0,
     )
-    return _emit_fit(result, args)
+    return _emit_fit(result, args, _ignored(proposer, result, args))
 
 
 def build_parser() -> argparse.ArgumentParser:

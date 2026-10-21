@@ -10,6 +10,7 @@ fits the grid and keeps the rhymes.
 
 from __future__ import annotations
 
+from . import lyrics
 from .fit import Change, FitResult, Unresolved, _variables, replace_lines, run
 from .lang import ANALYZERS
 from .proposers import Proposer
@@ -73,6 +74,15 @@ def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
     return {"stanza": stanzas}
 
 
+def source_warnings(report: Report) -> list[str]:
+    """What makes a source line's slot unreliable: digits or words ashugh cannot count."""
+    return [
+        f"L{i.line}: {i.message} ({i.detail}); its slot counts only the words"
+        for i in report.issues
+        if i.code == "script"
+    ]
+
+
 def _faithful(original: str, text: str, faithfulness: float | None) -> float:
     del original, text
     return 0.3 + 0.6 * max(0.0, min(1.0, faithfulness)) if faithfulness is not None else 0.5
@@ -98,7 +108,9 @@ def translate_song(
     data = derive_spec(src, keep)
     data.update(language=target, tolerance=tolerance, min_rhyme=min_rhyme)
     spec = from_dict(data)
-    return translate_with_spec(src, spec, proposer, rounds, n, solver)
+    result = translate_with_spec(src, spec, proposer, rounds, n, solver)
+    result.warnings = source_warnings(src)
+    return result
 
 
 def translate_with_spec(
@@ -108,7 +120,10 @@ def translate_with_spec(
     units = []
     for u, unit in enumerate(src.units):
         rule = spec.rule_for(unit.key, u)
-        meter_name = rule.meter or "free"
+        # Without a meter to keep, a candidate's ambiguous words are read in the meter
+        # the source stanza has, as the scan of the result will most likely read them
+        # (мою́ in an iamb), not in free verse (мо́ю).
+        meter_name = rule.meter or unit.meter
         source = "spec" if rule.meter else "detected"
         units.append(UnitReport(unit.section, unit.key, meter_name, source, "", rule, unit.lines))
     frame = Report(src.path, spec, units, src.text)
@@ -150,14 +165,18 @@ def translate_with_spec(
                 Change(k, var.lr.line.text, text, round(chosen.weight, 3) if chosen else 0.0)
             )
     out = replace_lines(src.text, new, lang=target, asides=False)
+    out = "".join(lyrics.retag(line) for line in lyrics.split_lines(out, keepends=True))
     report = scan(out, spec, lang=target)
-    for lr in report.lines:  # still the source's words: not a translation that passes
-        if lr.line.number in variables and lr.line.number not in new:
-            lr.issues.append(
-                Issue(
-                    lr.line.number, "translate", "error", "not translated", "no candidate came back"
-                )
-            )
+    why = {u.line: u.reasons[0] for u in unresolved}
+    for lr in report.lines:  # an attempt that failed its checks is no translation that passes
+        k = lr.line.number
+        if k in variables and k not in new:
+            issue = Issue(k, "translate", "error", "not translated", "no candidate came back")
+        elif k in why:
+            issue = Issue(k, "translate", "error", "no translation fits", why[k])
+        else:
+            continue
+        lr.issues.append(issue)
     return FitResult(out, report, changes, unresolved, used, asked)
 
 

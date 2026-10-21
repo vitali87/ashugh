@@ -201,3 +201,20 @@ def test_english_example_grid():
     data = translate.derive_spec(scan(text), keep={"syllables", "rhyme"})
     assert data["stanza"]["1"]["syllables"] == [8, 8, 8, 8]
     assert data["stanza"]["2"]["rhyme"] == "AABB"
+
+
+def test_candidates_are_checked_in_the_meter_the_result_is_scanned_in():
+    # free verse reads кра́ю and мо́ю; the iamb the source and the result share, мою́
+    proposer = Scripted([{1: ["Ушла, оставив боль мою."]}])
+    source = "And left a fire in my chest.\n"
+    result = translate.translate_song(source, "ru", proposer, keep={"endings"}, rounds=1)
+    assert result.ok and result.unresolved == []
+
+
+def test_an_unresolved_line_never_counts_as_passing():
+    source = "I saw you walking through the meadow,\nThe sun was setting in the west,\n"
+    russian = {1: ["Я видел, как ты шла по полю,"], 2: ["Закат горел в чужом краю,"]}
+    result = translate.translate_song(source, "hy", Scripted([russian]), keep={"syllables"})
+    assert {u.line for u in result.unresolved} == {1, 2}
+    assert not result.ok and [lr.ok for lr in result.report.lines] == [False, False]
+    assert {i.code for i in result.report.issues if i.severity == "error"} == {"translate"}
