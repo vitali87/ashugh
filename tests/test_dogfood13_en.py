@@ -79,3 +79,20 @@ def test_suno_marks_a_dropped_vowel_with_an_apostrophe():
     spec = from_dict({"language": "en", "syllables": 4})
     got = suno.format_song("every day I wait\n", spec=spec, tags=False, split="all").text
     assert got.split()[0] == "ev'-ry"
+
+
+GROUP = (
+    "[Verse 1]\nMy daddy ran the feed store down\nBeside the old county line\n"
+    "He hollered y'all come back around\nWe close up shop at ten\n"
+)
+
+
+def test_a_partner_rhymes_with_a_line_that_has_no_fix_as_it_is_written():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    spec = from_dict({"language": "en", "syllables": [8, 6], "meter": "iamb", "rhyme": "ABAB"})
+    res = fit_song(GROUP, spec, StaticProposer({5: ["We close up shop at nine"]}), rounds=1)
+    assert [c.line for c in res.changes] == [5]
+    assert res.text.splitlines()[4] == "We close up shop at nine"
+    assert [u.line for u in res.unresolved] == [3]

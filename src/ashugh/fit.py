@@ -141,6 +141,7 @@ class _Var:
     blocked: list[str] = field(default_factory=list)  # why the last round did not settle it
     offered: int = 0  # candidates the proposer gave
     malformed: list[str] = field(default_factory=list)  # why unusable ones were dropped
+    written: bool = True  # the line as written may stand (not in a translation)
 
     @property
     def number(self) -> int:
@@ -361,6 +362,7 @@ def _variables(report: Report, keep_original: bool, everything: bool = False):
                 lr.alt_tails = rhyme_alternatives(lr, unit.rule, unit.meter, unit.meter_source)
     for var in variables.values():
         var.seen.add(_norm(var.lr.line.text))
+        var.written = keep_original
         if keep_original and not line_errors(var.lr):
             var.pool.append(Candidate(var.lr.line.text, var.lr, 1.0, original=True))
         if var.group not in groups:
@@ -450,8 +452,26 @@ def _settle(
         var_numbers = [k for k in numbers if k in variables]
         problem = _problem(pools)
         choice = solve(problem, method) if all(pools) else None
+        empty = [k for k in var_numbers if not variables[k].pool]
+        if choice is None and empty and all(variables[k].written for k in empty):
+            # A line with no usable candidate stays as written, unresolved, and its
+            # partners may still be fixed to rhyme with it as it stands: line / nine.
+            pools = [p or [_fixed(lines[k])] for k, p in zip(numbers, pools)]
+            choice = solve(_problem(pools), method)
+            if choice is not None and any(
+                not pools[j][c].original for j, c in enumerate(choice) if numbers[j] not in empty
+            ):
+                for k, c in zip(numbers, choice):
+                    if k in empty:
+                        var = variables[k]
+                        var.chosen, var.blocked = None, [_why_empty(var)]
+                        pending.add(k)
+                    elif k in variables:
+                        variables[k].chosen = pools[numbers.index(k)][c]
+                        variables[k].blocked = []
+                continue
+            choice = None
         if choice is None:
-            empty = [k for k in var_numbers if not variables[k].pool]
             for k in var_numbers:
                 var = variables[k]
                 passing = [c for c in var.pool if c.original and not line_errors(c.report)]
