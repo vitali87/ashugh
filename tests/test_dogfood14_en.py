@@ -455,3 +455,47 @@ def test_an_off_beat_word_is_quoted_as_the_line_sings_it():
     report = scan(limerick, from_dict({"language": "en", "meter": "anapest"}))
     (beat,) = [i for i in report.issues if "off the beat" in i.message]
     assert "e\u0301ve-ry" in beat.message and "-e-ry" not in beat.message
+
+
+@pytest.mark.parametrize(
+    "word",
+    [
+        "glorious", "whispering", "wondering", "glittering", "flickering", "opening",
+        "heavenly", "prettiest", "various", "heavier", "dangerous", "personal",
+    ],
+)  # fmt: skip
+def test_a_post_tonic_weak_vowel_may_be_sung_away(word):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert w.drop is not None and w.drop_cost > 0  # a licence, taken when the line needs it
+
+
+@pytest.mark.parametrize("word", ["liberty", "radio", "being", "poetry", "tenderly"])
+def test_no_syncope_without_two_weak_vowels_side_by_side(word):
+    from ashugh.lang import en
+
+    assert en.analyze_word(word).drop is None
+
+
+def test_a_hymn_sings_glorious_in_two():
+    spec = from_dict({"language": "en", "syllables": 6, "meter": "iamb"})
+    report = scan("Thy glorious name we sing\n", spec)
+    assert report.lines[0].ok, report.lines[0].issues
+    report = scan("We sang of liberty\n", from_dict({"language": "en", "syllables": 5}))
+    assert not report.lines[0].ok
+
+
+@pytest.mark.parametrize(
+    "pieces,drop,sung",
+    [
+        (["glo", "ri", "ous"], 1, ["glo", "rious"]),
+        (["pret", "ti", "est"], 1, ["pret", "tiest"]),
+        (["whis", "per", "ing"], 1, ["whisp'", "ring"]),
+        (["ev", "e", "ry"], 1, ["ev'", "ry"]),
+    ],
+)
+def test_suno_sings_a_glide_into_the_next_vowel(pieces, drop, sung):
+    from ashugh.lang import en
+
+    assert en.sung_pieces(pieces, drop, True) == sung

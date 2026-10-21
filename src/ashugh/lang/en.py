@@ -1055,16 +1055,9 @@ def analyze_word(
         for f in full if len(stresses) == longest - 1 else ():
             if word.drop is None:  # fa-vo-rite, fav-rite: a reduced vowel either way
                 word.drop = _drop_index(_reduced(*f[1:]), _reduced(stresses, bare))
-    vowels, marks = full[0][2], full[0][1]
-    nuclei = [k for k, ph in enumerate(full[0][0]) if is_vowel(ph)]
-    if (
-        word.drop is None
-        and len(vowels) >= 3
-        and vowels[-2:] == ["ER", "IY"]
-        and marks[-2] == 0
-        and nuclei[-1] == nuclei[-2] + 1  # not lib-er-ty, ten-der-ly: a consonant between
-    ):
-        word.drop = len(vowels) - 2  # mem'ry, myst'ry: an unstressed er right before a final y
+    vowels = full[0][2]
+    if word.drop is None and (k := _syncope(*full[0])) is not None:
+        word.drop = k  # mem'ry, whisp'ring, glo-rious, op'ning
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
     if word.drop is None and _smoothed(*full[0]):
         word.drop = len(vowels) - 1
@@ -1227,6 +1220,28 @@ def _auxiliary(words: list[Word], k: int) -> bool:
     return False
 
 
+def _syncope(phones: tuple[str, ...], marks: list[int], bare: list[str]) -> int | None:
+    """The weak syllable after the stress that verse may sing away, or None: an er
+    or a y-like vowel right before another weak vowel (mem'ry, whisp'ring,
+    dang'rous, glo-rious, pret-tiest), or a schwa before n and a weak vowel
+    (op'ning, heav'nly, pers'nal); never across another consonant (lib-er-ty,
+    ten-der-ly) or before a full vowel (ra-di-o)."""
+    if 1 not in marks or len(bare) < 3:
+        return None
+    nuclei = [k for k, ph in enumerate(phones) if is_vowel(ph)]
+    for k in range(marks.index(1) + 1, len(bare) - 1):
+        if marks[k] or marks[k + 1]:
+            continue
+        between = phones[nuclei[k] + 1 : nuclei[k + 1]]
+        if not between and (
+            bare[k] == "ER" or (bare[k] in ("IY", "IH") and bare[k + 1] in ("AH", "ER", "IH"))
+        ):
+            return k
+        if bare[k] in ("AH", "IH") and list(between) in (["n"], ["n", "l"]):
+            return k
+    return None
+
+
 def heteronyms(words: list[Word]) -> None:
     """A noun-verb pair read by the word before it: to recórd, I protést, but my
     récord, a présent; with no such word, the noun or adjective (you look
@@ -1261,7 +1276,11 @@ def sung_pieces(pieces: list[str], drop: int | None, short: bool) -> list[str]:
     last = len(pieces) - 1
     if drop is None or not 0 <= drop <= last:
         return pieces
-    if short and 0 < drop < last:
+    after = pieces[drop + 1] if drop < last else ""
+    glide = pieces[drop][-1:].lower() in ("i", "y") and after[:1].lower() in tuple("aeiou")
+    if short and 0 < drop < last and glide:  # glo-ri-ous: glo-rious, the i a glide
+        pieces[drop : drop + 2] = [pieces[drop] + pieces[drop + 1]]
+    elif short and 0 < drop < last:
         cut = pieces[drop]
         at = next((k for k, ch in enumerate(cut) if ch.lower() in "aeiouy"), len(cut))
         pieces[drop - 1 : drop + 1] = [pieces[drop - 1] + cut[:at] + "'"]
