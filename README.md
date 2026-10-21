@@ -538,9 +538,13 @@ K-pop), and capitals against an & are letters (AT&T). o' is of, unstressed (a
 cup o' tea), a hum is a syllable (mm, hmm), and a vowel sung again after its
 word is an unstressed echo (hey-ey-ey). After the stress, an er or a y-like
 vowel right before another weak vowel, or a schwa before n and a weak vowel,
-may be sung away as hymns and pop do (whisp'ring, glo-rious, op'ning), a
-licence the meter takes only when the line needs it; never across another
-consonant (liberty) or before a full vowel (radio).
+may be sung away as hymns and pop do (whisp'ring, glo-rious, op'ning), and so
+may the schwa between v and a final n (heav'n, giv'n), a licence the meter
+takes only when the line needs it; never across another consonant (liberty)
+or before a full vowel (radio). Hymn adjectives may sing their -ed (bless-ed,
+curs-ed), Cockney's dropped h is read as the word ('ere, 'is, 'eart: here,
+his, heart), the old adverbs are cut at their parts (where-on, there-in), and
+o'er- compounds are stressed after the o'er (o'er-whélm, e'er-lást-ing).
 
 **Meter** (`meter.py`). Each syllable position is a strong or a weak beat.
 Fitting a line picks a reading for every ambiguous word and prices the
