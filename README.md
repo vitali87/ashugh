@@ -578,10 +578,14 @@ the largest set that does stands, and the lines outside it are flagged
 (pen / end / friends / ends holds, though pen and ends are only slant).
 Words are compared by sound, not spelling: a homograph stressed apart is no
 rhyme (за́мок / замо́к, désert / desért), and English keeps apart the vowels it
-contrasts (still / feel, far / war) but not the ones it merges before r
-(here / year, tour / poor), and an English r is no l (care / bell is slant). A line that rhymes only on the word an earlier
-line ends with, or on another form of it (сердце / сердца, սիրտս / սիրտը), is
-warned about as a refrain, not a rhyme. An English tail against a Russian
+contrasts (still / feel, far / war) but not the ones it merges: before r
+(here / year, tour / poor), cot and caught elsewhere (falling / calling, rock /
+talk), and an unstressed ɪ and ə (beautiful / dutiful); an English r is no l
+(care / bell is slant). Two syllables or more alike after differing stressed
+vowels are a slant rhyme (General / mineral). A line that rhymes only on the
+word an earlier line ends with, or on another form of it (сердце / сердца,
+սիրտս / սիրտը), is warned about as a refrain, not a rhyme, and one that rhymes
+on it with a prefix (шёл / пришёл, rest / unrest) gets a note: one root. An English tail against a Russian
 or Armenian one is heard in the other language's sounds (star as стар, okay
 as окей, love as լավ) and judged by that language's rules, so star / гитар
 rhymes. A line whose last sung token is in digits ('99) has no rhyme until
