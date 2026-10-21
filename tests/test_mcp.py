@@ -221,3 +221,41 @@ def test_params_and_arguments_must_be_objects_even_when_empty(bad):
     assert r is not None and r["error"]["code"] == -32602
     r = call(s, "tools/call", {"name": "scan", "arguments": bad})
     assert r["error"]["code"] == -32602 and "arguments must be an object" in r["error"]["message"]
+
+
+RU_SOURCE = "Я помню чудное мгновенье,\nПередо мной явилась ты,\n"
+
+
+def test_translate_keeps_what_it_is_asked_to():
+    s = Server()
+    _, plain = tool(s, "translate", lyrics=RU_SOURCE, to="en")
+    _, kept = tool(s, "translate", lyrics=RU_SOURCE, to="en", keep="syllables,meter,rhyme,endings")
+    assert not any(r.get("meter") for r in plain["requests"])
+    assert all(r.get("meter") for r in kept["requests"])
+
+
+@pytest.mark.parametrize(
+    "arguments, message",
+    [
+        ({"keep": "tempo"}, "cannot keep"),
+        ({"tolerance": -1}, "tolerance"),
+        ({"tolerance": "2"}, "tolerance"),
+        ({"min_rhyme": "rough"}, "min_rhyme"),
+    ],
+)
+def test_translate_refuses_bad_options(arguments, message):
+    response = call(
+        Server(),
+        "tools/call",
+        {"name": "translate", "arguments": {"lyrics": RU_SOURCE, "to": "en", **arguments}},
+    )
+    result = response["result"]
+    assert result["isError"] and message in result["content"][0]["text"]
+
+
+def test_derive_spec_reads_the_source_in_the_language_given():
+    s = Server()
+    song = "Mtnem aygin, kyanqs\nSirum em qez\n"
+    _, by_lang = tool(s, "derive_spec", lyrics=song, source_lang="hy", keep="syllables")
+    _, guessed = tool(s, "derive_spec", lyrics=song, keep="syllables")
+    assert by_lang["toml"] != guessed["toml"]

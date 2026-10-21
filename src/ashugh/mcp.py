@@ -153,17 +153,28 @@ def t_translate(args: dict) -> dict:
     if target not in ANALYZERS:
         raise ToolError(f"to must be one of {', '.join(sorted(ANALYZERS))}, not {target!r}")
     lyrics, source_lang = _str(args, "lyrics"), _lang(args)
+    tolerance = args.get("tolerance", 0)
+    if isinstance(tolerance, bool) or not isinstance(tolerance, int) or tolerance < 0:
+        raise ToolError("tolerance must be a whole number of syllables, 0 or more")
+    keep, min_rhyme = parse_keep(_opt(args, "keep")), _opt(args, "min_rhyme") or "near"
+
+    def run(proposer):
+        return translate_song(
+            lyrics, target, proposer, keep, 1, source_lang=source_lang,
+            tolerance=tolerance, min_rhyme=min_rhyme,
+        )  # fmt: skip
+
     raw = args.get("candidates")
     if raw is None:  # the first step: what each line must be
         recorder = _Recorder()
-        translate_song(lyrics, target, recorder, rounds=1, source_lang=source_lang)
+        run(recorder)
         return {"requests": [r.as_dict() for r in recorder.requests]}
     try:
         candidates = parse_candidates(raw)
     except ProposerError as e:
         raise ToolError(str(e)) from None
     proposer = StaticProposer(candidates)
-    result = translate_song(lyrics, target, proposer, rounds=1, source_lang=source_lang)
+    result = run(proposer)
     data = result.as_dict()
     data["ignored"] = proposer.unused({lr.line.number for lr in result.report.lines})
     return data
@@ -188,7 +199,10 @@ def t_suno(args: dict) -> dict:
 
 def t_derive_spec(args: dict) -> dict:
     keep = parse_keep(_opt(args, "keep"))
-    source = scan(_str(args, "lyrics"))
+    source_lang = _opt(args, "source_lang")
+    if source_lang and source_lang not in ANALYZERS:
+        raise ToolError(f"source_lang must be one of {', '.join(sorted(ANALYZERS))}")
+    source = scan(_str(args, "lyrics"), lang=source_lang)
     data = derive_spec(source, keep)
     lang = _lang(args)
     if lang:
@@ -208,6 +222,9 @@ def _schema(required: list[str], **props: str) -> dict:
         "stress": {"type": "string", "enum": ["caps", "acute", "none"]},
         "armenian": {"type": "string", "enum": ["script", "schwa", "latin"]},
         "split": {"type": "string", "enum": ["none", "last", "all"]},
+        "source_lang": {"type": "string", "enum": ["hy", "ru", "en"]},
+        "tolerance": {"type": "integer", "minimum": 0},
+        "min_rhyme": {"type": "string", "enum": ["perfect", "near", "slant", "assonance"]},
     }
     return {
         "type": "object",
@@ -282,6 +299,10 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             to="the target language: hy, ru or en",
             candidates="line number -> candidate translations (omit to get requests)",
             lang="the source language, detected when omitted",
+            keep="comma-separated: syllables,meter,rhyme,endings (default syllables,rhyme); "
+            "keep all four to sing the translation to the same melody",
+            tolerance="syllables a line may be off its slot (default 0)",
+            min_rhyme="perfect, near (default), slant or assonance",
         ),
         t_translate,
     ),
@@ -308,6 +329,7 @@ TOOLS: dict[str, tuple[str, dict, Callable[[dict], dict]]] = {
             lyrics="the source song",
             keep="comma-separated: syllables,meter,rhyme,endings (default syllables,rhyme)",
             lang="language of the target spec",
+            source_lang="language of the source song, detected per line when omitted",
         ),
         t_derive_spec,
     ),
