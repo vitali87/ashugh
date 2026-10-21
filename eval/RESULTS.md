@@ -3,8 +3,9 @@
 Measured on 2026-10-20 and 2026-10-21 with the scripts described in
 [README.md](README.md). The raw outputs are in [runs/2026-10-20/](runs/2026-10-20/)
 (the analyzer benchmarks in its `rifma.json`, `armenian.json`, `wikipron.json`
-and `oov.json`, rerun as the analyzer changed) and the third holdout's in
-[runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/).
+and `oov.json`, rerun as the analyzer changed; the latest RIFMA run is
+[runs/2026-10-21/rifma.json](runs/2026-10-21/rifma.json)) and the third
+holdout's in [runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/).
 
 ## The analyzer
 
@@ -12,12 +13,12 @@ and `oov.json`, rerun as the analyzer changed) and the third holdout's in
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,855) | 97.4% |
-| each word's first reading, without meter or rhyme | 93.0% |
-| words the dictionary lists (50,968) | 98.2% |
-| ambiguous words resolved by meter and rhyme (3,788) | 95.4% |
-| unknown words guessed from the ending, meter and rhyme (4,422) | 88.6% |
-| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.879, F1 0.909 |
+| stress of polysyllabic words (60,854) | 97.4% |
+| each word's first reading, without meter or rhyme | 93.3% |
+| words the dictionary lists (52,714) | 98.2% |
+| ambiguous words resolved by meter and rhyme (3,669) | 95.3% |
+| unknown words guessed from the ending, meter and rhyme (4,346) | 88.6% |
+| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.880, F1 0.909 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
 led to the gerund and participle twins, the ending prior, the second
