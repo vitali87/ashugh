@@ -129,3 +129,60 @@ def test_suno_writes_the_genitive():
 def test_an_anapest_with_utra_is_detected():
     rep = scan("Я гуляю с утра до утра\n", from_dict({"language": "ru"}))
     assert rep.units[0].meter.startswith("anapest")
+
+
+@pytest.mark.parametrize(
+    "word, value, stress",
+    [("по-моему", "по-мо́ему", 1), ("жил-был", "жи́л-был", 0), ("тра-та-та", "тра́-та-та", 0)],
+)
+def test_a_hyphenated_word_can_be_put_in_the_lexicon(word, value, stress):
+    assert ru.override_error(word, value) is None
+    (ln,) = analyze_lines(word, Spec(language="ru", lexicon={word: value}))
+    assert ln.words[0].readings[0].stress == stress
+
+
+def test_a_lexicon_value_spelling_another_word_is_still_refused():
+    assert ru.override_error("по-моему", "по-тво́ему") is not None
+
+
+@pytest.mark.parametrize(
+    "word, stress",
+    [
+        ("дабы", 0),
+        ("дождусь", 1),
+        ("дождешься", 1),
+        ("дождётся", 1),
+        ("дождутся", 1),
+        ("посреди", 2),
+    ],
+)
+def test_dictionary_gaps_and_errors(word, stress):
+    w = ru.analyze_word(word)
+    assert w.readings[0].stress == stress and not w.guessed
+
+
+@pytest.mark.parametrize(
+    "tag, out",
+    [
+        ("[Пред-припев]", "[Pre-Chorus]"),
+        ("[Переход]", "[Bridge]"),
+        ("[Гитарное соло]", "[Guitar Solo]"),
+    ],
+)
+def test_more_russian_tags(tag, out):
+    from ashugh import lyrics
+
+    assert lyrics.retag(tag) == out
+
+
+@pytest.mark.parametrize("token, stress", [("замо'к", 1), ("за'мок", 0), ("Мо'ре", 0)])
+def test_an_apostrophe_after_a_vowel_marks_the_stress(token, stress):
+    w = ru.analyze_word(token)
+    assert w.readings[0].stress == stress and w.readings[0].source == "mark"
+    assert w.size == 2
+
+
+@pytest.mark.parametrize("stress, out", [("caps", "замОк"), ("acute", "замо́к")])
+def test_suno_reads_an_apostrophe_mark_as_the_writers_stress(stress, out):
+    text = suno.format_song("Висит на воротах замо'к\n", tags=False, stress=stress).text
+    assert out in text and "'" not in text

@@ -343,6 +343,7 @@ def _render(
 def _russian(
     w: Word, token: str, chosen: int | None, stress: str, n: int, notes: list[Note]
 ) -> str:
+    token = ru.APOSTROPHE_MARK.sub("\\1" + ACUTE, token)  # замо'к: the writer's mark
     if ACUTE in token and stress == "none":
         return token  # the writer's own marks stay as written
     letters = token.replace(ACUTE, "")

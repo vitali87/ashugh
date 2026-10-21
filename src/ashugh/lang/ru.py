@@ -17,6 +17,7 @@ assimilates obstruents, and drops the silent consonants of сердце, сол�
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import replace
 from functools import cache
@@ -196,6 +197,14 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     **{f: (f, (1,)) for f in "годам годами годах годов".split()},
     # не грусти́ before гру́сти of грусть, which a preposition usually announces
     "грусти": ("грусти", (1, 0)),
+    "дабы": ("дабы", (0,)),  # the table's даба́ is a misprint
+    "посреди": ("посреди", (2,)),
+    # дождаться's present, which the dump's garbled row lacks: дожду́сь, дождёшься
+    **{
+        k: (f, (1,))
+        for f in "дождусь дождёшься дождётся дождёмся дождётесь дождутся".split()
+        for k in (f, f.replace("ё", "е"))
+    },
     # The far more frequent word first, where the table ranks a rarer verb above it:
     # мою́ (my) before мо́ю (I wash), стоя́т (stand) before сто́ят (cost), выходи́ (come
     # out) before вы́ходи (nurse), жила́ (lived) before жи́ла (vein).
@@ -454,6 +463,11 @@ def _yo_only_mark(token: str) -> bool:
     return read_marks(token.replace("ё", "е").replace("Ё", "Е"))[1] is None
 
 
+# An apostrophe after a vowel of a Cyrillic word, the stress mark of OpenRussian
+# and of plain keyboards: замо'к, за'мок.
+APOSTROPHE_MARK = re.compile("([аеёиоуыэюяАЕЁИОУЫЭЮЯ])'(?=[а-яё]|$)")
+
+
 def read_marks(token: str) -> tuple[str, int | None]:
     """Normalized spelling and the stressed vowel index a mark in token gives, if any."""
     stress = None
@@ -479,7 +493,7 @@ def read_marks(token: str) -> tuple[str, int | None]:
 def override_error(word: str, value: str) -> str | None:
     """Why a [lexicon] entry cannot be used, or None: замок = замо́к, замОк or ё."""
     spelled, stress = read_marks(value.replace("-", ""))
-    if spelled.replace("ё", "е") != read_marks(word)[0].replace("ё", "е"):
+    if spelled.replace("ё", "е") != read_marks(word)[0].replace("-", "").replace("ё", "е"):
         return f"{value!r} spells a different word"
     if stress is None and vowel_count(spelled) > 1:
         return f"{value!r} marks no stress: write it like замо́к, замОк, or with ё"
@@ -1080,7 +1094,7 @@ def cyrillic(token: str) -> str:
 def analyze_word(
     token: str, overrides: dict[str, str] | None = None, capitals: bool = False
 ) -> Word:
-    token = cyrillic(token)
+    token = APOSTROPHE_MARK.sub("\\1" + ACUTE, cyrillic(token))  # замо'к, as OpenRussian writes
     if not (overrides or {}).get(token.lower()):
         spelled = abbreviation(token, capitals)
         if spelled is not None:
