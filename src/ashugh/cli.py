@@ -187,7 +187,7 @@ def cmd_syl(args: argparse.Namespace) -> int:
     spec = load(args.spec) if args.spec else Spec()
     if lyrics.has_digits(text):
         print("warning: digits are not counted; spell numbers out", file=sys.stderr)
-    for ln in analyze_lines(text, spec, args.lang):
+    for ln in analyze_lines(text, spec, args.lang, labels=False):
         f = meter.fit(ln.words, meter.parse_meter(args.meter or "free")[0])
         parts = []
         for i, w in enumerate(ln.words):
@@ -210,7 +210,7 @@ def cmd_syl(args: argparse.Namespace) -> int:
 
 def cmd_rhyme(args: argparse.Namespace) -> int:
     spec = Spec(language=args.lang)
-    lines = analyze_lines(f"{args.a}\n{args.b}", spec, args.lang)
+    lines = analyze_lines(f"{args.a}\n{args.b}", spec, args.lang, labels=False)
     if len(lines) != 2:
         print("give two words or lines", file=sys.stderr)
         return 2

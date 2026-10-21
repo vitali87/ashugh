@@ -24,7 +24,8 @@ NOTE_RE = re.compile(r"[:\u055d\u0589]|\s+-\s+|\s*[–—]\s*")  # [Verse 2: sof
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
     r"(?<![^\W_])(?<!\d[-'’])(?>(?:@(?=[^\W\d_]))?"  # @ typed for ը: @nkers, sirt@; not a@b.com
-    r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*(?:@(?![^\W_]))?"
+    r"[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_])"
+    r"|@(?=[^\W\d_])(?![^\W\d_]*\.\w))*(?:@(?![^\W_]))?"  # An@ndhat, not an e-mail
     r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?"  # a dropped g: goin', lovin'
     r"(?:(?<=(?<![^\W\d_])(?<!['’])[oO])['’](?![^\W\d_]))?)(?!\d)"  # of: a cup o' tea
     r"|&"  # sung as and, и, և
@@ -36,7 +37,7 @@ DIGIT_RE = re.compile(r"\d")
 # hyphen (по‐моему, по‑моему).
 INVISIBLE_RE = re.compile("[\u00ad\u200b-\u200d\u2060\ufeff]")
 LETTER = r"[^\W\d_]"
-APOSTROPHE_RE = re.compile(rf"(?<={LETTER})[´`‘′ʼ](?={LETTER})")
+APOSTROPHE_RE = re.compile(rf"(?<={LETTER})[´`‘′ʼ\u055a](?={LETTER})")  # and Armenian ՚
 HYPHEN_RE = re.compile(rf"(?<={LETTER})[\u2010\u2011\u058a](?={LETTER})")  # and Armenian \u058a
 
 
@@ -119,6 +120,16 @@ SECTION_NAMES = {
     "մեներգ": "Solo",
     "նվագ": "Instrumental",
     "соло на гитаре": "Guitar Solo",
+    "գործիքային": "Instrumental",
+    "սոլո կիթառ": "Guitar Solo",
+    "կիթառի սոլո": "Guitar Solo",
+    # said, not sung: Suno's Spoken Word, which a spec leaves free
+    "spoken": "Spoken Word",
+    "spoken word": "Spoken Word",
+    "ասմունք": "Spoken Word",
+    "խոսք": "Spoken Word",
+    "речь": "Spoken Word",
+    "декламация": "Spoken Word",
 }
 # Voices, which Suno takes as tags of their own beside a section's, not as one.
 VOICE_NAMES = {
@@ -301,10 +312,18 @@ def section_tag(line: str, keep: bool = False) -> str | None:
     if not is_tag(line):
         return None
     names = BRACKET_RE.findall(plain_label(line) or line)
-    known = [n for n in names if suno_tag(n) is not None]
+    # a voice is no section: [Կանացի ձայն], [Женский вокал] and [Хор] leave it as it is
+    sections = [n for n in names if _voice_key(n) not in VOICE_NAMES]
+    known = [n for n in sections if suno_tag(n) is not None]
     if known:
         return known[0]
-    return None if keep else names[0]
+    if keep:
+        return None
+    return sections[0] if sections else names[0]
+
+
+def _voice_key(name: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"\([^)]*\)", " ", name.lower())).strip()
 
 
 TRAILING_REPEAT_RE = re.compile(r"(?<=\])\s*([xх×]\s*\d+|\d+\s*[xх×])\s*$")
@@ -432,13 +451,22 @@ def sub_asides(text: str, fn: Callable[[str], str]) -> str:
     return "".join(out) + text[last:]
 
 
+VOCABLE_VOWELS = frozenset("аеёиоуыэюяaeiouyաեէըիոօու")
+
+
 def token_spans(text: str) -> list[tuple[int, int, str]]:
     """(start, end, token) of every word outside parentheses, as tokenize sees them."""
     masked = sub_asides(text, lambda aside: " " * len(aside))
     spans = []
     for m in WORD_RE.finditer(masked):
         parts = m.group(0).split("-")
-        if len(parts) > 1 and len({p.lower() for p in parts}) == 1 and len(parts[0]) > 1:
+        vowels = all(ch.lower() in VOCABLE_VOWELS for ch in parts[0])  # Ու-ու-ու: one vocable
+        if (
+            len(parts) > 1
+            and len({p.lower() for p in parts}) == 1
+            and len(parts[0]) > 1
+            and not vowels
+        ):
             # a reduplication is one word per part, each with its own stress: тихо-тихо
             # (but о-о-о is one sung vowel, not a row of clitics)
             at = m.start()
@@ -468,14 +496,16 @@ def section_keys(text: str) -> set[str]:
     return keys
 
 
-def parse(text: str) -> list[Line]:
+def parse(text: str, labels: bool = True) -> list[Line]:
+    """The lyric lines of a text; without labels, a plain section name is a word
+    (syl կրկներգ, rhyme chorus porous), and only a bracketed tag is a tag."""
     lines: list[Line] = []
     section, key = "", "default"
     unit, index = 0, 0
     open_unit = tagged = False  # tagged: a tag line with no lyric line after it yet
     for number, raw in enumerate(split_lines(text), 1):
         stripped = raw.strip()
-        if is_tag(raw):
+        if is_tag(raw) and (labels or TAG_RE.match(raw.rstrip("\r\n"))):
             tag = section_tag(raw, keep=tagged)
             if tag is not None:
                 section, key = tag.strip(), section_key(tag)

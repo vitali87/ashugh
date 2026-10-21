@@ -44,6 +44,14 @@ ALIASES = {
     "амфибрахий": "amphibrach",
     "анапест": "anapest",
     "дольник": "dolnik",
+    "յամբ": "iamb",
+    "քորե": "trochee",
+    "խորե": "trochee",
+    "դակտիլ": "dactyl",
+    "ամֆիբրաքիոս": "amphibrach",
+    "ամֆիբրախիոս": "amphibrach",
+    "անապեստ": "anapest",
+    "դոլնիկ": "dolnik",
 }
 
 STRESS_OFF_BEAT = 1.0

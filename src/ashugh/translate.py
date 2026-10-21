@@ -193,6 +193,7 @@ def translate_with_spec(
     def as_translation(var, req) -> None:
         req.source, req.source_lang = req.original, var.lr.line.lang
         req.original, req.lang = "", target
+        req.script = "armenian" if target == "hy" else ""  # the letters of the new line
 
     warnings: list[str] = []
     used, asked = run(

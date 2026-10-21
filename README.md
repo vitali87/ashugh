@@ -91,7 +91,7 @@ Suno's x2; a label for who sings (`MABEL:`, `Call:`) and an emoji
 are warned of, as Suno would sing the one and may say the other. Text pasted from elsewhere reads as typed: decomposed letters are
 composed, soft hyphens and zero-width characters are dropped, a stray Latin
 letter in a Cyrillic word or the other way round (oкон, hеllo) is read as its
-look-alike, and the look-alikes of the apostrophe (´ ` ‘ ′ ʼ) and of the
+look-alike, and the look-alikes of the apostrophe (´ ` ‘ ′ ʼ and the Armenian ՚) and of the
 hyphen inside a word count as ' and -. Parentheses may nest inside a backing
 vocal, and a line of tags with notes (`[Chorus] (softly)`) is a tag line. A
 vowel written three times or more is one held note (Ooooh, Ооо, Օօօ), in a word
@@ -147,7 +147,8 @@ chorus stanza's table changes only what it sets, except that a table's
 not the `iamb4` above's four). Command-line flags (`--syllables`, `--meter`, `--feet`,
 `--rhyme`, `--endings`, `--tolerance`, `--min-rhyme`, `--forbid-final`) override all.
 A `--rhyme` value that starts with `-` needs `=` (`--rhyme=-A-A`), or use
-`.A.A`. A spoken section (`[Spoken]`, `[Spoken Word]`, `[Narration]`) is said,
+`.A.A`. A spoken section (`[Spoken]`, `[Spoken Word]`, `[Narration]`, `[Ասմունք]`,
+`[Речь]`) is said,
 not sung to the song's line, so only its own `[section."spoken word"]` table
 applies to it.
 

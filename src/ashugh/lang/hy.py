@@ -562,6 +562,10 @@ def _stress(syllables: list[list[Seg]], penult: bool = False) -> int:
     return full[-1] if full else len(syllables) - 1
 
 
+# ի before a vowel, which a sung line may glide: Կիլիկիա as Կի-լի-կյա, հեքիաթ as հե-քյաթ.
+GLIDE_I_RE = re.compile("ի(?=[աեէըիոօ])")
+
+
 def override_error(word: str, value: str) -> str | None:
     """Why a [lexicon] entry cannot be used, or None: կայ-սը-րու-թյուն."""
     example = "like կայ-սը-րու-թյուն"
@@ -572,10 +576,14 @@ def override_error(word: str, value: str) -> str | None:
     if len(chunks) == 1 and vowels[0] > 1:
         return f"{value!r} needs a hyphen between its sung syllables, {example}"
     if any(n != 1 for n in vowels):
+        glide = next((c for c, n in zip(chunks, vowels) if n == 2 and GLIDE_I_RE.search(c)), None)
+        if glide is not None:  # կիա as one syllable: its ի is the glide յ
+            return f"{value!r}: write a gliding ի as յ, {glide} as {GLIDE_I_RE.sub('յ', glide)}"
         return f"{value!r} needs one vowel per syllable, ը included, {example}"
 
     def bare(text: str) -> str:  # և as the ե and վ it is drawn for: Ե-րե-վան is Երևան
-        return normalize(text).replace("-", "").replace("ը", "").replace("և", "եվ")
+        plain = normalize(text).replace("-", "").replace("ը", "").replace("և", "եվ")
+        return GLIDE_I_RE.sub("յ", plain)  # Կի-լի-կյա for Կիլիկիա: ի sung as a glide
 
     if bare(value) not in (bare(word), bare(reformed(word))):  # Աստուած as Աստ-ված
         return f"{value!r} spells a different word"
@@ -946,10 +954,17 @@ CLASSICAL = (
 OY = re.compile("ոյ(?=[^\u0561-\u0587]*[" + _C + "])")
 OY_STEMS = (
     "յոյս", "լոյս", "կոյր", "քոյր", "բոյն", "թոյն", "գոյն", "բոյր", "ծոյլ", "կոյս", "սոյն",
-    "փոյթ", "ժոյժ", "հոյզ", "դոյզն", "խոյս", "զոյգ", "ճոյլ", "թոյլ", "յոյզ",
+    "փոյթ", "ժոյժ", "հոյզ", "դոյզն", "խոյս", "զոյգ", "ճոյլ", "թոյլ", "յոյզ", "ցոյց",
+    "բոյս", "կոյտ", "դոյլ",
 )  # fmt: skip
 # Classical words whose reformed spelling is no rule's: իւր (his own) is իր.
-CLASSICAL_WORDS = {"իւր": "իր", "իւրեանց": "իրենց", "իւրը": "իրը"}
+CLASSICAL_WORDS = {
+    "իւր": "իր",
+    "իւրեանց": "իրենց",
+    "իւրը": "իրը",
+    "ողորմեա": "ողորմյա",  # Տէր, ողորմեա of the hymn: a final եա is no rule's
+    "ողորմեայ": "ողորմյա",
+}
 FINAL_YOD = re.compile("(?<=[աո])յ$")  # հիմայ, հետոյ: the յ unsung, so unwritten
 LOAN_CLASSICAL = ("ռեալ", "իդեալ", "դուետ", "սիլուետ", "լուիզ", "ռուանդ", "կորեա", "սեանս")
 # Common classical forms with a final silent յ, whose reformed spelling drops it; a
@@ -993,6 +1008,28 @@ def reformed(token: str) -> str:
     return new[:1].upper() + new[1:] if token[:1].isupper() else new
 
 
+def _hyphen_vocable(token: str) -> Word | None:
+    """Օ-օ-օ, Ու-ու-ու, Ա-ա-ա: one vowel sung again, a note each, any of which may take
+    the beat; never the clitic ու or the auxiliary ա."""
+    parts = token.split("-")
+    if len(parts) < 2 or len({p.lower() for p in parts}) != 1:
+        return None
+    segs = segments(parts[0])
+    if not segs or not all(s.vowel for s in segs) or len(segs) != 1:
+        return None
+    phones = tuple(segs[0].ph for _ in parts)
+    norm = normalize(token)
+    return Word(
+        text=token,
+        norm=norm,
+        lang=CODE,
+        syllables=tuple(Syllable(p, False, (segs[0].ph,)) for p in parts),
+        # every note may take a beat: the first stressed, the rest as secondaries
+        readings=(Reading(0, phones, norm, "rule", tuple(range(1, len(parts)))),),
+        weak=True,
+    )
+
+
 def analyze_word(
     token: str, overrides: dict[str, str] | None = None, capitals: bool = False
 ) -> Word:
@@ -1003,6 +1040,9 @@ def analyze_word(
         word.notes.append(f"classical spelling, read as {modern}")
         return word
     norm = normalize(token)
+    vocable = _hyphen_vocable(token)
+    if vocable is not None:
+        return vocable
     if not (overrides or {}).get(norm):
         spelled = abbreviation(token, capitals)
         if spelled is not None:
@@ -1083,7 +1123,7 @@ def analyze_word(
         readings=(reading,),
         weak=clitic or len(syllables) == 1,
         clitic=clitic,
-        enclitic=norm in AUXILIARIES,
+        enclitic=norm in AUXILIARIES and source != "mark",  # ա՜ is an interjection
         head_schwa=len(syllables) > 1 and bool(first) and first[0].ph == "ə",
         tail_schwa=len(syllables) > 1 and linkable,
         drop=optional,

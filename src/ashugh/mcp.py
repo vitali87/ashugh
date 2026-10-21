@@ -80,7 +80,7 @@ def t_scan(args: dict) -> dict:
 
 def t_syllables(args: dict) -> dict:
     lines = []
-    for ln in analyze_lines(_str(args, "text"), _spec(args), _lang(args)):
+    for ln in analyze_lines(_str(args, "text"), _spec(args), _lang(args), labels=False):
         f = meter.fit(ln.words, meter.parse_meter(_opt(args, "meter") or "free")[0])
         sung = " ".join(
             lean_marked(
@@ -112,7 +112,7 @@ def t_syllables(args: dict) -> dict:
 def t_rhyme(args: dict) -> dict:
     a, b = _str(args, "a"), _str(args, "b")
     lang = _lang(args)
-    lines = analyze_lines(f"{a}\n{b}", Spec(language=lang), lang)
+    lines = analyze_lines(f"{a}\n{b}", Spec(language=lang), lang, labels=False)
     if len(lines) != 2:
         raise ToolError("a and b must each be a word or a line")
     s, x, y = rhyme.match(*(rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines))

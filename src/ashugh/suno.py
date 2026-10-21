@@ -172,7 +172,23 @@ def format_song(
             last = b
         pieces.append(body[last:])
         line_out = "".join(pieces)
-        armenian_line = lr.line.lang == "hy" or any(hy.is_armenian(ch) for ch in line_out)
+        # Hold me tonight x2, (կրկնել): Suno would sing the mark; the line is written out.
+        # Read before the asides are respelled, which would hide (կրկնել).
+        repeat = REPEAT_MARK_RE.search(line_out)
+        times = _times(repeat) if repeat else 0
+        if repeat and 2 <= times <= MAX_REPEAT:
+            mark = repeat.group(0).strip()
+            line_out = line_out[: repeat.start()].rstrip()
+            notes.append(
+                Note(lr.line.number, "repeat", mark, "", f"sung {times} times, written out")
+            )
+        else:
+            times = 0
+        armenian_line = (
+            lr.line.lang == "hy"
+            or any(w.lang == "hy" for w in lr.line.words)  # Ո՞ւր ես, baby
+            or any(hy.is_armenian(ch) or ch in PENDING for ch in line_out)
+        )
         if armenian_line and default_mode != "script":
             line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, lexicon)
             line_out = _place_marks(line_out)
@@ -182,15 +198,8 @@ def format_song(
         if icons:  # 💔: Suno may read it out as broken heart
             line_out = " ".join(lyrics.EMOJI_RE.sub(" ", line_out).split())
             notes.append(Note(lr.line.number, "emoji", " ".join(icons), "", "no emoji is sung"))
-        repeat = REPEAT_MARK_RE.search(line_out)
-        if repeat and 2 <= _times(repeat) <= MAX_REPEAT:
-            # Hold me tonight x2: Suno would sing the mark; the line is written out
-            times = _times(repeat)
-            line_out = line_out[: repeat.start()].rstrip()
-            mark = repeat.group(0).strip()
-            notes.append(
-                Note(lr.line.number, "repeat", mark, "", f"sung {times} times, written out")
-            )
+        line_out = line_out.translate(UNPENDING)  # no mark left waiting is sent to Suno
+        if times:
             line_out = (line_out + (ending or "\n")) * (times - 1) + line_out
         raw[lr.line.number - 1] = line_out + ending
     sung = {lr.line.number for lr in report.lines}
@@ -214,7 +223,7 @@ ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
 # and in words, in parentheses only, as a sung "twice" is a word: (repeat), (2 раза)
 REPEAT_MARK_RE = re.compile(
     r"\s*\(?\s*(?<!\w)(?:[xх×]\s*(\d+)|(\d+)\s*[xх×])(?!\w)\s*\)?[\s.!?,…]*$"
-    r"|\s*\(\s*(?:(\d+)\s*(?:times|раза?)|(repeat|rpt|повтор|twice|дважды|կրկնել))\s*\)"
+    r"|\s*\(\s*(?:(\d+)\s*(?:times|раза?|անգամ)|(repeat|rpt|повтор|twice|дважды|կրկնել))\s*\)"
     r"[\s.!?,…]*$",
     re.I,
 )

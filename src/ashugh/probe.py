@@ -89,7 +89,11 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
         seen: set[str] = set()
         for mode in modes:
             if lang == "hy":
-                shown = format_song(token, armenian=mode, tags=False).text
+                # կրկներգ, a section's name alone, would be kept as a label: a comma
+                # makes it a word to spell
+                label = lyrics.is_tag(token)
+                shown = format_song(token + ("," if label else ""), armenian=mode, tags=False).text
+                shown = shown.removesuffix(",") if label else shown
             else:
                 shown = _russian_variant(w, token, reading, mode)
             if shown in seen or shown in made:

@@ -134,8 +134,12 @@ def _quote(text: str) -> str:
     return f"«{text}»"
 
 
-def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line]:
-    lines = lyrics.parse(lyrics.clean(text))
+def analyze_lines(
+    text: str, spec: Spec, forced: str | None = None, labels: bool = True
+) -> list[Line]:
+    """The lines of a text, analyzed; without labels, for words rather than a song,
+    a plain section name (chorus, կրկներգ) is a word to analyze."""
+    lines = lyrics.parse(lyrics.clean(text), labels)
     tokens = [lyrics.tokenize(ln.text) for ln in lines]
     default = forced or spec.language or languages.detect([t for ts in tokens for t in ts])
     if not forced and not spec.language and default == "en":
@@ -148,6 +152,9 @@ def analyze_lines(text: str, spec: Spec, forced: str | None = None) -> list[Line
         if (
             len(typed) >= 2
             and 2 * sum(typed) > len(typed)
+            # Mtnem aygin: one line of words, typed in Latin, is Armenian too (not WTF)
+            or typed == [True]
+            and sum(len(ts) for ts in tokens) >= 2
             or armenian
             and armenian + latin >= english
         ):

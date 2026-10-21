@@ -44,6 +44,9 @@ MAX_LINE = 300
 PUNCT_RE = re.compile(r"[,.;:!?…։՝—-]+\s*$")  # not ՛ ՜ ՞: they mark a stressed vowel
 ASIDE_PUNCT = ",.;:!?…։՝"
 TO_ARMENIAN = str.maketrans({".": "։"})
+# Closing marks an Armenian line writes as its full stop: the question and the
+# exclamation are on the word (Ո՞ւր, Ի՜նչ), the semicolon and colon in ։ or ․.
+ARMENIAN_STOPS = {".", "։", "?", "!", ";", ":", "?!", "!!", "!?"}
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
 UNTRANSLATED = "the source line, untranslated"
@@ -883,8 +886,14 @@ def replace_lines(
             elif not own:
                 if mark:
                     tail = mark.group(0)
-                    if lang is not None and tail.strip() in (".", "։", "՝"):  # not an ellipsis
-                        tail = tail.translate(TO_ARMENIAN if lang == "hy" else FROM_ARMENIAN)
+                    end = tail.strip()
+                    # an Armenian line ends on ։ (its ՞ and ՜ sit on a vowel); one typed in
+                    # Latin letters, or in another language, on the Latin full stop
+                    script = lang == "hy" and any(hy.is_armenian(ch) for ch in content)
+                    if script and end in ARMENIAN_STOPS:
+                        tail = tail.replace(end, "։")
+                    elif lang is not None and end in (".", "։", "՝"):  # not an ellipsis
+                        tail = tail.translate(TO_ARMENIAN if script else FROM_ARMENIAN)
                     content += tail  # keep the line's closing comma or full stop
                 content += paren + after
             lines[number - 1] = lead + content + ending
