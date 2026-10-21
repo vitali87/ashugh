@@ -159,3 +159,51 @@ def test_syllables_tool_reads_a_spacing_acute_apostrophe():
 
     (ln,) = analyze_lines("I don´t know", Spec(language="en"))
     assert [w.text for w in ln.words] == ["I", "don't", "know"]
+
+
+def words_of(text: str, lang: str) -> list[tuple[str, int, bool]]:
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    (ln,) = analyze_lines(text, Spec(language=lang))
+    return [(w.text, w.size, w.spelled) for w in ln.words]
+
+
+@pytest.mark.parametrize("line", ["ВСЁ В СССР", "СССР", "Всё в СССР"])
+def test_a_russian_abbreviation_with_no_vowel_is_spelled_even_in_capitals(line):
+    assert words_of(line, "ru")[-1] == ("СССР", 4, True)
+
+
+@pytest.mark.parametrize("line", ["WE LOVE THE MC", "WE LOVE THE TV", "I love the MC"])
+def test_an_english_abbreviation_with_no_vowel_is_spelled_even_in_capitals(line):
+    assert words_of(line, "en")[-1][1:] == (2, True)
+
+
+@pytest.mark.parametrize(
+    "line, word",
+    [
+        ("I love MY baby", "MY"),
+        ("Tell me WHY", "WHY"),
+        ("TELL ME WHY", "WHY"),
+        ("I hit the GYM", "GYM"),
+        ("I said HMM", "HMM"),
+        ("SHE SAID SHH", "SHH"),
+        ("I said PSST", "PSST"),
+    ],
+)
+def test_a_capitalized_english_word_with_y_or_an_interjection_is_no_abbreviation(line, word):
+    assert dict((t, s) for t, _, s in words_of(line, "en"))[word] is False
+
+
+@pytest.mark.parametrize("line", ["Я сказал ХМ", "Я СКАЗАЛ ХМ", "НО ТСС"])
+def test_a_russian_interjection_with_no_vowel_is_no_abbreviation(line):
+    assert words_of(line, "ru")[-1][2] is False
+
+
+def test_a_lone_vowelless_abbreviation_rhymes():
+    from ashugh import meter, rhyme
+    from ashugh.scan import analyze_lines
+    from ashugh.spec import Spec
+
+    lines = analyze_lines("СССР\nСША", Spec(language="ru"))
+    assert all(rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines)

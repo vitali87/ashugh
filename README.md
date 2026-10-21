@@ -409,8 +409,9 @@ reading first and gains the name's. A name written without its ё gets it
 (Та́нин, Та́нечка, Ни́ночка). An abbreviation in capitals with no vowel
 letter (СПб, МСК), or one that ends on a vowel and has more consonants (США,
 МГУ), is sung letter by letter and stressed on the last (эс-пэ-бэ́, which
-`suno` writes out for the singer); ЗАГС and НАТО stay words, and a line in
-capitals is never spelt out. A preposition or conjunction said twice in a
+`suno` writes out for the singer); ЗАГС and НАТО stay words, a line in
+capitals spells only the ones with no vowel (ВСЁ В СССР), and ХМ and ТСС are
+sounds, not letters. A preposition or conjunction said twice in a
 row is a vocable, not a clitic (на-на-на, да-да-да), and тя leans on its
 verb like бы. A hyphenated word the dictionary stresses only before its last
 part takes the last part's stress too (чёрно-бе́лый), and a compound's
@@ -466,7 +467,9 @@ the main one, even where the dictionary lists the whole (twenty-óne / sun).
 A dictionary reading that moves the stress costs the meter a little, and one
 that moves it onto a full vowel where the usual reading has a reduced one is
 a surname's and left out (begún, not Bé-gun). An abbreviation with no vowel
-letter is always spelt (MC, DJ), one of four letters or more that alternates
+letter is always spelt (MC, DJ), even in a line in capitals; Y counts as a
+vowel there (MY, WHY and GYM are words) and HMM, SHH and PSST are sounds. One
+of four letters or more that alternates
 consonant and vowel is a word (FOMO, NASA), and Dr. is doctor. Song slang
 the dictionary lacks or gets wrong is listed: yeet, highkey, lowkey, rizz,
 bae, email, spring.

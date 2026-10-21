@@ -835,20 +835,23 @@ LETTER_NAMES = dict(
 
 # Abbreviations said with their own letter names by custom: США is сэ-шэ-а́.
 SPOKEN_ABBREVIATIONS = {"сша": "сэшэа"}
+# Words with no vowel letter that are sounds, not letters: ХМ, ТСС, БРР.
+INTERJECTIONS = set("хм хмм гм мм ммм тс тсс брр бррр шш шшш пс пст псс кх кхм".split())
 
 
 def abbreviation(token: str, capitals: bool = False) -> Word | None:
     """An abbreviation in capitals sung letter by letter, stressed on the last: СПб,
-    МСК, США. One with no vowel letter is always spelt; one with a vowel only when it
-    ends on it and has more consonants (США, МГУ, but ЗАГС, ВУЗ and НАТО are words).
-    Not in a line written all in capitals."""
-    if capitals or not 2 <= len(token) <= 6 or not token[:2].isupper():
+    МСК, США. One with no vowel letter is always spelt, even in a line all in
+    capitals (СССР), unless it is an interjection (ХМ, ТСС); one with a vowel only
+    when it ends on it and has more consonants (США, МГУ, but ЗАГС, ВУЗ and НАТО
+    are words), and not in a line all in capitals."""
+    if not 2 <= len(token) <= 6 or not token[:2].isupper():
         return None
     low = token.lower()
-    if not all(ch in LETTER_NAMES for ch in low):
+    if not all(ch in LETTER_NAMES for ch in low) or low in INTERJECTIONS:
         return None
     vowels = vowel_count(low)
-    if vowels and not (low[-1] in VOWELS and vowels < len(low) - vowels):
+    if vowels and (capitals or not (low[-1] in VOWELS and vowels < len(low) - vowels)):
         return None
     spelling = SPOKEN_ABBREVIATIONS.get(low) or "".join(LETTER_NAMES[ch] for ch in low)
     last = len(low) - 1

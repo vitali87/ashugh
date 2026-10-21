@@ -499,20 +499,28 @@ LETTER_NAMES = {
 # Abbreviations spelt like a word: LA is L-A, not la, wherever the line is not in capitals.
 SPELLED_OUT = {"LA", "US", "AM", "PM", "ID", "RIP", "USA"}
 ABBREVIATION_RE = re.compile(r"([A-Z]{2,5})(s?)")
+# Words with no vowel letter that are sounds, not letters: HMM, SHH, PSST.
+INTERJECTIONS = set(
+    "hm hmm hmmm mm mmm mhm sh shh shhh ssh psst pst brr brrr tsk zzz grr grrr pfft pff".split()
+)
 
 
 def abbreviation(token: str, capitals: bool = False) -> tuple[str, bool] | None:
     """The letters of an abbreviation sung letter by letter, and whether it is a
-    plural (DMs): capitals 2 to 5 long that are no word, or listed in SPELLED_OUT
-    (unless the whole line is in capitals, where AM is am)."""
+    plural (DMs): capitals 2 to 5 long that are no word, or listed in SPELLED_OUT.
+    In a line all in capitals (where AM is am), only one with no vowel letter, as
+    MC, DJ and TV are anywhere; Y is a vowel there (MY, WHY, GYM) and an
+    interjection is no abbreviation (HMM, PSST)."""
     m = ABBREVIATION_RE.fullmatch(token)
     if m is None:
         return None
     core = m.group(1)
+    if core.lower() in INTERJECTIONS:
+        return None
+    if not re.search("[AEIOUY]", core):
+        return core.lower(), bool(m.group(2))  # MC, DJ, TV: no word to read
     if capitals:
         return None
-    if not re.search("[AEIOU]", core):
-        return core.lower(), bool(m.group(2))  # MC, DJ, TV: no word to read
     if len(core) >= 4 and re.fullmatch(r"(?:[^AEIOU][AEIOU])+|(?:[AEIOU][^AEIOU])+", core):
         return None  # FOMO, YOLO, NASA: said as a word
     if TABLE.get(core.lower()) and core not in SPELLED_OUT:
