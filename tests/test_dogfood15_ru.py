@@ -83,3 +83,28 @@ def test_a_vy_word_with_one_reading_keeps_it(word):
 
 def test_suno_leaves_lermontov_alone():
     assert sung("Выхожу один я на дорогу\n").startswith("ВыхожУ")  # not ВЫхожу
+
+
+@pytest.mark.parametrize("word,stress", [("соловей", 2), ("целей", 0), ("бурей", 0), ("шалей", 0)])
+def test_an_ej_word_takes_no_comparative_it_does_not_have(word, stress):
+    assert {r.stress for r in line_words(word)[0].readings} == {stress}
+
+
+@pytest.mark.parametrize("word,stress", [("милей", 1), ("сильней", 1), ("веселей", 2)])
+def test_a_real_short_comparative_keeps_its_stress(word, stress):
+    assert stress in {r.stress for r in line_words(word)[0].readings}
+
+
+def test_suno_sings_a_nightingale():
+    assert sung("Пой, соловей, пой\n").strip() == "Пой, соловей, пой"
+
+
+@pytest.mark.parametrize("pronoun", ["тебе", "себе", "нашем", "вашем"])
+def test_more_pronouns_may_take_a_weak_beat(pronoun):
+    assert line_words(pronoun)[0].weak
+
+
+def test_yesenin_tebe_scans():
+    spec = from_dict({"language": "ru", "meter": "anapest", "feet": 3})
+    report = scan("Я готов рассказать тебе поле\n", spec)
+    assert report.lines[0].ok, report.lines[0].issues

@@ -112,14 +112,14 @@ WEAK = {
 WEAK |= set(
     """
     она оно они
-    меня тебя себя мне его ему её ее ею нею него нему неё нее ими ними нами вами мною
+    меня тебя себя мне тебе себе его ему её ее ею нею него нему неё нее ими ними нами вами мною
     тобой собой тобою собою кого кому чего чему
     этот эта это эти эту этой этом этим этих этого этому этою
     мой моя моё мое мою мои моей моих моим моего моему моими
     твой твоя твоё твое твою твои твоей твоих твоим твоего твоему твоими
     свой своя своё свое свою свои своей своих своим своего своему своими
     наша наше наши нашу нашей наших нашим нашего нашему ваша ваше ваши вашу вашей
-    ваших вашим вашего вашему
+    ваших вашим вашего вашему нашем вашем нашими вашими сама само сами
     """.split()
 )
 # Pronoun forms and function words the table lacks: spelling, stressed vowels.
@@ -871,9 +871,10 @@ def _lexicon_readings(norm: str) -> list[Reading]:
     if not options:  # Ростова, Алёна: a name the table lacks
         for spelling, stress in ru_names.readings(norm):
             options.append((spelling, stress, "lexicon"))
-    elif norm.endswith("ей") and norm not in CORE:
+    elif norm.endswith("ей") and norm not in CORE and TABLE.get(norm[:-2] + "ее") is not None:
         # the short comparative keeps the stress of its -ее form even where the same
-        # spelling is another word: миле́й (милее), not only ми́лей (of miles)
+        # spelling is another word: миле́й (милее), not only ми́лей (of miles); a
+        # comparative the dictionary lists, not one derived (соловей is no соловее)
         for _, stress in TABLE.variants(norm[:-2] + "ее"):
             options.append((norm, stress, "lexicon"))
     options = _yo_plural_first(options)
