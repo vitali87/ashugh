@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import cached_property
 
 from . import lang as languages
 from . import lyrics, meter, rhyme
@@ -27,9 +28,10 @@ from .scan import (
     Report,
     UnitReport,
     check_line,
-    one_word,
+    forms_of_one_word,
     reanalyze,
     rhyme_alternatives,
+    rhyme_head,
     scan,
 )
 from .solver import Problem, solve
@@ -49,6 +51,18 @@ class Candidate:
     report: LineReport
     weight: float
     original: bool = False
+
+    @cached_property
+    def head(self) -> tuple | None:
+        """Its rhyme word as forms_of_one_word compares it, found once for all pairs."""
+        return rhyme_head(self.report)
+
+    @cached_property
+    def rhyme_key(self) -> tuple:
+        """All that its rhyme with another candidate depends on: candidates that
+        end alike (a thousand lines on cry, shy, pie) are judged once a pair."""
+        tail = self.report.tail
+        return (tuple(_rhymes(self)), tail and tail.spelling, self.original, self.head)
 
 
 @dataclass
@@ -480,41 +494,51 @@ def _problem(pools: list[list[Candidate]]) -> Problem:
     pen would not do), and the first line only where nothing else fits better."""
     weights = [[c.weight for c in pool] for pool in pools]
     pairs: dict[tuple[int, int], set[tuple[int, int]]] = {}
-    for b in range(1, len(pools)):
-        rhymed = {
-            a: {
-                (i, j)
-                for i, x in enumerate(pools[a])
-                for j, y in enumerate(pools[b])
-                if _rhyme_ok(x, y)
-            }
-            for a in range(b)
+    alike = [_alike(pool) for pool in pools]
+
+    def allowed(a: int, b: int, test: Callable[[Candidate, Candidate], bool]):
+        return {
+            (i, j)
+            for xs in alike[a].values()
+            for ys in alike[b].values()
+            if test(pools[a][xs[0]], pools[b][ys[0]])
+            for i in xs
+            for j in ys
         }
+
+    for b in range(1, len(pools)):
+        rhymed = {a: allowed(a, b, _rhyme_ok) for a in range(b)}
         anchor = max(range(b), key=lambda a: (len(rhymed[a]), -a))
         pairs[(anchor, b)] = rhymed[anchor]
         for a in range(b):
             if a == anchor:
                 continue
-            ok = {
-                (i, j)
-                for i, x in enumerate(pools[a])
-                for j, y in enumerate(pools[b])
-                if (x.original and y.original) or not _same_rhyme_word(x, y)
-            }
+            ok = allowed(
+                a, b, lambda x, y: (x.original and y.original) or not _same_rhyme_word(x, y)
+            )
             if len(ok) < len(pools[a]) * len(pools[b]):
                 pairs[(a, b)] = ok
     return Problem(weights, pairs)
+
+
+def _alike(pool: list[Candidate]) -> dict[tuple, list[int]]:
+    """A pool's candidates grouped by rhyme_key, in order."""
+    out: dict[tuple, list[int]] = {}
+    for i, c in enumerate(pool):
+        out.setdefault(c.rhyme_key, []).append(i)
+    return out
 
 
 def _rhyme_ok(x: Candidate, y: Candidate) -> bool:
     """y rhymes with x at y's min_rhyme, and not on the same word or another form
     of it (сердца / сердце) unless both lines were written that way."""
     s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
+    if s < rhyme.THRESHOLD[y.report.min_rhyme]:
+        return False
+    if x.original and y.original:
+        return True
     same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
-    same_word = same_word or one_word(x.report, y.report)
-    return s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
-        same_word and not (x.original and y.original)
-    )
+    return not (same_word or forms_of_one_word(x.head, y.head))
 
 
 def _rhymes(c: Candidate) -> list:

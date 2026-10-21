@@ -639,3 +639,30 @@ def test_a_song_written_with_a_form_rhyme_keeps_it():
     text = "Я слышу стук родного сердца\nИ бьётся радостное сердце\n"
     res = fit_song(text, from_dict({"language": "ru", "rhyme": "AA"}), StaticProposer({}))
     assert res.text == text and not res.unresolved
+
+
+def test_candidates_that_end_alike_are_judged_once_a_pair(monkeypatch):
+    from ashugh import fit
+    from ashugh.proposers import StaticProposer
+
+    calls = []
+    judge = fit._rhyme_ok
+    monkeypatch.setattr(fit, "_rhyme_ok", lambda x, y: calls.append(1) or judge(x, y))
+    words = ["sky", "high", "night"]
+    pool = {
+        k: [
+            f"I {verb} beneath the {w}"
+            for verb in ("walked", "stood", "ran", "sang")
+            for w in words
+        ]
+        * 25
+        for k in (1, 2)
+    }
+    text = "I walked beneath the sky\nI stood beneath the high\n"
+    fit.fit_song(
+        text,
+        from_dict({"language": "en", "rhyme": "AA", "syllables": 7}),
+        StaticProposer(pool),
+        rounds=1,
+    )
+    assert len(calls) <= 4 * len(words) ** 2  # not 300 x 300

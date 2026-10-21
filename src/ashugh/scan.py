@@ -792,21 +792,28 @@ def _same_word(members: list[LineReport], k: int, pair) -> None:
     )
 
 
+def rhyme_head(lr: LineReport) -> tuple | None:
+    """A line's rhyme word as one_word compares it: its language, its syllables up
+    to and with the stressed one, and the word."""
+    w = rhyme.anchor_word(lr.line, lr.fit)
+    if w is None:
+        return None
+    word, stress = lr.line.words[w], lr.fit.stresses.get(w)
+    if stress is None:
+        return None
+    sung = tuple(s.text.lower().replace("ё", "е") for s in word.syllables)
+    return word.lang, sung[: stress + 1], word.norm
+
+
 def one_word(a: LineReport, b: LineReport) -> bool:
     """Whether two lines end on forms of one word: the same syllables up to and with
     the stressed one (сер-дце, сер-дца), not merely the same sound (луг, лук)."""
-    heads = []
-    for lr in (a, b):
-        w = rhyme.anchor_word(lr.line, lr.fit)
-        if w is None:
-            return False
-        word, stress = lr.line.words[w], lr.fit.stresses.get(w)
-        if stress is None:
-            return False
-        sung = [s.text.lower().replace("ё", "е") for s in word.syllables]
-        heads.append((word.lang, sung[: stress + 1], word.norm))
-    (la, ha, na), (lb, hb, nb) = heads
-    return la == lb and ha == hb and na != nb
+    return forms_of_one_word(rhyme_head(a), rhyme_head(b))
+
+
+def forms_of_one_word(a: tuple | None, b: tuple | None) -> bool:
+    """one_word for two rhyme_heads found already."""
+    return a is not None and b is not None and a[:2] == b[:2] and a[2] != b[2]
 
 
 def _norm_text(text: str) -> str:
