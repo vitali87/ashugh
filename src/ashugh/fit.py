@@ -690,6 +690,7 @@ def _request(
         # another language's, and only a kept endings rule carries it over)
         want_ending = min(lr.tail.post, 3)
     meter_name = var.unit.meter if var.unit.meter_source == "spec" else None
+    meter_name = None if rule.free_at(idx) else meter_name
     if rule.ending_at(idx) is None and want_ending is not None and syllables:
         want_ending = _ending_that_fits(meter_name, syllables, want_ending)
     feet = rule.feet_at(idx) if meter_name else None

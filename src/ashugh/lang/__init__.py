@@ -164,6 +164,20 @@ def _dotted_letters(tokens: list[str], text: str | None) -> set[int]:
     return {k for k, (a, b, _) in enumerate(spans) if any(x <= a and b <= y for x, y in dotted)}
 
 
+def _after_apostrophe(tokens: list[str], text: str | None) -> set[int]:
+    """Words written after an apostrophe that opens them: 'ere, 'is, 'eart."""
+    if not text or not any(ch in text for ch in "'’"):
+        return set()
+    spans = lyrics.token_spans(text)
+    if [t for _, _, t in spans] != tokens:
+        return set()
+    return {
+        k
+        for k, (a, _, _) in enumerate(spans)
+        if a > 0 and text[a - 1] in "'’" and (a == 1 or not text[a - 2].isalnum())
+    }
+
+
 def analyze(
     lang: str, tokens: list[str], lexicon: dict[str, str], text: str | None = None
 ) -> list[Word]:
@@ -176,6 +190,7 @@ def analyze(
     in_latin = lang == hy.CODE and latin_armenian(tokens)
     armenian = latin_words_in_armenian(tokens, in_latin) if lang == hy.CODE else []
     glued = _glued_to_ampersand(tokens, text) | _dotted_letters(tokens, text)
+    opened = _after_apostrophe(tokens, text)
     seen: dict[str, Word] = {}
     for k, token in enumerate(tokens):
         if k in glued:  # AT&T, R&B, U.S.A.: letters, whatever word they spell
@@ -194,6 +209,11 @@ def analyze(
             and_ = analyze_word_as(AMPERSAND.get(lang, "and"), lexicon)
             and_.text = token
             words.append(and_)
+            continue
+        if k in opened and script_of(token) == en.CODE:  # 'ere, 'is: here, his
+            word = en.analyze_word("'" + token, lexicon, capitals)
+            word.text = token
+            words.append(word)
             continue
         if token in seen:  # a word the line repeats (la la la): analyzed once, copied
             words.append(replace(seen[token], notes=list(seen[token].notes)))

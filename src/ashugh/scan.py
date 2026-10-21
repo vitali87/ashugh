@@ -361,6 +361,8 @@ def check_line(
     promote: bool | None = None,
 ) -> LineReport:
     """Fit one analyzed line to its slot and collect its line-level issues."""
+    if rule.free_at(ln.index):
+        meter_name = "free"  # syllables = [0]: a spoken line, free of the meter too
     target = rule.syllables_at(ln.index)
     feet = rule.feet_at(ln.index)
     f = meter.fit(ln.words, meter_name, target, rule.tolerance, force, feet, promote)
@@ -757,6 +759,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             what = "last stress off the beat"
         feet = rule.feet_at(ln.index)
         own = min(lr.tail.post, 3) if lr.tail is not None else f.ending
+        asked = rule.ending_at(ln.index)
+        own = asked if asked is not None else own  # the slot's ending, where the spec sets one
         slot = meter.slot_template(meter_name, feet, own) if feet is not None else None
         if slot is not None and lr.target is None and f.feet == feet and len(slot) != f.count:
             # the beats were forced onto the slot's feet: the line is the wrong length

@@ -275,6 +275,10 @@ def lookup(norm: str) -> list[str] | None:
             raw = TABLE.get(stem) if len(stem) > 1 else None
             if raw and (stem + "s" == norm or stem.endswith(("s", "x", "z", "ch", "sh", "y"))):
                 return [v + _s_ending(v) for v in raw.split("|")]
+    if re.search(r"[aeiou]'[aeiou]", norm):  # ne'ertheless: never's v left out, not -less
+        elided = _elided(norm)
+        if elided:
+            return elided
     derived = _derived(norm) or _suffixed(norm)
     if derived:
         return derived
@@ -364,6 +368,8 @@ def _elided(norm: str) -> list[str] | None:
     if norm[k - 1] in "aeiou" and norm[k + 1] in "aeiou":  # e'er, whate'er: the v of ever
         full = lookup(norm[:k] + "v" + norm[k + 1 :])
         out = [v for v in (_drop_v(v) for v in full or []) if v]
+        if k == 1 and norm[k + 1 : k + 3] == "er" and len(norm) > 4:
+            out = [_stress_last_part(v) for v in out]  # o'er-whélm, o'er-cóme, e'er-lást-ing
         return list(dict.fromkeys(out)) or None
     words = [norm[:k] + vowel + norm[k + 1 :] for vowel in "eoiau"]
     # a listed word first: fam'ly is family, not fame-ly
@@ -396,12 +402,27 @@ def _spelled_vowels(word: str) -> int:
     return len(groups)
 
 
+def _stress_last_part(pron: str) -> str:
+    """An o'er- or e'er- compound with its main stress on the word after it, as
+    verse says it (o'ercome, though CMUdict stresses over in overcome)."""
+    phones = pron.split()
+    later = [k for k, p in enumerate(phones) if p.endswith("2")]
+    first = next((k for k, p in enumerate(phones) if p[-1:] in "12"), None)
+    if first is None or not later or later[0] <= first or phones[first].endswith("2"):
+        return pron
+    phones[first] = phones[first][:-1] + "2"
+    phones[later[0]] = phones[later[0]][:-1] + "1"
+    return " ".join(phones)
+
+
 def _drop_v(pron: str) -> str | None:
     """ever as e'er, even as e'en: the v after the stress and the vowel after it go,
-    an r-colored one leaving its r (whate'er rhymes with there)."""
+    an r-colored one leaving its r (whate'er rhymes with there); in overwhelm, after
+    a secondary stress."""
     phones = pron.split()
     for k in range(len(phones) - 2):
-        if phones[k].endswith("1") and phones[k + 1] == "V" and phones[k + 2].endswith("0"):
+        stressed = phones[k][-1:] in "12"
+        if stressed and phones[k + 1] == "V" and phones[k + 2].endswith("0"):
             kept = ["R"] if phones[k + 2] == "ER0" else []
             return " ".join(phones[: k + 1] + kept + phones[k + 3 :])
     return None
@@ -688,6 +709,9 @@ def split_spelling(
             return [*out[:-1], out[-1] + token[-2:]]  # hur-ri-cane's, not hur-ri-ca-ne's
         if before == n - 1:  # James-'s, Charles-'s: the 's sung as a syllable of its own
             return [*split_spelling(token[:-2], n - 1, short, parted, ly), token[-2:]]
+    head = re.match(r"[a-z]*?[aeo]['’]er(?=[a-z]{2})", low)  # ne'er-the-less, o'er-whelms
+    if head and n >= 2:
+        return [token[: head.end()], *split_spelling(token[head.end() :], n - 1)]
     elided = re.search(r"e['’][ae][rn]$", low)  # what-e'er, how-e'er: e'er is one syllable
     if elided and n >= 2 and elided.start() > 0:
         return split_spelling(token[: elided.start()], n - 1) + [token[elided.start() :]]
@@ -869,6 +893,12 @@ def _vowelless(piece: str) -> bool:
     return not re.search(r"(?i)[aeiouy]", piece)
 
 
+SHORT_IRE_RE = re.compile(r"[iy]re[sd]?$")
+IRE_PHONES_RE = re.compile(r"AY1 R(?=(?: [ZD])?$)")
+
+# Words after an apostrophe that are no h left out: 'em (them), a good 'un (one).
+NOT_H_DROPPED = {"em", "un", "uns", "n"}
+
 # where-in, there-on, here-of, where-up-on: the old adverbs, each part as it is said
 ADVERB_COMPOUND_RE = re.compile(r"(where|there|here)(?:in|on|of|at|by|to|upon|with|unto)$")
 OUT_PREFIX_RE = re.compile(r"(out)(?=[bcdfghjklmnpqrstvwxz][a-z]{2,})")  # out-ra-geous
@@ -927,7 +957,7 @@ LETTER_NAMES = {
     "y": "W AY", "z": "Z IY",
 }  # fmt: skip
 # Abbreviations spelt like a word: LA is L-A, not la, wherever the line is not in capitals.
-SPELLED_OUT = {"LA", "US", "AM", "PM", "ID", "RIP", "USA"}
+SPELLED_OUT = {"LA", "US", "AM", "PM", "ID", "RIP", "USA", "OG", "KO", "TKO", "PR", "AI"}
 ABBREVIATION_RE = re.compile(r"([A-Z]{2,5})(s|'s)?")  # DMs, NYC's
 # Words with no vowel letter that are sounds, not letters: HMM, SHH, PSST.
 INTERJECTIONS = set(
@@ -1023,6 +1053,17 @@ MIN_COMPOUND_PART = 4  # moon-light, heart-ache; not pat-ron from pat and Ron
 SHORT_PART = 3  # glove-box: after a silent e, the second word may be shorter
 # Readings songs use that CMUdict lacks: yeah as in care, re-al, po-em in one.
 EXTRA = {
+    # thro' of hymns and Tennyson, gon' of rap (gonna in one), the fount of hymns
+    "thro": ["TH R UW1"],
+    "altho": ["AO2 L DH OW1"],
+    "gon": ["G AH0 N"],
+    "fount": ["F AW1 N T"],
+    "founts": ["F AW1 N T S"],
+    # adjectives hymns and verse sing in two syllables: bless-ed Trinity, curs-ed
+    "blessed": ["B L EH1 S T", "B L EH1 S IH0 D"],
+    "cursed": ["K ER1 S T", "K ER1 S IH0 D"],
+    "dogged": ["D AO1 G D", "D AO1 G IH0 D"],
+    "winged": ["W IH1 NG D", "W IH1 NG IH0 D"],
     # the old adverbs of hymns and verse: where-on, here-of, there-with
     "whereon": ["W EH0 R AA1 N"],
     "whereof": ["W EH0 R AH1 V"],
@@ -1387,6 +1428,12 @@ def analyze_word(
     if norm == "th" and token[1:] == "h":  # th' eternal: the, run into the next vowel
         return Word(token, norm, CODE, (), (), clitic=True, weak=True)
     variants = ["W IH1 DH"] if token == "w" else lookup(norm)  # me w/ you: with
+    role = norm  # the word whose part of speech it is: hand for 'and
+    if token[:1] in APOSTROPHES and norm[:1] in "aeiou" and norm not in NOT_H_DROPPED:
+        with_h = lookup("h" + norm)
+        if with_h:  # 'ere, 'is, 'eart: the h Cockney leaves out (Kipling's here, his, heart)
+            variants = [v.removeprefix("HH ") for v in with_h]
+            role = "h" + norm
     user = (overrides or {}).get(norm) or (overrides or {}).get(token.lower())
     spelled = None if user else abbreviation(token, capitals)
     if letters and not user and token.isalpha():
@@ -1416,6 +1463,12 @@ def analyze_word(
     assumed = " + ".join(pair) if pair and variants == _compound_variants(pair) else ""
     if norm in EXTRA and not user:
         variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
+    if variants and not user and SHORT_IRE_RE.search(norm):
+        # as-pire, as-pi-er: the long -ire fire and desire have, where the dictionary
+        # lists only the short one (aspire, admire, inspire, spire, squire)
+        long = [IRE_PHONES_RE.sub("AY1 ER0", v) for v in variants if IRE_PHONES_RE.search(v)]
+        if not any("AY1 ER0" in v for v in variants):
+            variants = variants + [v for v in long if v not in variants]
     if user:
         variants = [user] if any(ch.isdigit() for ch in user) else variants
     elif variants and token.lower().endswith(("èd", "éd")):  # blessèd, wingéd: -ed sung
@@ -1425,7 +1478,7 @@ def analyze_word(
         if not voiced:  # touché, not the fencer's touche: the é sung, and stressed
             voiced = [re.sub("1", "2", variants[0]) + " EY1"]
         variants = voiced + [v for v in variants if v not in voiced]
-    word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
+    word = Word(token, norm, CODE, (), (), clitic=role in CLITICS, weak=role in WEAK)
     word.assumed = assumed
     parts = norm.strip("-").split("-")
     whole_words = len(parts) > 1 and all(len(p) > 1 and p.isalpha() for p in parts)
@@ -1479,6 +1532,8 @@ def analyze_word(
             stress = 0
         source = "clitic" if word.clitic else "lexicon"
         full_vowels = [i for i, v in enumerate(bare) if i > stress and v in UNREDUCED]
+        if len(bare) - 1 > stress and bare[-1] == "AE":  # Grace-land / hand, Nev-er-land
+            full_vowels.append(len(bare) - 1)
         secondary = tuple(sorted({i for i in marked if i != stress} | set(full_vowels)))
         if readings and not marked:
             continue  # a reduced form (been as /bən/) is no reading of its own
@@ -1717,8 +1772,14 @@ def _camel(word: Word, token: str, overrides: dict[str, str] | None) -> Word | N
     return word
 
 
+# Two vowels a name sings apart (Ni-o-be, Au-re-li-us, An-to-ni-o, Le-o), but
+# not after a consonant that makes the i a glide (-tion, -cia, -gio).
+GUESS_HIATUS_RE = re.compile(r"(?<![cstxgq])i[aou]|eo|uo")
+
+
 def _guessed(word: Word, token: str, norm: str) -> Word:
-    n = max(1, guess_syllables(norm))
+    plain = re.sub(r"[^a-z]", "", norm.lower())
+    n = max(1, guess_syllables(norm) + len(GUESS_HIATUS_RE.findall(plain)))
     phones = _guess_phones(norm)
     word.syllables = tuple(Syllable(p) for p in split_spelling(token, n))
     order = SUFFIXES.order(re.sub(r"[^a-z]", "", norm), n)

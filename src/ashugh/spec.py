@@ -78,7 +78,14 @@ class Rule:
         """The line's count, or None for none asked (0 in a list leaves a line free)."""
         return self.syllables[i % len(self.syllables)] or None if self.syllables else None
 
+    def free_at(self, i: int) -> bool:
+        """Whether a 0 in the syllables list leaves the line free of count and meter
+        alike: a spoken bridge in a song that counts the rest."""
+        return bool(self.syllables) and self.syllables[i % len(self.syllables)] == 0
+
     def feet_at(self, i: int) -> int | None:
+        if self.free_at(i):
+            return None
         return self.feet[i % len(self.feet)] or None if self.feet else None
 
     def ending_at(self, i: int) -> int | None:

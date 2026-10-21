@@ -208,3 +208,149 @@ def test_the_scan_shows_a_short_syllabic_l_word_as_sung():
     out = check("Every day I'm struggling\n", syllables=6, meter="trochee")
     note = next(i for i in out.lines[0].issues if "struggling" in i.message)
     assert "strug-gling" in note.detail or "strug-gling" in note.message
+
+
+def test_blessed_may_be_sung_in_two_syllables():
+    text = (
+        "Holy, holy, holy! Lord God Almighty!\nEarly in the morning our song shall rise to thee;\n"
+        "Holy, holy, holy! merciful and mighty!\nGod in three Persons, blessed Trinity!\n"
+    )
+    assert errors(text, syllables=[11, 12, 12, 10]) == []
+
+
+def test_blessed_is_one_syllable_by_default():
+    report = check("We are blessed\n")
+    assert report.lines[0].fit.count == 3
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [("beer", "out 'ere"), ("apart", "my 'eart"), ("land", "in 'is 'and")],
+)
+def test_a_cockney_dropped_h_reads_as_the_word(a, b):
+    assert en_rhyme(a, b) >= rhyme.THRESHOLD["perfect"]
+
+
+def test_a_dropped_h_word_keeps_its_own_part_of_speech():
+    hand = next(w for w in words("'Is 'and was cold") if w.text == "and")
+    assert not hand.clitic
+
+
+@pytest.mark.parametrize("line,norm", [("need 'em now", "em"), ("a good 'un", "un")])
+def test_em_and_un_are_no_dropped_h(line, norm):
+    w = next(w for w in words(line) if w.norm == norm)
+    assert not w.readings[0].phones[:1] == ("h",)
+    assert "ɛm" not in "".join(w.readings[0].phones) or norm == "em"
+
+
+def test_kiplings_gunga_din_rhymes():
+    text = (
+        "You may talk o' gin and beer\nWhen you're quartered safe out 'ere,\n"
+        "An' you're sent to penny-fights an' Aldershot it;\n"
+        "But when it comes to slaughter\nYou will do your work on water,\n"
+        "An' you'll lick the bloomin' boots of 'im that's got it.\n"
+    )
+    assert not any("rhyme" in m for m in errors(text, rhyme="AABCCB"))
+
+
+@pytest.mark.parametrize("word", ["aspire", "admire", "inspire", "spire"])
+def test_ire_words_have_the_long_reading_too(word):
+    w = words(word)[0]
+    assert w.drop is not None and w.drop_cost < 0  # short first, long when the line needs it
+
+
+def test_blakes_tyger_derives_one_ending_for_a_rhyme_pair():
+    text = (
+        "In what distant deeps or skies.\nBurnt the fire of thine eyes?\n"
+        "On what wings dare he aspire?\nWhat the hand, dare seize the fire?\n"
+    )
+    data = translate.derive_spec(check(text), keep={"syllables", "endings", "rhyme"})
+    stanza = data["stanza"]["1"]
+    assert stanza["syllables"][2] == stanza["syllables"][3]
+    assert stanza["endings"][2] == stanza["endings"][3]
+
+
+def test_a_zero_count_frees_a_line_of_its_feet_and_meter():
+    text = (
+        "[Verse]\nI walk along the river side\n\n"
+        "[Spoken]\nAnd then she said to me that nothing ever really ends\n"
+    )
+    spec = from_dict(
+        {
+            "language": "en",
+            "syllables": 8,
+            "meter": "iamb4",
+            "section": {"spoken": {"syllables": [0]}},
+        }
+    )
+    report = scan(text, spec)
+    spoken = report.lines[-1]
+    assert spoken.ok, spoken.issues
+
+
+def test_a_zero_count_still_leaves_the_other_lines_checked():
+    text = "[Verse]\nI walk along the river side today\n\n[Spoken]\nAnd then she said\n"
+    spec = from_dict(
+        {
+            "language": "en",
+            "syllables": 8,
+            "meter": "iamb4",
+            "section": {"spoken": {"syllables": [0]}},
+        }
+    )
+    assert not scan(text, spec).lines[0].ok
+
+
+@pytest.mark.parametrize(
+    "line,word", [("I'm the OG on the block", "OG"), ("a KO in the ring", "KO")]
+)
+def test_og_and_ko_are_letters(line, word):
+    w = next(w for w in words(line) if w.text == word)
+    assert w.size == 2 and w.spelled
+
+
+def test_ok_is_still_a_word_of_two_syllables():
+    assert words("I'm OK")[-1].size == 2
+
+
+@pytest.mark.parametrize(
+    "word,stressed",
+    [
+        ("o'erwhelms", 1),
+        ("o'erthrown", 1),
+        ("e'erlasting", 1),
+        ("o'ercome", 1),
+        ("ne'ertheless", 2),
+    ],
+)
+def test_oer_compounds_are_known_and_stressed_after_oer(word, stressed):
+    w = words(word)[0]
+    assert not w.guessed
+    assert w.readings[0].stress == stressed
+
+
+@pytest.mark.parametrize("word,n", [("thro'", 1), ("gon'", 1), ("Fount", 1)])
+def test_hymn_and_rap_spellings_are_known(word, n):
+    w = words(f"We {word} away")[1]
+    assert not w.guessed and w.size == n
+
+
+@pytest.mark.parametrize("word,n", [("Aurelius", 4), ("Tarquinius", 4), ("Coriolanus", 5)])
+def test_a_guessed_name_counts_its_hiatus(word, n):
+    assert words(word)[0].size == n
+
+
+@pytest.mark.parametrize("word,n", [("Ignatius", 3), ("Bianca", 3)])
+def test_a_glide_after_t_is_no_hiatus(word, n):
+    assert words(word)[0].size == n
+
+
+def test_the_meter_error_quotes_the_slots_template():
+    report = check("Eternal Father, strong to save\n", syllables=8, meter="dactyl3", endings="f")
+    detail = next(i.detail for i in report.lines[0].issues if i.code == "meter")
+    assert detail.endswith("dactyl3 wants /xx/xx/x")
+
+
+@pytest.mark.parametrize("a,b", [("Graceland", "hand"), ("Neverland", "understand")])
+def test_land_compounds_rhyme_on_land(a, b):
+    assert en_rhyme(a, b) >= rhyme.THRESHOLD["perfect"]
