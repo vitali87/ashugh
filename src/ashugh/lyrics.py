@@ -20,10 +20,10 @@ BRACKET_RE = re.compile(r"\[([^\]]*)\]")
 NOTE_RE = re.compile(r":|\s+-\s+|\s*[–—]\s*")  # [Verse 2: soft], [Verse 2 - Rap]
 LINE_BREAK_RE = re.compile(r"(\r\n|\r|\n)")
 WORD_RE = re.compile(
-    r"(?<![^\W_])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
+    r"(?<![^\W_])(?<!\d[-'’])(?>[^\W\d_](?:[^\W\d_]|[\u0301\u055b\u055c\u055e]|[-'’](?=[^\W\d_]))*"
     r"(?:(?<=[iI][nN])['’](?![^\W\d_]))?)(?!\d)"  # a dropped g: goin', lovin'
     r"|&"  # sung as and, и, և
-)  # letters glued to digits ('80s, 4ever, mp3) are no word: the digits warn
+)  # letters glued to digits ('80s, 4ever, mp3, 2000-х, 80's) are no word: the digits warn
 DIGIT_RE = re.compile(r"\d")
 # What a paste or another keyboard leaves inside a word: a soft hyphen, zero-width
 # spaces and joiners, a word joiner or a stray byte order mark, all unseen; the

@@ -91,7 +91,12 @@ class Word:
         if not self.syllables:
             return self.text
         parts = []
+        caps = [ch for ch in self.text[1:] if ch.isupper()]
+        # замОк: the writer's capital mark, shown by the acute as every other is
+        writer_caps = mark and len(caps) == 1 and caps[0].lower() in VOWEL_LETTERS
         for i, text in enumerate(self._with_yo(stress)):
+            if writer_caps:
+                text = text[:1] + text[1:].lower() if i == 0 else text.lower()
             if mark and i == stress and self.size > 1:
                 text = mark_stress(text)
             parts.append(text)

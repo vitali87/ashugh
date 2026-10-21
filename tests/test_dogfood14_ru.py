@@ -333,3 +333,23 @@ def test_latin_brand_with_a_russian_ending_rhymes_in_russian():
 def test_english_rhymes_are_unchanged_by_the_adaptation():
     assert rhymes("star", "far") >= 0.9
     assert rhymes("sky", "die") >= 0.9
+
+
+@pytest.mark.parametrize("text", ["В 2000-х годах", "в 90-е годы", "5-й этаж", "the 80's are back"])
+def test_a_numeral_ending_is_part_of_the_number(text):
+    from ashugh import lyrics
+
+    tokens = lyrics.tokenize(text)
+    assert all(len(t) > 1 or t.lower() in ("в", "a") for t in tokens), tokens
+
+
+def test_syl_marks_a_preposition_that_took_the_stress():
+    report = scan("за́ город\n", Spec(language="ru"))
+    assert report.lines[0].sung.startswith("за́ ")
+
+
+def test_display_shows_the_writers_capital_mark_as_an_acute_only():
+    report = scan("Где замОк висит\n", Spec(language="ru"))
+    assert "за-мо́к" in report.lines[0].sung
+    report = scan("Санкт-Петербу́рг\n", Spec(language="ru"))
+    assert "Петер" in report.lines[0].sung.replace("-", "")

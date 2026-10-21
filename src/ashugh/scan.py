@@ -59,9 +59,15 @@ class LineReport:
     @property
     def sung(self) -> str:
         parts = []
-        for i, w in enumerate(self.line.words):
+        words = self.line.words
+        for i, w in enumerate(words):
             stress = self.fit.stresses.get(i, w.stress_options()[0])
-            parts.append(w.sung(stress, mark=w.lang == "ru", dropped=i in self.fit.elided))
+            part = w.sung(stress, mark=w.lang == "ru", dropped=i in self.fit.elided)
+            nxt = i + 1
+            if w.lang == "ru" and nxt < len(words) and words[nxt].leans:
+                if self.fit.stresses.get(nxt, 0) is None:  # за́ город: the noun gave it
+                    part = mark_stress(part)
+            parts.append(part)
         return " ".join(p for p in parts if p)
 
     @property
