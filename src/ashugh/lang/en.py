@@ -844,6 +844,8 @@ REPLACED = {
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
     "o'er": ["AO1 R"],  # said as or, ore: rhymes with more
+    "statesmanlike": ["S T EY1 T S M AH0 N L AY2 K"],  # CMUdict: st-a-tess-man-like
+    "wildflowers": ["W AY1 L D F L AW2 ER0 Z"],  # CMUdict has only wild-flow'rs
     "mm": ["AH1 M"],  # a hum is a syllable, though CMUdict gives it no vowel
     "mmm": ["AH1 M"],
     "hmm": ["HH AH1 M"],

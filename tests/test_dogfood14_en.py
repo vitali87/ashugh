@@ -626,3 +626,11 @@ def test_a_letter_compound_is_stressed_on_its_letter(token, size):
 )
 def test_a_vowel_heteronym_rhymes_as_its_context_reads_it(a, b, rhyming):
     assert (rhymes(a, b) >= 0.9) is rhyming
+
+
+@pytest.mark.parametrize("word,size", [("statesmanlike", 3), ("wildflowers", 3)])
+def test_cmudict_slips_are_corrected(word, size):
+    from ashugh.lang import en
+
+    w = en.analyze_word(word)
+    assert w.size == size and w.readings[0].stress == 0
