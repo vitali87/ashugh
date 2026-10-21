@@ -566,3 +566,30 @@ def test_a_name_with_a_short_prefix_is_not_split_into_words(token, size):
 
     w = en.analyze_word(token)
     assert w.size == size and w.readings[0].source != "rule"  # not De + Shawn
+
+
+@pytest.mark.parametrize(
+    "token,size",
+    [
+        ("Mm-hmm", 2),
+        ("Hey-ey-ey", 3),
+        ("yeah-eah", 2),
+        ("Mmm", 1),
+        ("hmm", 1),
+        ("Oh-oh-oh", 3),
+        ("no-o-o", 3),
+    ],
+)
+def test_vocables_are_read_without_warnings(token, size):
+    from ashugh.lang import en
+
+    w = en.analyze_word(token)
+    assert w.size == size
+    assert not w.guessed and all(r.source != "guess" for r in w.readings)
+
+
+def test_an_echo_syllable_leaves_the_stress_on_the_word():
+    from ashugh.lang import en
+
+    w = en.analyze_word("Hey-ey-ey")
+    assert w.readings[0].stress == 0

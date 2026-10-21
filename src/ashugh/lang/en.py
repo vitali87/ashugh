@@ -844,6 +844,11 @@ REPLACED = {
     "vibe": ["V AY1 B"],
     "vibes": ["V AY1 B Z"],
     "o'er": ["AO1 R"],  # said as or, ore: rhymes with more
+    "mm": ["AH1 M"],  # a hum is a syllable, though CMUdict gives it no vowel
+    "mmm": ["AH1 M"],
+    "hmm": ["HH AH1 M"],
+    "hmmm": ["HH AH1 M"],
+    "mhm": ["AH0 M HH AH1 M"],
     "o'": ["AH0"],  # of, as a cup o' tea and will-o'-the-wisp say it
     "e'en": ["IY1 N"],
     "e'er": ["EH1 R"],
@@ -1128,12 +1133,29 @@ def analyze_word(
     return word
 
 
+def _echo(token: str, norm: str, before: Word) -> Word:
+    """A vowel sung again after the word it ends (hey-ey, yeah-eah): its last
+    syllable's sound once more, a syllable with no stress of its own."""
+    phones = before.readings[0].phones
+    vowels = [k for k, ph in enumerate(phones) if is_vowel(ph)]
+    sound = phones[vowels[-1] :] if vowels else phones
+    reading = Reading(0, tuple(sound), norm, "rule")
+    return Word(token, norm, CODE, (Syllable(token),), (reading,), weak=True, clitic=True)
+
+
 def _hyphenated(word: Word, token: str, overrides: dict[str, str] | None) -> Word:
     """A hyphenated word the dictionary lacks, read part by part: the last
     stressed part carries the stress and the rhyme, the parts before keep theirs
     as secondary stresses (ice-cóld, twenty-four-séven); a clitic part takes
     none (up-to-dáte)."""
-    parts = [analyze_word(p, overrides) for p in token.split("-") if p.strip("'")]
+    parts: list[Word] = []
+    for p in (p for p in token.split("-") if p.strip("'")):
+        before = parts[-1] if parts else None
+        low = normalize(p)
+        if before is not None and not lookup(low) and before.norm.endswith(low) and before.readings:
+            parts.append(_echo(p, low, before))  # hey-ey-ey, yeah-eah: the vowel sung again
+        else:
+            parts.append(analyze_word(p, overrides))
     offsets = [sum(p.size for p in parts[:k]) for k in range(len(parts))]
     stressed = [k for k, p in enumerate(parts) if not p.clitic and p.size]
     last = stressed[-1] if stressed else len(parts) - 1
