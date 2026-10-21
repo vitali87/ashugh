@@ -218,3 +218,29 @@ def test_an_unresolved_line_never_counts_as_passing():
     assert {u.line for u in result.unresolved} == {1, 2}
     assert not result.ok and [lr.ok for lr in result.report.lines] == [False, False]
     assert {i.code for i in result.report.issues if i.severity == "error"} == {"translate"}
+
+
+def test_a_wrong_language_candidate_is_never_written_as_a_change():
+    proposer = Scripted([{1: ["Я помню чудное мгновенье"], 2: ["until the morning light"]}])
+    result = translate.translate_song(COUPLET, "hy", proposer, keep={"syllables"}, rounds=1)
+    assert "Я помню" not in result.text
+    assert result.text == COUPLET  # an unresolved line keeps its source
+    assert result.changes == []
+    rejected = {u.line: u.rejected for u in result.unresolved}
+    assert rejected[1] == [{"text": "Я помню чудное мгновенье", "why": "not in Armenian"}]
+    assert rejected[2] == [
+        {"text": "until the morning light", "why": "the source line, untranslated"}
+    ]
+    details = {
+        lr.line.number: [i.detail for i in lr.issues if i.code == "translate"]
+        for lr in result.report.lines
+    }
+    assert "not in Armenian" in details[1][0]
+    assert "untranslated" in details[2][0]
+
+
+def test_a_candidate_that_only_misses_the_count_is_still_the_fallback():
+    proposer = Scripted([{1: ["Я помню чудное мгновенье"], 2: ["Ես քեզ եմ սպասում ամբողջ գիշեր"]}])
+    result = translate.translate_song(COUPLET, "hy", proposer, keep={"syllables"}, rounds=1)
+    assert "Ես քեզ եմ սպասում ամբողջ գիշեր" in result.text
+    assert [c.line for c in result.changes] == [2]

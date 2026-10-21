@@ -168,7 +168,7 @@ def translate_with_spec(
             rejected = [{"text": t, "why": why} for t, why in var.rejected]
             unresolved.append(Unresolved(k, var.blocked or ["no candidate fit"], rejected))
             best = max(var.pool, key=lambda c: c.weight, default=None)
-            text = best.text if best else _first_attempt(var.rejected)
+            text = best.text if best else _first_attempt(var.rejected, var.foreign)
         else:
             text = chosen.text
         if text:
@@ -180,10 +180,15 @@ def translate_with_spec(
     out = "".join(lyrics.retag(line) for line in lyrics.split_lines(out, keepends=True))
     report = scan(out, spec, lang=target)
     why = {u.line: u.reasons[0] for u in unresolved}
+    tried = {u.line: u.rejected for u in unresolved}
     for lr in report.lines:  # an attempt that failed its checks is no translation that passes
         k = lr.line.number
         if k in variables and k not in new:
-            issue = Issue(k, "translate", "error", "not translated", "no candidate came back")
+            first = tried.get(k)
+            detail = (
+                f"{first[0]['text']} — {first[0]['why']}" if first else "no candidate came back"
+            )
+            issue = Issue(k, "translate", "error", "not translated", detail)
         elif k in why:
             issue = Issue(k, "translate", "error", "no translation fits", why[k])
         else:
@@ -192,5 +197,7 @@ def translate_with_spec(
     return FitResult(out, report, changes, unresolved, used, asked, warnings)
 
 
-def _first_attempt(rejected: list[tuple[str, str]]) -> str | None:
-    return rejected[0][0] if rejected else None
+def _first_attempt(rejected: list[tuple[str, str]], foreign: set[str]) -> str | None:
+    """The first attempt to keep for a line nothing fit, never one in the wrong
+    language or the source echoed back: the source line then stays."""
+    return next((text for text, _ in rejected if text not in foreign), None)

@@ -99,13 +99,20 @@ def make_probes(words: list[str], lang: str, modes: list[str] | None = None) -> 
                     word=token,
                     mode=mode,
                     lyrics=f"[Verse]\n{line}\n{shown}\n",
-                    sung=_word(w.norm, lang).sung() if lang == "hy" else w.sung(reading.stress),
+                    sung=_sung(w, token, lang, reading.stress),
                     syllables=w.size,
                     phones=list(reading.phones),
                     stress=reading.stress,
                 )
             )
     return plan
+
+
+def _sung(w, token: str, lang: str, stress: int | None) -> str:
+    if lang != "hy":
+        return w.sung(stress)
+    sung = w.sung()  # analysed as written: ԱՄՆ-ից is spelled out, ամն-ից is not
+    return sung if sum(ch.isupper() for ch in token) > 1 else sung.lower()
 
 
 def _russian_variant(token: str, stress: int | None, mode: str) -> str:

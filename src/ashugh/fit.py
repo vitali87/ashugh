@@ -45,6 +45,7 @@ ASIDE_PUNCT = ",.;:!?…։՝"
 TO_ARMENIAN = str.maketrans({".": "։"})
 FROM_ARMENIAN = str.maketrans({"։": ".", "՝": ","})
 LINE_LEVEL = {"rhyme", "scheme"}
+UNTRANSLATED = "the source line, untranslated"
 REFRAIN_WEIGHT = 0.25  # under any rewrite (0.3 at least): a candidate that ends a refrain wins
 
 
@@ -145,6 +146,7 @@ class _Var:
     offered: int = 0  # candidates the proposer gave
     malformed: list[str] = field(default_factory=list)  # why unusable ones were dropped
     written: bool = True  # the line as written may stand (not in a translation)
+    foreign: set[str] = field(default_factory=set)  # rejected as no translation at all
 
     @property
     def number(self) -> int:
@@ -420,6 +422,9 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
     text, faith = cleaned
     key = _norm(text)
     if key in var.seen:
+        if not var.written and key == _norm(var.lr.line.text) and text not in var.foreign:
+            var.foreign.add(text)  # the source line echoed back
+            var.rejected.append((text, UNTRANSLATED))
         return
     var.seen.add(key)
     want = lang or var.lr.line.lang
@@ -429,6 +434,7 @@ def _consider(var: _Var, raw, spec: Spec, lang: str | None, weigh: Weigh) -> Non
         written = "hy"  # Ari u el mi gna: Armenian typed in Latin letters
     if want in languages.ANALYZERS and written and written != want:
         name = languages.NAMES.get(want, want)
+        var.foreign.add(text)
         var.rejected.append((text, f"not in {name}"))  # a translation left in its source
         return
     line = reanalyze(var.lr.line, text, spec, lang)

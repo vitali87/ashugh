@@ -267,3 +267,9 @@ def test_probe_pipeline_cli(tmp_path, capsys):
     capsys.readouterr()
     assert main(["suno", str(song), "--policy", str(policy), "--no-tags"]) == 0
     assert "ըսպասել" in capsys.readouterr().out
+
+
+def test_probe_sung_keeps_an_abbreviation_spelled_out():
+    plan = probe.make_probes(["ԱՄՆ-ից"], "hy", modes=["script"])
+    assert plan[0].syllables == 4
+    assert plan[0].sung == "Ա-Մե-Նե-ից"
