@@ -177,3 +177,9 @@ def test_other_armenian_words_keep_the_last(word):
 
     w = hy.analyze_word(word)
     assert w.readings[0].stress == len(w.syllables) - 1
+
+
+def test_a_drop_note_is_given_once_for_a_word_said_twice():
+    report = scan("Էս գիշեր մերն ա, էս գիշեր մերն ա\n", from_dict({"language": "hy"}))
+    notes = [i.message for i in report.lines[0].issues if "drops its" in i.message]
+    assert len(notes) == len(set(notes))

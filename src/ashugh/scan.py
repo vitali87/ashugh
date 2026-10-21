@@ -560,9 +560,13 @@ def reanalyze(ln: Line, text: str, spec: Spec, lang: str | None = None) -> Line:
 def _elision_notes(ln: Line, f, add, source: str = "spec") -> None:
     """Notes on the syllables the line's fit leaves out, so none goes unsaid; for
     English only where a spec holds the line, and not for a word whose short form
-    is its usual one (real)."""
+    is its usual one (real); a word the line says twice, once."""
+    said: set[str] = set()
     for i in sorted(f.elided):
         w = ln.words[i]
+        if w.norm in said:
+            continue
+        said.add(w.norm)
         if w.lang == "en" and (source != "spec" or w.drop_cost < 0):
             continue
         if w.lang == "hy" and w.drop == w.optional:
