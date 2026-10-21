@@ -652,9 +652,13 @@ def _request(
     want_ending = rule.ending_at(idx)
     if want_ending is None and partner_ending is not None:
         want_ending = min(partner_ending, 3)  # пустая asks тая: a feminine slot
-    elif want_ending is None and lr.tail is not None and not line_errors(lr):
-        want_ending = min(lr.tail.post, 3)  # a passing line keeps its own ending
+    elif want_ending is None and lr.tail is not None and not line_errors(lr) and var.written:
+        # a passing line keeps its own ending (not a translation: its source's is
+        # another language's, and only a kept endings rule carries it over)
+        want_ending = min(lr.tail.post, 3)
     meter_name = var.unit.meter if var.unit.meter_source == "spec" else None
+    if rule.ending_at(idx) is None and want_ending is not None and syllables:
+        want_ending = _ending_that_fits(meter_name, syllables, want_ending)
     feet = rule.feet_at(idx) if meter_name else None
     template = None
     if meter_name in meter.CLASSICAL:
@@ -717,6 +721,18 @@ def _request(
 def _breaks_rhyme(lr: LineReport) -> bool:
     """Whether the line is one its rhyme group leaves out (day among night, light)."""
     return any(i.code == "rhyme" for i in lr.issues)
+
+
+def _ending_that_fits(meter_name: str | None, length: int, ending: int) -> int:
+    """The ending a classical line of length can have nearest to ending: a seven-
+    syllable iamb ends unstressed, whatever its partner's masculine asks."""
+    if meter_name not in meter.CLASSICAL:
+        return ending
+    period, phase = meter.CLASSICAL[meter_name]
+    allowed = [length - 1 - b for b in range(phase, length, period)]
+    if not allowed or ending in allowed:
+        return ending
+    return min(allowed, key=lambda e: (abs(e - ending), e))
 
 
 def _rhyme_word_stays(lr: LineReport) -> bool:

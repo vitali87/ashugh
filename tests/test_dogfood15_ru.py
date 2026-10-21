@@ -192,3 +192,44 @@ def test_no_syllable_starts_with_a_hard_or_soft_sign(word, split):
 def test_suno_marks_no_stress_in_a_chain_of_short_words(line):
     out = sung(line + "\n")
     assert out.strip() == line
+
+
+def _consistent(r) -> bool:
+    if not r.template or r.ending is None:
+        return True
+    names = {"masculine": 0, "feminine": 1, "dactylic": 2, "hyperdactylic": 3}
+    return r.template.rstrip("x") == r.template[: len(r.template) - names[r.ending]]
+
+
+@pytest.mark.parametrize(
+    "text,lang",
+    [
+        ("Լույս է տալիս մեր հողին,\nՈր չի մարի գիշերին։\n", "hy"),
+        ("I walk along the river side\nAnd sing a song of love\n", "en"),
+    ],
+)
+def test_a_request_never_asks_an_ending_its_template_cannot_have(text, lang):
+    from ashugh.fit import requests_for
+
+    spec = from_dict({"language": lang, "syllables": 7, "meter": "iamb", "rhyme": "AA"})
+    for r in requests_for(text, spec):
+        assert _consistent(r), (r.template, r.ending)
+
+
+def test_a_translation_request_does_not_copy_the_source_ending():
+    from ashugh import translate
+
+    class Echo:
+        name = "echo"
+
+        def __init__(self):
+            self.calls = []
+
+        def propose(self, requests):
+            self.calls.append(list(requests))
+            return {r.id: [] for r in requests}
+
+    src = "Звезда моя, звезда\nНе спи, моя беда\n"
+    p = Echo()
+    translate.translate_song(src, "en", p, keep={"syllables", "rhyme"}, rounds=1)
+    assert all(r.ending is None for r in p.calls[0])
