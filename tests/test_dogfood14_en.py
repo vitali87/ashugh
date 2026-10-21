@@ -634,3 +634,21 @@ def test_cmudict_slips_are_corrected(word, size):
 
     w = en.analyze_word(word)
     assert w.size == size and w.readings[0].stress == 0
+
+
+@pytest.mark.parametrize(
+    "line,needle",
+    [
+        ("I walk alone (and cry", "parenthesis"),
+        ("I see the light) tonight", "parenthesis"),
+        ("*spoken* Hey you out there", "asterisks"),
+    ],
+)
+def test_unbalanced_brackets_and_stage_directions_are_warned(line, needle):
+    report = scan(line + "\n", Spec(language="en"))
+    assert any(needle in i.message for i in report.issues), report.issues
+
+
+def test_balanced_backing_vocals_are_not_warned():
+    report = scan("I walk alone (alone) tonight\n", Spec(language="en"))
+    assert not any("parenthes" in i.message or "asterisk" in i.message for i in report.issues)

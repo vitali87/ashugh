@@ -366,6 +366,7 @@ def check_line(
     return lr
 
 
+STAGE_RE = re.compile(r"\*[^*\n]+\*")  # *spoken*, *whispers*
 LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
 
 
@@ -543,7 +544,14 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     if roman:  # XXI դար, Пётр I: sung as letters, not as the number
         detail = f"{', '.join(roman)}: spell the number out"
         add(Issue(ln.number, "script", "warning", "a Roman numeral is sung as letters", detail))
-    if any(ch in "[]" for ch in lyrics.sub_asides(ln.text, lambda _: " ")):  # [Bridge] I walk
+    outside = lyrics.sub_asides(ln.text, lambda _: " ")
+    if "(" in outside or ")" in outside:  # I walk alone (and cry
+        detail = "a backing vocal goes in (…) closed on its line; these words are counted"
+        add(Issue(ln.number, "tag", "warning", "an unclosed parenthesis", detail))
+    if STAGE_RE.search(outside):  # *spoken*: Suno sings it
+        detail = "a direction goes in a tag such as [Spoken]; these words are counted"
+        add(Issue(ln.number, "tag", "warning", "a direction in asterisks", detail))
+    if any(ch in "[]" for ch in outside):  # [Bridge] I walk
         detail = "a tag such as [Chorus] goes on a line of its own; these words are counted"
         add(Issue(ln.number, "tag", "warning", "brackets in a sung line", detail))
     warned: set[str] = set()  # a word guessed twice in a line is named once
