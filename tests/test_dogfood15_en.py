@@ -58,3 +58,24 @@ def test_an_elongated_word_rhymes_as_its_word(a, b):
 
 def test_a_sound_with_a_triple_letter_stays_itself():
     assert words("Brrr")[0].size == 1
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "We danced until the midnight\nUnder the silver light\n",
+        "Sleep, little sparrow, goodnight\nStars on the water are bright\n",
+    ],
+)
+def test_a_secondary_stress_rhyme_takes_its_ending_from_that_stress(text):
+    from ashugh.translate import derive_spec
+
+    data = derive_spec(scan(text), {"rhyme", "endings"})
+    assert data["stanza"]["1"]["endings"] == "mm"
+    report = scan(text, from_dict({"language": "en", "endings": "mm", "rhyme": "AA"}))
+    assert report.ok, report.issues
+
+
+def test_a_primary_ending_still_counts():
+    report = scan("We danced until the midnight\n", from_dict({"language": "en", "endings": "f"}))
+    assert report.ok, report.issues

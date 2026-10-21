@@ -375,6 +375,22 @@ STAGE_RE = re.compile(r"\*[^*\n]+\*")  # *spoken*, *whispers*
 LAST_NUMBER_RE = re.compile(r"\d[^\w]*$")
 
 
+def later_endings(ln: Line, f: meter.Fit) -> set[int]:
+    """The endings an English line's rhyme word also has from a secondary stress
+    after its main one, where the rhyme may fall: midnight / light, sunshine /
+    mine, yesterday / cabaret end masculine on it."""
+    k = rhyme.anchor_word(ln, f)
+    if k is None or ln.words[k].lang != "en":
+        return set()
+    w, chosen = ln.words[k], f.stresses.get(k)
+    reading = next((r for r in w.readings if r.stress == chosen), None)
+    if reading is None or chosen is None:
+        return set()
+    return {
+        f.ending - (s - chosen) for s in reading.secondary if chosen < s and f.ending >= s - chosen
+    }
+
+
 def ends_in_number(text: str) -> bool:
     """Whether a line's last sung token is written in digits: born in '99."""
     return bool(LAST_NUMBER_RE.search(lyrics.sub_asides(text, lambda _: "").rstrip()))
@@ -698,6 +714,8 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
 
     want = rule.ending_at(ln.index)
+    if want is not None and want in later_endings(ln, f):
+        want = None  # mid-níght: the rhyme's later stress gives the ending asked
     if want is not None and f.ending != want and not (want == 3 and f.ending > 3):  # h: 3 or more
         detail = _quote(ln.words[-1].text) if ln.words else ""
         letter = rule.rhyme[ln.index % len(rule.rhyme)] if rule.rhyme and not rule.endings else ""

@@ -14,7 +14,7 @@ from . import lyrics
 from .fit import Change, FitResult, Unresolved, _variables, replace_lines, run
 from .lang import ANALYZERS
 from .proposers import Proposer
-from .scan import Issue, Report, UnitReport, scan
+from .scan import Issue, Report, UnitReport, later_endings, scan
 from .spec import Spec, from_dict
 
 KEEP = ("syllables", "meter", "rhyme", "endings")
@@ -82,7 +82,8 @@ def _ending(lr) -> str:
     last beat there); - for a line of digits alone."""
     if not lr.fit.count:
         return "-"
-    return ENDING_CODES.get(lr.fit.ending, "h")
+    later = later_endings(lr.line, lr.fit)  # goodnight / bright: the rhyme's ending
+    return ENDING_CODES.get(min(later) if later else lr.fit.ending, "h")
 
 
 def source_warnings(report: Report) -> list[str]:
