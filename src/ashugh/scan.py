@@ -579,6 +579,19 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
     for i, w in enumerate(ln.words):
         if w.lang == "xx":
             continue
+        if w.assumed and w.norm not in warned:  # Persephone as perse + phone
+            warned.add(w.norm)
+            detail = f"not in the dictionary, so sung {w.sung(f.stresses.get(i), mark=True)}"
+            add(
+                Issue(
+                    ln.number,
+                    "stress",
+                    "warning",
+                    f"{_quote(w.text)} read as {w.assumed}",
+                    detail + "; add it to [lexicon] if it is a name said otherwise",
+                    {"word": w.text, "parts": w.assumed.split(" + ")},
+                )
+            )
         if w.guessed and w.size == 1 and w.lang == "en":
             # Russian and Armenian count a word's syllables by its vowels; English
             # spelling does not (zorb, gnaw, Ngozi), so a guessed one is named too.

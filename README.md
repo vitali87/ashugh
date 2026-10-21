@@ -497,7 +497,9 @@ capitals (I AM THE ONE) or the dictionary has it as a word (NASA); a lowercase
 word is never read as its letters (ba is not B.A.). Other unknown words are
 counted from their spelling and stressed by the ending prior, and named in a
 warning, a one-syllable one too (zorb), since English spelling does not count
-syllables. A preposition that ends a line takes the stress (ships gone by /
+syllables. One the dictionary has as two words is read as them (lovestruck),
+and named in a warning when it is capitalized, since it may be a name
+(Persephone is not perse + phone). A preposition that ends a line takes the stress (ships gone by /
 sky). A word sung a syllable short rhymes as sung (real in one syllable /
 feel), and as written; a last word that may be sung short (fire, hour, poem)
 takes the ending a spec asks of it and rhymes either way (poem / home). An

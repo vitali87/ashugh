@@ -267,8 +267,7 @@ def lookup(norm: str) -> list[str] | None:
         return derived
     parts = _compound_parts(norm)
     if parts:  # lovestruck, facetime: two words, stressed on the first
-        left, right = ((TABLE.get(p) or "").split("|") for p in parts)
-        return [x + " " + right[0].replace("1", "2") for x in left]  # fire-light, fir'-light
+        return _compound_variants(parts)
     if norm.endswith("'s") and len(norm) > 3:  # bustle's, mornin's: the word, then its -s
         found = lookup(norm[:-2])
         if found:
@@ -570,9 +569,9 @@ def _archaic_ending(low: str) -> bool:
     return not TABLE.get(low)  # an old verb form the dictionary lacks: har-vest stays
 
 
-def _hiatus(low: str, groups: list[tuple[int, int]]) -> bool:
-    """Whether a vowel run holds two sung vowels: sci-ence, vi-o-lence."""
-    return any(h in low[a:b] for h in HIATUS for a, b in groups)
+def _hiatuses(low: str, groups: list[tuple[int, int]]) -> int:
+    """How many vowel runs hold two sung vowels: sci-ence, vi-o-lence."""
+    return sum(any(h in low[a:b] for h in HIATUS) for a, b in groups)
 
 
 def split_spelling(
@@ -624,8 +623,8 @@ def split_spelling(
         stem = next((TABLE.get(x) for x in stems if TABLE.get(x)), None)
         if stem is not None:
             revive = sum(ch.isdigit() for ch in stem.split("|")[0]) < n
-        else:
-            revive = not _hiatus(low, groups)
+        else:  # each hiatus holds one more (her-mi-o-ne has one and a final e)
+            revive = len(groups) + _hiatuses(low, groups) < n
         if revive:
             groups = _vowel_groups(low) or groups
     sung_ed = (
@@ -989,6 +988,12 @@ def _short_part_ok(low: str, k: int) -> bool:
     )
 
 
+def _compound_variants(parts: tuple[str, str]) -> list[str]:
+    """Two words read as one, stressed on the first: fire-light, fir'-light."""
+    left, right = ((TABLE.get(p) or "").split("|") for p in parts)
+    return [x + " " + right[0].replace("1", "2") for x in left]
+
+
 def _compound_parts(low: str) -> tuple[str, str] | None:
     """A word the dictionary lacks as two words it has, the most even split."""
     if not low.isalpha() or len(low) < 2 * MIN_COMPOUND_PART:
@@ -1121,6 +1126,10 @@ def analyze_word(
         variants = variants[1:]  # ba, the vocable, not B.A.; but tv has no word to read
     if variants and len(variants) > 1 and not token[:1].isupper():
         variants = [variants[0]] + [v for v in variants[1:] if not _name_reading(variants[0], v)]
+    # a capitalized word read as two the dictionary has may be a name: Persephone
+    named = token[:1].isupper() and variants and not user and not TABLE.get(norm)
+    pair = _compound_parts(norm) if named else None
+    assumed = " + ".join(pair) if pair and variants == _compound_variants(pair) else ""
     if norm in EXTRA and not user:
         variants = (variants or []) + [v for v in EXTRA[norm] if v not in (variants or [])]
     if user:
@@ -1131,6 +1140,7 @@ def analyze_word(
         voiced = [v for v in variants if v.split()[-1].rstrip("012") in VOWELS_ARPA]
         variants = voiced + [v for v in variants if v not in voiced]
     word = Word(token, norm, CODE, (), (), clitic=norm in CLITICS, weak=norm in WEAK)
+    word.assumed = assumed
     parts = norm.strip("-").split("-")
     whole_words = len(parts) > 1 and all(len(p) > 1 and p.isalpha() for p in parts)
     if (not variants or (whole_words and not user)) and "-" in norm.strip("-"):

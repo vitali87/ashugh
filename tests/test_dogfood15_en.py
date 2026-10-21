@@ -242,3 +242,45 @@ def test_a_partner_with_one_reading_is_asked_for_as_before():
     text = "My heart is broke in two\nI need a brand new tune\n"
     reqs = {r.id: r for r in requests_for(text, from_dict({"language": "en", "rhyme": "AA"}))}
     assert reqs["L2"].rhyme_with == ["two"] and reqs["L2"].ending == "masculine"
+
+
+def test_a_capitalized_word_read_as_two_dictionary_words_is_named():
+    text = "Persephone in the underworld\nAnd Eurydice\n"
+    report = scan(text, from_dict({"language": "en"}))
+    said = [i for i in report.issues if "read as" in i.message]
+    assert [i.message for i in said] == [
+        "«Persephone» read as perse + phone",
+        "«Eurydice» read as eury + dice",
+    ]
+    assert "lexicon" in said[0].detail and said[0].data["parts"] == ["perse", "phone"]
+
+
+def test_a_lowercase_compound_or_a_known_name_draws_no_such_warning():
+    text = "So lovestruck in the moonlight\nPenelope and Hermione\n"
+    report = scan(text, from_dict({"language": "en"}))
+    assert not [i for i in report.issues if "read as" in i.message]
+
+
+def test_a_lexicon_entry_silences_the_name_warning():
+    spec = from_dict({"language": "en", "lexicon": {"persephone": "P ER0 S EH1 F AH0 N IY0"}})
+    report = scan("Persephone in the underworld\n", spec)
+    assert not [i for i in report.issues if "read as" in i.message]
+    assert report.lines[0].line.words[0].size == 4
+
+
+@pytest.mark.parametrize(
+    "word,split",
+    [
+        ("hermione", "her-mi-o-ne"), ("calliope", "cal-li-o-pe"),
+        ("science", "sci-ence"), ("violence", "vi-o-lence"),
+    ],
+)  # fmt: skip
+def test_a_name_with_a_hiatus_and_a_sung_final_e_splits_at_both(word, split):
+    assert pieces(word) == split
+
+
+def test_a_dictionary_compound_at_a_line_start_draws_no_name_warning():
+    report = scan(
+        "Somewhere in the moonlight\nMoonlight on the barefoot\n", from_dict({"language": "en"})
+    )
+    assert not [i for i in report.issues if "read as" in i.message]

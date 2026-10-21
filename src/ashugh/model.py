@@ -53,6 +53,7 @@ class Word:
     optional_why: str = ""  # why the optional schwa may go, for the note
     notes: list[str] = field(default_factory=list)
     held: bool = False  # one held vowel (Ооо, աաա): a vocable, no rhyme word after a word
+    assumed: str = ""  # how a name the dictionary lacks was read: perse + phone
 
     @property
     def size(self) -> int:
