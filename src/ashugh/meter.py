@@ -79,14 +79,19 @@ def length(meter: str, feet: int, ending: int) -> int | None:
     return phase + period * (feet - 1) + 1 + ending
 
 
+MAX_FEET = 50  # a sung line has far fewer; more is a typo that would hang a fit
+
+
 def parse_meter(name: str) -> tuple[str, int | None]:
     """ "iamb4" -> ("iamb", 4); "trochee" -> ("trochee", None)."""
     text = name.strip().lower()
-    digits = "".join(ch for ch in text if ch.isdigit())
     base = text.rstrip("0123456789").strip()
+    digits = text[len(base) :].strip()
     base = ALIASES.get(base, base)
     if base not in METERS and base != "free":
         raise ValueError(f"unknown meter {name!r}; use one of {', '.join(METERS)}, free")
+    if digits and int(digits) > MAX_FEET:
+        raise ValueError(f"a meter has at most {MAX_FEET} feet, got {name!r}")
     return base, int(digits) if digits else None
 
 

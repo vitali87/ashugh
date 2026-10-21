@@ -106,8 +106,11 @@ def check_policy(policy: dict) -> None:
         entry = policy.get(lang, {})
         if not isinstance(entry, dict):
             raise ValueError(f'policy "{lang}" must be an object')
-        modes = [entry.get("default", fallback), *(entry.get("words") or {}).values()]
-        bad = [m for m in modes if m not in allowed]
+        words = entry.get("words") or {}
+        if not isinstance(words, dict):
+            raise ValueError(f'policy "{lang}" words must map words to modes')
+        modes = [entry.get("default", fallback), *words.values()]
+        bad = [m for m in modes if not isinstance(m, str) or m not in allowed]
         if bad:
             raise ValueError(f"{lang} policy modes must be {', '.join(allowed)}, not {bad[0]!r}")
 

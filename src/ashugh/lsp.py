@@ -54,7 +54,7 @@ def read_message(stream):
         name, _, value = line.decode("ascii", "replace").partition(":")
         if name.strip().lower() == "content-length":
             value = value.strip()
-            if not value.isdigit():
+            if not (value.isascii() and value.isdigit()) or len(value) > 9:  # under 1 GB
                 raise FramingError(f"bad Content-Length: {value!r}")
             length = int(value)
     body = stream.read(length)
@@ -291,7 +291,7 @@ def _read_waiting(stdin) -> list:
     while True:
         try:
             msg = read_message(stdin)
-        except ValueError, json.JSONDecodeError:  # FramingError too: read on
+        except ValueError, RecursionError:  # FramingError, bad JSON, [[[[...: read on
             continue
         out.append(msg)
         if msg is EOF_ or not _ready(stdin):
@@ -309,17 +309,23 @@ def _ready(stream) -> bool:
 
 
 def _superseded(msg, queue: list) -> bool:
-    """A didChange that a later didChange or didClose of the same document replaces:
-    with full sync only the last text counts, so fast typing costs one scan."""
+    """A didChange that a later didChange or didClose of the same document replaces
+    before any request reads it: with full sync only the last text counts, so fast
+    typing costs one scan, and a hover between two changes reads the first."""
     if not isinstance(msg, dict) or msg.get("method") != "textDocument/didChange":
         return False
     uri = _uri(msg)
-    return uri is not None and any(
-        isinstance(m, dict)
-        and m.get("method") in ("textDocument/didChange", "textDocument/didClose")
-        and _uri(m) == uri
-        for m in queue
-    )
+    if uri is None:
+        return False
+    for m in queue:
+        if not isinstance(m, dict):
+            continue
+        if "id" in m and "method" in m:  # a request answers from the text so far
+            return False
+        if m.get("method") in ("textDocument/didChange", "textDocument/didClose"):
+            if _uri(m) == uri:
+                return True
+    return False
 
 
 def _uri(msg: dict) -> str | None:

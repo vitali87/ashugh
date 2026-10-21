@@ -34,7 +34,7 @@ from pathlib import Path
 
 from . import lyrics
 from .lang import ANALYZERS, override_error
-from .meter import parse_meter
+from .meter import MAX_FEET, parse_meter
 from .rhyme import THRESHOLD
 
 RULE_KEYS = {
@@ -138,6 +138,9 @@ def mixed_case(s: str) -> bool:
     return any(c.isupper() for c in letters) and any(c.islower() for c in letters)
 
 
+MAX_COUNT = {"syllables": 200, "feet": MAX_FEET}  # more is a typo that would hang a fit
+
+
 def _int_list(name: str, value, where: str) -> tuple[int, ...]:
     """Counts of 1 or more; a 0 among them leaves that line free (a line of
     digits in a spec derived from its song), but not every line."""
@@ -145,6 +148,8 @@ def _int_list(name: str, value, where: str) -> tuple[int, ...]:
     if any(n < 0 for n in out) or not any(out):
         free = " (0 in a list leaves that line free)" if 0 in out else ""
         raise SpecError(f"{where}: {name} must be 1 or more{free}, got {value!r}")
+    if max(out) > MAX_COUNT[name]:
+        raise SpecError(f"{where}: {name} must be {MAX_COUNT[name]} or fewer, got {value!r}")
     return out
 
 
@@ -226,7 +231,7 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     if unknown:
         raise SpecError(f"{where}: unknown key(s) {', '.join(sorted(unknown))}")
     language = data.get("language")
-    if language is not None and language not in ANALYZERS:
+    if language is not None and (not isinstance(language, str) or language not in ANALYZERS):
         raise SpecError(f"{where}: language must be one of {', '.join(sorted(ANALYZERS))}")
     base = apply({k: v for k, v in data.items() if k in RULE_KEYS}, Rule(), where)
     sections = {}
@@ -245,7 +250,9 @@ def from_dict(data: dict, path: str | None = None) -> Spec:
     if not isinstance(raw_stanzas, dict):
         raise SpecError(f"{where}: [stanza.<number>] tables expected")
     for name, table in raw_stanzas.items():
-        if not str(name).isdigit() or int(name) < 1 or not isinstance(table, dict):
+        if not (str(name).isascii() and str(name).isdigit()) or int(name) < 1:
+            raise SpecError(f"{where}: stanza.{name} must be a table numbered from 1")
+        if not isinstance(table, dict):
             raise SpecError(f"{where}: stanza.{name} must be a table numbered from 1")
         stanzas[int(name)] = apply(table, base, f"{where} [stanza.{name}]")
         tables[int(name)] = table

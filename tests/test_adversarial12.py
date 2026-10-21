@@ -276,3 +276,106 @@ def test_pick_keeps_both_backing_vocals():
     proposer = StaticProposer({1: ["I walked along the riverside"]})
     res = fit_song(text, from_dict({"language": "en", "syllables": 8}), proposer, rounds=1)
     assert res.text == "I walked along the riverside (oh) (yeah)\n"
+
+
+ODD_VALUES = [["ru"], {"a": 1}, 1.5, True, None, "²", [], [[8]], {"verse": 5}, -1, 10**30]
+
+
+@pytest.mark.parametrize("value", ODD_VALUES)
+@pytest.mark.parametrize(
+    "key",
+    [
+        "language",
+        "syllables",
+        "tolerance",
+        "meter",
+        "feet",
+        "rhyme",
+        "endings",
+        "min_rhyme",
+        "forbid_final",
+        "section",
+        "stanza",
+        "lexicon",
+    ],
+)
+def test_a_spec_value_of_any_type_is_read_or_refused_by_name(key, value):
+    from ashugh.spec import SpecError
+
+    for data in ({key: value}, {"section": {"verse": {key: value}}}, {"stanza": {"²": {}}}):
+        try:
+            from_dict(data, "song.toml")
+        except SpecError as e:
+            assert "song.toml" in str(e)
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        {"hy": {"words": ["x"]}},
+        {"hy": {"words": "x"}},
+        {"ru": {"words": [1]}},
+        {"hy": {"default": ["latin"]}},
+        {"hy": {"words": {"x": ["latin"]}}},
+    ],
+)
+def test_a_malformed_policy_is_refused_with_a_message(policy):
+    with pytest.raises(ValueError, match="policy"):
+        suno.format_song("Իմ տունը\n", policy=policy)
+
+
+def test_mcp_survives_a_huge_integer():
+    from test_servers_robust import PING, mcp_run
+
+    big = '{"jsonrpc":"2.0","id":1,"method":"ping","params":{"x":' + "9" * 5000 + "}}"
+    replies = mcp_run(big, PING)
+    assert replies[0]["error"]["code"] == -32700 and replies[-1]["id"] == 99
+
+
+def test_lsp_survives_deep_nesting_and_a_huge_length():
+    from test_servers_robust import frame, lsp_run, msg
+
+    deep = b"[" * 100000 + b"]" * 100000
+    huge = b"Content-Length: 99999999999999999999\r\n\r\n{}"
+    stream = frame(deep) + huge + frame(msg(id=7, method="shutdown"))
+    assert [m.get("id") for m in lsp_run(stream)] == [7]
+
+
+def test_lsp_hover_reads_the_text_of_its_moment():
+    from test_servers_robust import frame, lsp_run, msg
+
+    def change(text: str) -> bytes:
+        params = {"textDocument": {"uri": "u"}, "contentChanges": [{"text": text}]}
+        return frame(msg(method="textDocument/didChange", params=params))
+
+    opened = {"textDocument": {"uri": "u", "text": "x"}}
+    hover = {"textDocument": {"uri": "u"}, "position": {"line": 0, "character": 0}}
+    stream = (
+        frame(msg(method="textDocument/didOpen", params=opened))
+        + change("I walk the way")
+        + frame(msg(id=1, method="textDocument/hover", params=hover))
+        + change("I walk the long and winding way")
+        + frame(msg(id=2, method="shutdown"))
+    )
+    (reply,) = [m for m in lsp_run(stream) if m.get("id") == 1]
+    assert reply["result"]["contents"]["value"].startswith("**4 syllables**")
+
+
+def test_lsp_names_a_spec_with_a_list_for_its_language(tmp_path):
+    from ashugh import lsp
+
+    song, spec = tmp_path / "song.txt", tmp_path / "song.toml"
+    spec.write_text('language = ["ru"]\n', encoding="utf-8")
+    server = lsp.Server()
+    open_ = {"textDocument": {"uri": song.as_uri(), "text": "Я жду\n"}}
+    (pub,) = server.handle({"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": open_})
+    (diag,) = pub["params"]["diagnostics"]
+    assert "language" in diag["message"] and diag["code"] == "spec"
+
+
+@pytest.mark.parametrize("name", ["iamb100000000", "iamb51"])
+def test_a_meter_of_absurd_length_is_refused(name):
+    from ashugh.spec import SpecError
+
+    with pytest.raises(SpecError, match="at most 50 feet"):
+        from_dict({"meter": name})

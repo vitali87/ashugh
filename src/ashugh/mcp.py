@@ -403,7 +403,7 @@ def serve(stdin=None, stdout=None) -> int:
             continue
         try:
             msg = json.loads(line.lstrip("\ufeff"))  # a BOM some clients send first
-        except json.JSONDecodeError, RecursionError:  # [[[[... a hundred thousand deep
+        except ValueError, RecursionError:  # [[[[... a hundred thousand deep, or 5,000 digits
             reply = _error(None, -32700, "parse error")
         else:
             try:
