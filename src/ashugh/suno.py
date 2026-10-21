@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import lang as languages
 from . import lyrics
 from .lang import hy, ru
 from .model import ACUTE, LICENCES, Word
@@ -140,6 +141,7 @@ def format_song(
         ru_words = {w: PROBE_STRESS[m] for w, m in (policy["ru"].get("words") or {}).items()}
 
     report = scan(text, spec or Spec(), lang=lang)
+    lexicon = (spec or Spec()).lexicon
     raw = lyrics.split_lines(text, keepends=True)
     notes: list[Note] = []
     by_meter = {lr.line.number for u in report.units if u.meter_source == "spec" for lr in u.lines}
@@ -161,7 +163,7 @@ def format_song(
         line_out = "".join(pieces)
         armenian_line = lr.line.lang == "hy" or any(hy.is_armenian(ch) for ch in line_out)
         if armenian_line and default_mode != "script":
-            line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, notes)
+            line_out = _armenian_asides(line_out, words_policy, default_mode, schwa, lexicon)
             line_out = _place_marks(line_out)
         line_out = _russian_asides(line_out, lr.line.number, notes)
         raw[lr.line.number - 1] = line_out + ending
@@ -171,7 +173,7 @@ def format_song(
             continue
         body, ending = _split_ending(line_raw)
         if default_mode != "script" and any(hy.is_armenian(ch) for ch in body):
-            body = _armenian_asides(body, words_policy, default_mode, schwa, notes)
+            body = _armenian_asides(body, words_policy, default_mode, schwa, lexicon)
         raw[k] = _russian_asides(body, k + 1, notes) + ending
     out = "".join(raw)
     if tags:
@@ -182,21 +184,28 @@ def format_song(
 ARMENIAN_STOPS = str.maketrans({"։": ".", "՝": ","})
 
 
-def _armenian_asides(line: str, policy: dict, mode: str, schwa: str, notes: list[Note]) -> str:
-    """The backing vocals in parentheses spelled like the rest of the line, and in
+def _armenian_asides(
+    line: str, policy: dict, mode: str, schwa: str, lexicon: dict[str, str]
+) -> str:
+    """The backing vocals in parentheses spelled like the rest of the line, read as a
+    line of their own (ո՞ւր ես is you are, not I) with the spec's lexicon, and in
     Latin letters the Armenian full stop and pause as . and ,."""
 
     def aside(m: re.Match) -> str:
         inner = m.group(0)
+        spans = lyrics.word_spans(inner)
+        words = languages.analyze("hy", [t for _, _, t in spans], lexicon, inner[1:-1])
+        if len(words) != len(spans):  # a token the analysis split or joined: word by word
+            words = [languages.analyze_word_as(t, lexicon) for _, _, t in spans]
         out, last = [], 0
-        for a, b, token in lyrics.word_spans(inner):
+        for (a, b, token), w in zip(spans, words):
             if not any(hy.is_armenian(ch) for ch in token):
                 continue
-            w = hy.analyze_word(token)
             how = policy.get(w.norm, mode)
-            out += [inner[last:a], _armenian(w, token, False, how, False, schwa, 0, [])]
+            aux = w.norm == "ես" and w.enclitic  # ո՞ւր ես: [es], not the pronoun
+            out += [inner[last:a], _armenian(w, token, False, how, False, schwa, 0, [], aux)]
             last = b
-        return _place_marks("".join(out) + inner[last:])
+        return _place_marks("".join(out) + inner[last:], aside=True)
 
     line = lyrics.PAREN_RE.sub(aside, line)
     if mode == "latin":
@@ -420,12 +429,15 @@ def _put_mark(syllable: str, mark: str, mode: str) -> str:
     return syllable
 
 
-def _place_marks(text: str) -> str:
-    """Each pending ? or ! at the end of its sentence: Úr es, úr? and Úr es? Yek."""
+def _place_marks(text: str, aside: bool = False) -> str:
+    """Each pending ? or ! at the end of its sentence: Úr es, úr? and Úr es? Yek. A
+    question outranks an exclamation before it (Ó, im ser, úr es?); a backing vocal
+    keeps its mark inside its parentheses, and a line ending on one puts its own
+    mark before it."""
     out, pending = [], ""
     for ch in text:
         if ch in PENDING:
-            pending = pending or PENDING[ch]
+            pending = "?" if PENDING[ch] == "?" else (pending or PENDING[ch])
             continue
         if pending and ch in ".?!":
             out.append(pending if ch == "." else ch)
@@ -436,7 +448,11 @@ def _place_marks(text: str) -> str:
     if pending:  # at the line's end: in place of a comma, inside a closing quote
         body = line.rstrip()
         end = line[len(body) :]
-        quote = body[len(body.rstrip("»”\"’'")) :]
+        if not aside and body.endswith(")") and "(" in body:
+            at = body.rindex("(")  # Úr es? (im ser): the backing vocal has its own
+            end, body = " " + body[at:] + end, body[:at].rstrip()
+        closing = "»”\"’')" if aside else "»”\"’'"
+        quote = body[len(body.rstrip(closing)) :]
         body = body[: len(body) - len(quote)].rstrip().rstrip(",;:").rstrip()
         line = body + pending + quote + end
     return line

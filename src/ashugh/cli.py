@@ -176,8 +176,9 @@ def cmd_syl(args: argparse.Namespace) -> int:
                 options = "/".join(w.sung(o, mark=True) for o in w.stress_options())
                 note = f"({options})"
             parts.append(sung + note)
-        fewest = f.count - max(len(r) for r in meter.realizations(ln.words)) + len(f.elided)
-        count = f"{fewest}-{f.count}" if fewest < f.count else str(f.count)  # նա ստացավ: 3-4
+        most = f.count + len(f.elided)  # every droppable syllable sung: Գի-շե-րըն, 5
+        fewest = most - max(len(r) for r in meter.realizations(ln.words))
+        count = f"{fewest}-{most}" if fewest < most else str(most)  # նա ստացավ: 3-4
         print(f"{count:>2}  {f.grid:14}  {' '.join(parts)}")
     return 0
 

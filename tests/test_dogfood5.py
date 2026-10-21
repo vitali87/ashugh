@@ -206,10 +206,11 @@ def syl_output(capsys, *argv: str) -> str:
 
 
 def test_syl_shows_a_dropped_syllable_as_the_count_has_it(capsys):
+    # the range a slot accepts, the dropped syllable shown as the iamb sings it
     out = syl_output(capsys, "--meter", "iamb", "And every sailor that I know")
-    assert out.split()[0] == "8" and "é-ve-ry" not in out and "éve-ry" in out
+    assert out.split()[0] == "8-9" and "é-ve-ry" not in out and "éve-ry" in out
     out = syl_output(capsys, "--lang", "hy", "Դու իմ սերն ես")
-    assert out.split()[0] == "4" and "սե́-ր(ը)ն" in out
+    assert out.split()[0] == "4-5" and "սե́-ր(ը)ն" in out
 
 
 def test_scan_shows_an_english_drop_too():

@@ -206,7 +206,10 @@ def _schwa() -> Seg:
     return Seg("ə", "ը", True, epenthetic=True)
 
 
-def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
+def _valid_coda(
+    cs: list[Seg], final: bool, possessive: bool = True, before: str | None = None
+) -> bool:
+    """Whether cs may close a syllable; before is the consonant that follows it, if any."""
     if len(cs) > (MAX_FINAL_CODA if final else MAX_CODA):
         return False
     if len(cs) == 3:
@@ -218,9 +221,13 @@ def _valid_coda(cs: list[Seg], final: bool, possessive: bool = True) -> bool:
         a, b = cs[0].ph, cs[1].ph
         if final and (a, b) in FINAL_SPLIT:
             return False
+        if before is not None and (a.replace("ɾ", "r"), b) == ("r", "n") and before != "tsʰ":
+            return False  # ա-ռըն-չել, ձեռ-նը-տու: no ռն or րն before a consonant (but լեռն-ցի)
         if sonority(a) < sonority(b) and not (final and not possessive and b == "s"):
-            if not (final and b == "m" and features(a).manner == "fric"):
-                return False  # a stem may end in a stop and ս (մաքս), a fricative and մ (կողմ)
+            fric_m = b == "m" and features(a).manner == "fric"
+            if not (fric_m and (final or before == "n")):
+                return False  # a stem may end in a stop and ս (մաքս), a fricative and մ
+                # (կողմ), which stays before ն too (կողմ-նա-կի)
         if final and possessive and _possessive(a, b):
             return False
     return True
@@ -331,7 +338,9 @@ def _parse_cluster(cs: list[Seg], has_prev: bool, has_next: bool, possessive: bo
         for coda_len in coda_lens:
             coda = inner[:coda_len]
             final = not has_next
-            if has_prev and not _valid_coda(coda, final, possessive=possessive):
+            after = (inner[coda_len:] + onset)[:1]
+            before = after[0].ph if after else None
+            if has_prev and not _valid_coda(coda, final, possessive, before):
                 continue
             middle = inner[coda_len:]
             for run in _schwa_runs(middle, not has_next, possessive=possessive):
@@ -358,6 +367,10 @@ def _negative_prefix(segs: list[Seg], cluster: list[Seg]) -> bool:
     )
 
 
+def _schwa_after(first: str, stop: str) -> bool:
+    return (first == "ʃ" and stop.endswith("ʰ")) or (first == "z" and stop in ("p", "t", "k"))
+
+
 def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
     vowels = [i for i, s in enumerate(segs) if s.vowel]
     if not vowels:
@@ -366,8 +379,14 @@ def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
 
     syllables: list[list[Seg]] = []
     lead = segs[: vowels[0]]
-    # Prothesis: ս/զ/շ + stop at the start of the word.
-    while len(lead) >= 2 and lead[0].ph in PROTHESIS_FIRST and is_stop(lead[1].ph):
+    # Prothesis: ս/զ/շ + stop at the start of the word; but շ before an aspirate and զ
+    # before a voiceless stop take the schwa after them (շը-քեղ, զը-տել).
+    while (
+        len(lead) >= 2
+        and lead[0].ph in PROTHESIS_FIRST
+        and is_stop(lead[1].ph)
+        and not _schwa_after(lead[0].ph, lead[1].ph)
+    ):
         syllables.append([_schwa(), lead[0]])
         lead = lead[1:]
     parsed = _parse_cluster(lead, has_prev=False, has_next=True)
@@ -473,17 +492,32 @@ def _from_override(spec: str) -> list[list[Seg]]:
 # Words that open a clause, so a ես after them is the pronoun: ու ես, որ ես.
 CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե երբ եթե քանի մինչ ապա հետո էլ".split())
 FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
+# 1st person aorists that do not end in -ցի: տեսա, եկա (I saw, I came).
+FIRST_AORISTS = set(
+    "տեսա եկա եղա դարձա մեռա կորա հասա մտա ելա կերա տարա առա գտա դրի թողի բերի տվի".split()
+)
+# Words that end like a verb of I but are none: անգամ (time), դեմ (against), կամ (or).
+NOT_VERBS = {"անգամ", "դեմ", "կամ", "համ"}
+
+
+def _verb_of_i(norm: str) -> bool:
+    if norm in NOT_VERBS:
+        return False
+    return norm in FIRST_PERSON or norm in FIRST_AORISTS or norm.endswith(("եմ", "ամ", "ցի"))
 
 
 def auxiliary_es(norms: list[str], i: int, clause_end: list[bool]) -> bool:
     """Whether the ես at i is the auxiliary (you are, [es]) leaning on the word
     before it, not the pronoun I ([jes]). The pronoun opens its clause (Ես եմ,
-    ու ես, ..., ես) or comes with a verb of I (հիմա ես գիտեմ); the auxiliary
-    follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես)."""
+    ու ես, ..., ես), follows an auxiliary of I (սիրում եմ ես, ով եմ ես) or comes
+    with a verb of I (հիմա ես գիտեմ, քեզ ես սիրեցի, երեկ ես տեսա); the auxiliary
+    follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես, գեղեցիկ ես ամեն անգամ)."""
     if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS:
         return False
+    if norms[i - 1] in FIRST_PERSON:
+        return False  # two auxiliaries never meet: the second is the pronoun
     for k in range(i + 1, len(norms)):
-        if norms[k] in FIRST_PERSON or norms[k].endswith(("եմ", "ամ")):
+        if _verb_of_i(norms[k]):
             return False
         if clause_end[k]:
             break
@@ -503,6 +537,57 @@ def read_es(word: Word, auxiliary: bool) -> None:
         )
 
 
+# Endings of a finite verb, a participle or an infinitive, after the negative չ- or
+# the future կ-: չգնաս, կգնամ, չգցել.
+VERB_ENDINGS = tuple(
+    sorted(
+        "ել ալ եմ ես ենք եք են ամ աս անք աք ան ի իր ինք իք ին եի եիր եր եինք եիք եին ա "
+        "ացի եցի ում ած այի այիր ար այինք այիք ային".split(),
+        key=len,
+        reverse=True,
+    )
+)
+NOT_PREFIXED = ("չնչին", "կծծի")  # roots that only look like չ- or կ- and a verb
+
+
+def _stem_schwas(norm: str, segs: list[Seg]) -> list[int]:
+    """Where a word keeps schwas its sounds alone would not give it: after the
+    negative չ- or the future կ- before a stem that opens on two consonants
+    (չը-գը-նամ, կը-գը-նամ, as գը-նալ), and in a reduplicated root (բըլ-բը-լալ)."""
+    if len(segs) < 5 or any(s.vowel for s in segs[:4]):
+        return [] if len(segs) < 4 or any(s.vowel for s in segs[:3]) else _prefixed(norm, segs)
+    same = [s.ph.replace("ɾ", "r") for s in segs[:4]]  # թրթռ- repeats with ր and ռ
+    if same[0] == same[2] and same[1] == same[3]:
+        return [1, 3]
+    return []
+
+
+def _prefixed(norm: str, segs: list[Seg]) -> list[int]:
+    if not segs[3].vowel or norm.startswith(NOT_PREFIXED):
+        return []
+    if segs[1].ph in PROTHESIS_FIRST and is_stop(segs[2].ph):
+        return []  # չ- before ըս-պա-սել: the prothesis stays
+    stem = norm[1:]
+    ending = next((e for e in VERB_ENDINGS if stem.endswith(e) and len(stem) > len(e) + 1), None)
+    if ending is None:
+        return []
+    if norm[0] == "չ":
+        return [1, 2]
+    # The future is կ- and a subjunctive whose ending matches its verb's conjugation:
+    # կգնամ, կգնա of գնալ, կքնեմ, կքնի of քնել; not a root like կթխա or կշռել.
+    base = stem[: -len(ending)]
+    for infinitive, endings in FUTURE_ENDINGS:
+        if ending in endings and base + infinitive in cluster_roots():
+            return [1, 2]
+    return []
+
+
+FUTURE_ENDINGS = (
+    ("ալ", set("ամ աս ա անք աք ան այի այիր ար այինք այիք ային".split())),
+    ("ել", set("եմ ես ի ենք եք են եի եիր եր եինք եիք եին".split())),
+)
+
+
 def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
     norm = normalize(token)
     override = (overrides or {}).get(norm)
@@ -512,6 +597,8 @@ def analyze_word(token: str, overrides: dict[str, str] | None = None) -> Word:
         source = "user"
     else:
         segs = segments(token)
+        for i in reversed(_stem_schwas(norm, segs)):
+            segs.insert(i, _schwa())
         inserted = []
         for i in compound_points(norm):
             inserted.append(_schwa())

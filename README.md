@@ -293,10 +293,10 @@ a regression test, not as an independent measurement.
 **Armenian against Wiktionary** (`uv run eval/wikipron.py`): on 1,768
 words of Wiktionary's Eastern Armenian pronunciations that ashugh's word
 lists were built without, its sung syllables match Wiktionary's vowels for
-93.3% of words (92.9% of those written with a schwa). Most of the rest are
+93.4% of words (93.5% of those written with a schwa). Most of the rest are
 conventions rather than errors: Wiktionary leaves out the schwa of many
 loanwords and names (բրիգադ, ֆլեշմոբ) and reads ի before a vowel as a
-glide (դանիացի). The real misses, 14 words (0.8%), have a schwa inside that
+glide (դանիացի). The real misses, 12 words (0.7%), have a schwa inside that
 the two readings disagree on: mostly compounds no listed word explains
 (ծո-վա-գը-նաց), and some clusters where ashugh sings a schwa Wiktionary does
 not write (ա-բըստ-րա-հել).
@@ -314,7 +314,9 @@ consonant cluster is split into a coda, an onset and as few schwa syllables
 as possible:
 
 - a word-initial ս, զ or շ before a stop takes a schwa in front of it:
-  ըս-պա-սել, ըզ-գեստ, and ըս-կը-սել when the cluster goes on;
+  ըս-պա-սել, ըզ-գեստ, and ըս-կը-սել when the cluster goes on; but շ before
+  an aspirate and զ before a voiceless stop take it after them (շը-քեղ,
+  շը-փոթ, զը-տել);
 - an onset is one consonant, or a consonant plus յ (կյանք, -թյուն);
 - a coda is at most two consonants that do not rise in sonority (սիրտ,
   միտք), so տետր is տե-տըր and աստղ is աս-տըղ, though a word may end on a
@@ -322,13 +324,19 @@ as possible:
   (պարտք, կուրծք, Մինսկ, and տեքստ with ս between stops); a schwa syllable
   closes on two consonants only when the second is a stop (մը-կըրտ-չյան,
   հընդ-կաս-տան), so զրնգալ is զը-րըն-գալ and բժշկել is բը-ժըշ-կել;
-- a word does not end in մն or ռն: ու-րե-մըն, սա-ռըն;
+- a word does not end in մն or ռն: ու-րե-մըն, սա-ռըն; nor does a syllable
+  close on ռն or րն before another consonant (ա-ռըն-չել, ձեռ-նը-տու), while
+  a fricative and մ stay a coda before ն (կողմ-նա-կի, բեղմ-նա-վոր);
 - a final ս or դ after a consonant other than յ is the possessive and takes
   a schwa (սիր-տըս, գը-լու-խըդ, սե-րըս, սե-րըդ, տու-նըդ), except where the
   stem ends that way: 296 stems listed from Wiktionary's dictionary forms
   (չորս, մարդ, ադամանդ, մաքս), compounds joined by ա or ե that end in one
   (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
-- the negative prefix ան- keeps its stem's schwa (ան-շը-տապ);
+- the negative prefix ան- keeps its stem's schwa (ան-շը-տապ), and so do
+  the negative չ- and the future կ- before a verb (չը-գը-նամ, կը-գը-նամ, as
+  գը-նալ); the future only where its ending fits a listed verb, so the roots
+  կղզի and կրկին stay as they are;
+- a reduplicated root keeps both schwas (բըլ-բը-լալ, կըլ-կը-լալ, թըր-թը-ռում);
 - the article -ն after ր, լ or ն may be sung with a schwa or without it
   (սե-րըն or սերն): a line may count either; after two consonants the
   schwa stays (կյան-քըն) unless a vowel follows (կյանքն է, կյանք-նէ);
@@ -345,8 +353,9 @@ In connected speech, a vowel before a word swallows its leading ը (նա
 The check uses whichever length fits the slot. Stress falls on the last full
 vowel, or where a ՛ ՜ ՞ mark puts it. The auxiliary եմ/ես/է… is an unstressed
 enclitic that rhymes with the word before it. ես is the pronoun I [jes]
-instead where it opens its clause (Ես եմ, ու ես) or its clause has a verb of
-I (հիմա ես գիտեմ), and the auxiliary [es] otherwise (ինչու ես լռում). A hyphenated reduplication
+instead where it opens its clause (Ես եմ, ու ես), follows an auxiliary of I
+(սիրում եմ ես) or its clause has a verb of I (հիմա ես գիտեմ, քեզ ես սիրեցի),
+and the auxiliary [es] otherwise (ինչու ես լռում, գեղեցիկ ես ամեն անգամ). A hyphenated reduplication
 (փափուկ-փափուկ, тихо-тихо) is one stressed word per part, and any other
 hyphenated word the dictionary lacks keeps each part's stress as a secondary
 one the meter may use, the last part carrying the main stress and the rhyme
