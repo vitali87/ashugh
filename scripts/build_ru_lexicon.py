@@ -360,7 +360,8 @@ def ranked_with_rows(
                 first = _first_person(header, row) if infinitive else ""
                 for variant, column in forms:
                     form = variant.strip().lower().replace("\u0301", "'").replace("*", "")
-                    verb = column.startswith(VERB_COLUMNS)
+                    # a verb's own headword (вести́, пасти́) is a verb form too
+                    verb = column.startswith(VERB_COLUMNS) or verb_row and column == "accented"
                     norm = infinitive and feminine_like_base(infinitive, form, bases, first)
                     if norm:  # позвала́ before позва́ла
                         bare, positions, _ = stress_positions(norm)

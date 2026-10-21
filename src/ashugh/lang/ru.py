@@ -238,6 +238,23 @@ CORE: dict[str, tuple[str, tuple[int, ...]]] = {
     # verbs), стре́лки (not стрелки́, shooters), мир по́лон, по провода́м, стра́стной.
     **{f: (f, (0, 1)) for f in "полке пору лета рода морю солью стрелки полон страстной".split()},
     "проводам": ("проводам", (2, 0)),
+    # Second readings no one says, which the table keeps from rare words: вто́рой,
+    # во́лна (wool), голу́бой, смо́гу.
+    **{f: (f, (1,)) for f in "второй волна волне волну волной смогу".split()},
+    "голубой": ("голубой", (2,)),
+    # Forms the table lacks: цветки́ (the plural of цветок beside цветы), встать с коле́н,
+    # сбросить око́в, в полно́чный час.
+    **{
+        f: (f, (1,))
+        for f in (
+            "цветки цветкам цветками цветках колен оков полночный полночная полночное "
+            "полночные полночного полночной полночному полночным полночную полночных "
+            "полночными полночном полночною"
+        ).split()
+    },
+    # Parts of foreign place names: Лос-А́нджелес, Сан-Франци́ско, Улан-Удэ́, Рио-де-Жане́йро.
+    **{f: (f, (0,)) for f in "анджелес анджелеса анджелесе анджелесу анджелесом рио".split()},
+    **{f: (f, (1,)) for f in "франциско удэ жанейро".split()},
     # Slang and loanwords of songs the dictionary lacks.
     **{
         f: (f, (k,))
@@ -388,11 +405,11 @@ PREPOSITION_SHIFT = {
     "на": set(
         """берег воду гору день ночь зиму лето год два три дом ногу ноги руку руки
         голову спину бок пол нос плечи поле небо море мель смех слух спор сторону
-        душу борт ветер""".split()
+        душу борт ветер реку""".split()
     ),
     "за": set(
         """руку руки ногу ноги голову волосы бок борт город год день ночь зиму лето
-        душу уши плечи спину нос полночь морем""".split()
+        душу уши плечи спину нос полночь морем реку""".split()
     ),
     "по": set("лесу полю морю небу миру снегу лугу полу двое трое сердцу плечу уху".split()),
     "из": set("лесу дому виду носу".split()),
@@ -415,6 +432,12 @@ LOCATIVE_ONLY_AFTER = {
     "виду": {"на"},
     "суку": {"на"},
     "лету": {"на"},  # на лету́, but к ле́ту
+    "долгу": {"в", "во"},  # в долгу́, but к до́лгу
+    "цеху": {"в", "во"},
+    "весу": {"на"},
+    "слуху": {"на"},
+    "скаку": {"на"},
+    "юру": {"на"},
 }
 # -ого / -его is said -ово / -ево, except in these words.
 NOT_OGO = {
@@ -1118,6 +1141,7 @@ LETTER_NAMES = dict(
 # сэ-шэ-а́, ЦСКА цэ-эс-ка́.
 SPOKEN_ABBREVIATIONS = {"сша": ("сэ", "шэ", "а"), "цска": ("цэ", "эс", "ка")}
 # Words with no vowel letter that are sounds, not letters: ХМ, ТСС, БРР.
+HUM_RE = re.compile(r"(?i)^[хг]?мм+$|^[хг]м$")
 INTERJECTIONS = set("хм хмм гм мм ммм тс тсс брр бррр шш шшш пс пст псс кх кхм".split())
 
 
@@ -1209,7 +1233,9 @@ def _hyphenated(norm: str) -> list[Reading]:
     offsets = [vowel_count("".join(parts[:k])) for k in range(len(parts))]
     stresses = []
     spellings = []
+    guessed: list[dict[int, float]] = []  # a guessed part's stresses and their costs
     for part in parts:
+        guessed.append({})
         if part in PARTICLES or not vowel_count(part):
             stresses.append([])
             spellings.append(part)
@@ -1217,6 +1243,8 @@ def _hyphenated(norm: str) -> list[Reading]:
             readings = analyze_word(part).readings
             stresses.append([r.stress for r in readings if r.stress is not None])
             spellings.append(readings[0].spelling if readings else part)  # моё, not мое
+            if readings and all(r.source == "guess" for r in readings):
+                guessed[-1] = {r.stress: r.penalty for r in readings if r.stress is not None}
     stressed = [k for k, options in enumerate(stresses) if options]
     if not stressed:
         return []
@@ -1232,8 +1260,19 @@ def _hyphenated(norm: str) -> list[Reading]:
     readings = []
     for p in dict.fromkeys(stresses[last]):
         at = offsets[last] + p
-        readings.append(Reading(at, transcribe(spelling, at), spelling, "lexicon", secondary))
+        # Лос-А́нджелес: the compound is a guess as its part is, with its "stress unknown"
+        source, cost = ("guess", guessed[last][p]) if guessed[last] else ("lexicon", 0.0)
+        readings.append(Reading(at, transcribe(spelling, at), spelling, source, secondary, cost))
     return readings
+
+
+def _user_value(overrides: dict[str, str], norm: str) -> str | None:
+    """The [lexicon] entry for a word: under its spelling, or the other's of е and ё
+    (a key передохнём for the text's передохнем, a key все for всё)."""
+    found = overrides.get(norm) or overrides.get(norm.replace("ё", "е"))
+    if found or "е" not in norm:
+        return found
+    return next((v for k, v in overrides.items() if "ё" in k and k.replace("ё", "е") == norm), None)
 
 
 def _user_readings(value: str) -> list[Reading]:
@@ -1302,6 +1341,16 @@ def analyze_word(
         spelled = abbreviation(token, capitals)
         if spelled is not None:
             return spelled
+    if HUM_RE.match(token):  # Ммм, хм: one held note, as English counts mm
+        return Word(
+            text=token,
+            norm=token.lower(),
+            lang=CODE,
+            syllables=(Syllable(token),),
+            readings=(Reading(0, ("m",), token.lower(), "rule"),),
+            weak=True,
+            held=True,
+        )
     if lyrics.held_note(token, VOWELS):
         v = token[0].lower()
         return Word(
@@ -1337,7 +1386,7 @@ def analyze_word(
         clitic=clitic,
         enclitic=norm in ENCLITICS,
     )
-    user = (overrides or {}).get(norm) or (overrides or {}).get(norm.replace("ё", "е"))
+    user = _user_value(overrides or {}, norm)
     readings: list[Reading] = []
     if marked is not None and not user and _yo_only_mark(token) and n > 1:
         # чёрно-бе́лый, трёхэта́жный: a written ё marks the stress unless the dictionary

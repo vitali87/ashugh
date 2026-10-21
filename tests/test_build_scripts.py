@@ -262,3 +262,19 @@ def test_stresses_are_ranked_by_how_usual_their_form_is(tmp_path):
     assert [p for p, _ in marked["глаза"]] == [2, 1], "the plural before the genitive"
     assert ru_build.encode(marked["полю"]) == "2v1", "the verb's stress is marked"
     assert ru_build.encode(marked["глаза"]) == "2p1", "the plural's stress is marked"
+
+
+def test_an_infinitive_is_a_verb_form_no_preposition_takes(tmp_path):
+    header = ["bare", "accented", "aspect", "past_m", "presfut_sg1"]
+    rows = [["вести", "вести'", "imperfective", "вёл", "веду'"]]
+    (tmp_path / "verbs.csv").write_text(
+        "\n".join("\t".join(r) for r in [header, *rows]) + "\n", encoding="utf-8"
+    )
+    (tmp_path / "nouns.csv").write_text(
+        "bare\taccented\tsg_nom\tsg_gen\nвесть\tве'сть\tве'сть\tве'сти\n", encoding="utf-8"
+    )
+    for name in ("adjectives.csv", "others.csv"):
+        (tmp_path / name).write_text("bare\taccented\n", encoding="utf-8")
+    table = ru_build.ranked(tmp_path)
+    assert (2, "v") in table["вести"], "вести́, the infinitive: no reading after без"
+    assert (1, "") in table["вести"], "ве́сти, of весть"

@@ -180,11 +180,16 @@ VERB_PREFIXES = sorted(
 )
 
 
-def _mobile(infinitive: str) -> bool:
-    if infinitive in MOBILE_ROOTS:
+# Roots of -сти, -зти and -чь verbs with no object, so no passive: врасти, вползти, вытечь;
+# not брести or лечь, which обрести and облечь would match.
+INTRANSITIVE_ROOTS = {"расти", "ползти", "цвести", "лезти", "течь", "мочь"}
+
+
+def _mobile(infinitive: str, roots: set[str] = MOBILE_ROOTS) -> bool:
+    if infinitive in roots:
         return True
     return any(
-        infinitive.startswith(p) and _mobile(infinitive[len(p) :])
+        infinitive.startswith(p) and _mobile(infinitive[len(p) :], roots)
         for p in VERB_PREFIXES
         if len(infinitive) > len(p)
     )
@@ -192,8 +197,9 @@ def _mobile(infinitive: str) -> bool:
 
 def past_passive(infinitive: str, past_m: str, sg1: str, sg2: str) -> list[str]:
     """The past passive participle, full and short: напи́санный, напи́сан; бро́шенный;
-    решённый, решена́; сби́тый, сби́ты. Verbs of their own pattern (взять, при́нятый;
-    отдать, отдана́), reflexive verbs and -сти, -чь and -ереть verbs give none."""
+    решённый, решена́; сби́тый, сби́ты; спасённый, привлечённый, вы́несенный. Verbs
+    of their own pattern (взять, при́нятый; отдать, отдана́; остричь, остри́женный),
+    reflexive verbs, -сть and -ереть verbs give none."""
     inf, at = stress(_first(infinitive))
     if not inf or inf.endswith(("ся", "сь")) or _mobile(inf):
         return []
@@ -237,6 +243,16 @@ def past_passive(infinitive: str, past_m: str, sg1: str, sg2: str) -> list[str]:
         # обману́ть, обма́нутый; распахну́ть, распа́хнутый: the stress steps back
         place = at - 1 if inf.endswith("уть") and at == size and size > 1 else at
         return adjective(render(stem + "тый", place)) + _short(stem + "т", place)
+    if inf.endswith(("сти", "зти", "чь")) and not _mobile(inf, INTRANSITIVE_ROOTS | {"стричь"}):
+        stem, at1 = stress(_first(sg1))
+        if not stem.endswith(("у", "ю")) or at1 is None:
+            return []
+        stem = stem[:-1]
+        if inf.endswith("чь"):  # привлеку́, привлечённый; сберегу́, сбережённый
+            stem = stem[:-1] + {"к": "ч", "г": "ж"}.get(stem[-1], stem[-1])
+        if at1 == count(stem) + 1:  # спасу́: спасённый, спасён, спасена́
+            return adjective(render(stem + "ённый", at1)) + _short(stem, 0, end_stressed=True)
+        return adjective(render(stem + "енный", at1)) + _short(stem + "ен", at1)  # вы́несу
     return []
 
 
