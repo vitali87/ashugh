@@ -124,3 +124,11 @@ def test_an_ed_ending_is_no_second_word(word, sung):
 def test_a_guessed_word_is_warned_about_once_per_line():
     rep = scan("Кто создан из камня, кто создан из глины\n", from_dict({"language": "ru"}))
     assert len([i for i in rep.issues if i.code == "stress"]) == 1
+
+
+def test_a_final_secondary_may_take_the_last_beat_of_an_english_anapest():
+    text = (
+        "And the sheen of their spears was like stars on the sea,\n"
+        "When the blue wave rolls nightly on deep Galilee.\n"
+    )
+    assert errors(text, language="en", meter="anapest4", rhyme="AA") == []

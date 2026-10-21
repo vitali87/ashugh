@@ -424,7 +424,8 @@ to its second part (sometíme, but not prógram or áthlete), a late stress may 
 one when a stressed word follows (Ténnessee whiskey, but not a line that ends
 on Tennessee), and the last beat may fall on a final syllable
 two after the stress (témperàte), which can then carry the rhyme
-(memory / free).
+(memory / free), or in a ternary meter on a final secondary stress, the main
+one yielding to the beat before it (on deep Gal-i-lée).
 
 Detection compares iamb, trochee, dactyl, amphibrach, anapest and dolnik,
 and falls back to free verse.

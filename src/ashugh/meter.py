@@ -430,19 +430,72 @@ def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> 
     if anchor is None:
         return None
     a = ss[anchor]
-    last = a.start + (choice[a.word] or 0)
+    st = choice[a.word]
+    last = a.start + (st or 0)
+    best = _loose_beats(kind, count, last, period, phase, feet)
+    promoted = False
+    final = a.size - 1
+    if (
+        a.lang == "en"
+        and st is not None
+        and anchor == len(ss) - 1
+        and final in a.secondary
+        and final - st >= 2
+    ):
+        # deep Gal-i-lée: the last beat on a final secondary, the main stress yielding
+        yielded = list(kind)
+        yielded[a.start + st] = "W"
+        alt = _loose_beats(yielded, count, a.start + final, period, phase, feet)
+        if alt is not None:
+            alt = (alt[0] + PROMOTION, *alt[1:])
+            if best is None or _loose_key(alt, feet) < _loose_key(best, feet):
+                best, promoted, last, kind = alt, True, a.start + final, yielded
+    if best is None:
+        return None
+    cost, n, beats = best
+    off_words = [
+        s.word
+        for s in ss
+        if s.size > 1
+        and choice[s.word] is not None
+        and not beats[s.start + choice[s.word]]
+        and not (s.weak or s.clitic)
+        and not (promoted and s is a)
+    ]
+    tail = sum(_off(kind[t]) for t in range(last + 1, count))
+    return Fit(
+        meter=meter,
+        cost=round(cost + tail + sum(s.penalty(choice[s.word]) for s in ss), 3),
+        feet=n,
+        count=count,
+        elided=elided,
+        stresses=_own(choice, words, elided, ss),
+        beats=tuple(beats),
+        stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
+        off_beat=off_words,
+        promoted=promoted,
+    )
+
+
+def _off(kind: str) -> float:
+    return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind, 0.0)
+
+
+def _loose_key(fit: tuple[float, int, list[bool]], feet: int | None) -> tuple:
+    return (feet is not None and fit[1] != feet, fit[0])
+
+
+def _loose_beats(kind, count, last, period, phase, feet) -> tuple[float, int, list[bool]] | None:
+    """The cheapest beats ending on last: (cost, number of beats, beat per syllable)."""
 
     def on(i: int) -> float:
         return {"u": PYRRHIC[period], "c": CLITIC_ON_BEAT}.get(kind[i], 0.0)
-
-    def off(i: int) -> float:
-        return {"S": STRESS_OFF_BEAT, "W": WEAK_WORD_OFF_BEAT, "m": MONO_OFF_BEAT}.get(kind[i], 0.0)
 
     # dp[i][(n, subs)]: cheapest beats ending on i, with n beats and subs short feet inside
     dp: list[dict[tuple[int, int], tuple[float, int]]] = [{} for _ in range(count)]
     for i, extra in ((phase, 0.0), (phase - 1, SUBSTITUTION)):
         if 0 <= i <= last:
-            dp[i][(1, 0)] = (on(i) + extra + sum(off(j) for j in range(i)), -1)
+            dp[i][(1, 0)] = (on(i) + extra + sum(_off(kind[j]) for j in range(i)), -1)
     for i in range(1, last + 1):
         for gap, extra in ((period, 0.0), (period - 1, SUBSTITUTION)):
             j = i - gap
@@ -452,7 +505,7 @@ def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> 
                 subs2 = subs + (gap < period)
                 if subs2 > MAX_INNER_SUBSTITUTIONS:
                     continue
-                c = c0 + extra + on(i) + sum(off(t) for t in range(j + 1, i))
+                c = c0 + extra + on(i) + sum(_off(kind[t]) for t in range(j + 1, i))
                 k = (n + 1, subs2)
                 if k not in dp[i] or c < dp[i][k][0]:
                     dp[i][k] = (c, j)
@@ -460,7 +513,6 @@ def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> 
     if not ends:
         return None
     key = min(ends, key=lambda k: (feet is not None and k[0] != feet, ends[k][0]))
-    cost = ends[key][0]
     beats = [False] * count
     i, state = last, key
     while i >= 0:
@@ -468,26 +520,7 @@ def _loose_one(words, ss, choice, count, elided, meter, period, phase, feet) -> 
         j = dp[i][state][1]
         state = (state[0] - 1, state[1] - (j >= 0 and i - j < period))
         i = j
-    off_words = [
-        s.word
-        for s in ss
-        if s.size > 1
-        and choice[s.word] is not None
-        and not beats[s.start + choice[s.word]]
-        and not (s.weak or s.clitic)
-    ]
-    tail = sum(off(t) for t in range(last + 1, count))
-    return Fit(
-        meter=meter,
-        cost=round(cost + tail + sum(s.penalty(choice[s.word]) for s in ss), 3),
-        feet=key[0],
-        count=count,
-        elided=elided,
-        stresses=_own(choice, words, elided, ss),
-        beats=tuple(beats),
-        stressed=_stressed_grid(ss, choice, lambda p: beats[p], count),
-        off_beat=off_words,
-    )
+    return ends[key][0], key[0], beats
 
 
 def _dolnik_one(words, ss, choice, count, elided, feet: int | None = None) -> Fit | None:
