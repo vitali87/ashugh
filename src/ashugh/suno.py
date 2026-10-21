@@ -282,7 +282,8 @@ def _render(
             and words[nxt].leans
             and chosen.get(nxt, 0) is None
         ):
-            new = _mark_vowel(token, 0, stress)  # по́ лесу: the noun gave the preposition its stress
+            # по́ лесу: the noun gave the preposition its stress (or the writer did)
+            new = _mark_vowel(token.replace(ACUTE, ""), 0, stress)
             notes.append(Note(n, "stress", token, new, "stress on the preposition"))
             return new
         if w.spelled:  # СПб as эс-пэ-бэ́: a singer may read the letters as one word

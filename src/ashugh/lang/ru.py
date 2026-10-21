@@ -1092,6 +1092,24 @@ def second_locatives(words: list[Word]) -> None:
         w.readings = (Reading(last, transcribe(w.norm, last), w.norm, "lexicon"),)
 
 
+def marked_leans(words: list[Word]) -> None:
+    """A preposition or не the writer marks takes the stress of what follows: по́
+    лесу, за́ руку, не́ был, не́ с кем; the next word up to the first that has a
+    stress of its own leans on it."""
+    for k, prev in enumerate(words[:-1]):
+        if prev.lang != CODE or prev.size != 1 or not prev.readings:
+            continue
+        if prev.readings[0].source != "mark" or prev.norm not in PREPOSITIONS | {"не", "ни"}:
+            continue
+        for w in words[k + 1 :]:
+            if w.lang != CODE or not w.readings or w.readings[0].source in ("mark", "user"):
+                break
+            base = w.readings[0]
+            w.readings = (Reading(None, transcribe(base.spelling, None), base.spelling, "lean"),)
+            if not w.clitic:
+                break
+
+
 def preposition_shift(words: list[Word]) -> None:
     """Let the noun of a listed pair lend its stress to the preposition: по́ лесу."""
     for prev, w in zip(words, words[1:]):
