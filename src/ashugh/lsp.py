@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import select
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from . import lyrics
+from .model import ACUTE
 from .scan import Report, scan
 from .spec import Spec, SpecError, load
 
@@ -199,16 +201,21 @@ class Server:
             diagnostics.append(_diag(0, 0, 1, "spec", problem, 1))
         elif rep is not None:
             lines = lyrics.split_lines(self.docs[uri])
+            used: dict[tuple[int, str], int] = {}
             for issue in rep.issues:
                 row = issue.line - 1
                 text = lines[row] if 0 <= row < len(lines) else ""
-                start = _utf16(text[: len(text) - len(text.lstrip())])  # LSP counts UTF-16
                 message = issue.message + (f": {issue.detail}" if issue.detail else "")
+                a, b = _word_span(text, message, row, used) or (
+                    len(text) - len(text.lstrip()),
+                    len(text),
+                )
+                start = _utf16(text[:a])  # LSP counts UTF-16
                 diagnostics.append(
                     _diag(
                         row,
                         start,
-                        max(_utf16(text), start + 1),
+                        max(_utf16(text[:b]), start + 1),
                         issue.code,
                         message,
                         SEVERITY[issue.severity],
@@ -227,6 +234,33 @@ class Server:
         rhyme = f" · rhyme {lr.letter}" if lr.letter and lr.letter != "-" else ""
         value = f"**{lr.fit.count} syllables** · `{lr.fit.grid}` · {lr.ending}{rhyme}\n\n{lr.sung}"
         return {"contents": {"kind": "markdown", "value": value}}
+
+
+QUOTED = re.compile(r"«([^»]+)»")
+
+
+def _plain(word: str) -> str:
+    return word.replace(ACUTE, "").replace("-", "").lower().replace("ё", "е")
+
+
+def _word_span(
+    text: str, message: str, row: int, used: dict[tuple[int, str], int]
+) -> tuple[int, int] | None:
+    """Where on its line the first word a message quotes stands («воды» read as
+    во-ды́), each repeat of a note on the next occurrence; None if no quoted word
+    is on the line (a rhyme partner's, say)."""
+    spans = lyrics.token_spans(text)
+    plain = [_plain(t) for _, _, t in spans]
+    for quoted in QUOTED.findall(message):
+        want = [_plain(w) for w in quoted.split()]
+        n = len(want)
+        found = [k for k in range(len(plain) - n + 1) if plain[k : k + n] == want]
+        if found:
+            key = (row, " ".join(want))
+            k = found[min(used.get(key, 0), len(found) - 1)]
+            used[key] = used.get(key, 0) + 1
+            return spans[k][0], spans[k + n - 1][1]
+    return None
 
 
 def _utf16(text: str) -> int:

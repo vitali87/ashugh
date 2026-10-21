@@ -353,3 +353,35 @@ def test_display_shows_the_writers_capital_mark_as_an_acute_only():
     assert "за-мо́к" in report.lines[0].sung
     report = scan("Санкт-Петербу́рг\n", Spec(language="ru"))
     assert "Петер" in report.lines[0].sung.replace("-", "")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "[section.куплет]\nsyllables = 8\n",
+        '[lexicon]\nзамок = "замо́к"\n',
+        "[section.կրկներգ]\nsyllables = 8\n",
+    ],
+)
+def test_an_unquoted_non_latin_key_gets_a_hint(text):
+    from ashugh.spec import SpecError, loads
+
+    with pytest.raises(SpecError, match="quotes"):
+        loads(text)
+
+
+def test_an_unquoted_non_latin_key_hint_from_a_file(tmp_path):
+    from ashugh.spec import SpecError, load
+
+    path = tmp_path / "s.toml"
+    path.write_text("[section.куплет]\nsyllables = 8\n", encoding="utf-8")
+    with pytest.raises(SpecError, match='section."куплет"'):
+        load(path)
+
+
+def test_other_toml_errors_get_no_quote_hint():
+    from ashugh.spec import SpecError, loads
+
+    with pytest.raises(SpecError) as e:
+        loads("syllables = = 8\n")
+    assert "quotes" not in str(e.value)

@@ -64,8 +64,10 @@ def test_diagnostics_for_the_example(tmp_path):
     errors = [(d["range"]["start"]["line"], d["code"]) for d in diags if d["severity"] == 1]
     assert errors == [(2, "syllables"), (10, "rhyme"), (13, "final")]
     first = next(d for d in diags if d["code"] == "syllables" and d["severity"] == 1)
-    assert first["range"]["start"]["character"] == 0
     assert "ըս-պա-սում" in first["message"] and first["source"] == "ashugh"
+    line = song.read_text(encoding="utf-8").splitlines()[2]
+    r = first["range"]
+    assert line[r["start"]["character"] : r["end"]["character"]] == "սպասում"  # its word
 
 
 def test_change_republishes_and_close_clears(tmp_path):
@@ -249,3 +251,27 @@ def test_exit_without_shutdown_is_exit_code_1():
     raw = frame({"jsonrpc": "2.0", "method": "exit"})
     assert serve(io.BytesIO(raw), io.BytesIO()) == 1
     assert serve(io.BytesIO(b""), io.BytesIO()) == 0  # the client just went away
+
+
+def test_a_word_note_spans_its_word_each_time(tmp_path):
+    uri = (tmp_path / "song.txt").as_uri()
+    text = "Текут воды, воды, воды\nГде замок стоит\n"
+    (published,) = open_doc(Server(), uri, text)
+    spans = {}
+    for d in published["params"]["diagnostics"]:
+        r = d["range"]
+        spans.setdefault(r["start"]["line"], []).append(
+            (r["start"]["character"], r["end"]["character"])
+        )
+    assert spans[0] == [(6, 10), (12, 16), (18, 22)]  # each воды its own
+    assert sorted(spans[1]) == [(4, 9), (10, 15)]  # замок, стоит
+
+
+def test_a_note_whose_word_is_not_on_the_line_spans_the_line(tmp_path):
+    (tmp_path / "song.toml").write_text('rhyme = "AA"\n', encoding="utf-8")
+    uri = (tmp_path / "song.txt").as_uri()
+    (published,) = open_doc(Server(), uri, "Я жду тебя всю ночь\nИ снова снег\n")
+    rhyme = [d for d in published["params"]["diagnostics"] if d["code"] == "rhyme"]
+    assert rhyme and rhyme[0]["range"]["start"]["line"] == 1
+    r = rhyme[0]["range"]
+    assert (r["start"]["character"], r["end"]["character"]) == (8, 12)  # снег, this line's word

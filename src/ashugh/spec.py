@@ -274,7 +274,7 @@ def load(path: str | Path) -> Spec:
         with open(path, "rb") as fh:
             data = tomllib.load(fh)
     except tomllib.TOMLDecodeError as e:
-        raise SpecError(f"{path}: {e}") from None
+        raise SpecError(f"{path}: {e}{_key_hint(e)}") from None
     except UnicodeDecodeError:
         raise SpecError(f"{path}: not UTF-8 text") from None
     return from_dict(data, str(path))
@@ -284,8 +284,19 @@ def loads(text: str, path: str | None = None) -> Spec:
     try:
         data = tomllib.loads(text)
     except tomllib.TOMLDecodeError as e:
-        raise SpecError(f"{path or 'spec'}: {e}") from None
+        raise SpecError(f"{path or 'spec'}: {e}{_key_hint(e)}") from None
     return from_dict(data, path)
+
+
+def _key_hint(e: tomllib.TOMLDecodeError) -> str:
+    """A bare TOML key is Latin letters, digits, - and _: one in Cyrillic or
+    Armenian is an error TOML words badly, so say what to write."""
+    lines = (e.doc or "").splitlines()
+    line = lines[e.lineno - 1] if 0 < e.lineno <= len(lines) else ""
+    key = line.split("=", 1)[0]
+    if '"' in key or not any(ch.isalpha() and not ch.isascii() for ch in key):
+        return ""
+    return '; a key in letters other than Latin needs quotes: [section."куплет"], "замок" = "замо́к"'
 
 
 def _toml_value(value) -> str:
