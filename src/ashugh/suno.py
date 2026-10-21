@@ -282,8 +282,9 @@ def _render(
             notes.append(Note(n, "stress", token, new, "stress on the preposition"))
             return new
         if w.spelled:  # СПб as эс-пэ-бэ́: a singer may read the letters as one word
-            names = [ru.LETTER_NAMES[ch] for ch in w.norm]
-            names[-1] = _mark_vowel(names[-1], 0, stress) if stress != "none" else names[-1]
+            names: list[str] = [ru.LETTER_NAMES[ch] for ch in w.norm]
+            if stress != "none":
+                names[-1] = _mark_vowel(names[-1], 0, stress)
             new = "-".join(names)
             notes.append(Note(n, "spelled", token, new, "an abbreviation sung letter by letter"))
             return new

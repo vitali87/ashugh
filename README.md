@@ -386,8 +386,8 @@ not машу́, колю́, сочи́); one that opens a sentence keeps the dic
 reading first and gains the name's. A name written without its ё gets it
 (Лёха, Алёна). An abbreviation in capitals with no vowel letter, or ending
 on its only vowels (США, МГУ), is sung letter by letter and stressed on the
-last (эс-пэ-бэ́); ЗАГС and НАТО stay words, and a line in capitals is never
-spelt out. A preposition or conjunction said twice in a row is a vocable,
+last (эс-пэ-бэ́, which `suno` writes out for the singer); ЗАГС and НАТО stay
+words, and a line in capitals is never spelt out. A preposition or conjunction said twice in a row is a vocable,
 not a clitic (на-на-на, да-да-да), and тя leans on its verb like бы. A
 hyphenated word the dictionary stresses only before its last part takes the
 last part's stress too (чёрно-бе́лый), and a compound's earlier ё is no
