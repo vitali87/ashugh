@@ -119,3 +119,21 @@ def test_from_latin_reads_the_auxiliaries_whole(word, armenian):
 
 def test_other_latin_words_in_e_keep_their_e():
     assert hy.from_latin("ergum") == "էրգում"
+
+
+@pytest.mark.parametrize("line", ["Ուր ես, ես կգամ", "Ուր ես։ Ես կգամ", "Ով ես, ես գիտեմ"])
+def test_an_auxiliary_es_that_ends_its_clause_stays_the_auxiliary(line):
+    ws = words(line)
+    assert ws[1].clitic and not ws[2].clitic
+
+
+def test_suno_writes_the_clause_final_auxiliary_as_es():
+    out = suno.format_song("Ուր ես, ես կգամ\n", tags=False, armenian="latin").text
+    assert out.startswith("Ur es, yes")
+
+
+@pytest.mark.parametrize("line", ["Սիրում եմ ես, դու գիտես", "Հիմա ես գիտեմ"])
+def test_the_pronoun_es_stays_the_pronoun(line):
+    ws = words(line)
+    k = [w.norm for w in ws].index("ես")
+    assert not ws[k].clitic

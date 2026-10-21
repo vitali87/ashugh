@@ -526,11 +526,14 @@ def auxiliary_es(norms: list[str], i: int, clause_end: list[bool]) -> bool:
     before it, not the pronoun I ([jes]). The pronoun opens its clause (Ես եմ,
     ու ես, ..., ես), follows an auxiliary of I (սիրում եմ ես, ով եմ ես) or comes
     with a verb of I (հիմա ես գիտեմ, քեզ ես սիրեցի, երեկ ես տեսա); the auxiliary
-    follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես, գեղեցիկ ես ամեն անգամ)."""
+    follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես, գեղեցիկ ես ամեն անգամ),
+    and ends its clause after one (ուր ես, ես կգամ)."""
     if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS:
         return False
     if norms[i - 1] in FIRST_PERSON:
         return False  # two auxiliaries never meet: the second is the pronoun
+    if clause_end[i]:
+        return True  # ուր ես, ...: a verb of I in a later clause is another's
     for k in range(i + 1, len(norms)):
         if _verb_of_i(norms[k]):
             return False
