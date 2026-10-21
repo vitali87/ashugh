@@ -427,10 +427,7 @@ def _armenian(
         if after_link and parts and parts[0].startswith("y"):
             parts[0] = parts[0][1:]
     elif mode == "schwa":
-        parts = [
-            s.text.replace("ը", "", 1).replace("Ը", "", 1) if k == drop else s.text
-            for k, s in enumerate(w.syllables)
-        ]
+        parts = [_written(s.text, True) if k == drop else s.text for k, s in enumerate(w.syllables)]
     else:
         parts = [_written(s.text, s.epenthetic) for s in w.syllables]
     mark = next((ch for ch in token if ch in hy.STRESS_MARKS), None)
@@ -527,8 +524,13 @@ def _letters(text: str) -> int:
 
 
 def _written(text: str, epenthetic: bool) -> str:
-    """A syllable as written: its hidden ը taken back out."""
-    return text.replace("ը", "", 1).replace("Ը", "", 1) if epenthetic else text
+    """A syllable as written: its hidden ը taken back out, a capital Ը leaving its
+    capital to the letter after it (Ըս-տե: Ստե)."""
+    if not epenthetic:
+        return text
+    if text.startswith("Ը"):
+        return text[1:2].upper() + text[2:]
+    return text.replace("ը", "", 1)
 
 
 def _latin(phones: tuple[str, ...], dropped: bool, schwa: str) -> str:

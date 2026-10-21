@@ -494,6 +494,19 @@ def _article_schwa(syllables: list[list[Seg]]) -> list[list[Seg]] | None:
     return [*syllables[:-1], last[:-2], [last[-2], _schwa(), last[-1]]]
 
 
+def _mark_hidden(syllables: list[list[Seg]], norm: str) -> None:
+    """Mark the ը of a [lexicon] entry the word does not write as hidden: կայ-սը-րու-թյուն
+    for կայսրություն, but not the ը of ըն-կեր."""
+    k = 0
+    for seg in (seg for syl in syllables for seg in syl):
+        if not seg.src:
+            continue
+        if norm.startswith(seg.src, k):
+            k += len(seg.src)
+        elif seg.src == "ը":
+            seg.epenthetic = True
+
+
 def _from_override(spec: str) -> list[list[Seg]]:
     """A [lexicon] entry: syllables separated by "-", hidden ը written out."""
     syllables = []
@@ -789,6 +802,7 @@ def analyze_word(
     optional, prefer_short = None, False
     if override or inflected:
         syllables = _from_override(override) if override else inflected or []
+        _mark_hidden(syllables, norm)
         source = "user"
     else:
         segs = segments(token)
@@ -808,6 +822,8 @@ def analyze_word(
         if article is not None and optional is None:
             syllables, optional, prefer_short = article, len(article) - 1, True
     shown = _display(syllables, token)
+    if source == "user" and token[:1].isupper() and shown:  # Կայսրություն as written
+        shown[0] = replace(shown[0], text=shown[0].text[:1].upper() + shown[0].text[1:])
     phones = _after_r(tuple(s.ph for syl in syllables for s in syl))
     clitic = norm in CLITICS
     stress = None if clitic and len(syllables) > 1 else _stress(syllables)

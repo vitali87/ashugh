@@ -194,3 +194,32 @@ def test_a_lexicon_entry_holds_for_the_words_forms(word, pieces):
 def test_a_lexicon_entry_does_not_reach_another_word_it_begins():
     (ln,) = analyze_lines("կայսրությունական", LEXICON)
     assert ln.words[0].readings[0].source != "user"
+
+
+@pytest.mark.parametrize(
+    "line, out",
+    [
+        ("Ես գնում եմ Ստեփանակերտ\n", "Ստե-փա-նա-կերտ"),
+        ("Սպասում եմ քեզ\n", "Սպա-սում"),
+    ],
+)
+def test_suno_keeps_the_capital_of_a_word_with_a_leading_schwa(line, out):
+    assert out in suno.format_song(line, tags=False, armenian="script", split="all").text
+
+
+def test_suno_keeps_the_capital_of_a_lexicon_word():
+    spec = Spec(language="hy", lexicon={"կայսրություն": "կայ-սը-րու-թյուն"})
+    out = suno.format_song("Կայսրություն\n", spec=spec, tags=False, armenian="schwa").text
+    assert out.startswith("Կայսըրություն")
+
+
+def test_script_mode_does_not_write_a_lexicon_words_hidden_schwa():
+    spec = Spec(language="hy", lexicon={"կայսրություն": "կայ-սը-րու-թյուն"})
+    out = suno.format_song("Կայսրություն\n", spec=spec, tags=False, split="all").text
+    assert "ը" not in out and out.startswith("Կայ")
+
+
+def test_a_lexicon_schwa_the_word_writes_stays():
+    spec = Spec(language="hy", lexicon={"ընկեր": "ըն-կեր"})
+    (ln,) = analyze_lines("ընկեր", spec)
+    assert not any(s.epenthetic for s in ln.words[0].syllables)
