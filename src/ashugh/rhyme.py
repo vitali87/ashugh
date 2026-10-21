@@ -206,7 +206,22 @@ def score(a: Tail | None, b: Tail | None) -> float:
             s -= 0.4 * (distance(x[0], y[0]) if x and y else 0.6)
     elif not a.rest or not b.rest:
         s -= 0.2  # open against closed: ду / сум
+    if vd <= ASSONANT_VOWELS and a.post == b.post and a.post and _vowels(a) == _vowels(b):
+        # the same vowels from the stress on are assonance however the consonants
+        # differ, which a long dactylic tail would otherwise pile up: ласковый /
+        # сказочный
+        s = max(s, ASSONANCE_FLOOR)
     return max(0.0, min(1.0, round(s, 3)))
+
+
+ASSONANT_VOWELS = 0.15  # stressed vowels this close are the same for assonance
+ASSONANCE_FLOOR = 0.3
+REDUCED = {"ɐ": "ə", "ɪ": "ə"}  # reduced vowels after the stress: one class
+
+
+def _vowels(t: Tail) -> tuple[str, ...]:
+    """The vowels after the stress, the reduced ones by their class."""
+    return tuple(REDUCED.get(p, p) for p in t.rest if is_vowel(p))
 
 
 def _english_merger(a: Tail, b: Tail) -> bool:

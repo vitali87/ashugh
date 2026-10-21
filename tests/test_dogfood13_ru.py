@@ -226,3 +226,15 @@ def test_a_ternary_line_too_long_for_its_feet_says_so():
 def test_a_line_that_fits_its_feet_gets_no_length_error():
     rep = scan("Солнце глядит на огромное око\n", from_dict({"language": "ru", "meter": "dactyl4"}))
     assert rep.ok
+
+
+@pytest.mark.parametrize(
+    "a, b", [("ласковый", "сказочный"), ("ласково", "сказочно"), ("ласковый", "масленый")]
+)
+def test_dactylic_words_with_the_same_vowels_are_at_least_assonant(a, b):
+    assert rhymes(a, b) >= rhyme.THRESHOLD["assonance"]
+
+
+@pytest.mark.parametrize("a, b", [("ласковый", "ветреный"), ("сказочный", "бешеный")])
+def test_dactylic_words_with_other_vowels_are_not(a, b):
+    assert rhymes(a, b) < rhyme.THRESHOLD["assonance"]
