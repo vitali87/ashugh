@@ -662,7 +662,7 @@ def split_spelling(
     return pieces
 
 
-CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z][a-z])")  # LinkedIn, YouTube, iPhone
+CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z])")  # LinkedIn, YouTube, iPhone, SpaceX
 
 
 def _written_parts(token: str) -> list[str]:
@@ -1033,7 +1033,7 @@ def analyze_word(
         # stress, even where the dictionary lists the whole (its twenty-one has twen)
         return _hyphenated(word, token, overrides)
     if not variants:
-        return _guessed(word, token, norm)
+        return _camel(word, token, overrides) or _guessed(word, token, norm)
 
     parsed = [_parse(v) for v in variants]
     # The first pronunciation counts; a longer one only when it differs by one vowel
@@ -1190,6 +1190,35 @@ def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> 
         return False
     at = [i for i, p in enumerate(phones) if is_vowel(p)]
     return at[-1] == at[-2] + 1
+
+
+CAMEL_PARTS = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z]?[a-z]+|[A-Z](?![a-z])")
+TITLES = {"mr", "mrs", "ms", "dr", "st"}
+
+
+def _camel(word: Word, token: str, overrides: dict[str, str] | None) -> Word | None:
+    """A name run together from dictionary words and capitals: Chat-G-P-T, O-pen-A-I,
+    Mr-Beast, Space-X; the stress on spelt-out capitals at the end or the name after
+    a title, else on the first part. None unless every part is a word (De-Shawn)."""
+    parts = CAMEL_PARTS.findall(token)
+    if len(parts) < 2 or "".join(parts) != token:
+        return None
+    for p in parts:
+        low = p.lower()
+        if not p.isupper() and not (low in TITLES or (len(p) > 2 and TABLE.get(low))):
+            return None
+    words = [analyze_word(p, overrides, letters=p.isupper()) for p in parts]
+    if any(w.guessed or not w.readings for w in words):
+        return None
+    starts = [sum(w.size for w in words[:k]) for k in range(len(words))]
+    last = len(words) - 1
+    head = last if (len(parts[-1]) > 1 and parts[-1].isupper()) or parts[0].lower() in TITLES else 0
+    stresses = [starts[k] + (w.readings[0].stress or 0) for k, w in enumerate(words)]
+    word.syllables = tuple(s for w in words for s in w.syllables)
+    phones = tuple(ph for w in words for ph in w.readings[0].phones)
+    rest = tuple(x for k, x in enumerate(stresses) if k != head)
+    word.readings = (Reading(stresses[head], phones, word.norm, "rule", rest),)
+    return word
 
 
 def _guessed(word: Word, token: str, norm: str) -> Word:

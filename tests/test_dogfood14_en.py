@@ -540,3 +540,29 @@ def test_ends_in_number(text, expected):
     from ashugh.scan import ends_in_number
 
     assert ends_in_number(text) is expected
+
+
+@pytest.mark.parametrize(
+    "token,size,stress,shown",
+    [
+        ("ChatGPT", 4, 3, "Chat-G-P-T"),
+        ("OpenAI", 4, 3, "O-pen-A-I"),
+        ("MrBeast", 3, 2, "M-r-Beast"),  # Mr is mister
+        ("SpaceX", 2, 0, "Space-X"),
+    ],
+)
+def test_a_name_run_together_from_words_and_capitals(token, size, stress, shown):
+    from ashugh.lang import en
+
+    w = en.analyze_word(token)
+    assert not w.guessed
+    assert w.size == size and w.readings[0].stress == stress
+    assert "-".join(s.text for s in w.syllables) == shown
+
+
+@pytest.mark.parametrize("token,size", [("DeShawn", 2), ("LaToya", 3)])
+def test_a_name_with_a_short_prefix_is_not_split_into_words(token, size):
+    from ashugh.lang import en
+
+    w = en.analyze_word(token)
+    assert w.size == size and w.readings[0].source != "rule"  # not De + Shawn
