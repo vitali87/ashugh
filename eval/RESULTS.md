@@ -48,8 +48,8 @@ either length, as the checker accepts both.
 
 | | before the lists | now |
 |---|---|---|
-| sung syllables equal Wiktionary's vowels | 91.2% | **93.4%** |
-| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **93.5%** |
+| sung syllables equal Wiktionary's vowels | 91.2% | **93.6%** |
+| the same, on the 309 words Wiktionary writes with a schwa | 84.1% | **94.8%** |
 
 The last rules (the negative չ- and future կ-, reduplicated roots, ռն and
 րն before a consonant, ղմն, շ before an aspirate) came from a comparison with
@@ -57,14 +57,14 @@ every Wiktionary entry, held-out ones included, so for those patterns this is
 not unseen data. Across all 17,594 entries they raised agreement from 16,891
 to 16,958 words and broke none.
 
-The 116 disagreements left, by kind:
+The 113 disagreements left, by kind:
 
 | kind | words | mostly |
 |---|---|---|
-| a schwa at the start | 49 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
-| a schwa at the end | 23 | stems in -նդ, -րդ and -րս that the held-out list lacks, read as the possessive (տաղանդ, մարդ, աղերս), and abbreviations (ԵՏՄ) |
+| a schwa at the start | 48 | Wiktionary writes none in loanwords and names (բրիգադ, ֆլեշմոբ, Պլեթոն) or before ս and a stop (սպանուհի), where ashugh sings one |
+| a schwa at the end | 22 | stems in -նդ, -րդ and -րս that the held-out list lacks, read as the possessive (տաղանդ, մարդ, աղերս), and abbreviations (ԵՏՄ) |
 | a vowel letter | 32 | Wiktionary reads ի before a vowel as a glide (դանիացի as dɑnjɑtsʰi); sung verse gives it a syllable |
-| a schwa inside | 12 | compounds whose second root is listed in no form of its own (ծո-վա-գը-նաց, from գնալ) or was left out for breaking an entry (պատ-կե-րա-սը-րահ) |
+| a schwa inside | 11 | compounds whose second root is listed in no form of its own (ծո-վա-գը-նաց, from գնալ) or was left out for breaking an entry (պատ-կե-րա-սը-րահ) |
 
 Wiktionary transcribes speech, not singing, so this is agreement rather than
 accuracy. The comparison gave ashugh four things:

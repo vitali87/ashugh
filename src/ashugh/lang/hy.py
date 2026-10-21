@@ -382,6 +382,19 @@ def _negative_prefix(segs: list[Seg], cluster: list[Seg]) -> bool:
     )
 
 
+def _ver_prefix(segs: list[Seg], v: int, cluster: list[Seg]) -> bool:
+    """վեր- before a stem that opens on ս, զ or շ and a stop: վերստին, վերսկսել."""
+    return (
+        v == 1
+        and [s.ph for s in segs[:2]] == ["v", "e"]
+        and len(cluster) >= 3
+        and cluster[0].ph == "ɾ"
+        and cluster[1].ph in PROTHESIS_FIRST
+        and is_stop(cluster[2].ph)
+        and not _schwa_after(cluster[1].ph, cluster[2].ph)
+    )
+
+
 def _schwa_after(first: str, stop: str) -> bool:
     return (first == "ʃ" and stop.endswith("ʰ")) or (first == "z" and stop in ("p", "t", "k"))
 
@@ -415,6 +428,16 @@ def syllabify(segs: list[Seg], possessive: bool = True) -> list[list[Seg]]:
         end = vowels[k + 1] if k + 1 < len(vowels) else len(segs)
         cluster = segs[v + 1 : end]
         has_next = k + 1 < len(vowels)
+        if k == 0 and has_next and _ver_prefix(segs, v, cluster):
+            # վեր- keeps its stem's leading schwa: վե-րըս-տին, վե-րըս-կը-սել
+            syllables.append(current)
+            syllables.append([cluster[0], _schwa(), cluster[1]])
+            rest = cluster[2:]
+            parsed = _parse_cluster(rest, has_prev=False, has_next=True)
+            _, run, onset = parsed if parsed else ([], [], rest)
+            syllables.extend(o + [_schwa()] + c for o, c in run)
+            current = onset + [segs[end]]
+            continue
         if v == 0 and has_next and _negative_prefix(segs, cluster):
             syllables.append(current + cluster[:1])  # the stem keeps its schwa
             syllables.append(cluster[1:2] + [_schwa()])

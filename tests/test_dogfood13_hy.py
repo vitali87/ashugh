@@ -223,3 +223,21 @@ def test_a_lexicon_schwa_the_word_writes_stays():
     spec = Spec(language="hy", lexicon={"ընկեր": "ըն-կեր"})
     (ln,) = analyze_lines("ընկեր", spec)
     assert not any(s.epenthetic for s in ln.words[0].syllables)
+
+
+@pytest.mark.parametrize(
+    "word, pieces",
+    [
+        ("վերստին", "վե-րըս-տին"),
+        ("վերսկսել", "վե-րըս-կը-սել"),
+        ("վերստեղծել", "վե-րըս-տեղ-ծել"),
+        ("Վերստին", "Վե-րըս-տին"),
+        # negative: վեր- before a vowel or another cluster, and words that only begin so
+        ("վերադառնալ", "վե-րա-դառ-նալ"),
+        ("վերցնել", "վերց-նել"),
+        ("վերջ", "վերջ"),
+    ],
+)
+def test_the_prefix_ver_keeps_its_stems_schwa_before_s_and_a_stop(word, pieces):
+    (w,) = words(word)
+    assert shown(w) == pieces

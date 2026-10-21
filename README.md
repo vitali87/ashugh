@@ -342,7 +342,8 @@ as possible:
   stem ends that way: 296 stems listed from Wiktionary's dictionary forms
   (չորս, մարդ, ադամանդ, մաքս), compounds joined by ա or ե that end in one
   (նո-րա-հարս), and nouns in -որդ and -ուրդ (վա-րորդ, ժո-ղո-վուրդ);
-- the negative prefix ան- keeps its stem's schwa (ան-շը-տապ), and so do
+- the negative prefix ան- keeps its stem's schwa (ան-շը-տապ), as վեր-
+  keeps the one before ս and a stop (վե-րըս-տին, վե-րըս-կը-սել), and so do
   the negative չ- and the future կ- before a verb (չը-գը-նամ, կը-գը-նամ, as
   գը-նալ); the future only where its ending fits a listed verb, so the roots
   կղզի and կրկին stay as they are;
