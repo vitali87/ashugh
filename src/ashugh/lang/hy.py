@@ -590,6 +590,8 @@ def _inflected_override(norm: str, overrides: dict[str, str]) -> list[list[Seg]]
 # Not էլ (դու էլ ես: you too are) nor երբ (ե՞րբ ես գալու): a verb of I in the
 # clause tells the pronoun after them (հետո էլ ես գնացի, երբ ես եկա).
 CLAUSE_OPENERS = set("ու և եվ բայց իսկ որ թե եթե քանի մինչ ապա հետո".split())
+# After a negation, an or, or a focus word, ես is I: ոչ ես, կամ ես, նույնիսկ ես.
+BEFORE_PRONOUN = set("ոչ կամ նաև նաեւ նույնիսկ անգամ հենց միայն թեկուզ".split())
 FIRST_PERSON = {"եմ", "չեմ", "էի", "չէի"}
 # 1st person aorists that do not end in -ցի: տեսա, եկա (I saw, I came).
 FIRST_AORISTS = set(
@@ -616,7 +618,7 @@ def auxiliary_es(norms: list[str], i: int, clause_end: list[bool]) -> bool:
     սիրեցի, երեկ ես տեսա, կերգեմ ես, մի օր ես կգայի); the auxiliary
     follows its word (գալիս ես, ինչու ես լռում, իմ սերն ես, գեղեցիկ ես ամեն անգամ),
     and ends its clause after one (ուր ես, ես կգամ)."""
-    if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS:
+    if i == 0 or clause_end[i - 1] or norms[i - 1] in CLAUSE_OPENERS | BEFORE_PRONOUN:
         return False
     for k in range(i - 1, -1, -1):  # կերգեմ ես, սիրում եմ քեզ ես: a verb of I before
         if _verb_of_i(norms[k]):
