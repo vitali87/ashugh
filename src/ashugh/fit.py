@@ -27,6 +27,7 @@ from .scan import (
     Report,
     UnitReport,
     check_line,
+    one_word,
     reanalyze,
     rhyme_alternatives,
     scan,
@@ -506,10 +507,11 @@ def _problem(pools: list[list[Candidate]]) -> Problem:
 
 
 def _rhyme_ok(x: Candidate, y: Candidate) -> bool:
-    """y rhymes with x at y's min_rhyme, and not on the same word unless both
-    lines were written that way."""
+    """y rhymes with x at y's min_rhyme, and not on the same word or another form
+    of it (сердца / сердце) unless both lines were written that way."""
     s, tx, ty = rhyme.match(_rhymes(x), _rhymes(y))
     same_word = tx is not None and ty is not None and tx.spelling == ty.spelling
+    same_word = same_word or one_word(x.report, y.report)
     return s >= rhyme.THRESHOLD[y.report.min_rhyme] and not (
         same_word and not (x.original and y.original)
     )

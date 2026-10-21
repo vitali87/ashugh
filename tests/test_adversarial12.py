@@ -620,3 +620,22 @@ def test_pick_says_nothing_of_a_backing_vocal_it_keeps():
     proposer = StaticProposer({1: ["I walked along the riverside"]})
     res = fit_song(text, from_dict({"language": "en", "syllables": 8}), proposer, rounds=1)
     assert res.text.endswith("(oh)\n") and res.warnings == []
+
+
+def test_pick_does_not_rhyme_a_line_on_another_form_of_its_partners_word():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "Я слышу стук родного сердца\nИ бьётся радостно душа\n"
+    proposer = StaticProposer({2: ["И бьётся радостное сердце", "И бьётся радостно, как дверца"]})
+    res = fit_song(text, from_dict({"language": "ru", "rhyme": "AA"}), proposer, rounds=1)
+    assert res.text.splitlines()[1] == "И бьётся радостно, как дверца"
+
+
+def test_a_song_written_with_a_form_rhyme_keeps_it():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+
+    text = "Я слышу стук родного сердца\nИ бьётся радостное сердце\n"
+    res = fit_song(text, from_dict({"language": "ru", "rhyme": "AA"}), StaticProposer({}))
+    assert res.text == text and not res.unresolved

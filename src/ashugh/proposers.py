@@ -240,7 +240,7 @@ stress may fall.
 - rhyme_with: the line's last stressed vowel and everything after it must \
 sound like these words' (by sound, not spelling). rhyme_sound is that rime; \
 with rhyme_with empty it is the line's own rhyme, to keep. Never end on the \
-same word as a partner.
+same word as a partner, or on another form of it.
 - rejected: earlier candidates that failed, with the reason. Do not repeat them.
 
 A request with a "source" line is a translation: original is empty, and each \

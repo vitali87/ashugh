@@ -768,7 +768,7 @@ def _same_word(members: list[LineReport], k: int, pair) -> None:
         if _norm_text(members[m].line.text) == _norm_text(lr.line.text):
             return
         same = ta.spelling == tb.spelling and (ta.vowel, ta.rest) == (tb.vowel, tb.rest)
-        if not same and not _one_word(members[m], lr):
+        if not same and not one_word(members[m], lr):
             return
         itself = itself and same
     if k == 0:
@@ -792,7 +792,7 @@ def _same_word(members: list[LineReport], k: int, pair) -> None:
     )
 
 
-def _one_word(a: LineReport, b: LineReport) -> bool:
+def one_word(a: LineReport, b: LineReport) -> bool:
     """Whether two lines end on forms of one word: the same syllables up to and with
     the stressed one (сер-дце, сер-дца), not merely the same sound (луг, лук)."""
     heads = []
