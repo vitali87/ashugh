@@ -291,3 +291,24 @@ def test_hover_on_a_line_of_digits_says_they_are_not_counted(tmp_path):
     )
     value = reply["result"]["contents"]["value"]
     assert "digits are not counted" in value and "masculine" not in value
+
+
+def test_an_off_beat_homograph_underlines_its_own_copy(tmp_path):
+    (tmp_path / "song.toml").write_text('meter = "trochee"\nfeet = 4\n', encoding="utf-8")
+    uri = (tmp_path / "song.txt").as_uri()
+    text = "Ох, мука́ моя, му́ка,\n"
+    (published,) = open_doc(Server(), uri, text)
+    meter = [d for d in published["params"]["diagnostics"] if d["code"] == "meter"]
+    assert meter, published
+    r = meter[0]["range"]
+    assert text[r["start"]["character"] : r["end"]["character"]] == "му́ка"
+
+
+def test_a_repeated_rhyme_word_underlines_the_last(tmp_path):
+    (tmp_path / "song.toml").write_text('rhyme = "AA"\n', encoding="utf-8")
+    uri = (tmp_path / "song.txt").as_uri()
+    text = "I love the night\nthe sun and sun\n"
+    (published,) = open_doc(Server(), uri, text)
+    rhyme = [d for d in published["params"]["diagnostics"] if d["code"] == "rhyme"]
+    r = rhyme[0]["range"]
+    assert (r["start"]["character"], r["end"]["character"]) == (12, 15)

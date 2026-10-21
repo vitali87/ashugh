@@ -665,6 +665,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
                 f"stress {f.grid}, {wants}",
                 {
                     "words": [ln.words[i].text for i in f.off_beat],
+                    "at": list(f.off_beat),  # word indices, for an editor to underline
                     "grid": f.grid,
                     "template": f.template,
                 },

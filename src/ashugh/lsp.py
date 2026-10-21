@@ -206,9 +206,13 @@ class Server:
                 row = issue.line - 1
                 text = lines[row] if 0 <= row < len(lines) else ""
                 message = issue.message + (f": {issue.detail}" if issue.detail else "")
-                a, b = _word_span(text, message, row, used) or (
-                    len(text) - len(text.lstrip()),
-                    len(text),
+                a, b = (
+                    _indexed_span(text, issue)
+                    or _word_span(text, message, row, used, issue.code)
+                    or (
+                        len(text) - len(text.lstrip()),
+                        len(text),
+                    )
                 )
                 start = _utf16(text[:a])  # LSP counts UTF-16
                 diagnostics.append(
@@ -247,18 +251,34 @@ def _plain(word: str) -> str:
     return word.replace(ACUTE, "").replace("-", "").lower().replace("ё", "е")
 
 
+def _indexed_span(text: str, issue) -> tuple[int, int] | None:
+    """The span of the words an issue names by index (an off-beat word), so of
+    two мука the one off the beat is underlined."""
+    at = issue.data.get("at") if isinstance(issue.data, dict) else None
+    spans = lyrics.token_spans(text)
+    if not at or any(not 0 <= k < len(spans) for k in at):
+        return None
+    return spans[at[0]][0], spans[at[-1]][1]
+
+
+LINE_END_CODES = {"rhyme", "ending", "final", "scheme"}  # about the line's last word
+
+
 def _word_span(
-    text: str, message: str, row: int, used: dict[tuple[int, str], int]
+    text: str, message: str, row: int, used: dict[tuple[int, str], int], code: str = ""
 ) -> tuple[int, int] | None:
     """Where on its line the first word a message quotes stands («воды» read as
-    во-ды́), each repeat of a note on the next occurrence; None if no quoted word
-    is on the line (a rhyme partner's, say)."""
+    во-ды́), each repeat of a note on the next occurrence, a rhyme's from the
+    line's end; None if no quoted word is on the line (a rhyme partner's, say)."""
     spans = lyrics.token_spans(text)
     plain = [_plain(t) for _, _, t in spans]
     for quoted in QUOTED.findall(message):
         want = [_plain(w) for w in quoted.split()]
         n = len(want)
         found = [k for k in range(len(plain) - n + 1) if plain[k : k + n] == want]
+        if found and code in LINE_END_CODES:
+            k = found[-1]
+            return spans[k][0], spans[k + n - 1][1]
         if found:
             key = (row, " ".join(want))
             k = found[min(used.get(key, 0), len(found) - 1)]
