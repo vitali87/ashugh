@@ -116,3 +116,32 @@ def test_the_owl_and_the_pussycat_scans():
 
     report = scan("The owl and the pussy-cat went to sea\n")
     assert report.lines[0].fit.stresses[3] == 0  # PUS-sy-cat
+
+
+@pytest.mark.parametrize(
+    "text,note",
+    [
+        ("Я шёл\nИ ты пришёл\n", "rhymes «пришёл» with «шёл», one root"),
+        ("Он ушёл\nИ ты пришёл\n", "rhymes «пришёл» with «ушёл», one root"),
+        ("Приход\nУход\n", "rhymes «Уход» with «Приход», one root"),
+        ("I'll never do\nWhat you undo\n", "rhymes «undo» with «do», one root"),
+    ],
+)
+def test_a_rhyme_on_one_root_is_noted(text, note):
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    report = scan(text, from_dict({"rhyme": "AA"}))
+    (issue,) = [i for i in report.issues if "one root" in i.message]
+    assert issue.message == note and issue.severity == "info" and report.ok
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Вода\nДа\n", "Such delight\nIn the light\n", "Art\nHeart\n", "Return\nAnd burn\n"],
+)
+def test_words_that_only_end_alike_are_no_root(text):
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    assert not any("one root" in i.message for i in scan(text, from_dict({"rhyme": "AA"})).issues)

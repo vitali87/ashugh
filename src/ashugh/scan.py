@@ -888,6 +888,7 @@ def _check_groups(groups: dict[str, list[LineReport]]) -> None:
         for k, lr in enumerate(members):
             if k in kept:
                 _same_word(members, k, pair)
+                _same_root(members, k, pair, kept)
                 continue
             partner = max(sorted(kept), key=lambda m: pair(m, k)[0])
             s, ta, tb = pair(partner, k)
@@ -958,6 +959,49 @@ def _same_word(members: list[LineReport], k: int, pair) -> None:
             {"word": word.word},
         )
     )
+
+
+# Prefixes that make a new word of one root: шёл / пришёл, ход / приход, do / undo.
+ROOT_PREFIXES = {
+    "ru": (
+        "при", "по", "на", "за", "вы", "от", "пере", "рас", "раз", "со", "во", "под", "над",
+        "про", "об", "до", "из", "без", "вз", "пре", "у",
+    ),
+    "en": ("un", "re", "dis", "mis", "over", "under", "out", "with", "fore", "be"),
+}  # fmt: skip
+
+
+MIN_ROOT = {"ru": 3, "en": 2}  # шел of пришел, but not да of вода; do of undo
+
+
+def _root(word: str, lang: str) -> str:
+    """A word less the longest prefix that leaves a root: шел of пришел."""
+    fits = [
+        p
+        for p in ROOT_PREFIXES[lang]
+        if word.startswith(p) and len(word) - len(p) >= MIN_ROOT[lang]
+    ]
+    return word[len(max(fits, key=len, default="")) :]
+
+
+def _same_root(members: list[LineReport], k: int, pair, kept) -> None:
+    """A line rhyming on an earlier rhyme word with a prefix (шёл / пришёл, do /
+    undo): one root, a poor rhyme though a sound one."""
+    lr = members[k]
+    if any(i.detail == REFRAIN for i in lr.issues):
+        return
+    for m in sorted(kept):
+        if m >= k:
+            break
+        _, ta, tb = pair(m, k)
+        if ta is None or tb is None or ta.lang != tb.lang or ta.lang not in ROOT_PREFIXES:
+            continue
+        a, b = (t.word.lower().replace("ё", "е") for t in (ta, tb))
+        if a != b and _root(a, ta.lang) == _root(b, ta.lang):
+            detail = "the same root with a prefix is a poor rhyme; fine if meant"
+            message = f"rhymes {_quote(tb.word)} with {_quote(ta.word)}, one root"
+            lr.issues.append(Issue(lr.line.number, "rhyme", "info", message, detail))
+            return
 
 
 def rhyme_head(lr: LineReport) -> tuple | None:
