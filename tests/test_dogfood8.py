@@ -50,7 +50,7 @@ def test_english_kit_fleece_and_north_start_do_not_rhyme(a, b, capsys):
 
 @pytest.mark.parametrize(
     "a, b, want",
-    [("law", "saw", "perfect"), ("caught", "cot", "perfect"), ("dawn", "con", "near"),
+    [("law", "saw", "perfect"), ("caught", "cot", "perfect"), ("dawn", "con", "perfect"),
      ("door", "four", "perfect"), ("sea", "me", "perfect"),
      # before r English keeps no KIT / FLEECE contrast, whatever CMUdict writes
      ("here", "year", "perfect"), ("pier", "here", "perfect"), ("clear", "fear", "perfect"),

@@ -232,7 +232,10 @@ def score(a: Tail | None, b: Tail | None) -> float:
     s = 1.0 - vd
     if a.post != b.post:
         s -= 0.35
-    s -= 0.5 * align_cost(a.rest, b.rest, vowel_weight=POST_TONIC_VOWELS)
+    if a.lang == b.lang == "en":  # beau-ti-ful / du-ti-ful: a reduced vowel is one sound
+        s -= 0.5 * align_cost(_reduced(a.rest), _reduced(b.rest), vowel_weight=POST_TONIC_VOWELS)
+    else:
+        s -= 0.5 * align_cost(a.rest, b.rest, vowel_weight=POST_TONIC_VOWELS)
     if not a.rest and not b.rest:
         # Russian and Armenian open rhymes want the consonant before the vowel too.
         x, y = a.onset[-1:], b.onset[-1:]
@@ -276,13 +279,22 @@ def _heard_in(t: Tail, lang: str) -> Tail:
 
 
 def _english_merger(a: Tail, b: Tail) -> bool:
-    """Vowels English does not tell apart before r, however CMUdict writes them:
-    here / year (NEAR) and tour / poor (CURE)."""
+    """Vowels English does not tell apart, however CMUdict writes them: here / year
+    (NEAR) and tour / poor (CURE) before r, and falling / calling, cot / caught
+    elsewhere, the merger most singers make (but far / war stay apart)."""
     pair = {a.vowel, b.vowel}
-    return (
-        "en" in (a.lang, b.lang)
-        and pair in ({"i", "ɪ"}, {"u", "ʊ"})
-        and a.rest[:1] == b.rest[:1] == ("ɹ",)
+    before_r = a.rest[:1] == b.rest[:1] == ("ɹ",)
+    return "en" in (a.lang, b.lang) and (
+        pair in ({"i", "ɪ"}, {"u", "ʊ"}) and before_r or pair == {"ɑ", "ɔ"} and not before_r
+    )
+
+
+def _reduced(rest: tuple[str, ...]) -> tuple[str, ...]:
+    """English vowels after the stress as sung, ɪ and ə alike (fa-ces, sad-dest), and an
+    i before another vowel too (du-ti-ful); a last i stays (happy is no rhyme for grappa)."""
+    vowels = [k for k, ph in enumerate(rest) if is_vowel(ph)]
+    return tuple(
+        "ə" if ph == "ɪ" or ph == "i" and k != vowels[-1] else ph for k, ph in enumerate(rest)
     )
 
 
