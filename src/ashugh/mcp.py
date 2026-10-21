@@ -30,6 +30,7 @@ from collections.abc import Callable
 from . import __version__, meter, report, rhyme
 from .fit import fit_song, requests_for
 from .lang import ANALYZERS
+from .lyrics import has_digits
 from .proposers import ProposerError, StaticProposer, parse_candidates
 from .scan import analyze_lines, scan
 from .spec import Spec, SpecError, dumps, loads, template
@@ -87,6 +88,10 @@ def t_syllables(args: dict) -> dict:
         )
         ambiguous = [w.text for w in ln.words if w.ambiguous and w.size > 1]
         fewest, most = meter.syllable_range(ln.words, f)
+        warnings = ["digits are not counted; spell numbers out"] if has_digits(ln.text) else []
+        guessed = [w.text for w in ln.words if w.guessed]
+        if guessed:
+            warnings.append(f"not in the dictionaries, guessed: {', '.join(guessed)}")
         lines.append(
             {
                 "text": ln.text,
@@ -96,6 +101,7 @@ def t_syllables(args: dict) -> dict:
                 "grid": f.grid,
                 "sung": sung,
                 "ambiguous": ambiguous,
+                "warnings": warnings,
             }
         )
     return {"lines": lines}

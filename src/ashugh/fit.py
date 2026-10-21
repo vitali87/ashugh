@@ -23,6 +23,7 @@ from . import lang as languages
 from . import lyrics, meter, rhyme
 from .proposers import Proposer, ProposerError, Request
 from .scan import (
+    DIGITS,
     ENDING_NAMES,
     REFRAIN,
     LineReport,
@@ -151,7 +152,13 @@ class _Var:
 
 
 def line_errors(lr: LineReport) -> list:
-    return [i for i in lr.issues if i.severity == "error" and i.code not in LINE_LEVEL]
+    """What a repair must fix in a line: its errors, and digits, which its count
+    leaves out (100 is sung հարյուր), so no candidate with them fits."""
+    return [
+        i
+        for i in lr.issues
+        if (i.severity == "error" and i.code not in LINE_LEVEL) or i.message == DIGITS
+    ]
 
 
 def fit_song(
@@ -658,10 +665,13 @@ def _request(
             template = "".join(
                 "/" if p % period == phase and p <= last else "x" for p in range(length)
             )
+    digits = any(i.message == DIGITS for i in lr.issues)
     problems = [
         f"{i.message}" + (f" ({i.detail})" if i.detail else "")
         for i in lr.issues
-        if i.severity == "error" or i.detail == REFRAIN
+        if i.severity == "error" or i.detail == REFRAIN or i.message == DIGITS
+        # a count without the digits misleads: spell them out, then count
+        if not (digits and i.code in ("syllables", "feet", "meter"))
     ]
     problems.extend(b for b in var.blocked if b not in problems)
     if moving and not sound:

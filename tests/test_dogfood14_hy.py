@@ -84,3 +84,29 @@ def test_es_after_its_word_with_no_verb_of_i_is_the_auxiliary(line):
 def test_suno_sings_the_pronoun_yes():
     out = suno.format_song("Կերգեմ ես\nԴու էլ ես գեղեցիկ\n", tags=False, armenian="latin").text
     assert "Kergem yes" in out and "Du el es" in out
+
+
+def test_pick_rejects_a_candidate_with_digits():
+    from ashugh.fit import fit_song
+    from ashugh.proposers import StaticProposer
+    from ashugh.spec import from_dict
+
+    spec = from_dict({"language": "hy", "syllables": 7})
+    res = fit_song(
+        "[Տուն]\nԵս քեզ սիրում եմ շատ\n",
+        spec,
+        StaticProposer({2: ["Ես քեզ սիրում եմ 100 տարի"]}),
+        rounds=1,
+    )
+    assert "100" not in res.text
+
+
+def test_a_request_for_a_line_with_digits_says_to_spell_them_out():
+    from ashugh.fit import requests_for
+    from ashugh.spec import from_dict
+
+    (req,) = requests_for(
+        "[Տուն]\nԵս քեզ սիրում եմ 100 տարի\n", from_dict({"language": "hy", "syllables": 9})
+    )
+    assert any("digits" in p for p in req.problems)
+    assert not any("syllables, slot" in p for p in req.problems)  # its count leaves them out

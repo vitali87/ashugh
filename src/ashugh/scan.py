@@ -355,6 +355,7 @@ def check_line(
     return lr
 
 
+DIGITS = "digits are not counted"  # a warning to a reader, an error to a repair
 RHYME_STRESS_MARGIN = 0.6  # extra meter cost a stress may take to make a rhyme
 RHYME_STRESS_GAIN = 0.15  # how much better the rhyme must get
 
@@ -517,7 +518,7 @@ def _check_line(lr: LineReport, rule: Rule, meter_name: str, source: str) -> Non
             )
         )
     if lyrics.has_digits(ln.text):
-        add(Issue(ln.number, "script", "warning", "digits are not counted", "spell numbers out"))
+        add(Issue(ln.number, "script", "warning", DIGITS, "spell numbers out"))
     if any(ch in "[]" for ch in lyrics.sub_asides(ln.text, lambda _: " ")):  # [Bridge] I walk
         detail = "a tag such as [Chorus] goes on a line of its own; these words are counted"
         add(Issue(ln.number, "tag", "warning", "brackets in a sung line", detail))

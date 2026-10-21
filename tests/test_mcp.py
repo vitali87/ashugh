@@ -259,3 +259,15 @@ def test_derive_spec_reads_the_source_in_the_language_given():
     _, by_lang = tool(s, "derive_spec", lyrics=song, source_lang="hy", keep="syllables")
     _, guessed = tool(s, "derive_spec", lyrics=song, keep="syllables")
     assert by_lang["toml"] != guessed["toml"]
+
+
+def test_syllables_warns_of_digits_and_guessed_words():
+    _, data = tool(Server(), "syllables", text="Y'all loved it, 24/7, blorptastic")
+    (line,) = data["lines"]
+    assert any("digits" in w for w in line["warnings"])
+    assert any("blorptastic" in w for w in line["warnings"])
+
+
+def test_syllables_of_a_plain_line_warn_of_nothing():
+    _, data = tool(Server(), "syllables", text="I walk along the river")
+    assert data["lines"][0]["warnings"] == []
