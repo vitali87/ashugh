@@ -228,3 +228,25 @@ def test_past_active_follows_the_infinitive_after_a_vowel():
     assert "поня'вшими" in ru_forms.past_active("по'нял", "поня'ть")
     assert "возни'кший" in ru_forms.past_active("возни'к", "возни'кнуть")
     assert "улыба'вшимися" in ru_forms.past_active("улыба'лся", "улыба'ться")
+
+
+@pytest.mark.parametrize(
+    "infinitive,form",
+    [
+        ("припаркова'ть", "припарку'ет"),
+        ("припаркова'ть", "припарку'ют"),
+        ("припаркова'ть", "припарку'й"),
+        ("финанси'ровать", "финанси'рует"),
+        ("финанси'роваться", "финанси'руются"),
+        ("зафрахто'вывать", "зафрахто'вывает"),
+        ("сосредота'чивать", "сосредота'чиваю"),
+        ("переформиро'вывать", "переформиро'вываем"),
+    ],
+)
+def test_present_of_regular_suffixed_verbs(infinitive, form):
+    assert form in ru_forms.present(infinitive)
+
+
+@pytest.mark.parametrize("infinitive", ["кова'ть", "сосна'ть", "писа'ть", "сиде'ть", "плева'ть"])
+def test_no_present_where_the_suffix_is_the_root(infinitive):
+    assert ru_forms.present(infinitive) == []

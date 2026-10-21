@@ -309,6 +309,8 @@ def derived(source: Path) -> dict[str, list[int]]:
         )
         for variant in re.split(r"[,;/]", past):
             forms += ru_forms.past_active(variant.strip(), row.get("accented", ""))
+        if not row.get("presfut_sg1") and not row.get("presfut_sg3"):
+            forms += ru_forms.present(row.get("accented", ""))
     forms += comparatives + [ru_forms.with_po(c) for c in comparatives]
     out: dict[str, list[int]] = {}
     for form in forms:

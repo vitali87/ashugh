@@ -365,10 +365,11 @@ one the meter may use, the last part carrying the main stress and the rhyme
    ещё), the past tenses the dump leaves out derived from the infinitive,
    and a prefixed verb's feminine past ending-stressed where its base's is
    (позвала́ like звала́; the dump's позва́ла stays second, for verse);
-4. 395,968 regular forms the dump leaves out, derived from its lemmas and
+4. 398,359 regular forms the dump leaves out, derived from its lemmas and
    read only where it lists no form with that spelling (ё read as е):
    comparatives with their по- (нежне́е, кре́пче, подо́льше), past
-   participles (бро́шен, решённый, сби́ты, обма́нутых, ста́вший), and the
+   participles (бро́шен, решённый, сби́ты, обма́нутых, ста́вший), the
+   present of -овать and -ывать verbs listed without one (припарку́ет), and the
    declension of a lemma listed without one (пре́жнему, вселе́нной,
    людски́х); verbs whose participles move their stress their own way
    (о́тдан, отдана́; про́лит) are left to the steps below;

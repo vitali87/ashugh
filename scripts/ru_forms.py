@@ -431,3 +431,29 @@ def _fleeting(bare: str) -> str | None:
         before = bare[-3:-2]
         return bare[:-2] + ("йц" if before in VOWELS else "ьц" if before == "л" else "ц")
     return None
+
+
+def present(infinitive: str) -> list[str]:
+    """The present tense, imperative and gerund of a verb in -овать (припаркова́ть,
+    припарку́ет; финанси́ровать, финанси́рует) or -ывать/-ивать (зафрахто́вывать,
+    зафрахто́вывает), which conjugate without exception. A root that is all the
+    suffix (кова́ть, плева́ть) has its own present (кую́, плюю́)."""
+    inf, at = stress(_first(infinitive))
+    reflexive = inf.endswith("ся")
+    base = inf[:-2] if reflexive else inf
+    if at is None:
+        return []
+    if base.endswith("овать") and count(base[:-5]) >= 1 and len(base) > 7:
+        stem = base[:-5]
+        place = count(stem) + 1 if at > count(stem) else at  # -ова́ть: -у́ю
+        endings = ("ую", "уешь", "ует", "уем", "уете", "уют", "уй", "уйте", "уя")
+        forms = [render(stem + e, place) for e in endings]
+    elif base.endswith(("ывать", "ивать")) and count(base) >= 4:
+        stem = base[:-2]
+        endings = ("ю", "ешь", "ет", "ем", "ете", "ют", "й", "йте", "я")
+        forms = [render(stem + e, at) for e in endings]
+    else:
+        return []
+    if reflexive:
+        forms = [f + ("сь" if f.replace("'", "")[-1] in VOWELS else "ся") for f in forms]
+    return forms
