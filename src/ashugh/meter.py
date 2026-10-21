@@ -90,6 +90,8 @@ def parse_meter(name: str) -> tuple[str, int | None]:
     base = ALIASES.get(base, base)
     if base not in METERS and base != "free":
         raise ValueError(f"unknown meter {name!r}; use one of {', '.join(METERS)}, free")
+    if digits and base == "free":
+        raise ValueError(f"free verse has no feet, got {name!r}; dolnik{digits} has {digits} beats")
     if digits and int(digits) > MAX_FEET:
         raise ValueError(f"a meter has at most {MAX_FEET} feet, got {name!r}")
     return base, int(digits) if digits else None

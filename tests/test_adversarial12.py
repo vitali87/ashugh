@@ -540,3 +540,62 @@ def test_a_scheme_that_leaves_a_line_of_its_repeat_alone_warns():
 )
 def test_a_scheme_that_fits_its_stanza_says_nothing(text, scheme):
     assert not [w for w in warnings_of(text, {"rhyme": scheme}) if w[1] == "scheme"]
+
+
+@pytest.mark.parametrize("flag", ["--rhyme=", "--meter=", "--endings=", "--meter=free4"])
+def test_an_empty_or_meaningless_rule_flag_is_refused(flag, tmp_path, capsys):
+    from ashugh.cli import main
+
+    song = tmp_path / "song.txt"
+    song.write_text("I walk the way\n", encoding="utf-8")
+    assert main(["scan", str(song), flag]) == 2
+    assert "flags" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("key", ["2.9", "true", "1_0", "²", "L1_0", "-1"])
+def test_a_candidate_key_that_is_no_line_number_is_refused(key, tmp_path):
+    from ashugh.proposers import ProposerError, load_candidates
+
+    path = tmp_path / "c.json"
+    path.write_text("{" + f'"{key}"' + ': ["I walk"]}', encoding="utf-8")
+    with pytest.raises(ProposerError, match="not a line number"):
+        load_candidates(path)
+
+
+@pytest.mark.parametrize("key", [2.9, True])
+def test_a_candidate_line_that_is_no_whole_number_is_refused(key):
+    from ashugh.proposers import ProposerError, parse_candidates
+
+    with pytest.raises(ProposerError, match="not a line number"):
+        parse_candidates([{"line": key, "candidates": ["I walk"]}])
+
+
+@pytest.mark.parametrize(
+    "mixed, plain",
+    [
+        ("oкон", "окон"),
+        ("мoлoкo", "молоко"),
+        ("hеllo", "hello"),
+        ("cтaрых", "старых"),
+        ("Mосква-Moscow", "Москва-Moscow"),
+        ("МОСКBА", "МОСКВА"),
+    ],
+)
+def test_a_look_alike_letter_from_the_other_alphabet_is_read_as_its_twin(mixed, plain):
+    assert lyrics.clean(mixed) == plain
+
+
+@pytest.mark.parametrize("word", ["iPhone", "Ёж", "XXL", "мой-my", "SMSка", "VIPовский", "DJем"])
+def test_a_word_of_two_alphabets_without_twins_is_left_alone(word):
+    assert lyrics.clean(word) == word
+
+
+def test_syl_reads_stdin_as_scan_does(monkeypatch, capsys):
+    import io
+
+    from ashugh.cli import main
+
+    raw = io.BytesIO(b"I walk \xff the way\n")
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(raw, encoding="utf-8", errors="ignore"))
+    assert main(["syl"]) == 2
+    assert "not UTF-8" in capsys.readouterr().err

@@ -64,7 +64,7 @@ def _inline_rule(args: argparse.Namespace) -> dict:
     table: dict = {}
     for key in ("syllables", "meter", "feet", "rhyme", "endings", "min_rhyme", "forbid_final"):
         value = getattr(args, key, None)
-        if value:
+        if value is not None:  # --rhyme= is a mistake to name, not a rule to drop
             table[key] = value
     if getattr(args, "tolerance", None) is not None:
         table["tolerance"] = args.tolerance
@@ -176,7 +176,7 @@ def _emit_fit(result: FitResult, args: argparse.Namespace, ignored: list[str] | 
 
 
 def cmd_syl(args: argparse.Namespace) -> int:
-    text = " ".join(args.text) if args.text else sys.stdin.read()
+    text = " ".join(args.text) if args.text else _read("-")
     spec = load(args.spec) if args.spec else Spec()
     if lyrics.has_digits(text):
         print("warning: digits are not counted; spell numbers out", file=sys.stderr)

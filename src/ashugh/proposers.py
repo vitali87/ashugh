@@ -96,7 +96,8 @@ def _request_id(value) -> str | None:
         return f"L{value}"
     if isinstance(value, str):
         text = value.strip()
-        return f"L{text}" if text.isdigit() else text.upper() if text[:1] in "lL" else text
+        number = text.isascii() and text.isdigit()
+        return f"L{text}" if number else text.upper() if text[:1] in "lL" else text
     return None
 
 
@@ -154,16 +155,28 @@ def parse_candidates(data, path: str = "candidates") -> dict[int, list]:
         raise ProposerError(f"{path}: expected an object or a list")
     out: dict[int, list] = {}
     for key, cands in pairs:
-        try:
-            number = int(key[1:] if isinstance(key, str) and key[:1] in "Ll" else key)
-        except TypeError, ValueError:
-            raise ProposerError(f"{path}: {key!r} is not a line number") from None
+        number = _line_number(key)
+        if number is None:
+            raise ProposerError(f"{path}: {key!r} is not a line number")
         if not isinstance(cands, list) or not all(_candidate(c) for c in cands):
             raise ProposerError(
                 f'{path}: line {number} needs a list of lines or {{"text": ...}} objects'
             )
         out.setdefault(number, []).extend(cands)
     return out
+
+
+def _line_number(key) -> int | None:
+    """A line number as a candidates file may write it: 3, "3" or "L3"; not 2.9,
+    true, "1_0" or "²", which int() would take."""
+    if isinstance(key, int) and not isinstance(key, bool):
+        return key if key >= 1 else None
+    if isinstance(key, str):
+        text = key.strip()
+        text = text[1:] if text[:1] in "Ll" else text
+        if text.isascii() and text.isdigit() and int(text) >= 1:
+            return int(text)
+    return None
 
 
 def _candidate(c) -> bool:

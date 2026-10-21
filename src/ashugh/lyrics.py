@@ -209,14 +209,47 @@ def retag(line: str) -> str:
     return BRACKET_RE.sub(named, body) + line[len(body) :]
 
 
+# Letters that look alike in Latin and Cyrillic: a stray one in a word of the
+# other alphabet (oкон with a Latin o, hеllo with a Cyrillic е) is its twin.
+LATIN_TWINS = "aceopxykABCEHKMOPTXY"
+CYRILLIC_TWINS = "асеорхукАВСЕНКМОРТХУ"
+TO_CYRILLIC = str.maketrans(LATIN_TWINS, CYRILLIC_TWINS)
+TO_LATIN = str.maketrans(CYRILLIC_TWINS, LATIN_TWINS)
+LETTERS_RE = re.compile(LETTER + "+")
+
+
+def _twins(m: re.Match) -> str:
+    """A word of one alphabet with look-alikes from the other written in its own.
+    The alphabet is the one with a letter that has no twin (л in мoлoкo), else
+    the one with more letters (МОСКBА); a word with such letters in both stays
+    (VIPовский), and so does a run of twins at an edge, a loan (SMSка)."""
+    word = m.group(0)
+    latin = [k for k, ch in enumerate(word) if ch.isascii()]
+    cyrillic = [k for k, ch in enumerate(word) if "\u0400" <= ch <= "\u04ff"]
+    if not latin or not cyrillic:
+        return word
+    latin_own = any(word[k] not in LATIN_TWINS for k in latin)
+    cyrillic_own = any(word[k] not in CYRILLIC_TWINS for k in cyrillic)
+    if latin_own == cyrillic_own and (latin_own or len(latin) == len(cyrillic)):
+        return word
+    to_cyrillic = cyrillic_own if latin_own != cyrillic_own else len(cyrillic) > len(latin)
+    few, table = (latin, TO_CYRILLIC) if to_cyrillic else (cyrillic, TO_LATIN)
+    run = few == list(range(few[0], few[-1] + 1))
+    if len(few) > 1 and run and (few[0] == 0 or few[-1] == len(word) - 1):
+        return word
+    return "".join(ch.translate(table) if k in few else ch for k, ch in enumerate(word))
+
+
 def clean(text: str) -> str:
     """Text as the tools read it: letters composed (е with a combining diaeresis is
-    ё, as an editor shows it), unseen characters gone and the look-alikes of the
-    apostrophe and the hyphen inside a word written ' and -. Lines stay where
-    they are, so a report's line numbers are the file's."""
+    ё, as an editor shows it), unseen characters gone, a stray letter of the
+    other alphabet written as its twin, and the look-alikes of the apostrophe
+    and the hyphen inside a word written ' and -. Lines stay where they are, so
+    a report's line numbers are the file's."""
     if text.isascii() and "`" not in text:
         return text
     text = INVISIBLE_RE.sub("", unicodedata.normalize("NFC", text))
+    text = LETTERS_RE.sub(_twins, text)
     return HYPHEN_RE.sub("-", APOSTROPHE_RE.sub("'", text))
 
 
