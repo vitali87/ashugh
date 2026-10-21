@@ -618,9 +618,11 @@ def _written(text: str, epenthetic: bool) -> str:
     capital to the letter after it (Ըս-տե: Ստե)."""
     if not epenthetic:
         return text
-    if text.startswith("Ը"):
+    if text.startswith(("Ը", "Ə")):
         return text[1:2].upper() + text[2:]
-    return text.replace("ը", "", 1)
+    if "ը" in text:
+        return text.replace("ը", "", 1)
+    return text.replace("ə", "", 1)  # kyankən sung as kyankn: Armenian typed in Latin
 
 
 def _latin(phones: tuple[str, ...], dropped: bool, schwa: str) -> str:

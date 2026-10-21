@@ -105,6 +105,8 @@ class Word:
         if dropped and d is not None and 0 <= d < len(parts) and len(parts) > 1:
             if "ը" in parts[d] or "Ը" in parts[d]:
                 parts[d] = parts[d].replace("ը", "(ը)", 1).replace("Ը", "(Ը)", 1)
+            elif "ə" in parts[d]:  # kyan-k(ə)n: Armenian typed in Latin
+                parts[d] = parts[d].replace("ə", "(ə)", 1)
             else:
                 at = d - 1 if d > 0 else 0
                 parts[at : at + 2] = ["".join(parts[at : at + 2])]

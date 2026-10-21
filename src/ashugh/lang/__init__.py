@@ -142,7 +142,7 @@ def analyze(
         if k in glued:  # AT&T, R&B: letters, whatever word they spell
             words.append(en.analyze_word(token, lexicon, capitals, letters=True))
             continue
-        if LATIN_WITH_ENDING.fullmatch(token) and (lang == hy.CODE or in_latin):
+        if LATIN_WITH_ENDING.fullmatch(token):  # TikTok-ում, in any line: its ending is Armenian
             words.append(_latin_with_ending(token, lexicon))
             continue
         if armenian and armenian[k]:

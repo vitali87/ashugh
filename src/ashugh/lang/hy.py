@@ -643,6 +643,10 @@ def read_es(word: Word, auxiliary: bool) -> None:
         word.readings = tuple(
             replace(r, phones=r.phones[1:]) if r.phones[:1] == ("j",) else r for r in word.readings
         )
+        first = word.syllables[0] if word.syllables else None
+        if first is not None and first.text[:1] in "yY" and word.text[:1] not in "yY":
+            # es typed in Latin, shown from its sounds: the auxiliary has no y
+            word.syllables = (replace(first, text=first.text[1:]), *word.syllables[1:])
     else:
         word.enclitic = word.clitic = False
         word.readings = tuple(

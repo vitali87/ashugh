@@ -123,3 +123,34 @@ def test_a_lexicon_word_in_capitals_keeps_them():
 
     w = hy.analyze_word("ԿԱՅՍՐՈՒԹՅՈՒՆ", {"կայսրություն": "կայսըրություն"})
     assert "".join(s.text for s in w.syllables) == "ԿԱՅՍԸՐՈՒԹՅՈՒՆ"
+
+
+def test_a_latin_name_with_an_armenian_ending_in_an_english_line():
+    from ashugh import suno
+
+    w = words("I saw you dancing on TikTok-ում", lang="en")[-1]
+    assert w.lang == "hy" and w.readings[0].stress == w.size - 1
+    out = suno.format_song("I saw you dancing on TikTok-ում\n", armenian="latin", tags=False).text
+    assert "TikTok-um" in out
+
+
+def test_latin_typed_armenian_in_schwa_mode_keeps_es_and_the_count():
+    from ashugh import suno
+    from ashugh.spec import from_dict
+
+    spec = from_dict({"language": "hy", "syllables": 7})
+    out = suno.format_song(
+        "Du im kyanqn es, im srtik.\n", spec, armenian="schwa", tags=False, lang="hy"
+    )
+    assert "kyankn es" in out.text.lower(), out.text
+
+
+def test_latin_typed_display_shows_the_dropped_schwa_and_es():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    report = scan(
+        "Du im kyanqn es, im srtik.\n", from_dict({"language": "hy", "syllables": 7}), lang="hy"
+    )
+    sung = report.lines[0].sung
+    assert "yes" not in sung and "(ə)" in sung, sung
