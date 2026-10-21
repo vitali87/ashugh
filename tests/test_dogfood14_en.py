@@ -176,3 +176,31 @@ def test_loveliness_fits_an_iamb_of_eight():
 def test_stacked_contractions_on_yall(token, size):
     w = en_word(token)
     assert w.size == size and not w.guessed
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "I bought the fifteen chairs",
+        "I bought the sixteen chairs",
+        "I bought the eighteen chairs",
+        "I bought the thirteen chairs",
+        "I bought an antique chair",
+        "We ate the Chinese food",
+    ],
+)
+def test_the_rhythm_rule_moves_a_late_stress_before_a_stressed_word(line):
+    report = scan(line + "\n", from_dict({"language": "en", "meter": "iamb", "feet": 3}))
+    assert report.lines[0].ok, report.lines[0].issues
+
+
+@pytest.mark.parametrize("line", ["I counted to fifteen", "I found it so antique"])
+def test_the_late_stress_stays_at_the_end_of_a_line(line):
+    report = scan(line + "\n", from_dict({"language": "en", "meter": "iamb", "feet": 3}))
+    assert report.lines[0].ok, report.lines[0].issues
+
+
+@pytest.mark.parametrize("word", ["machine", "police", "believe"])
+def test_a_reduced_pretonic_vowel_never_takes_the_clash(word):
+    (ln,) = analyze_lines(word, Spec(language="en"))
+    assert all(r.source != "clash" for r in ln.words[0].readings)

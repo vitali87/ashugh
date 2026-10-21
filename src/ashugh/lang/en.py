@@ -751,6 +751,9 @@ SMOOTHED = {"AY", "AW"}
 # a rhyme like a secondary stress whether or not the dictionary marks it:
 # ém-pìre / fire, bírd-hòuse / mouse.
 UNREDUCED = {"AY", "AW", "OY"}
+# Vowels CMUdict may mark 0 before the stress though they are said in full: antique,
+# Chinese, bamboo, hotel.
+PRETONIC_FULL = {"AE", "AY", "AA", "AO", "OW", "EY", "AW", "OY"}
 HIATUS = ("ia", "io", "iu", "ie", "ua", "ue", "ui", "uo", "eo", "oe", "ea")
 
 
@@ -960,12 +963,17 @@ def analyze_word(
                 kind = "shift" if k > r.stress else "clash"
                 readings.append(Reading(k, r.phones, norm, kind, rest, penalty=STRESS_SHIFT))
     # Two primary stresses (well-known, thirteen) give way to a stressed word after
-    # them, so the first may carry the line: a wéll-known vóice.
-    for phones, stresses, _ in full[:1]:
+    # them, so the first may carry the line: a wéll-known vóice, the fífteen chairs,
+    # whichever of its variants the dictionary lists first. So does a full vowel
+    # before a late stress, however the dictionary marks it: an ántique chair.
+    for phones, stresses, bare in full:
         primary = [i for i, d in enumerate(stresses) if d == 1]
-        if len(primary) > 1 and all(x.stress != primary[0] for x in readings):
-            rest = tuple(i for i, d in enumerate(stresses) if d and i != primary[0])
-            readings.append(Reading(primary[0], phones, norm, "clash", rest, penalty=STRESS_SHIFT))
+        head = primary[0] if len(primary) > 1 else None
+        if head is None and primary and stresses.count(1) == 1 and not any(stresses[: primary[0]]):
+            head = next((i for i in range(primary[0]) if bare[i] in PRETONIC_FULL), None)
+        if head is not None and all(x.stress != head for x in readings):
+            rest = tuple(i for i, d in enumerate(stresses) if d and i != head)
+            readings.append(Reading(head, phones, norm, "clash", rest, penalty=STRESS_SHIFT))
     word.readings = tuple(readings)
     _, stresses, bare = full[0]
     short = {k for k, (v, d) in enumerate(zip(bare, stresses)) if d and v in SHORT_VOWELS}
