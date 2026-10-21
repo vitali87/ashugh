@@ -288,10 +288,10 @@ stress marked by hand and a rhyme scheme; `uv run eval/rifma.py`):
 
 | | |
 |---|---|
-| stress of polysyllabic words (60,855) | **97.4%** correct |
-| each word's first reading, without meter or rhyme | 93.0% |
-| words the dictionary lists | 98.2% |
-| ambiguous words, resolved by meter and rhyme | 95.4% |
+| stress of polysyllabic words (60,854) | **97.4%** correct |
+| each word's first reading, without meter or rhyme | 93.6% |
+| words the dictionary lists | 98.3% |
+| ambiguous words, resolved by meter and rhyme | 95.6% |
 | unknown words (7%), guessed from the ending, meter and rhyme | 88.6% |
 | "these two lines rhyme", pairs within a stanza | precision 0.94, recall 0.88, F1 0.91 |
 

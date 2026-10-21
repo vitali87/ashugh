@@ -14,11 +14,11 @@ holdout's in [runs/2026-10-21/holdout3/](runs/2026-10-21/holdout3/).
 | | |
 |---|---|
 | stress of polysyllabic words (60,854) | 97.4% |
-| each word's first reading, without meter or rhyme | 93.5% |
-| words the dictionary lists (52,714) | 98.2% |
-| ambiguous words resolved by meter and rhyme (3,669) | 95.3% |
-| unknown words guessed from the ending, meter and rhyme (4,346) | 88.6% |
-| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.880, F1 0.909 |
+| each word's first reading, without meter or rhyme | 93.6% |
+| words the dictionary lists (52,833) | 98.3% |
+| ambiguous words resolved by meter and rhyme (3,566) | 95.6% |
+| unknown words guessed from the ending, meter and rhyme (4,330) | 88.6% |
+| "these two lines rhyme", 33,798 pairs within stanzas | P 0.941, R 0.880, F1 0.910 |
 
 RIFMA was the development set for the Russian rules: the misses it showed
 led to the gerund and participle twins, the ending prior, the second
