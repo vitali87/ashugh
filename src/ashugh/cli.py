@@ -226,6 +226,13 @@ def cmd_suno(args: argparse.Namespace) -> int:
         print(json.dumps({"text": result.text, "notes": notes}, ensure_ascii=False, indent=2))
     else:
         _print_text(result.text)
+        guessed = [n.new for n in result.notes if n.why == "stress guessed by the meter"]
+        if guessed:
+            shown = ", ".join(dict.fromkeys(guessed))
+            print(
+                f"warning: stress guessed, not known: {shown}; mark it or add it to [lexicon]",
+                file=sys.stderr,
+            )
     return 0
 
 

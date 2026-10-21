@@ -99,3 +99,18 @@ def test_more_russian_tags(tag, name):
     from ashugh.lyrics import suno_tag
 
     assert suno_tag(tag) == name
+
+
+def test_suno_warns_which_stresses_are_guesses(capsys):
+    import io
+    import sys
+
+    from ashugh.cli import main
+
+    sys.stdin = io.StringIO("Хейтеры кипишуй опять\n")
+    try:
+        main(["suno", "-", "--lang", "ru"])
+    finally:
+        sys.stdin = sys.__stdin__
+    err = capsys.readouterr().err
+    assert "stress guessed" in err and "ХейтЕры" in err
