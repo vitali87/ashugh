@@ -44,3 +44,19 @@ def test_fire_and_sky_fail_a_rhyme_scheme():
         from_dict({"language": "en", "rhyme": "AA", "meter": "iamb4"}),
     )
     assert not rep.ok
+
+
+FIRE = (
+    "[V]\nI saw the glory of the fire\nAnd all my heart was free\n"
+    "I heard the music of the choir\nIt sang of you and me\n"
+)
+
+
+def test_a_song_passes_the_spec_derived_from_it():
+    from ashugh.spec import dumps, loads
+    from ashugh.translate import derive_spec
+
+    src = scan(FIRE, from_dict({"language": "en"}))
+    data = derive_spec(src, {"syllables", "meter", "rhyme", "endings"})
+    rep = scan(FIRE, loads(dumps({"language": "en", **data})))
+    assert not [i.message for i in rep.issues if i.severity == "error"]

@@ -81,7 +81,6 @@ def test_fit_json_names_the_file(tmp_path, capsys):
     [
         ({"syllables": 0}, "syllables"),
         ({"syllables": -3}, "syllables"),
-        ({"syllables": [0, 0]}, "syllables"),  # a 0 among counts is a free line
         ({"meter": "iamb0"}, "feet"),
         ({"feet": 0}, "feet"),
     ],
@@ -132,3 +131,12 @@ def test_messages_name_all_three_languages(capsys):
     with pytest.raises(SystemExit):
         main(["--help"])
     assert "Armenian, Russian and English" in capsys.readouterr().out
+
+
+def test_a_list_of_zeros_frees_every_line_of_a_section():
+    from ashugh.scan import scan
+    from ashugh.spec import loads
+
+    spec = loads('language = "en"\nsyllables = 8\n[section.bridge]\nsyllables = [0]\n')
+    rep = scan("[Bridge]\nNow listen to me talk a while, my friend\n", spec)
+    assert rep.ok and rep.lines[0].target is None

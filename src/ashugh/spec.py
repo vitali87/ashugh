@@ -142,12 +142,14 @@ MAX_COUNT = {"syllables": 200, "feet": MAX_FEET}  # more is a typo that would ha
 
 
 def _int_list(name: str, value, where: str) -> tuple[int, ...]:
-    """Counts of 1 or more; a 0 among them leaves that line free (a line of
-    digits in a spec derived from its song), but not every line."""
+    """Counts of 1 or more; a 0 in a list leaves that line free (a line of
+    digits in a spec derived from its song), and a list of 0s every line (a
+    spoken bridge in a song that counts the rest); a bare 0 is no count."""
     out = _numbers(name, value, where)
-    if any(n < 0 for n in out) or not any(out):
-        free = " (0 in a list leaves that line free)" if 0 in out else ""
-        raise SpecError(f"{where}: {name} must be 1 or more{free}, got {value!r}")
+    if any(n < 0 for n in out) or (not any(out) and not isinstance(value, list)):
+        raise SpecError(
+            f"{where}: {name} must be 1 or more (or a list with 0 for a free line), got {value!r}"
+        )
     if max(out) > MAX_COUNT[name]:
         raise SpecError(f"{where}: {name} must be {MAX_COUNT[name]} or fewer, got {value!r}")
     return out

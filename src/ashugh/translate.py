@@ -10,7 +10,7 @@ fits the grid and keeps the rhymes.
 
 from __future__ import annotations
 
-from . import lyrics, rhyme
+from . import lyrics
 from .fit import Change, FitResult, Unresolved, _variables, replace_lines, run
 from .lang import ANALYZERS
 from .proposers import Proposer
@@ -69,24 +69,18 @@ def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
             if scheme:
                 table["rhyme"] = scheme
         if "endings" in keep:  # a line of digits alone, counted 0, is left free
-            table["endings"] = "".join(_ending(lr, unit.lines) for lr in unit.lines)
+            table["endings"] = "".join(_ending(lr) for lr in unit.lines)
         stanzas[str(number)] = table
     return {"stanza": stanzas}
 
 
-def _ending(lr, lines: list) -> str:
-    """A line's ending as a translation must keep it: the one its rhyme makes
-    with a partner (become of mé with Tennessee, though the meter's last beat
-    is on come), else the meter's; - for a line of digits alone."""
+def _ending(lr) -> str:
+    """A line's ending as the scan checks it, so the song passes its own spec: the
+    one its fit gives (what be-cóme of mé ends on me, the rhyme having moved its
+    last beat there); - for a line of digits alone."""
     if not lr.fit.count:
         return "-"
-    ending = lr.fit.ending
-    partners = [p for p in lines if p is not lr and lr.letter not in ("", "-")]
-    partners = [p for p in partners if p.letter == lr.letter and p.tails]
-    if partners and lr.tails:
-        _, mine, _ = rhyme.match(lr.tails, partners[0].tails)
-        ending = mine.post if mine is not None else ending
-    return ENDING_CODES.get(ending, "h")
+    return ENDING_CODES.get(lr.fit.ending, "h")
 
 
 def source_warnings(report: Report) -> list[str]:

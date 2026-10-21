@@ -229,7 +229,7 @@ def test_a_zero_in_a_syllable_list_leaves_that_line_free():
     assert rep.ok
 
 
-@pytest.mark.parametrize("value", [0, [0, 0], "0"])
+@pytest.mark.parametrize("value", [0, "0"])  # a list of 0s frees every line
 def test_a_spec_with_no_count_above_zero_is_refused(value):
     from ashugh.spec import SpecError
 
