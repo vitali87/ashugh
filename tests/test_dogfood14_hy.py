@@ -160,3 +160,23 @@ def test_a_latin_word_with_an_ending_is_still_read_as_a_word():
 def test_suno_keeps_the_ligature_ev(line, mode, split, out):
     text = suno.format_song(line, tags=False, armenian=mode, split=split).text
     assert out in text and "Երեվան" not in text
+
+
+SONG_WITH_LATIN = (
+    "Ես քեզ սիրում եմ ամեն օր\nMtnem qo srtin, kyanqs, aynqan karotum em\nՈւ դու ինձ ես սիրում\n"
+)
+
+
+def test_a_latin_typed_line_in_an_armenian_song_is_armenian_without_lang():
+    from ashugh.scan import scan
+
+    rep = scan(SONG_WITH_LATIN)
+    assert rep.lines[1].line.lang == "hy"
+    assert rep.lines[1].fit.count == scan(SONG_WITH_LATIN, lang="hy").lines[1].fit.count
+
+
+def test_an_english_line_in_an_armenian_song_stays_english():
+    from ashugh.scan import scan
+
+    rep = scan("Ես քեզ սիրում եմ ամեն օր\nI love you more than words can say\n")
+    assert rep.lines[1].line.lang == "en"
