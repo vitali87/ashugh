@@ -342,6 +342,11 @@ PREPOSITION_SHIFT = {
     "от": set("роду".split()),
 }
 LEAN_COST = 0.2
+# не takes the stress of these by the norm (не́ был, не́ дал); не́ были and не бы́ли
+# are both heard, so those stay a choice
+NE_FIRST = frozenset("был было дал дало дали жил жило пил пило".split())
+# не́ с кем, не́ о чем, не́ за что: не, a preposition and one of these, stressed on не
+NE_PRONOUNS = frozenset("кем чем что кому кого чего ком чём чему".split())
 LOCATIVE_ONLY_AFTER = {
     "полку": {"в", "во"},
     "связи": {"в", "во"},
@@ -439,7 +444,7 @@ def read_marks(token: str) -> tuple[str, int | None]:
     vowel_no = -1
     caps = [i for i, ch in enumerate(token) if i > 0 and ch.isupper() and ch.lower() in VOWELS]
     rest_lower = all(not ch.isupper() for i, ch in enumerate(token) if i > 0 and i not in caps)
-    cap_mark = caps[0] if len(caps) == 1 and rest_lower else None
+    cap_mark = caps[0] if len(caps) == 1 and rest_lower and not token.isupper() else None
     for i, ch in enumerate(token):
         if ch == ACUTE:
             if vowel_no >= 0:
@@ -1110,6 +1115,27 @@ def marked_leans(words: list[Word]) -> None:
                 break
 
 
+def ne_with_pronoun(words: list[Word]) -> None:
+    """не́ с кем, не́ о чем, не́ за что: не takes the stress, the preposition and the
+    pronoun after it lean on it."""
+    for k in range(len(words) - 2):
+        ne, prep, pronoun = words[k : k + 3]
+        if ne.norm != "не" or prep.norm not in PREPOSITIONS or pronoun.norm not in NE_PRONOUNS:
+            continue
+        if any(
+            w.lang != CODE or w.readings[:1] and w.readings[0].source == "mark"
+            for w in (prep, pronoun)
+        ):
+            continue
+        ne.clitic = False
+        pronoun.clitic = pronoun.weak = True
+        base = pronoun.readings[0] if pronoun.readings else None
+        if base is not None:
+            pronoun.readings = (
+                Reading(None, transcribe(base.spelling, None), base.spelling, "clitic"),
+            )
+
+
 def preposition_shift(words: list[Word]) -> None:
     """Let the noun of a listed pair lend its stress to the preposition: по́ лесу."""
     for prev, w in zip(words, words[1:]):
@@ -1123,4 +1149,8 @@ def preposition_shift(words: list[Word]) -> None:
         lean = Reading(
             None, transcribe(base.spelling, None), base.spelling, "lean", penalty=LEAN_COST
         )
-        w.readings = (*w.readings, lean)
+        if prev.norm == "не" and w.norm in NE_FIRST:  # не́ был: the norm, not a licence
+            costly = tuple(replace(r, penalty=max(r.penalty, LEAN_COST)) for r in w.readings)
+            w.readings = (replace(lean, penalty=0.0), *costly)
+        else:
+            w.readings = (*w.readings, lean)

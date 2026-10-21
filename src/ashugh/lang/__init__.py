@@ -142,6 +142,7 @@ def analyze(
         ru.after_prepositions(words)
         ru.second_locatives(words)
         ru.marked_leans(words)
+        ru.ne_with_pronoun(words)
         ru.preposition_shift(words)
     if any(w.lang == "en" for w in words):
         en.heteronyms(words)
