@@ -233,3 +233,45 @@ def test_a_translation_request_does_not_copy_the_source_ending():
     p = Echo()
     translate.translate_song(src, "en", p, keep={"syllables", "rhyme"}, rounds=1)
     assert all(r.ending is None for r in p.calls[0])
+
+
+@pytest.mark.parametrize(
+    "tag,suno_name",
+    [
+        ("[Женский вокал]", "[Female Vocal]"),
+        ("[Мужской вокал]", "[Male Vocal]"),
+        ("[Хор]", "[Choir]"),
+        ("[Соло на гитаре]", "[Guitar Solo]"),
+        ("[припев:]", "[Chorus]"),
+        ("[Կանացի ձայն]", "[Female Vocal]"),
+        ("[Երգչախումբ]", "[Choir]"),
+    ],
+)
+def test_vocal_and_choir_tags_are_named_for_suno(tag, suno_name):
+    out = suno.format_song(f"{tag}\nЯ иду домой\n").text
+    assert out.splitlines()[0] == suno_name
+
+
+@pytest.mark.parametrize(
+    "word,stress",
+    [
+        ("человече", 2), ("махая", 1), ("холодком", 2), ("нашею", 0), ("клала", 0),
+        ("ситца", 0), ("девяноста", 2), ("ушедший", 1), ("пришедший", 1), ("нашими", 0),
+        ("вашими", 0), ("нашему", 0),
+    ],
+)  # fmt: skip
+def test_dictionary_gaps_are_filled(word, stress):
+    w = line_words(word)[0]
+    assert w.readings[0].stress == stress and not w.guessed
+
+
+@pytest.mark.parametrize(
+    "line,stress", [("О Лермонтов", 0), ("Марина Цветаева", 1), ("у реки Куры", 1)]
+)
+def test_poets_and_rivers_are_known(line, stress):
+    assert line_words(line)[-1].readings[0].stress == stress
+
+
+@pytest.mark.parametrize("word", ["по-над", "по-за"])
+def test_a_compound_preposition_is_unstressed(word):
+    assert line_words(word + " лесом")[0].clitic

@@ -61,7 +61,7 @@ def test_suno_keeps_a_tag_line_with_an_aside_and_adds_no_tag():
 
 def test_suno_names_each_section_tag_on_a_tag_line():
     out = suno.format_song("[Припев] [Женский вокал]\nЯ жду\n", tags=True).text
-    assert out.splitlines()[0] == "[Chorus] [Женский вокал]"
+    assert out.splitlines()[0] == "[Chorus] [Female Vocal]"  # the voice named for Suno too
 
 
 @pytest.mark.parametrize(

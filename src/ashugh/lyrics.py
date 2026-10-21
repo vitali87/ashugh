@@ -107,6 +107,16 @@ SECTION_NAMES = {
     "սոլո": "Solo",
     "մեներգ": "Solo",
     "նվագ": "Instrumental",
+    "соло на гитаре": "Guitar Solo",
+}
+# Voices, which Suno takes as tags of their own beside a section's, not as one.
+VOICE_NAMES = {
+    "женский вокал": "Female Vocal",
+    "мужской вокал": "Male Vocal",
+    "хор": "Choir",
+    "կանացի ձայն": "Female Vocal",
+    "արական ձայն": "Male Vocal",
+    "երգչախումբ": "Choir",
 }
 
 
@@ -187,11 +197,13 @@ def suno_tag(tag: str) -> str | None:
     name = ORDINAL_RE.sub(" ", name.lower())
     numbers = re.findall(r"\d+", name) + [o for o in ordinals if o.isdigit()]
     name = " ".join(re.sub(r"\d+", " ", name).split())
-    known = SECTION_NAMES.get(name)
+    known = SECTION_NAMES.get(name) or VOICE_NAMES.get(name)
     if known is None:
         return None
     parts = ["Final"] if "Final" in ordinals else []
     parts += [known, *numbers[:1], *([repeat] if repeat else []), *notes]
+    if not NOTE_RE.sub("", rest).strip():
+        rest = ""  # [припев:] -> [Chorus]: a separator with no note after it
     if rest:  # [Куплет 2 - Рэп] -> [Verse 2 - Rap]
         sep = NOTE_RE.match(rest)
         head = rest[: sep.end()] if sep else ""
