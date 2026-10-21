@@ -87,3 +87,45 @@ def test_a_meter_in_the_spec_still_limits_what_a_rhyme_may_buy():
     spec = from_dict({"language": "ru", "rhyme": "AA", "meter": "iamb"})
     rep = scan(VODY, spec)
     assert rep.lines[0].fit.stresses[4] == 1  # the iamb keeps воды́ and flags the rhyme
+
+
+@pytest.mark.parametrize(
+    "phrase, stress",
+    [
+        ("свет из окна", 1),
+        ("ты ждёшь у окна", 1),
+        ("с утра до ночи", 1),
+        ("до утра не спится", 1),
+        ("я уехал из страны", 1),
+        ("я летел до луны", 1),
+        ("ждала у сосны", 1),
+        ("свет от свечи", 1),
+        ("нет ни души", 1),
+        ("вдали от семьи", 1),
+        ("без письма", 1),
+        ("пьяный от вина", 1),
+        ("я пришёл из села", 1),
+        ("из гнезда", 1),
+    ],
+)
+def test_after_a_genitive_preposition_the_noun_is_no_plural(phrase, stress):
+    words = line_words(phrase)
+    k = next(i for i, w in enumerate(words) if i and words[i - 1].norm in ru.GENITIVE_PREPOSITIONS)
+    r = words[k].readings[0]
+    assert r.stress == stress and "ё" not in r.spelling
+
+
+@pytest.mark.parametrize("phrase", ["вижу окна", "в окна", "мои сёла", "за окна"])
+def test_elsewhere_the_plural_stays(phrase):
+    w = line_words(phrase)[-1]
+    assert 0 in {r.stress for r in w.readings}
+
+
+def test_suno_writes_the_genitive():
+    out = suno.format_song("Свет из окна, я пришёл из села\n", tags=False).text
+    assert "из окна," in out and "из села" in out  # unambiguous now: no mark needed
+
+
+def test_an_anapest_with_utra_is_detected():
+    rep = scan("Я гуляю с утра до утра\n", from_dict({"language": "ru"}))
+    assert rep.units[0].meter.startswith("anapest")

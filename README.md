@@ -445,10 +445,15 @@ earlier ё is no reading of its own (трёхэта́жный).
 A dictionary reading after the first costs the meter a little, so where the
 meter leaves the choice open the usual reading wins (уже́, not у́же; е́ду,
 not еду́), and right after a preposition a stress only a verb form has is
-dropped (по по́лю, not полю́, I weed).
+dropped (по по́лю, not полю́, I weed); after a preposition of the genitive
+(из, у, от, до, без, с, ни...) so is a stress only a nominative or
+accusative plural has (из окна́, до луны́, из села́; not о́кна, лу́ны, сёла).
+Frequent words come before rarer homographs the table ranks higher (мою́,
+стоя́т, выходи́).
 
 After в, во and на, about a hundred nouns take the stressed second locative
-(на берегу́, в саду́, в крови́). In about a hundred set pairs the stress may
+(на берегу́, в саду́, в крови́), also past an adjective or pronoun before them
+(в э́том дыму́, в моей груди́). In about a hundred set pairs the stress may
 move onto the preposition (по́ лесу, на́ ночь, за́ руку); the meter takes
 whichever reading fits, and a shifted line end rhymes from the preposition.
 At the end of a line, the rhyme partner picks between readings the meter

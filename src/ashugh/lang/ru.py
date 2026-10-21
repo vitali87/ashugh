@@ -1162,8 +1162,10 @@ def after_prepositions(words: list[Word]) -> None:
         if any(r.source in ("mark", "user") for r in w.readings):
             continue
         kept = [r for r in w.readings if r.stress not in TABLE.verb_only(r.spelling)]
-        if kept and len(kept) < len(w.readings):
-            w.readings = tuple(replace(r, penalty=0.0) if k == 0 else r for k, r in enumerate(kept))
+        if kept and kept != list(w.readings):
+            w.readings = tuple(
+                replace(r, penalty=0.0 if k == 0 else ALTERNATIVE_COST) for k, r in enumerate(kept)
+            )
 
 
 def prefer_names(words: list[Word], starts: list[bool]) -> None:
@@ -1247,14 +1249,19 @@ GENITIVE_IN_END = frozenset(
     """реки руки ноги горы стены зимы весны воды души земли звезды травы слезы
     головы бороды сестры жены трубы губы доски щеки норы дыры""".split()
 )
+# Genitives stressed on the end whose stem-stressed form verse uses too: с утра́, but
+# гуляли до у́тра; от вина́. The end comes first, the other stays.
+GENITIVE_END_FIRST = frozenset({"утра", "вина"})
 GENITIVE_PREPOSITIONS = frozenset(
-    "у из от до без для около возле после вокруг среди мимо из-за из-под".split()
+    """у из от до без для около возле после вокруг среди мимо из-за из-под с со ни
+    кроме вместо вдоль внутри вне ради против напротив близ""".split()
 )
 
 
 def after_genitive(words: list[Word]) -> None:
-    """у до́ма, из ле́са, у реки́, из воды́: no plural after a preposition of the
-    genitive, where a genitive singular is spelt like it."""
+    """у до́ма, из ле́са, у реки́, из воды́, из окна́, из села́: no nominative or
+    accusative plural after a preposition of the genitive, where a genitive
+    singular is spelt like it."""
     for prev, w in zip(words, words[1:]):
         if w.lang != CODE or prev.norm not in GENITIVE_PREPOSITIONS:
             continue
@@ -1265,10 +1272,14 @@ def after_genitive(words: list[Word]) -> None:
             kept = [r for r in w.readings if r.stress != last]
         elif w.norm.replace("ё", "е") in GENITIVE_IN_END:
             kept = [r for r in w.readings if r.stress == last]
-        else:
-            continue
-        if kept:
-            w.readings = tuple(replace(r, penalty=0.0) if k == 0 else r for k, r in enumerate(kept))
+        elif w.norm in GENITIVE_END_FIRST:
+            kept = sorted(w.readings, key=lambda r: r.stress != last)
+        else:  # из окна́, до луны́, из села́: not the plural о́кна, лу́ны, сёла
+            kept = [r for r in w.readings if r.stress not in TABLE.plural_only(r.spelling)]
+        if kept and kept != list(w.readings):
+            w.readings = tuple(
+                replace(r, penalty=0.0 if k == 0 else ALTERNATIVE_COST) for k, r in enumerate(kept)
+            )
 
 
 # The locative singular of an adjective or pronoun before a noun: э́том, на́шем, моём.

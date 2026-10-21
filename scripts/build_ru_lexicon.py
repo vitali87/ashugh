@@ -249,6 +249,7 @@ def column_rank(column: str) -> int:
 
 
 VERB_COLUMNS = ("presfut", "past", "imperative")
+PLURALS = ("pl_nom", "pl_acc")  # a noun's plural a preposition of the genitive cannot take
 
 
 def build(source: Path) -> dict[str, list[int]]:
@@ -259,18 +260,23 @@ def build(source: Path) -> dict[str, list[int]]:
     return {form: [p for p, _ in entry] for form, entry in ranked(source).items()}
 
 
-def ranked(source: Path) -> dict[str, list[tuple[int, bool]]]:
-    """build's table with each stress marked True where only a verb form has it
-    (полю́, I weed, beside по́лю of по́ле): no reading after a preposition."""
+def ranked(source: Path) -> dict[str, list[tuple[int, str]]]:
+    """build's table with each stress marked "v" where only a verb form has it
+    (полю́, I weed, beside по́лю of по́ле: no reading after a preposition), and "p"
+    where only a nominative or accusative plural has it (о́кна beside окна́: no
+    reading after a preposition of the genitive)."""
     csv.field_size_limit(sys.maxsize)
     rank: dict[str, dict[int, int]] = defaultdict(dict)
     nominal: dict[str, set[int]] = defaultdict(set)  # stresses some non-verb form has
+    other: dict[str, set[int]] = defaultdict(set)  # stresses a form not of PLURALS has
 
-    def add(bare: str, positions: set[int], r: int, verb: bool) -> None:
+    def add(bare: str, positions: set[int], r: int, verb: bool, column: str = "") -> None:
         for p in positions:
             rank[bare][p] = min(rank[bare].get(p, r), r)
             if not verb:
                 nominal[bare].add(p)
+            if column not in PLURALS:
+                other[bare].add(p)
 
     bases = end_feminines(source)
     for name in FILES:
@@ -313,18 +319,23 @@ def ranked(source: Path) -> dict[str, list[tuple[int, bool]]]:
                     bare, positions, count = stress_positions(form)
                     if not positions or (count < 2 and "ё" not in bare):
                         continue
-                    add(bare, positions, column_rank(column), verb)
+                    add(bare, positions, column_rank(column), verb, column)
+
+    def mark(form: str, p: int) -> str:
+        return "v" if p not in nominal[form] else "p" if p not in other[form] else ""
+
     return {
-        form: [(p, p not in nominal[form]) for p in sorted(ranks, key=lambda p: (ranks[p], p))]
+        form: [(p, mark(form, p)) for p in sorted(ranks, key=lambda p: (ranks[p], p))]
         for form, ranks in rank.items()
     }
 
 
-def encode(entry: list[tuple[int, bool]]) -> str:
-    """Stresses in order, each followed by v where only a verb form has it and the
-    form has another stress too: полю is "1v2" read as 2, then 1 (verb only)."""
+def encode(entry: list[tuple[int, str]]) -> str:
+    """Stresses in order, each followed by its mark (see ranked): v where the form
+    has another stress too, p always (сёла is "1p", spelt like села): полю is "1v2",
+    read as 2, then 1 (verb only), окна "1p2" as 1 (о́кна, plural only), then 2."""
     several = len(entry) > 1
-    return "".join(f"{p}{'v' if verb and several else ''}" for p, verb in entry)
+    return "".join(f"{p}{m if several or m == 'p' else ''}" for p, m in entry)
 
 
 def extra(source: Path, table: dict[str, list[int]]) -> dict[str, list[int]]:
@@ -394,7 +405,7 @@ def main() -> None:
     marked = ranked(Path(sys.argv[1]))
     table = {form: [p for p, _ in entry] for form, entry in marked.items()}
     made = extra(Path(sys.argv[1]), table)
-    derived_rows = {f: [(p, False) for p in ps] for f, ps in made.items()}
+    derived_rows = {f: [(p, "") for p in ps] for f, ps in made.items()}
     for path, rows in ((OUT, marked), (DERIVED_OUT, derived_rows)):
         keys = sorted(rows, key=lambda k: k.encode())
         with open(path, "w", encoding="utf-8", newline="\n") as out:

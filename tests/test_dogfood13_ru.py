@@ -140,10 +140,10 @@ def test_after_a_genitive_preposition_a_plural_in_a_is_no_reading(phrase):
     assert w.size - 1 not in {r.stress for r in w.readings}
 
 
-@pytest.mark.parametrize("phrase", ["из окна", "у моря"])
-def test_other_words_after_a_genitive_preposition_keep_their_readings(phrase):
+@pytest.mark.parametrize("phrase, stress", [("из окна", 1), ("у моря", 0)])
+def test_other_words_after_a_genitive_preposition_are_genitives_too(phrase, stress):
     (ln,) = analyze_lines(phrase, Spec(language="ru"))
-    assert ln.words[-1].readings[0].stress == ru.analyze_word(ln.words[-1].text).readings[0].stress
+    assert ln.words[-1].readings[0].stress == stress  # окна́, мо́ря: not о́кна, моря́
 
 
 def test_suno_hints_no_stress_the_line_still_fails_with():
