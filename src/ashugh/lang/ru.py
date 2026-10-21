@@ -470,6 +470,12 @@ def _yo_only_mark(token: str) -> bool:
 APOSTROPHE_MARK = re.compile("([аеёиоуыэюяАЕЁИОУЫЭЮЯ])'(?=[а-яё]|$)")
 
 
+# One-syllable ё words that are as usual as their е twin, so either reading may
+# stand: все / всё, слез / слёз. The table's rarer ones (лёт, лёс, сёл, шлём) are
+# no reading of лет, лес, сел, шлем.
+YO_TWINS = frozenset("всё всём лён слёз мёл стёр чёрт пёк стёк".split())
+
+
 def read_marks(token: str) -> tuple[str, int | None]:
     """Normalized spelling and the stressed vowel index a mark in token gives, if any."""
     stress = None
@@ -677,13 +683,16 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     # (улыба́лася, не ложи́ся, бою́ся): its twin is the -сь form, not the bare stem
     # (ло́жи, theatre boxes).
     if norm.endswith("ся") and norm[-3:-2] in VOWELS and not found and norm[:-2] not in CLITICS:
-        twin(norm[:-2] + "сь", lambda p: p)
+        if TABLE.variants(norm[:-2] + "сь"):  # not гася as a гась no table lists
+            twin(norm[:-2] + "сь", lambda p: p)
     # стараясь is стара́юсь's gerund, not ста́рая with сь: a gerund asks its verb first.
     gerund = norm.endswith(("ясь", "ась")) and not norm.endswith("лась")
     for suffix in ("ся", "сь"):
         # неся is несу́'s gerund, not не with -ся
-        if norm.endswith(suffix) and not found and not gerund and norm[:-2] not in CLITICS:
-            twin(norm[:-2], lambda p: p)
+        bare = norm[:-2]  # гася is гашу́'s gerund, not га with -ся: a bare stem is a word
+        if norm.endswith(suffix) and not found and not gerund and bare not in CLITICS:
+            if vowel_count(bare) > 1 or TABLE.variants(bare):
+                twin(bare, lambda p: p)
     for prefix in ("не", "ни"):
         if norm.startswith(prefix) and not found and vowel_count(norm) > 2:
             twin(norm[2:], lambda p: p + 1)
@@ -692,7 +701,8 @@ def _shift_lookup(norm: str) -> list[tuple[str, tuple[int, ...]]]:
     if not found:
         size = vowel_count(norm)
         for form in verb_twins(norm):
-            stress = TABLE.stresses(form)
+            # ношу́, not the noun's но́шу: a stress only the verb has, where one is marked
+            stress = tuple(sorted(TABLE.verb_only(form))) or TABLE.stresses(form)
             if stress and all(p < size for p in stress):
                 found.append((norm, stress))
                 break
@@ -758,13 +768,15 @@ def verb_twins(norm: str) -> list[str]:
         stem = base[:-1]
         if base.endswith("я"):
             out.append(stem + "ю" + sg_tail)
+            # the first person with its consonant alternated before the bare stem:
+            # уходя́ as ухожу́, not as the noun's ухо́ду; летя́ as лечу́, not ле́ту
+            for old, new in ALTERNATIONS:
+                if stem.endswith(old):
+                    out.append(stem[: -len(old)] + new + "у" + sg_tail)
             if stem[-1:] in "дтсзб":
                 out.append(stem + "у" + sg_tail)  # идя́ as иду́, неся́ as несу́
             if stem[-1:] in LABIALS:
                 out.append(stem + "лю" + sg_tail)
-            for old, new in ALTERNATIONS:
-                if stem.endswith(old):
-                    out.append(stem[: -len(old)] + new + "у" + sg_tail)
             out += [stem + "ят" + pl_tail, stem + "ют" + pl_tail]
         else:
             out += [stem + "у" + sg_tail, stem + "ат" + pl_tail]
@@ -1165,7 +1177,8 @@ def analyze_word(
     elif not readings and n == 1:
         # ждет is ждёт: no word is spelled ждет
         yo = None if norm in NOT_YO else yo_only().get(norm) or YO_NAMES.get(norm)
-        spellings = [yo] if yo else [norm] + [s for s, _ in TABLE.variants(norm) if s != norm]
+        twins = [s for s, _ in TABLE.variants(norm) if s != norm and s in YO_TWINS]
+        spellings = [yo] if yo else [norm, *twins]
         source = "clitic" if clitic else "rule"
         readings = [Reading(0, transcribe(s, 0), s, source) for s in spellings]
     elif not readings:
