@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import replace
+from itertools import product
 
 from ..model import Reading, Syllable, Word
 from ..phon import is_vowel
@@ -1040,6 +1041,9 @@ def analyze_word(
         # stress, even where the dictionary lists the whole (its twenty-one has twen)
         return _hyphenated(word, token, overrides)
     if not variants:
+        held = _held(token, overrides, capitals)
+        if held is not None:
+            return held
         return _camel(word, token, overrides) or _guessed(word, token, norm)
 
     parsed = [_parse(v) for v in variants]
@@ -1222,6 +1226,44 @@ def _smoothed(phones: tuple[str, ...], stresses: list[int], bare: list[str]) -> 
         return False
     at = [i for i, p in enumerate(phones) if is_vowel(p)]
     return at[-1] == at[-2] + 1
+
+
+RUN_RE = re.compile(r"([a-z])\1{2,}", re.I)  # a letter written three times or more
+
+
+def _held(token: str, overrides: dict[str, str] | None, capitals: bool) -> Word | None:
+    """An elongated word, one held note: whyyyy as why, Babyyyy as baby, looove as
+    love, Mmmmm as mmm; each run of a letter tried as one, then as two. Its pieces
+    keep the letters as written (Ba-byyyy). None if no squeeze is a word."""
+    runs = list(RUN_RE.finditer(token))
+    if not runs or len(runs) > 3:
+        return None
+    for keep in product((1, 2), repeat=len(runs)):
+        spans, last, squeezed = [], 0, []
+        for m, k in zip(runs, keep):
+            for ch_at in range(last, m.start()):
+                spans.append((ch_at, ch_at + 1))
+            spans += [(m.start() + j, m.start() + j + 1) for j in range(k - 1)]
+            spans.append((m.start() + k - 1, m.end()))  # the last kept letter holds the rest
+            last = m.end()
+        spans += [(j, j + 1) for j in range(last, len(token))]
+        squeezed = "".join(token[a] for a, _ in spans)
+        if not lookup(normalize(squeezed)):
+            continue
+        word = analyze_word(squeezed, overrides, capitals)
+        if word.guessed or not word.syllables:
+            continue
+        pieces, at = [], 0
+        for syl in word.syllables:
+            n = len(syl.text)
+            a, b = spans[at][0], spans[at + n - 1][1] if at + n - 1 < len(spans) else len(token)
+            pieces.append(replace(syl, text=token[a:b]))
+            at += n
+        if "".join(p.text for p in pieces) != token:
+            continue
+        word.text, word.syllables = token, tuple(pieces)  # a word, which may rhyme: whyyyy / sky
+        return word
+    return None
 
 
 CAMEL_PARTS = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z]?[a-z]+|[A-Z](?![a-z])")

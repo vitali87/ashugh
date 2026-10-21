@@ -34,3 +34,27 @@ def test_a_noun_after_a_determiner_cannot_buy_a_rhyme_with_the_verb_stress(text,
 @pytest.mark.parametrize("line", ["I want to record", "They will object", "we present"])
 def test_a_verb_after_its_subject_keeps_the_verb_stress(line):
     assert words(line)[-1].readings[0].stress == 1
+
+
+@pytest.mark.parametrize(
+    "token,size",
+    [
+        ("whyyyy", 1), ("nooooo", 1), ("Babyyyy", 2), ("Yeahhhh", 1), ("Ooooh", 1), ("Aaah", 1),
+        ("looove", 1), ("Yesss", 1), ("Loooong", 1), ("Heyyyy", 1), ("Mmmmm", 1), ("Sooooo", 1),
+    ],
+)  # fmt: skip
+def test_an_elongated_word_is_its_word_held(token, size):
+    w = words(token)[0]
+    assert w.size == size and not w.guessed, [r.source for r in w.readings]
+    assert "".join(s.text for s in w.syllables) == token
+
+
+@pytest.mark.parametrize(
+    "a,b", [("Tell me whyyyy", "sky"), ("Baby, nooooo", "so"), ("looove", "above")]
+)
+def test_an_elongated_word_rhymes_as_its_word(a, b):
+    assert rhymes(a, b) >= 0.9
+
+
+def test_a_sound_with_a_triple_letter_stays_itself():
+    assert words("Brrr")[0].size == 1
