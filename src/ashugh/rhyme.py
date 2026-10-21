@@ -228,6 +228,10 @@ def score(a: Tail | None, b: Tail | None) -> float:
     merged = _english_merger(a, b)
     vd = 0.0 if merged else vowel_distance(a.vowel, b.vowel)
     if vd > 0.3 or (not merged and _english_contrast(a, b)):
+        if a.post == b.post >= 2 and _plain(a) == _plain(b):
+            # Gén-er-al / mín-er-al: two syllables and more alike after the stress
+            # hold a slant rhyme though the stressed vowels differ
+            return CONSONANT_TAIL
         return 0.1
     s = 1.0 - vd
     if a.post != b.post:
@@ -249,6 +253,13 @@ def score(a: Tail | None, b: Tail | None) -> float:
         # сказочный
         s = max(s, ASSONANCE_FLOOR)
     return max(0.0, min(1.0, round(s, 3)))
+
+
+CONSONANT_TAIL = 0.5  # slant: a long tail alike after differing stressed vowels
+
+
+def _plain(t: Tail) -> tuple[str, ...]:
+    return _reduced(t.rest) if t.lang == "en" else t.rest
 
 
 ASSONANT_VOWELS = 0.15  # stressed vowels this close are the same for assonance

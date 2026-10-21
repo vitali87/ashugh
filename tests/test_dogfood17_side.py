@@ -150,3 +150,25 @@ def test_words_that_only_end_alike_are_no_root(text):
     from ashugh.spec import from_dict
 
     assert not any("one root" in i.message for i in scan(text, from_dict({"rhyme": "AA"})).issues)
+
+
+def test_a_long_tail_alike_is_a_slant_rhyme():
+    s = en_rhyme("general", "mineral")
+    assert rhyme.THRESHOLD["slant"] <= s < rhyme.THRESHOLD["near"]
+
+
+def test_the_major_general_passes_a_slant_spec():
+    from ashugh.scan import scan
+    from ashugh.spec import from_dict
+
+    text = (
+        "I am the very model of a modern Major-General\n"
+        "I've information vegetable, animal, and mineral\n"
+    )
+    assert scan(text, from_dict({"rhyme": "AA", "min_rhyme": "slant"})).ok
+    assert not scan(text, from_dict({"rhyme": "AA"})).ok
+
+
+@pytest.mark.parametrize("a,b", [("still", "feel"), ("sitting", "meeting"), ("table", "bubble")])
+def test_a_short_tail_after_differing_vowels_is_still_none(a, b):
+    assert en_rhyme(a, b) < rhyme.THRESHOLD["slant"]
