@@ -547,20 +547,27 @@ def _infer_tags(raw: list[str], report: Report, notes: list[Note]) -> str:
     }
     repeated = {t for t in texts.values() if list(texts.values()).count(t) > 1}
     verses = sum(1 for t in texts.values() if t not in repeated)
-    starts: dict[int, str] = {}
+    if repeated:
+        why_verse = "a stanza that does not come back is a verse"
+    elif len(stanzas) > 1:
+        why_verse = "untagged lyrics where no stanza repeats: each a verse"
+    else:
+        why_verse = "untagged lyrics of one stanza: a verse"
+    starts: dict[int, tuple[str, str]] = {}
     verse_no = 0
     for u, lrs in stanzas.items():
         if texts[u] in repeated:
-            tag = "[Chorus]"
+            tag, why = "[Chorus]", "a stanza that comes back is the chorus"
         else:
             verse_no += 1
-            tag = f"[Verse {verse_no}]" if verses > 1 else "[Verse]"
-        starts[lrs[0].line.number] = tag
+            tag, why = (f"[Verse {verse_no}]" if verses > 1 else "[Verse]"), why_verse
+        starts[lrs[0].line.number] = (tag, why)
     out = []
     for k, line in enumerate(raw, 1):
         if k in starts:
+            tag, why = starts[k]
             ending = line[len(line.rstrip("\r\n")) :] or "\n"  # the file's own line endings
-            out.append(starts[k] + ending)
-            notes.append(Note(k, "tag", "", starts[k], "inferred from repeated stanzas"))
+            out.append(tag + ending)
+            notes.append(Note(k, "tag", "", tag, why))
         out.append(line)
     return "".join(out)

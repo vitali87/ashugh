@@ -411,3 +411,23 @@ def test_surnames_written_without_their_yo_get_it(word, spelling):
     (ln,) = analyze_lines(f"Вспомнил {word}", Spec(language="ru"))
     r = ln.words[1].readings[0]
     assert r.spelling == spelling and r.stress == ru.vowel_count(spelling.split("ё")[0])
+
+
+def tag_notes(text: str) -> list[str]:
+    return [n.why for n in suno.format_song(text).notes if n.kind == "tag"]
+
+
+def test_a_single_untagged_stanza_is_not_said_to_repeat():
+    (why,) = tag_notes("Я иду по улице\nИ пою свою песню\n")
+    assert "repeat" not in why and "verse" in why
+
+
+def test_stanzas_that_do_not_repeat_are_said_to_be_verses():
+    whys = tag_notes("la la la\nla la la\n\nno no no\nno no no\n")
+    assert len(whys) == 2 and all("no stanza repeats" in w for w in whys)
+
+
+def test_a_repeated_stanza_is_said_to_be_the_chorus():
+    whys = tag_notes("la la la\n\nno no no\n\nla la la\n")
+    assert whys[0] == "a stanza that comes back is the chorus"
+    assert whys[1] == "a stanza that does not come back is a verse"
