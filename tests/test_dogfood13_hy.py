@@ -150,3 +150,22 @@ def test_the_pronoun_es_stays_the_pronoun(line):
 )
 def test_suno_without_a_spec_sings_what_the_scan_counts(line, out):
     assert out in suno.format_song(line, tags=False, armenian="latin").text
+
+
+@pytest.mark.parametrize(
+    "line, mode, out",
+    [
+        ("Սայաթ-Նովեն երգում է (օ-օ-օ)\n", "latin", "Sayat-Noven yergum e (o-o-o)"),
+        ("Երևան-Գյումրի գնացքով\n", "latin", "Yerevan-Gyumri gənatskov"),
+        ("Սայաթ-Նովեն երգում է (օ-օ-օ)\n", "schwa", "Սայաթ-Նովեն երգում է (օ-օ-օ)"),
+        ("Ու գոհար-մարջանը\n", "latin", "U gohar-marjanə"),
+        ("Փափուկ-փափուկ ձյուն\n", "latin", "Papuk-papuk dzyun"),
+    ],
+)
+def test_suno_keeps_the_writers_hyphens_and_capitals(line, mode, out):
+    assert out in suno.format_song(line, tags=False, armenian=mode).text
+
+
+def test_split_all_still_hyphenates_every_syllable():
+    out = suno.format_song("Սայաթ-Նովեն\n", tags=False, armenian="latin", split="all").text
+    assert "Sa-yat-No-ven" in out

@@ -437,10 +437,12 @@ def _armenian(
     stressed = w.readings[0].stress if mark and w.readings else None
     if mark and stressed is not None and stressed < len(parts):
         parts[stressed] = _put_mark(parts[stressed], mark, mode)  # the writer's own stress
-    parts = _merge_vowelless(parts, mode)
-    new = ("-" if hold else "").join(parts)
+    groups = []  # by the writer's hyphenated parts: Սայաթ-Նովեն, Sayat-Noven
+    for piece, group in _by_part(w, token, parts):
+        joined = ("-" if hold else "").join(_merge_vowelless(group, mode))
+        groups.append(_case_like(piece, joined) if mode == "latin" else joined)
+    new = "-".join(groups)
     if mode == "latin":
-        new = _case_like(token, new)
         if mark in LATIN_MARKS:
             new += SENTENCE_MARKS[mark]  # ո՞ւր: its sentence is a question
     if mode == "script" and not hold:
@@ -496,6 +498,32 @@ def _place_marks(text: str, aside: bool = False) -> str:
         body = body[: len(body) - len(quote)].rstrip().rstrip(",;:").rstrip()
         line = body + pending + quote + end
     return line
+
+
+def _by_part(w: Word, token: str, parts: list[str]) -> list[tuple[str, list[str]]]:
+    """The syllables' parts grouped by the hyphenated parts of the word as written
+    (Սայաթ-Նովեն: Սա յաթ | Նո վեն); one group if they do not line up."""
+    pieces = token.split("-")
+    if len(pieces) == 1 or len(parts) != len(w.syllables):
+        return [(token, parts)]
+    groups: list[tuple[str, list[str]]] = []
+    current: list[str] = []
+    seen = bound = 0
+    for syllable, part in zip(w.syllables, parts):
+        current.append(part)
+        seen += _letters(_written(syllable.text, syllable.epenthetic))
+        if len(groups) < len(pieces) - 1:
+            bound_here = bound + _letters(pieces[len(groups)])
+            if seen == bound_here:
+                groups.append((pieces[len(groups)], current))
+                current, bound = [], bound_here
+    groups.append((pieces[len(groups)], current))
+    return groups if len(groups) == len(pieces) and all(g for _, g in groups) else [(token, parts)]
+
+
+def _letters(text: str) -> int:
+    """Letters, և as the two it is drawn for (Երևան: Ե-րե-վան)."""
+    return sum(2 if ch == "և" else ch.isalpha() for ch in text)
 
 
 def _written(text: str, epenthetic: bool) -> str:
