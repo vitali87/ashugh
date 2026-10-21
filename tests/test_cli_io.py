@@ -81,7 +81,7 @@ def test_fit_json_names_the_file(tmp_path, capsys):
     [
         ({"syllables": 0}, "syllables"),
         ({"syllables": -3}, "syllables"),
-        ({"syllables": [8, 0]}, "syllables"),
+        ({"syllables": [0, 0]}, "syllables"),  # a 0 among counts is a free line
         ({"meter": "iamb0"}, "feet"),
         ({"feet": 0}, "feet"),
     ],

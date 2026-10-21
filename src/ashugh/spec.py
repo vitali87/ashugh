@@ -7,7 +7,7 @@ A spec is a TOML file. Keys at the top level apply to every section; a
 8, 6, 8, 6, ...
 
     language = "hy"              # hy | ru | en; detected per line when omitted
-    syllables = 8                # or [8, 8, 8, 6]
+    syllables = 8                # or [8, 8, 8, 6]; a 0 in a list leaves a line free
     tolerance = 0                # allowed miss in syllables
     meter = "iamb4"              # iamb trochee dactyl amphibrach anapest dolnik free,
                                  # optionally followed by the number of feet
@@ -72,10 +72,11 @@ class Rule:
         return self == Rule()
 
     def syllables_at(self, i: int) -> int | None:
-        return self.syllables[i % len(self.syllables)] if self.syllables else None
+        """The line's count, or None for none asked (0 in a list leaves a line free)."""
+        return self.syllables[i % len(self.syllables)] or None if self.syllables else None
 
     def feet_at(self, i: int) -> int | None:
-        return self.feet[i % len(self.feet)] if self.feet else None
+        return self.feet[i % len(self.feet)] or None if self.feet else None
 
     def ending_at(self, i: int) -> int | None:
         if self.endings:
@@ -138,9 +139,12 @@ def mixed_case(s: str) -> bool:
 
 
 def _int_list(name: str, value, where: str) -> tuple[int, ...]:
+    """Counts of 1 or more; a 0 among them leaves that line free (a line of
+    digits in a spec derived from its song), but not every line."""
     out = _numbers(name, value, where)
-    if any(n < 1 for n in out):
-        raise SpecError(f"{where}: {name} must be 1 or more, got {value!r}")
+    if any(n < 0 for n in out) or not any(out):
+        free = " (0 in a list leaves that line free)" if 0 in out else ""
+        raise SpecError(f"{where}: {name} must be 1 or more{free}, got {value!r}")
     return out
 
 
@@ -151,7 +155,7 @@ def _numbers(name: str, value, where: str) -> tuple[int, ...]:
         return (value,)
     if isinstance(value, str):
         parts = [p for p in value.replace(",", " ").split() if p]
-        if parts and all(p.isdigit() for p in parts):
+        if parts and all(p.isascii() and p.isdigit() for p in parts):  # not ² or ٣
             return tuple(int(p) for p in parts)
     if (
         isinstance(value, list)

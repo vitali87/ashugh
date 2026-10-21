@@ -93,7 +93,8 @@ as ' and -.
 
 ```toml
 language = "ru"            # hy | ru | en; detected per line if omitted
-syllables = [9, 8, 9, 8]   # or 8 for every line; lists repeat over the stanza
+syllables = [9, 8, 9, 8]   # or 8 for every line; lists repeat over the stanza;
+                           # a 0 in a list leaves that line free (feet too)
 tolerance = 0
 meter = "iamb4"            # iamb trochee dactyl amphibrach anapest dolnik free (+ feet)
 # feet = [4, 3]            # or feet per line, repeating over the stanza (a ballad)

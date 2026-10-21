@@ -68,8 +68,10 @@ def derive_spec(report: Report, keep: set[str] | frozenset[str]) -> dict:
             scheme = _scheme(unit.scheme)
             if scheme:
                 table["rhyme"] = scheme
-        if "endings" in keep:
-            table["endings"] = "".join(ENDING_CODES.get(lr.fit.ending, "h") for lr in unit.lines)
+        if "endings" in keep:  # a line of digits alone, counted 0, is left free
+            table["endings"] = "".join(
+                ENDING_CODES.get(lr.fit.ending, "h") if lr.fit.count else "-" for lr in unit.lines
+            )
         stanzas[str(number)] = table
     return {"stanza": stanzas}
 

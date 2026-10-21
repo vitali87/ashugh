@@ -207,3 +207,48 @@ def test_a_lone_vowelless_abbreviation_rhymes():
 
     lines = analyze_lines("СССР\nСША", Spec(language="ru"))
     assert all(rhyme.tails(ln, meter.fit(ln.words, "free")) for ln in lines)
+
+
+DIGITS_SONG = "[Intro]\n1, 2, 3, 4!\nI walked along the river side\n"
+
+
+def test_a_spec_derived_from_a_line_of_digits_loads_and_passes_its_song():
+    from ashugh.spec import dumps, loads
+    from ashugh.translate import derive_spec
+
+    src = scan(DIGITS_SONG, from_dict({"language": "en"}))
+    data = derive_spec(src, {"syllables", "meter", "rhyme", "endings"})
+    table = data["stanza"]["1"]
+    assert table["syllables"] == [0, 8] and table["endings"][0] == "-"
+    spec = loads(dumps({"language": "en", **data}))
+    assert not [i for i in scan(DIGITS_SONG, spec).issues if i.severity == "error"]
+
+
+def test_a_zero_in_a_syllable_list_leaves_that_line_free():
+    rep = scan("I walk\nI walked along the river side\n", from_dict({"syllables": [0, 8]}))
+    assert rep.ok
+
+
+@pytest.mark.parametrize("value", [0, [0, 0], "0"])
+def test_a_spec_with_no_count_above_zero_is_refused(value):
+    from ashugh.spec import SpecError
+
+    with pytest.raises(SpecError, match="syllables"):
+        from_dict({"syllables": value})
+
+
+@pytest.mark.parametrize("value", ["²", "٣", [8, -1]])
+def test_a_count_that_is_no_plain_number_is_refused_by_name(value):
+    from ashugh.spec import SpecError
+
+    with pytest.raises(SpecError, match="song.toml: syllables"):
+        from_dict({"syllables": value}, "song.toml")
+
+
+def test_translate_takes_a_source_with_a_line_of_digits():
+    from ashugh.proposers import StaticProposer
+    from ashugh.translate import translate_song
+
+    proposer = StaticProposer({2: ["Раз, два, три, четыре!"], 3: ["Я шёл по берегу реки"]})
+    result = translate_song(DIGITS_SONG, "ru", proposer, rounds=1)
+    assert "Я шёл по берегу реки" in result.text

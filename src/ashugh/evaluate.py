@@ -87,7 +87,7 @@ def load_tasks(path: str | Path) -> list[Task]:
 def _rule_words(rule: Rule) -> list[str]:
     out = []
     if rule.syllables:
-        counts = ", ".join(str(n) for n in rule.syllables)
+        counts = ", ".join(str(n) if n else "any" for n in rule.syllables)
         each = "each line has" if len(rule.syllables) == 1 else "lines have, in turn,"
         out.append(
             f"{each} {counts} sung syllables" + (f" (±{rule.tolerance})" if rule.tolerance else "")
