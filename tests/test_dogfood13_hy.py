@@ -137,3 +137,16 @@ def test_the_pronoun_es_stays_the_pronoun(line):
     ws = words(line)
     k = [w.norm for w in ws].index("ես")
     assert not ws[k].clitic
+
+
+@pytest.mark.parametrize(
+    "line, out",
+    [
+        ("Էս լռությունդ ինձ ցավ ա\n", "lərrutyunəd"),  # as scan counts it
+        ("Սերդ ինձ պետք է\n", "Serd"),  # scan drops it too
+        ("Մկրտիչն էլ եկավ\n", "Məkərtichn el"),  # the linking article, as speech says it
+        ("Նա ստացավ նամակ\n", "Na statsav"),
+    ],
+)
+def test_suno_without_a_spec_sings_what_the_scan_counts(line, out):
+    assert out in suno.format_song(line, tags=False, armenian="latin").text

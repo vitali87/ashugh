@@ -239,21 +239,22 @@ def _split_ending(line: str) -> tuple[str, str]:
 def _elided(lr: LineReport, constrained: bool) -> set[int]:
     """Schwas to drop. Where a count or a meter holds the line, the ones the scan
     dropped, so Suno sings what the check passed (Մայրիկըն է at 8 syllables,
-    Մայրիկն է at 7); with nothing to keep, speech's own forms: a compound's as
-    the meter left it, every linking -ն (Մըկըրտիչն էլ) and every leading ը after
-    a vowel (Na statsav)."""
+    Մայրիկն է at 7); with nothing to keep, those the scan dropped too, and
+    speech's own forms besides: every linking article -ն (Մըկըրտիչն էլ) and
+    every leading ը after a vowel (Na statsav). A possessive's schwa the scan
+    kept stays (լը-ռու-թյու-նըդ)."""
     if constrained:
         return set(lr.fit.elided)
     words = lr.line.words
-    out = {
-        i
-        for i in lr.fit.elided
-        if words[i].optional is not None and words[i].drop == words[i].optional
-    }
+    out = set(lr.fit.elided)
     out |= {
         i
         for i, w in enumerate(words)
-        if w.lang == "hy" and w.drop is not None and w.drop == w.size - 1 and w.size > 1
+        if w.lang == "hy"
+        and w.drop is not None
+        and w.drop == w.size - 1
+        and w.size > 1
+        and w.norm.endswith("ն")
     }
     # and every leading ը a vowel before swallows (նա ստացավ: նաս-տա-ցավ)
     out |= {i for i, w in enumerate(words) if w.lang == "hy" and w.head_schwa and w.drop == 0}
