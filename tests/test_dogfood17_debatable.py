@@ -143,3 +143,19 @@ def test_a_sung_twice_is_a_word():
     from ashugh import suno
 
     assert suno.format_song("I love you twice\n", tags=False).text == "I love you twice\n"
+
+
+@pytest.mark.parametrize("line", ["Мы поем о любви", "Мы не поем", "Мы снова поем"])
+def test_we_sing_with_yo(line):
+    w = next(w for w in _ru_words(line) if w.norm == "поем")
+    assert {r.spelling for r in w.readings} == {"поём"}
+
+
+def test_i_will_eat_keeps_both():
+    w = next(w for w in _ru_words("Я поем и пойду") if w.norm == "поем")
+    assert {r.spelling for r in w.readings} == {"поем", "поём"}
+
+
+def test_we_sing_does_not_rhyme_with_sovsem():
+    spec = from_dict({"language": "ru", "rhyme": "AA"})
+    assert not scan("Мы поем с тобой\nНе забыв совсем\n", spec).ok

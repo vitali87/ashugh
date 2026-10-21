@@ -1659,6 +1659,27 @@ def marked_leans(words: list[Word]) -> None:
                 break
 
 
+# Words that may stand between мы and its verb: мы не поём, мы снова поём.
+BEFORE_WE_VERB = frozenset("не ни вместе снова опять тоже также всегда все всё ещё уже".split())
+
+
+def we_sing(words: list[Word]) -> None:
+    """мы поём, not по-е́м (I'll eat a little): after мы, a word read either with -ем
+    or -ём is the verb's -ём, the form мы takes."""
+    for k, we in enumerate(words):
+        if we.lang != CODE or we.norm != "мы":
+            continue
+        for w in words[k + 1 : k + 3]:
+            if w.lang != CODE:
+                break
+            yo = tuple(r for r in w.readings if r.spelling.endswith("ём"))
+            if yo and len(yo) < len(w.readings) and w.readings[0].source not in ("mark", "user"):
+                w.readings = yo
+                break
+            if w.norm not in BEFORE_WE_VERB:
+                break
+
+
 def ne_with_pronoun(words: list[Word]) -> None:
     """не́ с кем, не́ о чем, не́ за что: не takes the stress, the preposition and the
     pronoun after it lean on it."""
