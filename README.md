@@ -84,14 +84,19 @@ stanza, and text in parentheses is a backing vocal left out of the count. A
 tag line may carry more tags or a note (`[Verse 1] [Male Vocal]`,
 `[Chorus] (softly)`, `[Verse 2 - Rap]`); the tag Suno knows as a section names
 it, and a style tag on a line of its own right after a section tag keeps that
-section. Text pasted from elsewhere reads as typed: decomposed letters are
+section. A section named in plain text, as lyrics sites write it (`Chorus:`,
+`Verse 1:`, `Repeat Chorus`, `CHORUS x2`, `Припев:`), is a tag too, and suno
+writes it in brackets; a label for who sings (`MABEL:`, `Call:`) and an emoji
+are warned of, as Suno would sing the one and may say the other. Text pasted from elsewhere reads as typed: decomposed letters are
 composed, soft hyphens and zero-width characters are dropped, a stray Latin
 letter in a Cyrillic word or the other way round (oкон, hеllo) is read as its
 look-alike, and the look-alikes of the apostrophe (´ ` ‘ ′ ʼ) and of the
 hyphen inside a word count as ' and -. Parentheses may nest inside a backing
 vocal, and a line of tags with notes (`[Chorus] (softly)`) is a tag line. A
-vowel written three times or more is one held note (Ooooh, Ооо, Օօօ); written
-with hyphens it is a note each (О-о-о). A note that names a section is given
+vowel written three times or more is one held note (Ooooh, Ооо, Օօօ), in a word
+too (whyyyy, Дааа, Ջաաաան, each one syllable); written with hyphens it is a note
+each (О-о-о). An apostrophe for a dropped vowel takes one syllable off the full
+word, never two (ev'ry and sov'reign in two, ev'rything in three, whate'er in two). A note that names a section is given
 Suno's name (`[Куплет 2 - Рэп]` becomes `[Verse 2 - Rap]`); a free note stays
 as written.
 
