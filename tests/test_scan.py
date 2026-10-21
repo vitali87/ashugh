@@ -349,7 +349,7 @@ def test_noun_alone_keeps_its_stress():
 
 
 def test_elision_note_speaks_the_lines_language():
-    rep = scan("I still recall our wondrous meeting", from_dict({"syllables": 9}))
+    rep = scan("I still recall every wondrous meeting", from_dict({"syllables": 10}))
     notes = [i.message for i in rep.issues if i.code == "syllables"]
     assert notes and all("ը" not in m for m in notes)
 

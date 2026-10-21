@@ -419,19 +419,30 @@ def _drop_after_stress(pron: str) -> str | None:
     return None
 
 
+# A stem ending in one vowel letter and one consonant, which doubles before an
+# ending if its vowel is short: hop, hopping; so hoping is of hope.
+SHORT_STEM_RE = re.compile(r"(?<![aeiou])[aeiou][b-df-hj-np-tvz]$")
+
+
 def _derived(norm: str) -> list[str] | None:
     """An -ed, -ing, -er, -eth or -est form the dictionary lacks, from its stem:
     ghosted, vibing, influencer, calleth, knowest (ghost, vibe, influence, call,
     know)."""
+    y = norm[:-3] + "y" if norm.endswith(("ier", "ied")) else norm[:-4] + "y"  # lonelier
     for ending, stems in (
         ("ing", (norm[:-3], norm[:-3] + "e", norm[:-4])),
-        ("ed", (norm[:-2], norm[:-1], norm[:-3], norm[:-3] + "y" if norm.endswith("ied") else "")),
-        ("er", (norm[:-2], norm[:-1], norm[:-3])),
+        ("ed", (norm[:-2], norm[:-1], norm[:-3], y if norm.endswith("ied") else "")),
+        ("er", (norm[:-2], norm[:-1], norm[:-3], y if norm.endswith("ier") else "")),
         ("eth", (norm[:-3], norm[:-3] + "e", norm[:-4])),  # calleth, loveth
-        ("est", (norm[:-3], norm[:-3] + "e", norm[:-4])),  # knowest, and a superlative
+        ("est", (norm[:-3], norm[:-3] + "e", norm[:-4], y if norm.endswith("iest") else "")),
     ):
         if not norm.endswith(ending) or len(norm) < len(ending) + 3:
             continue
+        bare = norm[: -len(ending)]
+        if SHORT_STEM_RE.search(bare) and TABLE.get(bare + "e"):
+            # hopeth, abideth, careth: a short stem would have doubled its consonant
+            # (hoppeth), so the stem is hope, abide, care, not hop, abid, car
+            stems = (bare + "e", *stems)
         for stem in stems:
             raw = TABLE.get(stem) if len(stem) > 2 else None
             if not raw:
@@ -698,6 +709,13 @@ def split_spelling(
         and groups[-1] == (len(low) - 2, len(low) - 1)
         and bool(TABLE.get(low[:-2]) or TABLE.get(low[:-1]))  # learn-ed, not hundr-ed
     )
+    silent, hiatus = _silent_e(low, groups), _hiatus_cut(low, groups)
+    if len(groups) == n and silent is not None and hiatus is not None and hiatus[0] > silent:
+        # lone-li-er: the silent e is no syllable, the ie of -ier is two
+        a, b = groups[silent - 1], groups.pop(silent)
+        groups[silent - 1] = (a[0], b[1])
+        k, at = hiatus[0] - 1, hiatus[1]
+        groups[k : k + 1] = [(groups[k][0], at), (at, groups[k][1])]
     while len(groups) > n:
         # a silent e (love-ly), else the vowel after the first, which speech drops
         # (choco-late, came-ra), else the last
@@ -962,6 +980,8 @@ EXTRA = {
 REPLACED = {
     "prob'ly": ["P R AA1 B L IY0"],  # probably, two letters left out
     "wi'": ["W IH1"],  # Scots with: wi' bickering brattle
+    "our": ["AW1 R", "AA1 R"],  # one syllable in song, though CMUdict lists ou-er first
+    "ours": ["AW1 R Z", "AA1 R Z"],
     "spring": ["S P R IH1 NG"],
     "springs": ["S P R IH1 NG Z"],
     "bae": ["B EY1"],
@@ -1341,9 +1361,11 @@ def analyze_word(
     # The first pronunciation counts; a longer one only when it differs by one vowel
     # that can drop (every, fire), not when it spells out an abbreviation (us: U.S.).
     longest = len(parsed[0][1])
+    short_listed = False  # miles, aisles, prayer: CMUdict lists the short form first
     for _, stresses, bare in parsed[1:]:
         if len(stresses) == longest + 1 and _drop_index(bare, parsed[0][2]) is not None:
             longest += 1
+            short_listed = True
             break
     if longest == 0:
         return _guessed(word, token, norm)
@@ -1362,7 +1384,7 @@ def analyze_word(
         word.drop_cost = SYNCOPE_COST  # a licence, taken when the line needs it
     if word.drop is None:
         word.drop = _smoothed(*full[0])
-    if norm in SHORT_FIRST and word.drop is not None:
+    if (norm in SHORT_FIRST or short_listed) and word.drop is not None:
         word.drop_cost = SHORT_PREFERENCE
 
     readings: list[Reading] = []
@@ -1661,18 +1683,25 @@ MODIFIERS = set(
 )
 
 
+SUBJECTS = {"i", "we", "they", "he", "she"}  # not you, an object too: I bought you presents
+ADVERBS = set("still always just really often sometimes ever also even already soon once".split())
+
+
 def _before(words: list[Word], k: int) -> str:
     """The word that tells a noun from a verb: the one before it, or the determiner
-    past one or two words that describe it (a broken record, the burning desert)."""
+    past one or two words that describe it (a broken record, the burning desert),
+    or the subject past an adverb (I still recall)."""
     if not k:
         return ""
-    j = k - 1
+    j, adverbs = k - 1, True
     while j >= 0 and k - j <= 2 and words[j].norm not in VERBAL | NOMINAL:
         norm = words[j].norm
-        if not (norm in MODIFIERS or MODIFIER_RE.fullmatch(norm)):
+        adverb = norm in ADVERBS or norm.endswith("ly")
+        if not (adverb or norm in MODIFIERS or MODIFIER_RE.fullmatch(norm)):
             break
+        adverbs = adverbs and adverb
         j -= 1
-    if 0 <= j < k - 1 and words[j].norm in NOMINAL:
+    if 0 <= j < k - 1 and (words[j].norm in NOMINAL or adverbs and words[j].norm in VERBAL):
         return words[j].norm
     return words[k - 1].norm
 
@@ -1721,7 +1750,9 @@ def heteronyms(words: list[Word]) -> None:
         if not any(r.stress == want for r in w.readings):
             continue
         first = [replace(r, penalty=0.0) for r in w.readings if r.stress == want]
-        if before in NOMINAL:  # the récord, a présent: a noun, which no rhyme makes a verb
+        if before in NOMINAL or before in SUBJECTS:
+            # the récord, a présent: a noun, which no rhyme makes a verb; I recáll,
+            # they still protést: a verb
             w.readings = tuple(first)
             continue
         rest = [

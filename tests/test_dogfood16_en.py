@@ -148,3 +148,87 @@ def test_latin_typed_armenian_is_still_found(line):
     from ashugh.lyrics import tokenize
 
     assert latin_armenian(tokenize(line))
+
+
+@pytest.mark.parametrize(
+    "word,shown",
+    [
+        ("loveliest", "love-li-est"), ("loneliest", "lone-li-est"), ("lonelier", "lone-li-er"),
+        ("stateliest", "state-li-est"), ("lovelier", "love-li-er"),
+    ],
+)  # fmt: skip
+def test_ier_and_iest_are_built_on_the_y_adjective(word, shown):
+    w = words(word)[0]
+    assert w.sung() == shown and not w.guessed and w.readings[0].stress == 0
+
+
+def test_the_loneliest_night_is_eight_syllables():
+    assert check("The loneliest night of the year\n", syllables=8).lines[0].ok
+
+
+@pytest.mark.parametrize(
+    "word,vowel",
+    [
+        ("hopeth", "oʊ"), ("shineth", "aɪ"), ("careth", "ɛ"), ("hideth", "aɪ"),
+        ("rideth", "aɪ"), ("hidest", "aɪ"), ("ripest", "aɪ"), ("abideth", "aɪ"),
+    ],
+)  # fmt: skip
+def test_eth_and_est_keep_a_silent_e_stems_vowel(word, vowel):
+    w = words(word)[0]
+    r = w.readings[0]
+    assert r.phones[rhyme.nuclei(r.phones)[r.stress]] == vowel
+
+
+@pytest.mark.parametrize(
+    "word,shown", [("calleth", "cal-leth"), ("knowest", "know-est"), ("openeth", "o-pen-eth")]
+)
+def test_a_stem_with_no_silent_e_stays(word, shown):
+    assert words(word)[0].sung() == shown
+
+
+def test_bakers_hymn_scans_and_rhymes():
+    text = "Lord, thy word abideth\nAnd our footsteps guideth\n"
+    report = check(text, meter="trochee", feet=3, rhyme="AA")
+    assert all(lr.ok for lr in report.lines), [i.message for i in report.issues]
+
+
+@pytest.mark.parametrize("word", ["our", "ours"])
+def test_our_is_one_syllable(word):
+    assert sizes(word) == {1}
+
+
+def test_a_line_opening_on_our_is_an_iamb():
+    report = scan("Our love will never die\nOur hearts will always fly\n")
+    assert report.units[0].meter == "iamb" and report.lines[0].fit.count == 6
+    assert not [i for i in report.issues if "our" in i.message.lower()]
+
+
+@pytest.mark.parametrize("a,b", [("our", "power"), ("ours", "flowers")])
+def test_our_still_rhymes_with_power(a, b):
+    assert en_rhyme(a, b) >= rhyme.THRESHOLD["perfect"]
+
+
+def test_miles_is_one_syllable_at_a_line_end():
+    report = scan("I walked a thousand miles\nTo see your lovely smiles\n")
+    assert [lr.fit.count for lr in report.lines] == [6, 6]
+    assert (
+        check("We think na on the lang Scots miles\n", meter="iamb", feet=4).lines[0].fit.count == 8
+    )
+
+
+def test_a_word_listed_short_first_may_still_be_sung_long():
+    w = words("miles")[0]
+    assert w.drop is not None and w.size == 2 and w.drop_cost < 0  # mi-les if the line asks
+
+
+@pytest.mark.parametrize(
+    "line,word,stress",
+    [
+        ("I still recall every wondrous meeting", "recall", 1),
+        ("We gladly record the show", "record", 1),
+        ("I always present my case", "present", 1),
+    ],
+)
+def test_a_subject_past_an_adverb_makes_a_verb(line, word, stress):
+    w = next(w for w in words(line) if w.norm == word)
+    assert {r.stress for r in w.readings} == {stress}
