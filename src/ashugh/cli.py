@@ -607,7 +607,9 @@ def main(argv: list[str] | None = None) -> int:
     if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
     try:
-        return args.func(args)
+        code = args.func(args)
+        sys.stdout.flush()  # the last write fails here, not in the exit's flush
+        return code
     except (SpecError, ProposerError, probe.ProbeError) as e:
         print(f"ashugh: {e}", file=sys.stderr)
         return 2
