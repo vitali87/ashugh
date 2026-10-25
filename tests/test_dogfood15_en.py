@@ -370,6 +370,59 @@ def test_a_reader_that_stops_early_is_no_error(tmp_path):
     assert proc.wait(timeout=60) == 0 and "Broken pipe" not in err, err
 
 
+def _scan_into(raw, tmp_path, monkeypatch):
+    """Run scan --json with stdout buffered over `raw`, big enough to hold it all."""
+    import io
+    import sys
+
+    from ashugh import cli
+
+    song = tmp_path / "song.txt"
+    song.write_text("I walk along the river side\n", encoding="utf-8")
+    out = io.TextIOWrapper(io.BufferedWriter(raw, 1 << 20), encoding="utf-8")
+    monkeypatch.setattr(sys, "stdout", out)
+    return cli.main(["scan", str(song), "--json"]), out
+
+
+def test_a_reader_gone_before_the_last_flush_is_no_error(tmp_path, monkeypatch):
+    import io
+    import os
+
+    # The whole answer still sits in the buffer when the scan returns, so the
+    # first write to the closed pipe is the last flush, as at a fast reader's exit.
+    read_end, write_end = os.pipe()
+    os.close(read_end)
+    code, out = _scan_into(io.FileIO(write_end, "w"), tmp_path, monkeypatch)
+    assert code == 0
+    out.close()  # nothing is left to fail on the closed pipe once main returns
+
+
+def test_a_full_disk_on_the_last_flush_is_an_error(tmp_path, monkeypatch, capsys):
+    import errno
+    import io
+
+    class Full(io.RawIOBase):
+        full = True
+
+        def writable(self):
+            return True
+
+        def write(self, b):
+            if self.full:
+                raise OSError(errno.ENOSPC, "No space left on device")
+            return len(b)
+
+    # Negative: only a reader that has gone is quiet; a write that fails for
+    # any other reason is reported and exits 2, not 0.
+    raw = Full()
+    try:
+        code, _ = _scan_into(raw, tmp_path, monkeypatch)
+        assert code == 2
+        assert "No space left on device" in capsys.readouterr().err
+    finally:
+        raw.full = False  # the buffer's own close may flush once the test is done
+
+
 def test_a_line_that_fails_its_meter_gets_no_note_that_it_fits():
     report = scan("We sat for hours\n", from_dict({"language": "en", "meter": "trochee"}))
     assert not [i for i in report.issues if i.message.startswith("fits if")]
