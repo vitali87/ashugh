@@ -38,6 +38,37 @@ def test_mcp_answers_malformed_requests_instead_of_dying():
     assert replies[-1]["id"] == 99
 
 
+def test_mcp_refuses_nesting_past_its_limit_on_any_stack():
+    # Whether json can parse a deep line depends on the host's stack limit,
+    # so the server sets its own: one level past it is a parse error on
+    # every host, though any host's json reads this depth.
+    deep = "[" * (mcp.MAX_DEPTH + 1) + "]" * (mcp.MAX_DEPTH + 1)
+    (reply,) = mcp_run(deep)
+    assert reply == {
+        "jsonrpc": "2.0",
+        "id": None,
+        "error": {"code": -32700, "message": "parse error"},
+    }
+
+
+def test_mcp_reads_nesting_at_its_limit_and_brackets_inside_strings():
+    # Negative for the guard: the limit itself is still read as a batch, and
+    # brackets inside a string, after an escaped quote, are not nesting. The
+    # sibling [] takes the bracket count past the limit, so the depth is what
+    # decides, not the count.
+    inner = mcp.MAX_DEPTH - 1
+    at_limit = "[[]," + "[" * inner + "]" * inner + "]"
+    (reply,) = mcp_run(at_limit)
+    assert isinstance(reply, list) and [r["error"]["code"] for r in reply] == [-32600, -32600]
+    lyrics = '\\"' + "[{" * mcp.MAX_DEPTH
+    call = (
+        '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"scan",'
+        f'"arguments":{{"lyrics":"{lyrics}"}}}}}}'
+    )
+    (reply,) = mcp_run(call)
+    assert reply["id"] == 7 and "result" in reply
+
+
 def test_mcp_takes_a_batch():
     batch = '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"x"}]'
     (reply,) = mcp_run(batch)

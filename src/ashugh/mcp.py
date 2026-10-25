@@ -439,6 +439,35 @@ def _valid_id(mid) -> bool:
     return (isinstance(mid, str) or isinstance(mid, int)) and not isinstance(mid, bool)
 
 
+# Deeper than any real message, and shallow enough that json reads it on any
+# stack: past it a line is a parse error, wherever the server runs.
+MAX_DEPTH = 256
+
+
+def _too_deep(line: str) -> bool:
+    """Whether a line's arrays and objects nest past MAX_DEPTH, strings aside."""
+    if line.count("[") + line.count("{") <= MAX_DEPTH:
+        return False
+    depth, in_string, escaped = 0, False, False
+    for ch in line:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+        elif ch == '"':
+            in_string = True
+        elif ch in "[{":
+            depth += 1
+            if depth > MAX_DEPTH:
+                return True
+        elif ch in "]}":
+            depth -= 1
+    return False
+
+
 def _result(mid, result) -> dict:
     return {"jsonrpc": "2.0", "id": mid, "result": result}
 
@@ -455,6 +484,8 @@ def serve(stdin=None, stdout=None) -> int:
         if not line.strip():
             continue
         try:
+            if _too_deep(line):
+                raise ValueError("nested past MAX_DEPTH")
             msg = json.loads(line.lstrip("\ufeff"))  # a BOM some clients send first
         except ValueError, RecursionError:  # [[[[... a hundred thousand deep, or 5,000 digits
             reply = _error(None, -32700, "parse error")
